@@ -9,7 +9,7 @@ resources:
 reference-location: margin # footnotes in margin
 link-citations: true       # citations link to references
 
-bibliography: experimentology.bib
+bibliography: references.bib
 reference-section-title: References
 
 crossref:
@@ -65,61 +65,27 @@ execute:
   tidy: true
 
 book:
-  title: "Experimentology"
-  subtitle: "An Open Science Approach to Experimental Psychology Methods"
+  title: "Machine Learning from Human Preferences"
+  subtitle: ""
   author:
-    - name: Michael C. Frank
-      orcid: 0000-0002-7551-4378
-    - name: Mika Braginsky
-      orcid: 0000-0001-9039-3220
-    - name: Julie Cachia
-      orcid: 0000-0001-9584-457X
-    - name: Nicholas A. Coles
-      orcid: 0000-0001-8583-5610
-    - name: Tom E. Hardwicke
-      orcid: 0000-0001-9485-4952
-    - name: Robert D. Hawkins
-      orcid: 0000-0003-0434-8736
-    - name: Maya B. Mathur
-      orcid: 0000-0001-6698-2607
-    - name: Rondeline Williams
-      orcid: 0000-0002-2690-1603
+    - name: Sang T. Truong
+      orcid: 0000-0001-8069-9410
+    - name: Sanmi Koyejo
+      orcid: 0000-0002-4023-419X
   date: last-modified
   # doi: 10.25936/3jp6-5m50
-  repo-url: https://github.com/langcog/experimentology
+  repo-url: https://github.com/sangttruong/mlhp
   repo-actions: [source, issue]
   downloads: [pdf]
   sidebar:
     style: "docked"
     footer: license.qmd
-  google-analytics: G-659MTW4XZ4
+  # google-analytics:
   # cookie-consent: true
   chapters:
     - index.qmd
-    - part: "Foundations"
-      chapters:
-        - 001-experiments.qmd
-        - 002-theories.qmd
-        - 003-replication.qmd
-        - 004-ethics.qmd
-    - part: "Statistics"
-      chapters:
-        - 005-estimation.qmd
-        - 006-inference.qmd
-        - 007-models.qmd
-    - part: "Planning"
-      chapters:
-        - 008-measurement.qmd
-        - 009-design.qmd
-        - 010-sampling.qmd
-    - part: "Execution"
-      chapters:
-        - 011-prereg.qmd
-        - 012-collection.qmd
-        - 013-management.qmd
-    - part: "Reporting"
-      chapters:
-        - 014-writing.qmd
-        - 015-viz.qmd
-        - 016-meta.qmd
-    - 017-conclusion.qmd
+    - 001-introduction.qmd
+    - 002-reward_model.qmd
+    - 003-measure.qmd
+    - 004-optim.qmd
+    - 005-align.qmd

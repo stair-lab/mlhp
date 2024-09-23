@@ -6,7 +6,6 @@
 .DS_Store
 *_files/
 *_cache/
-_book/
 
 *.sublime-project
 
@@ -21,7 +20,5 @@ images/management/analysis_pipeline.pdf
 *.aux
 # *.tex
 *.pdf
-
-Experimentology.tex
 
 /.quarto/

@@ -1,15 +1,10 @@
-# Experimentology
-## An Open Science Approach to Experimental Psychology Methods
-### Michael C. Frank, Mika Braginsky, Julie Cachia, Nicholas Coles, Tom Hardwicke, Robert Hawkins, Maya Mathur, and Rondeline Williams
+# Machine Learning from Human Preferences
+### Sang Truong and Sanmi Kojeyo
 
-A new open access textbook on experimental methods to be published by MIT Press. 
+This book is available online at: ai.stanford.edu/~sttruong/mlhp
 
-Available here: http://experimentology.io
-
-Book manuscript is not final and text is expected to change (mostly in minor ways) through at least early 2024. 
-
-To build locally (this is uncommon):
-* Make sure Quarto is up to date (we use HomeBrew)
+To build locally:
+* Make sure Quarto is up to date
 * Restore dependencies using `renv::restore()`
 
-Note that Experimentology is licensed CC-BY-NC 4.0: [https://creativecommons.org/licenses/by-nc/4.0/]()
+Note that this book is licensed [CC-BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/).

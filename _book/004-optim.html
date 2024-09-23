@@ -1,0 +1,1416 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.5.57">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>4&nbsp; Model-Free Preference Optimization – Machine Learning from Human Preferences</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for citations */
+div.csl-bib-body { }
+div.csl-entry {
+  clear: both;
+  margin-bottom: 0em;
+}
+.hanging-indent div.csl-entry {
+  margin-left:2em;
+  text-indent:-2em;
+}
+div.csl-left-margin {
+  min-width:2em;
+  float:left;
+}
+div.csl-right-inline {
+  margin-left:2em;
+  padding-left:1em;
+}
+div.csl-indent {
+  margin-left: 2em;
+}</style>
+
+
+<script src="site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="site_libs/quarto-nav/headroom.min.js"></script>
+<script src="site_libs/clipboard/clipboard.min.js"></script>
+<script src="site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="site_libs/quarto-search/fuse.min.js"></script>
+<script src="site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="./">
+<link href="./005-align.html" rel="next">
+<link href="./003-measure.html" rel="prev">
+<script src="site_libs/quarto-html/quarto.js"></script>
+<script src="site_libs/quarto-html/popper.min.js"></script>
+<script src="site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="site_libs/quarto-html/anchor.min.js"></script>
+<link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting-dark.css" rel="prefetch" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<script src="site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="site_libs/bootstrap/bootstrap.min.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="site_libs/bootstrap/bootstrap-dark.min.css" rel="prefetch" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<script id="quarto-search-options" type="application/json">{
+  "location": "sidebar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "start",
+  "type": "textbox",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+</head>
+
+<body class="nav-sidebar docked">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./004-optim.html"><span class="chapter-number">4</span>&nbsp; <span class="chapter-title">Model-Free Preference Optimization</span></a></li></ol></nav>
+        <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+        </a>
+      <button type="button" class="btn quarto-search-button" aria-label="Search" onclick="window.quartoOpenSearch();">
+        <i class="bi bi-search"></i>
+      </button>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation docked overflow-auto">
+    <div class="pt-lg-2 mt-2 text-left sidebar-header">
+    <div class="sidebar-title mb-0 py-0">
+      <a href="./">Machine Learning from Human Preferences</a> 
+        <div class="sidebar-tools-main tools-wide">
+    <a href="https://github.com/sangttruong/mlhp" title="Source Code" class="quarto-navigation-tool px-1" aria-label="Source Code"><i class="bi bi-github"></i></a>
+    <a href="./Machine-Learning-from-Human-Preferences.pdf" title="Download PDF" class="quarto-navigation-tool px-1" aria-label="Download PDF"><i class="bi bi-file-pdf"></i></a>
+  <a href="" class="quarto-color-scheme-toggle quarto-navigation-tool  px-1" onclick="window.quartoToggleColorScheme(); return false;" title="Toggle dark mode"><i class="bi"></i></a>
+</div>
+    </div>
+      </div>
+        <div class="mt-2 flex-shrink-0 align-items-center">
+        <div class="sidebar-search">
+        <div id="quarto-search" class="" title="Search"></div>
+        </div>
+        </div>
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Preface</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./001-introduction.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">1</span>&nbsp; <span class="chapter-title">Introduction</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./002-reward_model.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">2</span>&nbsp; <span class="chapter-title">Human Decision Making and Choice Models</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./003-measure.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">3</span>&nbsp; <span class="chapter-title">Model-Based Preference Optimization</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./004-optim.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text"><span class="chapter-number">4</span>&nbsp; <span class="chapter-title">Model-Free Preference Optimization</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./005-align.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">5</span>&nbsp; <span class="chapter-title">Human Values and AI Alignment</span></span></a>
+  </div>
+</li>
+    </ul>
+    </div>
+<div class="quarto-sidebar-footer"><div class="sidebar-footer-item">
+<p>© 2024. This work is openly licensed via <a href="https://creativecommons.org/licenses/by-nc/4.0/">CC BY NC 4.0</a>.</p>
+</div></div></nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Table of contents</h2>
+   
+  <ul>
+  <li><a href="#individual-preference-optimization-via-dueling-bandit" id="toc-individual-preference-optimization-via-dueling-bandit" class="nav-link active" data-scroll-target="#individual-preference-optimization-via-dueling-bandit"><span class="header-section-number">4.1</span> Individual Preference Optimization via Dueling Bandit</a>
+  <ul class="collapse">
+  <li><a href="#introduction-to-dueling-bandit-problem-and-its-extension" id="toc-introduction-to-dueling-bandit-problem-and-its-extension" class="nav-link" data-scroll-target="#introduction-to-dueling-bandit-problem-and-its-extension"><span class="header-section-number">4.1.1</span> Introduction to Dueling Bandit Problem and Its Extension</a></li>
+  <li><a href="#regret" id="toc-regret" class="nav-link" data-scroll-target="#regret"><span class="header-section-number">4.1.2</span> Regret</a></li>
+  <li><a href="#acquisition-functions" id="toc-acquisition-functions" class="nav-link" data-scroll-target="#acquisition-functions"><span class="header-section-number">4.1.3</span> Acquisition Functions</a></li>
+  <li><a href="#applications" id="toc-applications" class="nav-link" data-scroll-target="#applications"><span class="header-section-number">4.1.4</span> Applications</a></li>
+  <li><a href="#incentive-compatible-online-learning" id="toc-incentive-compatible-online-learning" class="nav-link" data-scroll-target="#incentive-compatible-online-learning"><span class="header-section-number">4.1.5</span> Incentive-Compatible Online Learning</a></li>
+  </ul></li>
+  <li><a href="#preferential-bayesian-optimization" id="toc-preferential-bayesian-optimization" class="nav-link" data-scroll-target="#preferential-bayesian-optimization"><span class="header-section-number">4.2</span> Preferential Bayesian Optimization</a>
+  <ul class="collapse">
+  <li><a href="#problem-statement" id="toc-problem-statement" class="nav-link" data-scroll-target="#problem-statement"><span class="header-section-number">4.2.1</span> Problem statement</a></li>
+  <li><a href="#acquisition-functions-1" id="toc-acquisition-functions-1" class="nav-link" data-scroll-target="#acquisition-functions-1"><span class="header-section-number">4.2.2</span> Acquisition Functions</a></li>
+  <li><a href="#regret-analysis" id="toc-regret-analysis" class="nav-link" data-scroll-target="#regret-analysis"><span class="header-section-number">4.2.3</span> Regret Analysis</a></li>
+  </ul></li>
+  <li><a href="#bibliography" id="toc-bibliography" class="nav-link" data-scroll-target="#bibliography">References</a></li>
+  </ul>
+<div class="toc-actions"><ul><li><a href="https://github.com/sangttruong/mlhp/blob/main/004-optim.qmd" class="toc-action"><i class="bi bi-github"></i>View source</a></li><li><a href="https://github.com/sangttruong/mlhp/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title"><span id="4optim" class="quarto-section-identifier"><span class="chapter-number">4</span>&nbsp; <span class="chapter-title">Model-Free Preference Optimization</span></span></h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="individual-preference-optimization-via-dueling-bandit" class="level2" data-number="4.1">
+<h2 data-number="4.1" class="anchored" data-anchor-id="individual-preference-optimization-via-dueling-bandit"><span class="header-section-number">4.1</span> Individual Preference Optimization via Dueling Bandit</h2>
+<section id="introduction-to-dueling-bandit-problem-and-its-extension" class="level3" data-number="4.1.1">
+<h3 data-number="4.1.1" class="anchored" data-anchor-id="introduction-to-dueling-bandit-problem-and-its-extension"><span class="header-section-number">4.1.1</span> Introduction to Dueling Bandit Problem and Its Extension</h3>
+<p>The multi-armed bandit (MAB) problem is when a gambler must choose which lever to pull on an MAB machine to maximize the winning rate despite not knowing which machine is the most rewarding. This scenario illustrates the need to balance exploration (trying new machines to discover potential higher rewards) and exploitation (using current knowledge to maximize gains). MAB algorithms navigate this dilemma by making decisions under uncertainty to achieve the best possible outcomes based on gathered data. At the core of the MAB problem lies a set of actions, or ‘arms,’ denoted by <span class="math inline">\(\mathcal{A} = \{1, 2, \ldots, K\}\)</span>, where <span class="math inline">\(K\)</span> signifies the total number of arms. For each round <span class="math inline">\(t\)</span>, the agent selects an arm <span class="math inline">\(a_t \in \mathcal{A}\)</span> and receives a reward <span class="math inline">\(r_t\)</span>, sampling from an arm-specific, unknown probability distribution. The expected reward of pulling arm <span class="math inline">\(a\)</span> is represented as <span class="math inline">\(\mu_a = \mathbb{E}[r_t | a]\)</span>.</p>
+<p>The multi-armed bandit framework can be extended in various ways to model more complex scenarios. In the infinite-armed bandit problem, the set of possible arms <span class="math inline">\(\mathcal{A}\)</span> is either very large or indeed infinite. This introduces significant challenges in exploration, as the agent can no longer afford to explore each arm even once. Algorithms for infinite-armed bandits typically assume some regularity or structure of the reward function across arms to make the problem tractable. The contextual bandit problem extends the bandit framework by incorporating observable external states or contexts that influence the reward distributions of arms. The agent’s task is to learn policies that map contexts to arms to maximize reward. This model is particularly powerful for personalized recommendations, where the context can include user features or historical interactions. In dueling bandit problems, the agent chooses two arms to pull simultaneously and receives feedback only on which of the two is better, not the actual reward values. This pairwise comparison model is especially useful in scenarios where absolute evaluations are difficult, but relative preferences are easier to determine, such as in ranking systems.</p>
+<p>Contextual bandits extend the multi-armed bandits: the decisions are now also conditional on the state of the environment and previous observations. The benefit of such a model is that observing the environment can add more information and possibly lead to better rewards and outcomes. Over each iteration, the agent is presented with the context of the environment then decides on an action based on the context and previous observations. Lastly, the agent observes the action’s outcome and reward. Throughout all this, the agent tries to maximize the average reward.</p>
+<p>In many real-world contexts, one may not have a real-value reward (or at least a reliable one) that we can associate with a decision. We may only be provided with observations of which of a set of bandits was optimal in a given scenario. The assumption we will make is that within these observations of preferred choice amongst a set of options, there is an implicit reward or payoff encapsulated in that decision. Let us look at some examples:</p>
+<ol type="1">
+<li><p>Dietary preferences: If we aim to provide food recommendations to humans, we likely can’t quantify an explicit reward the person attains from being recommended a specific food item. Rather, we can provide them meal options, and observe which one the person selects.</p></li>
+<li><p>Video recommendation: Some websites like YouTube and TikTok recommend specific videos to users. It is likely not possible to measure the reward a person attains from watching a video. Still, we can understand that a user preferred one video over another. From these relative preference observations, we can learn a strategy always to recommend videos they are likely to enjoy.</p></li>
+<li><p>Exoskeleton gait optimization: <span class="citation" data-cites="tucker2020preferencebased">(<a href="#ref-tucker2020preferencebased" role="doc-biblioref">Tucker et al. 2020</a>)</span> created a framework that uses human-evaluated preferences for an exoskeleton gait algorithm to ultimately develop an optimal strategy for the exoskeleton to assist a human in walking. A human cannot reliably produce a numerical value attributed to how well the exoskeleton helped them walk, but can reliably indicate which out of a set of options performed the best according to their preferences.</p></li>
+</ol>
+<p>Generally, we will assume that we have access to a set of actions. A noteworthy assumption we make is that any observations we can make are an unbiased estimate of the payoff. This means that if we observe that a human preferred one option over another (or several others), the preferred option had a higher implicit reward or payoff than the alternatives. In the case of dietary preferences, this may mean that a human liked the preferred option; in the case of video recommendation, a user was more entertained, satisfied, or educated by the video they selected than the other options (which is what we can observe).</p>
+<p>The overarching context is that we do not have direct or reliable access to rewards. We may not have a reward at all (for some decisions, it may be impossible to define a real value to the outcome), or it may be noisy (for example, if we ask a human to rate the satisfaction from their choice on a scale of 1 to 10). We use relative comparisons to evaluate the best of multiple options in this case. We aim to minimize the total regret in the face of noisy comparisons. Humans may not always provide consistent observations (since human decision making is not guaranteed to be consistent). However, we can still determine an optimal strategy with the observed comparison. We can think of it as minimizing the frequency by which we make sub-optimal decisions according to human preferences. In practice, many formulations of bandits can allow for infinitely many bandits (for example, in continuous-value and high-dimensional spaces). However, this situation can be intractable when determining an optimal decision strategy — with infinite options, how can we always ensure we have chosen the best? We will constrain our bandits to a discrete space to enable efficient exploration. We will assume that we have <span class="math inline">\(k\)</span> bandits, <span class="math inline">\(b_i, i \in [1, k]\)</span>, and our job is to choose the one that will minimize regret.</p>
+<p>With the framework outlined, let us now define our approach more formally. Note that this method was introduced in <span class="citation" data-cites="YUE20121538">(<a href="#ref-YUE20121538" role="doc-biblioref">Yue et al. 2012</a>)</span>, and proofs for the guarantees and derivations of parameters can be found in that work.</p>
+<p>To determine the optimal action, we will compare pairwise to ascertain the probability that an action <span class="math inline">\(b_i\)</span> is preferred over another <span class="math inline">\(b_j, i \ne j\)</span>. Concretely, we will assume that we have access to a function <span class="math inline">\(\epsilon\)</span> which helps us determine this probability; in practice, this can be done with an oracle, such as asking a human which of two options they prefer: <span class="math inline">\(P(b_i &gt; b_j) = \varepsilon(b_i, b_j) + \frac{1}{2}\)</span>. With this model, three basic properties govern the values provided by <span class="math inline">\(\epsilon\)</span>: <span class="math display">\[\epsilon(b_i, b_j) = -\epsilon(b_j, b_i), \epsilon(b_i, b_i) = 0, \epsilon(b_i, b_j) \in \left(-\frac{1}{2}, \frac{1}{2} \right)\]</span></p>
+<p>We will always assume that there is a total ordering of bandits, such that <span class="math inline">\(b_i \succ b_j\)</span> implies <span class="math inline">\(\epsilon(b_i, b_j) &gt; 0\)</span>. We impose two constraints which enable us to properly model comparisons:</p>
+<ul>
+<li><p>Strong Stochastic Transitivity: We must maintain our total ordering of bandits, and as such, the comparison model also respects this ordering: <span class="math inline">\(b_i \succ b_j \succ b_k \Rightarrow \epsilon(b_i, b_k) \ge \text{max}\{\epsilon(b_i, b_j), \epsilon(b_j, b_k)\}\)</span></p></li>
+<li><p>Stochastic Triangle Inequality: We also impose a triangle inequality, which captures the condition that the probability of a bandit winning (or losing) a comparison will exhibit diminishing returns as it becomes increasingly superior (or inferior) to the competing bandit: <span class="math inline">\(b_i \succ b_j \succ b_k \Rightarrow \epsilon(b_i, b_k) \le \epsilon(b_i, b_j) + \epsilon(b_j, b_k)\)</span></p></li>
+</ul>
+<p>These assumptions may initially seem limiting, however common models for comparisons satisfy these constraints. For example, the Bradley-Terry Model follows <span class="math inline">\(P(b_i &gt; b_j) = \frac{\mu_i}{\mu_i + \mu_j}\)</span>. The Gaussian model with unit variance also satisfies these constraints: <span class="math inline">\(P(b_i &gt; b_j) = P(X_i - X_j &gt; 0)\)</span>, where <span class="math inline">\(X_i - X_j \sim N(\mu_i - \mu_j, 2)\)</span>.</p>
+<p>To truly model the preferences between bandits in our framework of pairwise bandit comparisons and regret, we must keep track of certain parameters in our algorithm. First, we will keep a running empirical estimate of our probability of bandit preferences based on our observations. Keep in mind that we don’t have direct access to an <span class="math inline">\(\epsilon\)</span> function. Instead, we must provide two bandits to a human, who selects a winner. To do this, we will define: <span class="math display">\[\hat{P}_{i, j} = \frac{\# b_i\ \text{wins}}{\# \text{comparisons between}\ i \text{and}\ j}\]</span></p>
+<p>We will also compute confidence intervals at each timestep for each of the entries in <span class="math inline">\(\hat{P}\)</span> as <span class="math inline">\(\hat{C}_t = \left( \hat{P}_t - c_t, \hat{P}_t + c+t \right)\)</span>, where <span class="math inline">\(c_t = \sqrt{\frac{4\log(\frac{1}{\delta})}{t}}\)</span>. Note that <span class="math inline">\(\delta = \frac{1}{TK^2}\)</span>, where <span class="math inline">\(T\)</span> is the time horizon and <span class="math inline">\(K\)</span> is the number of bandits.</p>
+<p>Previously we discussed approaches finding the best action in a specific context. Now we want to consider changing contexts, which means, that there is no longer a static hidden preference matrix <span class="math inline">\(P\)</span>. Instead - at every time step - there is now a preference matrix <span class="math inline">\(P_C\)</span> depending on context <span class="math inline">\(C\)</span>. We consider a context <span class="math inline">\(C\)</span> and a preference matrix <span class="math inline">\(P_C\)</span> to be chosen by nature as they result of the given environment <span class="citation" data-cites="Contextual_Dueling">(<a href="#ref-Contextual_Dueling" role="doc-biblioref">Dudík et al. 2015</a>)</span>. The goal of a contextual bandits algorithm is to find some policy <span class="math inline">\(\pi\)</span> which maps contexts to Von Neumann winner distribution over our bandits. That is, our policy <span class="math inline">\(\pi\)</span> should map any context to some distribution over our bandits such that sampling from that distribution is preferred to a random action for that context.</p>
+</section>
+<section id="regret" class="level3" data-number="4.1.2">
+<h3 data-number="4.1.2" class="anchored" data-anchor-id="regret"><span class="header-section-number">4.1.2</span> Regret</h3>
+<p>The agent aims to pick a sequence of arms <span class="math inline">\((a_1, a_2, \ldots, a_T)\)</span> across a succession of time steps <span class="math inline">\(t = 1\)</span> to <span class="math inline">\(t = T\)</span> to maximize the total accumulated reward. Formally, the strategy seeks to maximize the sum of the expected rewards: <span class="math inline">\(\max_{a_1, \ldots, a_T} \mathbb{E} \left[\sum_{t=1}^{T} r_t\right]\)</span>. Regret is defined as the difference between the cumulative reward that could have been obtained by always pulling the best arm (in hindsight, after knowing the reward distributions) and the cumulative reward actually obtained by the algorithm. Formally, if <span class="math inline">\(\mu^*\)</span> is the expected reward of the best arm and <span class="math inline">\(\mu_{a_t}\)</span> is the expected reward of the arm chosen at time <span class="math inline">\(t\)</span>, the regret after <span class="math inline">\(T\)</span> time steps is given by <span class="math inline">\(R(T) = T \cdot \mu^* - \sum_{t=1}^{T} \mu_{a_t}\)</span>. The objective of a bandit algorithm is to minimize this regret over time, effectively learning to make decisions that are as close as possible to the decisions of an oracle that knows the reward distributions beforehand. Low regret indicates an algorithm that has often learned to choose well-performing arms, balancing the exploration of unknown arms with the exploitation of arms that are already known to perform well. Thus, an efficient bandit algorithm exhibits sub-linear regret growth, meaning that the average regret per round tends to zero as the number of rounds <span class="math inline">\(T\)</span> goes to infinity: <span class="math inline">\(\lim_{T \to \infty} \frac{R(T)}{T} = 0\)</span>. Minimizing regret is a cornerstone in the design of bandit algorithms, and its analysis helps in understanding the long-term efficiency and effectiveness of different bandit strategies.</p>
+<p>As previously discussed, our goal is to select the bandit that minimizes a quantity that reflects regret or the cost of not selecting the optimal bandit at all times. We can leverage our comparison model to define a quantity for regret over some time horizon <span class="math inline">\(T\)</span>, which is the number of decisions we make (selecting what we think is the best bandit at each iteration). Assuming we know the best bandit <span class="math inline">\(b^*\)</span> (and we know that there <em>is</em> a best bandit, since there is a total ordering of our discrete bandits), we can define two notions of regret:</p>
+<ul>
+<li><p>Strong regret: aims to capture the fraction of users who would prefer the optimal bandit <span class="math inline">\(b^*\)</span> over the <em>worse</em> of the options <span class="math inline">\(b_1, b_2\)</span> we provide at a given step:<span class="math inline">\(R_T = \sum_{t = 1}^T \text{max} \left\{ \epsilon(b^*, b_1^{(t)}), \epsilon(b^*, b_2^{(t)}) \right\}\)</span></p></li>
+<li><p>Weak regret: aims to capture the fraction of users who would prefer the optimal bandit <span class="math inline">\(b^*\)</span> over the <em>better</em> of the options <span class="math inline">\(b_1, b_2\)</span> we provide at a given step:<span class="math inline">\(\tilde{R}_T = \sum_{t = 1}^T \text{min} \left\{ \epsilon(b^*, b_1^{(t)}), \epsilon(b^*, b_2^{(t)}) \right\}\)</span></p></li>
+</ul>
+<p>The best bandit described in our regret definition is called a <strong>Condorcet Winner</strong>. This is the strongest form of winner. It’s the action <strong><span class="math inline">\(A_{i}\)</span></strong> which is preferred to each other action <strong><span class="math inline">\(A_j\)</span></strong> with <span class="math inline">\(p &gt; 0.5\)</span> in a head-to-head election. While the above introduced notions of regret assume an overall best bandit to exist, there might be settings, where no bandit wins more than half head-to-head duels. A set of actions without a Condorcet winner is described by the following preference matrix, where each entry <span class="math inline">\(\Delta_{jk}\)</span> is <span class="math inline">\(p(j \succ k) - 0.5\)</span>, the probability that action <span class="math inline">\(j\)</span> is preferred over action <span class="math inline">\(k\)</span> minus 0.5. There is no Condorcet winner as there is no action that is preferred with <span class="math inline">\(p &gt; 0.5\)</span> over all other actions. Imagine, you want to find the best pizza to eat (=action). There may not be a pizza that wins more than half of the head-to-head duels against every other pizza.</p>
+<p>However, we might still have an intuition of the best pizza. Therefore Sui et al., 2018 introduce the concepts of different <span class="math inline">\(\textit{winners}\)</span> in dueling bandit problems <span class="citation" data-cites="advancements_dueling">(<a href="#ref-advancements_dueling" role="doc-biblioref">Sui et al. 2018</a>)</span>. In this example, we might define the best pizza as the most popular one. We call the Pizza receiving the most votes in a public vote the <strong>Borda Winner</strong>, or formally, Borda winner <span class="math inline">\(j = \arg\max_{i \in A, i \neq j} \left(\sum p(j \succ i)\right)\)</span>. In contrast to the Condorcet Winner setting, there is always guaranteed to be one or more (in the case of a tie) Borda winners for a set of actions. However - if there is a Condorcet Winner, this might not necessarily be the same as a Borda Winner: In our Pizza example, a Pepperoni Pizza might win more than half of its head-to-head duels, while the Cheese-Pizza is still the most popular in a public poll.</p>
+<p>A more generic concept of winner is the <strong>Von Neumann Winner</strong>, which describes a probability distribution rather than a single bandit winner. A Von Neumann winner simply prescribes a probability distribution <span class="math inline">\(W\)</span> such that sampling from this distribution ‘beats’ an action from the random uniform distribution with <span class="math inline">\(p &gt; 0.5\)</span>. In our pizza example, this would correspond to trusting a friend to order whichever Pizza he likes, because this may still be preferred to ordering randomly. Formally, <span class="math inline">\(W\)</span> is a Von Neumann if <span class="math inline">\((j \sim W, k \sim R) [p(p(j \succ k) &gt; 0.5) &gt; 0.5]\)</span> where <span class="math inline">\(R\)</span> describes the uniform probability distribution over our actions. The concept of a Von Neumann winner is useful in contextual bandits, which will be introduced later. In these settings, the preference matrix depends on different context, which may have different Borda winners, just as different parties may vote for different pizzas.</p>
+<div id="fig:condorcet_violation">
+<table class="caption-top table">
+<caption>Violation of Condorcet Winner. Highlighted entries are different from Table 1. No Condorcet winner exists as no arm could beat every other arm.</caption>
+<thead>
+<tr class="header">
+<th></th>
+<th style="text-align: center;">A</th>
+<th style="text-align: center;">B</th>
+<th style="text-align: center;">C</th>
+<th style="text-align: center;">D</th>
+<th style="text-align: center;">E</th>
+<th style="text-align: center;">F</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>A</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;"><strong>0.03</strong></td>
+<td style="text-align: center;"><strong>-0.02</strong></td>
+<td style="text-align: center;">0.06</td>
+<td style="text-align: center;">0.10</td>
+<td style="text-align: center;">0.11</td>
+</tr>
+<tr class="even">
+<td>B</td>
+<td style="text-align: center;">-0.03</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;"><strong>0.03</strong></td>
+<td style="text-align: center;">0.05</td>
+<td style="text-align: center;">0.08</td>
+<td style="text-align: center;">0.11</td>
+</tr>
+<tr class="odd">
+<td>C</td>
+<td style="text-align: center;"></td>
+<td style="text-align: center;">-0.03</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0.04</td>
+<td style="text-align: center;">0.07</td>
+<td style="text-align: center;">0.09</td>
+</tr>
+<tr class="even">
+<td>D</td>
+<td style="text-align: center;">-0.06</td>
+<td style="text-align: center;">-0.05</td>
+<td style="text-align: center;">-0.04</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0.05</td>
+<td style="text-align: center;">0.07</td>
+</tr>
+<tr class="odd">
+<td>E</td>
+<td style="text-align: center;">-0.10</td>
+<td style="text-align: center;">-0.08</td>
+<td style="text-align: center;">-0.07</td>
+<td style="text-align: center;">-0.05</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0.03</td>
+</tr>
+<tr class="even">
+<td>F</td>
+<td style="text-align: center;">-0.11</td>
+<td style="text-align: center;">-0.11</td>
+<td style="text-align: center;">-0.09</td>
+<td style="text-align: center;">-0.07</td>
+<td style="text-align: center;">-0.03</td>
+<td style="text-align: center;">0</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>Next, we introduce two performance measures for the planner. The <strong>asymptotic ex-post regret</strong> is defined as <span class="math display">\[\text{Regret}(\mu_1, \ldots \mu_K) = T\cdot \max_i \mu_i - \sum_{i=1}^T E[\mu_{I_t}].\]</span></p>
+<p>Intuitively, this represents the difference between the reward achieved by always taking the action with the highest possible reward and the expected welfare of the recommendation algorithm (based on the actions it recommends at each timestep).</p>
+<p>We also define a weaker performance measure, the <strong>Bayesian regret</strong>, which is defined as <span class="math display">\[\text {Bayesian regret}=E_{\mu_1, \ldots, \mu_K \sim \text {Prior}}\left[\operatorname{Regret}\left(\mu_1, \ldots, \mu_K\right)\right]\]</span></p>
+<p>With a Bayesian optimal policy, we would like either definition of regret to vanish as <span class="math inline">\(T\to \infty\)</span>; we are considering “large-market optimal" settings where there are many short-lived, rather than a few long-term, users. Note the fact that ex-post regret is prior-free makes it robust to inaccuracies on the prior.</p>
+</section>
+<section id="acquisition-functions" class="level3" data-number="4.1.3">
+<h3 data-number="4.1.3" class="anchored" data-anchor-id="acquisition-functions"><span class="header-section-number">4.1.3</span> Acquisition Functions</h3>
+<p>Various strategies have been developed to balance the exploration-exploitation trade-off. These strategies differ in selecting arms based on past experiences and rewards.</p>
+<p>Uniform acquisition function is the most straightforward approach where each arm is selected uniformly randomly over time. This strategy does not consider the past rewards and treats each arm equally promising regardless of the observed outcomes. It is a purely explorative strategy that ensures each arm is sampled enough to estimate its expected reward, but it does not exploit the information to optimize rewards. In mathematical terms, if <span class="math inline">\(N_t(a)\)</span> denotes the number of times arm <span class="math inline">\(a\)</span> has been selected up to time <span class="math inline">\(t\)</span>, the Uniform Strategy would ensure that <span class="math inline">\(N_t(a) \approx \frac{t}{K}\)</span> for all arms <span class="math inline">\(a\)</span> as <span class="math inline">\(t\)</span> grows large: <span class="math inline">\(P(a_t = a) = \frac{1}{K}\)</span></p>
+<p>The Epsilon Greedy Strategy is a popular method that introduces a balance between exploration and exploitation. With a small probability <span class="math inline">\(\epsilon\)</span>, it explores by choosing an arm at random, and with a probability <span class="math inline">\(1 - \epsilon\)</span>, it exploits by selecting the arm with the highest estimated reward so far. This strategy incrementally favors actions that have historically yielded higher rewards, but still allows for occasional exploration to discover better options potentially. The parameter <span class="math inline">\(\epsilon\)</span> is chosen based on the desired exploration level, often set between 0.01 and 0.1. <span class="math display">\[P(a_t = a) =
+\begin{cases}
+\frac{\epsilon}{K} + 1 - \epsilon &amp; \text{if } a = \arg\max_{a'} \hat{\mu}_{a'} \\
+\frac{\epsilon}{K} &amp; \text{otherwise}
+\end{cases}\]</span></p>
+<p>Upper Confidence Bound (UCB) acquisition function takes a more sophisticated approach to the exploration-exploitation dilemma. It selects arms based on both the estimated rewards and the uncertainty or variance associated with those estimates. Specifically, it favors arms with high upper confidence bounds on the estimated rewards, which is a sum of the estimated mean and a confidence interval that decreases with the number of times the arm has been played. This ensures that arms with less certainty (those played less often) are considered more often, naturally balancing exploration with exploitation as the uncertainty is reduced over time.</p>
+<p><span class="math display">\[P(a_t = a) =
+\begin{cases}
+1 &amp; \text{if } a = \arg\max_{a'} \left( \hat{\mu}_{a'} + \sqrt{\frac{2 \ln t}{N_t(a')}} \right) \\
+0 &amp; \text{otherwise}
+\end{cases}\]</span></p>
+<section id="interleaved-filter" class="level4" data-number="4.1.3.1">
+<h4 data-number="4.1.3.1" class="anchored" data-anchor-id="interleaved-filter"><span class="header-section-number">4.1.3.1</span> Interleaved Filter</h4>
+<p>This algorithm tries to find the best bandit (Condorcet Winner) in a discrete, limited bandit-space via pairwise comparisons of the bandits. We will now introduce the algorithm for the Interleaved Filter as provided in <span class="citation" data-cites="YUE20121538">(<a href="#ref-YUE20121538" role="doc-biblioref">Yue et al. 2012</a>)</span> to solve a dueling bandit setup. It starts with a randomly defined <em>best bandit</em> <span class="math inline">\(\hat{b}\)</span> and iteratively compares it to set <span class="math inline">\(W\)</span> containing the remaining bandits <span class="math inline">\(b\)</span> resulting in winning probabilities <span class="math inline">\(\hat{P}_{\hat{b},b}\)</span> and confidence interval <span class="math inline">\(\hat{C}_{\hat{b},b}\)</span>. If a bandit <span class="math inline">\(b\)</span> is <em>confidently worse</em> than <span class="math inline">\(\hat{b}\)</span>, it is removed from <span class="math inline">\(W\)</span>. If a bandit <span class="math inline">\(b'\)</span> is <em>confidently better</em> than <span class="math inline">\(\hat{b}\)</span>, it is set as new <em>best bandit</em> <span class="math inline">\(\hat{b}\)</span> and bandit <span class="math inline">\(\hat{b}\)</span> as well as every other bandit <span class="math inline">\(b\)</span> <em>worse</em> than <span class="math inline">\(\hat{b}\)</span> are removed from <span class="math inline">\(W\)</span>. This is done, until <span class="math inline">\(W\)</span> is empty, leaving the final <span class="math inline">\(\hat{b}\)</span> as the predicted best bandit.</p>
+<div class="algorithm">
+<div class="algorithmic">
+<p><strong>input:</strong> <span class="math inline">\(T\)</span>, <span class="math inline">\(B=\{b_1, \dots, b_k\}\)</span> <span class="math inline">\(\delta \gets 1/(TK^2)\)</span> Choose <span class="math inline">\(\hat{b} \in B\)</span> randomly <span class="math inline">\(W \gets \{b_1, \dots, b_k\} \backslash \{\hat{b}\}\)</span> <span class="math inline">\(\forall b \in W\)</span>, maintain estimate <span class="math inline">\(\hat{P}_{\hat{b},b}\)</span> of <span class="math inline">\(P(\hat{b} &gt; b)\)</span> according to (6) <span class="math inline">\(\forall b \in W\)</span>, maintain <span class="math inline">\(1 - \delta\)</span> confidence interval <span class="math inline">\(\hat{C}_{\hat{b},b}\)</span> of <span class="math inline">\(\hat{P}_{\hat{b},b}\)</span> according to (7), (8) compare <span class="math inline">\(\hat{b}\)</span> and <span class="math inline">\(b\)</span> update <span class="math inline">\(\hat{P}_{\hat{b},b}\)</span>, <span class="math inline">\(\hat{C}_{\hat{b},b}\)</span> <span class="math inline">\(W \gets W \backslash \{b\}\)</span></p>
+<p><span class="math inline">\(W \gets W \backslash \{b\}\)</span> <span class="math inline">\(\hat{b} \gets b'\)</span>, <span class="math inline">\(W \gets W \backslash \{b'\}\)</span> <span class="math inline">\(\forall b \in W\)</span>, reset <span class="math inline">\(\hat{P}_{\hat{b},b}\)</span> and <span class="math inline">\(\hat{C}_{\hat{b},b}\)</span> <span class="math inline">\(\hat{T} \gets\)</span> Total Comparisons Made <span class="math inline">\((\hat{b}, \hat{T})\)</span></p>
+</div>
+</div>
+<dl>
+<dt>Parameter Initialization</dt>
+<dd>
+<p>In lines 1-6 of the algorithm, we take the inputs and first compute the value <span class="math inline">\(\delta\)</span> which is used to compute our confidence intervals. We select an initial guess of an optimal bandit <span class="math inline">\(\hat{b}\)</span> by uniformly sampling from all bandits <span class="math inline">\(\mathcal{B}\)</span>. We also keep a running set of bandit candidates <span class="math inline">\(W\)</span>, which is initialized to be <span class="math inline">\(\mathcal{B} \setminus \{\hat{b}\}\)</span>. At this point, we also initialize our empirical estimates for <span class="math inline">\(\hat{P}, \hat{C}\)</span>.</p>
+<p>Next, we will repeat several steps until our working set of bandit candidates <span class="math inline">\(W\)</span> is empty.</p>
+</dd>
+<dt>Update Estimates Based on Comparisons</dt>
+<dd>
+<p>The first step at each iteration (lines 8-11) is to look at all candidates in <span class="math inline">\(W\)</span>, and compare them to our current guess <span class="math inline">\(\hat{b}\)</span> using an oracle (e.g.&nbsp;by asking a human which of <span class="math inline">\(\hat{b}\)</span> or <span class="math inline">\(b \in W\)</span> is preferred). With this new set of wins and comparisons, we update our estimates of <span class="math inline">\(\hat{P}, \hat{C}\)</span>.</p>
+</dd>
+<dt>Prune Suboptimal Bandits</dt>
+<dd>
+<p>In lines 12-13, with updated comparison win probabilities and corresponding confidence intervals, we can remove bandit candidates from <span class="math inline">\(W\)</span> that we are <em>confident</em> <span class="math inline">\(\hat{b}\)</span> is better than. The intuition here is that we are mostly sure that our current best guess is better than some of the candidates, and we don’t need to consider those candidates in future iterations.</p>
+</dd>
+<dt>Check for Better Bandits from Candidate Set</dt>
+<dd>
+<p>Now that our candidate set of bandits may be smaller, in lines 15-21 we check if there are any bandits <span class="math inline">\(b'\)</span> that we are <em>confident</em> are better than our current best guess. If we do find such a candidate, we remove bandits which <span class="math inline">\(\hat{P}\)</span> indicates <span class="math inline">\(b\)</span> is <em>likely</em> worse than <span class="math inline">\(\hat{b}\)</span>. Note that in this step, we do not require the probability to be outside the confidence interval, since we already found one we believe to be significantly closer to optimal than our current best guess.</p>
+<p>Once we remove the candidates <em>likely</em> worse than <span class="math inline">\(\hat{b}\)</span>, we crown <span class="math inline">\(b'\)</span> as the new best guess, e.g.&nbsp;<span class="math inline">\(\hat{b} := b'\)</span>. Consequently, we remove <span class="math inline">\(b'\)</span> from <span class="math inline">\(W\)</span> and reset our empirical win counters <span class="math inline">\(\hat{P}, \hat{C}\)</span>.</p>
+</dd>
+</dl>
+<p>With this algorithm defined, let us look at some provisions of the method with respect to identifying the optimal strategy. Note that the proofs and derivations for these quantities are provided in <span class="citation" data-cites="YUE20121538">(<a href="#ref-YUE20121538" role="doc-biblioref">Yue et al. 2012</a>)</span>.</p>
+<p>First, the method guarantees that for the provided time horizon <span class="math inline">\(T\)</span>, the algorithm returns the correct bandit with probability <span class="math inline">\(P \ge 1 - \frac{1}{T}\)</span>. It is interesting and useful to note that if one has a strict requirement for the probability of identifying the correct bandit, one can compute the time horizon <span class="math inline">\(T\)</span> that guarantees this outcome at that probability. Furthermore, a time horizon of 1 leaves no probabilistic guarantee of a successful outcome, and increasing <span class="math inline">\(T\)</span> has diminishing returns. Second, in the event that the algorithm returns an incorrect bandit, the maximal regret incurred is linear with respect to <span class="math inline">\(T\)</span>, e.g.&nbsp;<span class="math inline">\(\mathcal(O)(T)\)</span>. This is also a useful provision as it allows us to estimate the overall cost in the worst case outcome. Based on these two provisions, we can compute the expected cumulative regret from running the Interleaved Filter algorithm, which is: <span class="math display">\[\mathbf{E}\left[R_T\right] \le \left(1 - \frac{1}{T}\right) \mathbf{E}\left[ R_T^{IF} \right] + \frac{1}{T}\mathcal{O}(T) \\
+= \mathcal{O}\left(\mathbf{E}\left[ R_T^{IF} \right] + 1\right)\]</span></p>
+<p>Interestingly, the original work shows that these bounds hold for both strong and weak regret. As demonstrated, the Interleaved Filter algorithm <a href="#fig:if" data-reference-type="ref" data-reference="fig:if">[fig:if]</a> provides a robust method to ascertain the optimal bandit or strategy given a set of options and only noisy comparisons. In most real-world scenarios for modeling human preferences, it is not possible to observe a real-world reward value, or at least a reliable one and as such this method is a useful way to properly model human preferences.</p>
+<p>Furthermore, the algorithm provides strong guarantees for the probability of selecting the correct bandit, maximal regret, and the number of comparisons required. It is even more impressive that the method can do so without severely limiting constraints; as demonstrated, the most commonly used models satisfy the imposed constraints.</p>
+<p>As we look to model human preferences, we can certainly leverage this method for k-armed dueling bandits to identify the best strategy to solve human-centric challenges, from video recommendation to meal selection and exoskeleton-assisted walking.</p>
+</section>
+<section id="dueling-bandit-gradient-descent" class="level4" data-number="4.1.3.2">
+<h4 data-number="4.1.3.2" class="anchored" data-anchor-id="dueling-bandit-gradient-descent"><span class="header-section-number">4.1.3.2</span> Dueling Bandit Gradient Descent</h4>
+<p>This algorithm tries to find the best bandit in a continuous bandit-space. Here, the set of all bandits is regarded as an Information-Retrieval (IR) system with infinite bandits uniquely defined by <span class="math inline">\(w\)</span>. We will cover the <em>Dueling Bandit Gradient Descent</em> algorithm from Yue and Joachims 2009 <span class="citation" data-cites="IR">(<a href="#ref-IR" role="doc-biblioref">Yue and Joachims 2009</a>)</span>. Yue and Joachims use the dueling bandits formulation for online IR optimization. They propose a retrieval system parameterized by a set of continuous variables lying in <span class="math inline">\(W\)</span>, a <span class="math inline">\(d\)</span>-dimensional unit-sphere. The DBGD algorithm adapts the current parameters <span class="math inline">\(w_t\)</span> of IR system by comparison with slightly altered parameters <span class="math inline">\(w_t'\)</span> both querying query <span class="math inline">\(q_t\)</span>. Only if the IR outcome using <span class="math inline">\(w_t'\)</span> is preferred, the parameters are changed in their direction. We will now discuss the algorithm more detailed.</p>
+<div class="algorithm">
+<div class="algorithmic">
+<p><strong>input:</strong> <span class="math inline">\(\gamma\)</span>, <span class="math inline">\(\delta\)</span>, <span class="math inline">\(w_1\)</span> sample unit vector <span class="math inline">\(u_t\)</span> uniformly <span class="math inline">\(w_t' \gets P_W(w_t + \delta u_t)\)</span> compare <span class="math inline">\(w_t\)</span> and <span class="math inline">\(w_t'\)</span> <span class="math inline">\(w_{t+1} \gets P_W(w_t + \gamma u_t)\)</span> <span class="math inline">\(w_{t+1} \gets w_t\)</span></p>
+</div>
+</div>
+<p>We first choose exploration step length <span class="math inline">\(\delta\)</span>, exploitation step length <span class="math inline">\(\gamma\)</span>, and starting point (in unit-sphere) <span class="math inline">\(w_1\)</span>. Choose a query and sample a random unit vector <span class="math inline">\(u_t\)</span>. We duel <span class="math inline">\(w_t\)</span> and <span class="math inline">\(w_t'\)</span>, where <span class="math inline">\(w_t\)</span> is our current point in the sphere, and <span class="math inline">\(w_t'\)</span> is our exploratory comparison, which is generated by taking a random step of length <span class="math inline">\(\delta\)</span>, such that <span class="math inline">\(w_t' = w_t + \delta u_t\)</span>. The objective of this duel is to ascertain the binary preference of users with respect to the results yielded by the IR systems parameterized by <span class="math inline">\(w_t\)</span> and <span class="math inline">\(w_t'\)</span> respectively, taking query <span class="math inline">\(q_t\)</span> as an input. The parameters that get the majority of the votes in the head to head win. If <span class="math inline">\(w_t\)</span> wins, then we keep the parameters for the next iteration. If <span class="math inline">\(w_t'\)</span> wins the duel, we update our parameters in the direction of <span class="math inline">\(u_t\)</span> by taking a step of length <span class="math inline">\(\gamma\)</span>. Note that the algorithm describes projection operation <span class="math inline">\(P_W(\overrightarrow{v})\)</span>. Since <span class="math inline">\(u_t\)</span> is chosen randomly, <span class="math inline">\(w_t + \delta u_t\)</span> or <span class="math inline">\(w_t + \gamma u_t\)</span> could exist outside of the unit sphere where all possible parameter configurations lie. In this case, we simply project the point back onto the sphere using said projection <span class="math inline">\(P_W(\overrightarrow{v})\)</span>.</p>
+<p>Yue and Joachims show that this algorithm has sublinear regret in <span class="math inline">\(T\)</span>, the number of iterations. We note that the algorithm assumes that there exists a hidden reward function <span class="math inline">\(R(w)\)</span> that maps system parameters <span class="math inline">\(w_t\)</span> to a reward value which is smooth and strictly concave over the input space <span class="math inline">\(W\)</span>.</p>
+<p>Lastly, we would also like to give motivation behind <span class="math inline">\(\delta\)</span> and <span class="math inline">\(\gamma\)</span> being different values. We need a <span class="math inline">\(\delta\)</span> that is sufficiently large that the comparison between a system parameterized by <span class="math inline">\(w_t\)</span> and <span class="math inline">\(w_t'\)</span> is meaningful. On the other hand, we may wish to take a smaller step in the direction of <span class="math inline">\(w_t'\)</span> during our update step, as during a duel, we only score <span class="math inline">\(w_t\)</span> against <span class="math inline">\(w_t'\)</span> over the results on one query <span class="math inline">\(q_t\)</span>. Having <span class="math inline">\(\delta &gt; \gamma\)</span> allows us to get reward signal from meaningfully different points while also updating our belief of the best point <span class="math inline">\(w_{\text{best}}\)</span> gradually.</p>
+</section>
+<section id="sparring-exp4" class="level4 unnumbered">
+<h4 class="unnumbered anchored" data-anchor-id="sparring-exp4">Sparring EXP4</h4>
+<p>Zoghi et al.&nbsp;2015 propose one algorithm for this problem — sparring EXP4, which duels two traditional EXP4 - algorithms. The (traditional) EXP4 algorithm solves the traditional contextual bandits — the case where we can directly observe a reward for a choice of bandit given a context. The EXP4 algorithm embeds each bandit as a vector. When the algorithm sees the context (called ‘advice’ in this formulation), it produces a probability distribution over the choices based on an adjusted softmax function on the inner product between the context and the bandit vectors. The probability function is different from a softmax as we assign some minimum probability that any action gets chosen to enforce exploration. A reward is then observed for the choice and propagated back through the embedding of the chosen bandit.</p>
+<p>Sparring EXP4 runs two instances of the EXP4 algorithm against each other. Each EXP4 instance samples an action given a context, and then these choices are ‘dueled’ against each other. Instead of directly observing a reward, as for traditional EXP4, we instead observe two converse reward — a positive reward for the choice that won the duel and a negative reward to the choice that lost. The reward is proportional to the degree to which the bandit wins the duel, i.e.&nbsp;how likely the bandit is to be preferred over the other when users are queried for binary preferences. Like in traditional EXP4, the reward or negative reward is then propagated back through the representations of the bandits.</p>
+</section>
+<section id="feel-good-thompson-sampling" class="level4" data-number="4.1.3.3">
+<h4 data-number="4.1.3.3" class="anchored" data-anchor-id="feel-good-thompson-sampling"><span class="header-section-number">4.1.3.3</span> Feel-good Thompson sampling</h4>
+<p>This algorithm is a solution for the contextual dueling bandit setting, and tries to minimize cumulative average regret (= find WHAT WINNER?!Von Neumann???): <span class="math display">\[\text{Regret}(T) := \sum_{t=1}^{T} \left[ r_{*}(x_t, a_{t}^{*}) - \frac{r_{*}(x_t, a_{t}^{1}) + r_{*}(x_t, a_{t}^{2})}{2} \right],\]</span> where <span class="math inline">\(r_{*}(x_t, a_{t})\)</span> is the true, hidden reward function of a context <span class="math inline">\(x_t\)</span> and action <span class="math inline">\(a_t\)</span>. Thompson sampling is an iterative process of receiving preference over two actions, each maximizing a different approximation of the reward function based on past data and adding this new information to the data.</p>
+<p>Finding good approximations of the reward function at time <span class="math inline">\(t\)</span> is done by sampling two reward function parameters <span class="math inline">\(\theta_t^{j=1}\)</span> and <span class="math inline">\(\theta_t^{j=2}\)</span> from a posterior distribution based on all previous data <span class="math inline">\(p_j(\cdot \mid S_{t-1})\)</span>. This posterior distribution is proportional to the multiplication of the prior and the likelihood function, which is a Gaussian in standard Thompson sampling. In Feel-Good Thompson sampling, an additional term called "Feel-good exploration" encourages parameters <span class="math inline">\(\theta\)</span> with a large maximum reward in previous rounds. This change to the likelihood function may increase probabilities in uncertain areas, thus exploring those regions. All that’s left is to select an action maximizing each reward function approximation and receive a preference <span class="math inline">\(y_t\)</span> on one of them to add the new information to the dataset<span class="citation" data-cites="fgts_cdb">(<a href="#ref-fgts_cdb" role="doc-biblioref">Zhang 2021</a>)</span>.</p>
+<div class="algorithm">
+<div class="algorithmic">
+<p>Initialize <span class="math inline">\(S_0 = \varnothing\)</span>. Receive prompt <span class="math inline">\(x_t\)</span> and action space <span class="math inline">\(\mathcal{A}_t\)</span>. Sample model parameter <span class="math inline">\(\theta_t^j\)</span> from the posterior distribution <span class="math inline">\(p^j(\cdot \mid S_{t-1})\)</span> Select response <span class="math inline">\(a_t^j = \arg\max_{a \in \mathcal{A}_t} \langle \theta_t^j, \phi(x_t, a) \rangle\)</span>. Receive preference <span class="math inline">\(y_t\)</span>. Update dataset <span class="math inline">\(S_t \leftarrow S_{t-1} \cup \{(x_t, a_t^1, a_t^2, y_t)\}\)</span>.</p>
+</div>
+</div>
+</section>
+</section>
+<section id="applications" class="level3" data-number="4.1.4">
+<h3 data-number="4.1.4" class="anchored" data-anchor-id="applications"><span class="header-section-number">4.1.4</span> Applications</h3>
+<p>There are many applications where contextual bandits are used. Many of these applications can utilize human preferences. One particular application illustrates the benefits a contextual bandit would have over a multi-armed bandit: a website deciding which app to show someone visiting the website. A multi-armed bandit might decide to show someone an ad for a swimsuit because the swimsuit ads have gotten the most user clicks (which indicates human preference). A contextual bandit might choose differently, however. A contextual bandit will also take into account the context, which in this case might mean information about the user (location, previously visited pages, and device information). If it discovers the user lives in a cold environment, for example, it might suggest a sweater ad for the user instead and get a better chance of a click. There are many more examples of where contextual bandits can be applied. They can be applied in other web applications, such as to optimize search results, medical applications, such as how much of a medication to prescribe based on a patient’s history, and gaming applications, such as basing moves off of the state of a chess board to try to win. In each of the above examples, human feedback could have been introduced during training and leveraged to learn a reward function.</p>
+<p>We explored different versions of bandits that address the exploration-exploitation trade-off in various real-world scenarios. These models have been employed across various fields, including but not limited to healthcare, finance, dynamic pricing, and anomaly detection. This section provides a deep dive into some real-world applications, emphasizing the value and advancements achieved by incorporating bandit methodologies. The content of this section draws upon the findings from the survey cited in reference <span class="citation" data-cites="bouneffouf2020survey">(<a href="#ref-bouneffouf2020survey" role="doc-biblioref">Bouneffouf, Rish, and Aggarwal 2020</a>)</span>.</p>
+<p>In healthcare, researchers have been applying bandits to address challenges in clinical trials and behavioral modeling <span class="citation" data-cites="bouneffouf2017bandit bastani2020online">(<a href="#ref-bouneffouf2017bandit" role="doc-biblioref">Bouneffouf, Rish, and Cecchi 2017</a>; <a href="#ref-bastani2020online" role="doc-biblioref">Bastani and Bayati 2020</a>)</span>. One of the examples is drug dosing. Warfarin, an oral anticoagulant, has traditionally been administered using fixed dosing protocols. Physicians would then make subsequent adjustments based on the patient’s emerging symptoms. Nonetheless, inaccuracies in the initial dosage—whether too low or too high—can lead to serious complications like strokes and internal bleeding. In a pivotal study, researchers in <span class="citation" data-cites="bastani2020online">(<a href="#ref-bastani2020online" role="doc-biblioref">Bastani and Bayati 2020</a>)</span> modeled the Warfarin initial dosing as a contextual bandit problem to assign dosages to individual patients appropriately based on their medication history. Their contributions include the adaptation of the LASSO estimator to the bandit setting, achieving a theoretical regret bound of <span class="math inline">\(O({s_0}^2 \log^2(dT)\)</span>, where <span class="math inline">\(d\)</span> represents the number of covariates, <span class="math inline">\(s_0 &lt;&lt; d\)</span> signifies the number of pertinent covariates, and <span class="math inline">\(T\)</span> indicates the total number of users. Additionally, they conducted empirical experiments to validate the robustness of their methodology.</p>
+<p>Within the finance sector, bandits have been instrumental in reshaping the landscape of portfolio optimization. Portfolio optimization is an approach to designing a portfolio based on the investor’s return and risk criteria, which fits the exploration-exploitation nature of the bandit problems. <span class="citation" data-cites="shen2015portfolio">(<a href="#ref-shen2015portfolio" role="doc-biblioref">Shen et al. 2015</a>)</span> utilized multi-armed bandits to exploit correlations between the instruments. They constructed orthogonal portfolios and integrated them with the UCB policy to achieve a cumulative regret bound of <span class="math inline">\(\frac{8n}{\Delta*} \ln(m) + 5n\)</span>, where <span class="math inline">\(n\)</span>, <span class="math inline">\(m\)</span>, and <span class="math inline">\(\Delta*\)</span> denotes the number of available assets, total time steps, and the gap between the best-expected reward and the expected reward. On the other hand, <span class="citation" data-cites="huo2017risk">(<a href="#ref-huo2017risk" role="doc-biblioref">Huo and Fu 2017</a>)</span> focused on risk-awareness online portfolio optimization by incorporating a compute of the minimum spanning tree in the bipartite graph, which encodes a combination of financial institutions and assets that helps diversify and reduce exposure to systematic risk during the financial crisis.</p>
+<p>Dynamic pricing, also known as demand-based pricing, refers to the strategy of setting flexible prices for products or services based on current market demands. The application of bandits in dynamic pricing offers a systematic approach to making real-time pricing decisions while balancing the trade-off between exploring new price points and exploiting known optimal prices. <span class="citation" data-cites="misra2019dynamic">(<a href="#ref-misra2019dynamic" role="doc-biblioref">Misra, Schwartz, and Abernethy 2019</a>)</span> proposed a policy where the company has only incomplete demand information. They derived an algorithm that balances immediate and future profits by combining multi-armed bandits with partial identification of consumer demand from economic theory.</p>
+<p>are essential components of numerous online platforms, guiding users through vast content landscapes to deliver tailored suggestions. These systems are instrumental in platforms like e-commerce sites, streaming platforms, and social media networks. However, the challenge of effectively recommending items to users is non-trivial, given the dynamic nature of user preferences and the vast amount of content available.</p>
+<p>One of the most significant challenges in recommendation systems is the "cold start" problem. This issue arises when a new user joins a platform, and the system has limited or no information about the user’s preferences. Traditional recommendation algorithms struggle in such scenarios since they rely on historical user-item interactions. As discussed in <span class="citation" data-cites="zhou2017large">(<a href="#ref-zhou2017large" role="doc-biblioref">Zhou et al. 2017</a>)</span>, the bandit setting is particularly suitable for large-scale recommender systems with a vast number of items. By continuously exploring user preferences and exploiting known interactions, bandit-based recommender systems can quickly adapt to new users, ensuring relevant recommendations in a few interactions. The continuous exploration inherent in bandit approaches also means that as a user’s preferences evolve, the system can adapt, ensuring that recommendations remain relevant. Recommending content that is up to date is also another important aspect of a recommendation system. In <span class="citation" data-cites="bouneffouf2012a">(<a href="#ref-bouneffouf2012a" role="doc-biblioref">Bouneffouf, Bouzeghoub, and Gançarski 2012</a>)</span>, the concept of "freshness" in content is explored through the lens of the bandit problem. The Freshness-Aware Thompson Sampling algorithm introduced in this study aims to manage the recommendation of fresh documents according to the user’s risk of the situation.</p>
+<p>Dialogue systems, often termed conversational agents or chatbots, aim to simulate human-like conversations with users. These systems are deployed across various platforms, including customer support, virtual assistants, and entertainment applications, and they are crucial for enhancing user experience and engagement. Response selection is fundamental to creating a natural and coherent dialogue flow. Traditional dialogue systems rely on a predefined set of responses or rules, which can make interactions feel scripted and inauthentic. In <span class="citation" data-cites="liu2018customized">(<a href="#ref-liu2018customized" role="doc-biblioref">Liu et al. 2018</a>)</span>, the authors proposed a contextual multi-armed bandit model for online learning of response selection. Specifically, they utilized bidirectional LSTM to produce the distributed representations of a dialogue context and responses and customized the Thompson sampling method.</p>
+<p>To create a more engaging and dynamic interaction, there’s a growing interest in developing pro-active dialogue systems that can initiate conversations without user initiation. <span class="citation" data-cites="perez2018contextual">(<a href="#ref-perez2018contextual" role="doc-biblioref">perez and Silander 2018</a>)</span> proposed a novel approach to this challenge with contextual bandits. By introducing memory models into the bandit framework, the system can recall past interactions, making its proactive responses more contextually relevant. Their contributions include the Contextual Attentive Memory Network, which implements a differentiable attention mechanism over past interactions.</p>
+<p><span class="citation" data-cites="upadhyay2019a">(<a href="#ref-upadhyay2019a" role="doc-biblioref">Upadhyay et al. 2019</a>)</span> addressed the challenge of orchestrating multiple independently trained dialogue agents or skills in a unified system. They attempted online posterior dialogue orchestration, defining it as selecting the most suitable subset of skills in response to a user’s input, which studying a context-attentive bandit model that operates under a skill execution budget, ensuring efficient and accurate response selection.</p>
+<p>Anomaly detection refers to the task of identifying samples that behave differently from the majority. In <span class="citation" data-cites="ding2019interactive">(<a href="#ref-ding2019interactive" role="doc-biblioref">Ding, Li, and Liu 2019</a>)</span>, the authors delve into anomaly detection in an interactive setting, allowing the system to actively engage with human experts through a limited number of queries about genuine anomalies. The goal is to present as many true anomalies to the human expert as possible after a fixed query budget is used up. They applied the multi-armed contextual bandit framework to address this issue. This algorithm adeptly integrates both nodal attributes and node dependencies into a unified model, efficiently managing the exploration-exploitation trade-off during anomaly queries.</p>
+<p>There are many challenges associated with contextual bandits. The first challenge is that each action only reveals the reward for that particular action. Therefore, the algorithm has to work with incomplete information. This leads to the dilemma of exploitation versus exploration: when should the algorithm choose the best-known option versus trying new options for potentially better outcomes? Another significant challenge for contextual bandits is using context effectively. The context the environment gives needs to be explored to figure out which action is best for each context.</p>
+<p>The overarching goal in systems designed for recommending options of high value to users is to achieve an optimal balance between exploration and exploitation. This dual approach is crucial in environments where user preferences and needs are dynamic and diverse. Exploration refers to the process of seeking out new options, learning about untried possibilities, and gathering fresh information that could lead to high-value recommendations. In contrast, exploitation involves utilizing existing knowledge and past experiences to recommend the best options currently known. This balance is key to maintaining a system that continuously adapts to changing user preferences while ensuring the reliability of its recommendations.</p>
+<p>A key observation in such systems is the dual role of users as both producers and consumers of information. Each user’s experience contributes valuable data that informs future recommendations for others. For instance, platforms like Waze, Netflix, and Trip Advisor rely heavily on user input and feedback. Waze uses real-time traffic data from drivers to recommend optimal routes; Netflix suggests movies and shows based on viewing histories and ratings; Trip Advisor relies on traveler reviews to guide future tourists. In these examples, the balance between gathering new information (exploration) and recommending the best-known options (exploitation) is dynamically managed to enhance user experience and satisfaction. This approach underscores the importance of user engagement in systems where monetary incentives are not (or can not be) the primary driver.</p>
+<p>Recommendation systems often face the challenge of overcoming user biases that can lead to a narrow exploration of options. Users come with preconceived notions and preferences, which can cause them to overlook potentially valuable options that initially appear inferior or unaligned with their interests. This predisposition can significantly limit the effectiveness of recommendation systems, as users might miss out on high-value choices simply due to their existing biases.</p>
+<p>To counteract this, it is crucial for recommendation systems to actively incentivize exploration among users. One innovative approach to achieve this is through the strategic use of <strong>information asymmetry</strong>. By controlling and selectively presenting information, these systems can guide users to explore options they might not typically consider. This method aims to reveal the true potential of various options by nudging users out of their comfort zones and encouraging a broader exploration of available choices. An important note here is that the system is not lying to users - it only selectively reveals information it has.</p>
+<p>The concept of incentivizing exploration becomes even more complex when considering different types of users. For instance, systems often encounter short-lived users who have little to gain from contributing to the system’s learning process, as their interactions are infrequent or based on immediate needs. Similarly, some users may operate under a ‘greedy’ principle, primarily seeking immediate gratification rather than contributing to the long-term accuracy and effectiveness of the system. In such scenarios, managing information asymmetry can be a powerful tool. By selectively revealing information, recommendation systems can create a sense of novelty and interest, prompting even the most transient or self-interested users to engage in exploration, thereby enhancing the system’s overall knowledge base and recommendation quality.</p>
+</section>
+<section id="incentive-compatible-online-learning" class="level3" data-number="4.1.5">
+<h3 data-number="4.1.5" class="anchored" data-anchor-id="incentive-compatible-online-learning"><span class="header-section-number">4.1.5</span> Incentive-Compatible Online Learning</h3>
+<p>To address this problem, we seek to create a model. But first, it is useful to outline the key criteria that our model must achieve.</p>
+<ul>
+<li><p>The <em>core</em> of the model revolves around repeated interactions between a planner (the system) and multiple agents (the users). Each agent, upon arrival in the system, is presented with a set of available options to choose from. These options could vary widely depending on the application of the model, such as routes in a transportation network, a selection of hotels in a travel booking system, or even entertainment choices in a streaming service.</p></li>
+<li><p>The <em>interaction process</em> is straightforward but crucial: agents arrive, select an action from the provided options, and then report feedback based on their experience. This feedback is vital as it forms the basis upon which the planner improves and evolves its recommendations. The agents in this model are considered strategic; they aim to maximize their reward based on the information available to them. This aspect of the model acknowledges the real-world scenario where users are typically self-interested and seek to optimize their own outcomes.</p></li>
+<li><p>The <em>planner</em>, on the other hand, has a broader objective. It aims to learn which alternatives are best in a given context and works to maximize the overall welfare of all agents. This involves a complex balancing act: the planner must accurately interpret feedback from a diverse set of agents, each with their own preferences and biases, and use this information to refine and improve the set of options available. The ultimate goal of the planner is to create a dynamic, responsive system that not only caters to the immediate needs of individual agents but also enhances the collective experience over time, leading to a continually improving recommendation ecosystem.</p></li>
+</ul>
+<p>Let’s break this up into a set of tangible research questions that we seek to answer in the rest of this chapter.</p>
+<ul>
+<li><p><strong>Planner Limitations</strong>: We seek to address the inherent limitations faced by the planner, particularly in scenarios where monetary transfers are not an option, and the only tool at its disposal is the control over the flow of information between agents. This inquiry aims to understand the extent to which these limitations impact the planner’s ability to effectively guide and influence agent behavior.</p></li>
+<li><p><strong>Inducing Exploration</strong>: A critical question is whether the planner can successfully induce exploration among agents, especially in the absence of financial incentives. This involves investigating strategies to encourage users to try less obvious or popular options, thus broadening the scope of feedback and enhancing the system’s ability to learn and identify the best alternatives.</p></li>
+<li><p><strong>Rate of Learning</strong>: Another essential research area is understanding the rate at which the planner learns from agent interactions. This encompasses examining how different agent incentives, their willingness to explore, and their feedback impact the speed and efficiency with which the planner can identify optimal recommendations.</p></li>
+<li><p><strong>Model Extensions</strong>: The model can be extended in several directions, each raising its own set of questions.</p>
+<ol type="1">
+<li><p>Multiple Agents with Interconnected Payoffs: When multiple agents arrive simultaneously, their choices and payoffs become interconnected, resembling a game. The research question here focuses on how these interdependencies affect individual and collective decision-making.</p></li>
+<li><p>Planner with Arbitrary Objective Function: Investigating scenarios where the planner operates under an arbitrary objective function, which might not align with maximizing overall welfare or learning the best alternative.</p></li>
+<li><p>Observed Heterogeneity Among Agents: This involves situations where differences among agents are observable and known, akin to contextual bandits in machine learning. The research question revolves around how these observable traits can be used to tailor recommendations more effectively.</p></li>
+<li><p>Unobserved Heterogeneity Among Agents: This aspect delves into scenarios where differences among agents are not directly observable, necessitating the use of causal inference techniques to understand and cater to diverse user needs.</p></li>
+</ol></li>
+</ul>
+<section id="bayesian-incentive-compatible-bandit-model" class="level4 unnumbered">
+<h4 class="unnumbered anchored" data-anchor-id="bayesian-incentive-compatible-bandit-model">Bayesian Incentive-Compatible Bandit Model</h4>
+<p>In this section, we introduce the main model of study in this chapter <span class="citation" data-cites="mansour2019bayesianincentivecompatiblebanditexploration mansour2021bayesianexplorationincentivizingexploration">(<a href="#ref-mansour2019bayesianincentivecompatiblebanditexploration" role="doc-biblioref">Mansour, Slivkins, and Syrgkanis 2019</a>; <a href="#ref-mansour2021bayesianexplorationincentivizingexploration" role="doc-biblioref">Mansour et al. 2021</a>)</span>. In our setup, there is a “planner," which aims to increase exploration, and many independent”agents," which will act selfishly (in a way that they believe will maximize their individual reward).</p>
+<p>Under our model shown in Figure <a href="#fig:planner-agent" data-reference-type="ref" data-reference="fig:planner-agent">1.1</a>, there are <span class="math inline">\(K\)</span> possible actions that all users can take, and each action has some mean reward <span class="math inline">\(\mu_i \in [0, 1]\)</span>. In addition, there is a common prior belief on each <span class="math inline">\(\mu_i\)</span> across all users.. The <span class="math inline">\(T\)</span> agents, or users, will arrive sequentially. As the <span class="math inline">\(t\)</span>’th user arrives, they are recommended an action <span class="math inline">\(I_t\)</span> by the planner, which they are free to follow or not follow. After taking whichever action they choose, the user experiences some realized reward <span class="math inline">\(r_i \in [0, 1]\)</span>, which is stochastic i.i.d. with mean <span class="math inline">\(\mu_i\)</span>, and reports this reward back to the planner.</p>
+<div id="fig:planner-agent" class="quarto-figure quarto-figure-center anchored">
+<figure class="figure">
+<p><img src="Figures/planner-agent-setup.png" class="img-fluid figure-img" style="width:60.0%"></p>
+<figcaption>Planner-agent setup</figcaption>
+</figure>
+</div>
+<p>So far, the model we have defined is equivalent to a multi-armed bandit model, which we have seen earlier in this chapter (<a href="#4optim" data-reference-type="ref" data-reference="4optim">1</a>). Under this model, well-known results in economics, operations research and computer science show that <span class="math inline">\(O(\sqrt{T})\)</span> regret is achievable <span class="citation" data-cites="russo2015informationtheoreticanalysisthompsonsampling auer_cesa-bianchi_fischer_2002 LAI19854">(<a href="#ref-russo2015informationtheoreticanalysisthompsonsampling" role="doc-biblioref">Russo and Roy 2015</a>; <a href="#ref-auer_cesa-bianchi_fischer_2002" role="doc-biblioref">Auer, Cesa-Bianchi, and Fischer 2002</a>; <a href="#ref-LAI19854" role="doc-biblioref">Lai and Robbins 1985</a>)</span> with algorithms such as Thompson sampling and UCB.</p>
+<p>However, our agents are strategic and aim to maximize their own rewards. If they observe the rewards gained from actions taken by other previous users, they will simply take the action they believe will yield the highest reward given the previous actions; they would prefer to benefit from exploration done by other users rather than take the risk of exploring themselves. Therefore, exploration on an individual level, which the planner would like to facilitate, is not guaranteed under this paradigm.</p>
+<p>In light of this, we also require that our model satisfy <strong>incentive compatibility</strong>, or that taking the action recommended by the planner has an expected utility that is as high as any other action the agent could take. Formally, <span class="math display">\[\forall i : \, E[\mu_i | I_t = i] \geq E[\mu_{i'} | I_t = i].\]</span> Note that this incentivizes the agents to actually take the actions recommended by the planner; if incentive compatibility is not satisfied, agents would simply ignore the planner and take whatever action they think will lead to the highest reward.</p>
+<p>At a high level, the key to achieving incentive compatibility while still creating a policy for the planner that facilitates exploration is information asymmetry. Under this paradigm, the users only have access to their previous recommendations, actions, and rewards, and not to the recommendations, actions, and rewards of other users. Therefore, they are unsure of whether, after other users take certain actions and receive certain rewards, arms that they might have initially considered worse in practice outperform arms that they initially considered better. Only the planner has access to the previous actions and rewards of all users; the user only has access to their own recommendations and overall knowledge of the planner’s policy.</p>
+<p>The main question we aim to answer for the rest of this section is, given this new constraint of incentive compatibility, is <span class="math inline">\(O(\sqrt{T})\)</span> regret still achievable? We illustrate such an algorithm in the following.</p>
+</section>
+<section id="black-box-reduction-algorithm" class="level4 unnumbered">
+<h4 class="unnumbered anchored" data-anchor-id="black-box-reduction-algorithm">Black-box Reduction Algorithm</h4>
+<p>The main result for this chapter is a <strong>black-box reduction</strong> algorithm to turn any bandit algorithm into an <em>incentive compatible</em> one, with only a constant increase in Bayesian regret. Since, as mentioned earlier, there are bandit algorithms with <span class="math inline">\(O(\sqrt{T})\)</span> Bayesian regret, black-box reduction will also allow us to get incentive-compatible algorithms with <span class="math inline">\(O(\sqrt{T})\)</span> regret. The idea of black-box reduction will be to simulate <span class="math inline">\(T\)</span> steps of any bandit algorithm in an incentive-compatible way in <span class="math inline">\(c T\)</span> steps. This allows us to design incentive-compatible recommendation systems by using any bandit algorithm and then adapting it.</p>
+<p>Consider the following setting: there are two possible actions, <span class="math inline">\(A_1\)</span> and <span class="math inline">\(A_2\)</span>. Assume the setting of <strong>deterministic rewards</strong>, where action 1 has reward <span class="math inline">\(\mu_1\)</span> with prior <span class="math inline">\(U[1/3, 1]\)</span> and mean <span class="math inline">\(\mathbb{E}[\mu_1] = 2/3\)</span>, and action 2 has reward <span class="math inline">\(\mu_2\)</span> with prior <span class="math inline">\(U[0, 1]\)</span> and mean <span class="math inline">\(\mathbb{E}[\mu_2] = 1/2\)</span>. Without the planner intervention and with full observability, users would simply always pick <span class="math inline">\(A_1\)</span>, so how can the planner <em>incentivize</em> users to play <span class="math inline">\(A_2\)</span>?</p>
+<div id="fig:deterministic-guinea-pig" class="quarto-figure quarto-figure-center anchored">
+<figure class="figure">
+<p><img src="Figures/guinea_pig_fig.png" class="img-fluid figure-img"></p>
+<figcaption>Illustration of black-box reduction algorithm when we have deterministic rewards.</figcaption>
+</figure>
+</div>
+<p>The key insight is going to be to <em>hide exploration in a pool of exploitation</em>. The users are only going to receive a recommendation from the planner, and no other observations. After deterministically recommending the action with the highest expected reward (<span class="math inline">\(A_1\)</span>), the planner will pick one <strong>guinea pig</strong> to recommend the exploratory action of <span class="math inline">\(A_2\)</span>. The users don’t know whether they are the guinea pig, so intuitively, as long as the planner picks guinea pigs uniformly at random and at low enough frequencies, the optimal decision for the users is still to follow the planner’s recommendation, even if it might go against their interest.</p>
+<p>The planner will pick the user who will be recommended the exploratory action uniformly at random from the <span class="math inline">\(L\)</span> users that come after the first one (which deterministically gets recommended the exploitation action). Under this setting (illustrated in Figure <a href="#fig:deterministic-guinea-pig" data-reference-type="ref" data-reference="fig:deterministic-guinea-pig">1.2</a>), it is optimal for users to always follow the option that is recommended for them. More formally, if <span class="math inline">\(I_t\)</span> is the recommendation that a user receives at time <span class="math inline">\(t\)</span>, then we have that: <span class="math display">\[\begin{split}
+    \mathbb{E}[\mu_1 - \mu_2 | I_t = 2] Pr[I_t = 2] &amp;= \frac{1}{L} (\mu_1 - \mu_2) \quad \text{(Gains if you are the unlucky guinea pig)}\\
+    &amp;+ (1 - \frac{1}{L}) \mathbb{E}[\mu_1 - \mu_2 | \mu_1 &lt; \mu_2] Pr[\mu_1 &lt; \mu_2] \quad \text{(Loss if you are not and $\mu_1 &lt; \mu_2$)}\\
+    &amp;\leq 0
+\end{split}\]</span> This holds when <span class="math inline">\(L \geq 12\)</span>. It means that the gains from not taking the recommended action are <em>negative</em>, which implies that users should always take the recommendation.</p>
+<p>So far we have considered the case where rewards are deterministic, but what about <strong>stochastic rewards</strong>? We are now going to consider the case where rewards are independent and identically distributed from some distribution, and where each action <span class="math inline">\(A_i\)</span> has some reward distribution <span class="math inline">\(r_i^t \sim D_i, \mathbb{E}[r_i^t] = \mu_i\)</span>. Back to the case where there are only two actions, we are going to adapt the prior algorithm of guinea pig-picking to the stochastic reward setting. Since one reward observation is not enough to fully know <span class="math inline">\(\mu_1\)</span> anymore, we’ll instead observe the outcome of the first action <span class="math inline">\(M\)</span> times to form a strong posterior <span class="math inline">\(\mathbb{E}[\mu_1 | r_1^1, \ldots r_1^M]\)</span>.</p>
+<div id="fig:stochastic-guinea-pig" class="quarto-figure quarto-figure-center anchored">
+<figure class="figure">
+<p><img src="Figures/stochastic_guinea_pig.png" class="img-fluid figure-img"></p>
+<figcaption>Illustration of black-box reduction algorithm when we have stochastic rewards.</figcaption>
+</figure>
+</div>
+<p>Figure <a href="#fig:stochastic-guinea-pig" data-reference-type="ref" data-reference="fig:stochastic-guinea-pig">1.3</a> illustrates the algorithm that we can use with stochastic rewards when there are two actions. Similarly, as before, we pick one guinea pig uniformly at random from the next <span class="math inline">\(L\)</span> users and use the reward we get as the exploratory signal.<br>
+In a very similar manner, we can generalize this algorithm from always having two actions to the general multi-armed bandit problem. Now suppose we have a general multi-armed bandit algorithm <span class="math inline">\(A\)</span>. We will wrap this algorithm around our black box reduction algorithm to make it incentive-compatible.</p>
+<div id="fig:multi-armed-guinea-pig" class="quarto-figure quarto-figure-center anchored">
+<figure class="figure">
+<p><img src="Figures/multi-armed-guinea-pig.png" class="img-fluid figure-img"></p>
+<figcaption>Illustration of black-box reduction algorithm for the general multi-armed bandit case.</figcaption>
+</figure>
+</div>
+<p>As Figure <a href="#fig:multi-armed-guinea-pig" data-reference-type="ref" data-reference="fig:multi-armed-guinea-pig">1.4</a> shows, we wrap every decision that <span class="math inline">\(A\)</span> would make by exactly <span class="math inline">\(L-1\)</span> recommendations of the action believed to be the best so far. This guarantees that the expected rewards for the users that are not chosen as guinea pigs are at least as good as <span class="math inline">\(A\)</span>’s reward at phase <span class="math inline">\(n\)</span>.</p>
+</section>
+</section>
+</section>
+<section id="preferential-bayesian-optimization" class="level2" data-number="4.2">
+<h2 data-number="4.2" class="anchored" data-anchor-id="preferential-bayesian-optimization"><span class="header-section-number">4.2</span> Preferential Bayesian Optimization</h2>
+<p>The traditional Bayesian optimization (BO) problem is described as follows. There is a black-box objective function <span class="math inline">\(g: \mathcal{X} \rightarrow \Re\)</span> defined on a bounded subset <span class="math inline">\(\mathcal{X} \subseteq \Re^q\)</span> such that direct queries to the function are expensive or not possible. However, we would like to solve the global optimization problem of finding <span class="math inline">\(\mathbf{x}_{\min }=\arg \min _{\mathbf{x} \in \mathcal{X}} g(\mathbf{x})\)</span>. This is highly analogous to modeling human preferences, since it is the case that direct access to a human’s latent preference function is not possible but we would still like to find its optimum, such as in A/B tests or recommender systems.</p>
+<p>We approach this problem for human preferences with <em>Preferential Bayesian Optimization</em> (PBO), as the key difference is that we are able to query the preference function through pairwise comparisons of data points, i.e.&nbsp;<em>duels</em>. This is a form of indirect observation of the objective function, which models real-world scenarios closely: we commonly need to to optimize a function via data about preferences. With humans, it has been demonstrated that we are better at evaluating differences rather than absolute magnitudes <span class="citation" data-cites="kahneman_tversky_1979">(<a href="#ref-kahneman_tversky_1979" role="doc-biblioref">Kahneman and Tversky 1979</a>)</span> and therefore PBO models can be applied in various contexts.</p>
+<section id="problem-statement" class="level3" data-number="4.2.1">
+<h3 data-number="4.2.1" class="anchored" data-anchor-id="problem-statement"><span class="header-section-number">4.2.1</span> Problem statement</h3>
+<p>The problem of finding the optimum of a latent preference function defined on <span class="math inline">\(\mathcal{X}\)</span> can be reduced to determining a sequence of duels on <span class="math inline">\(\mathcal{X} \times \mathcal{X}\)</span>. From each duel <span class="math inline">\(\left[\mathbf{x}, \mathbf{x}^{\prime}\right] \in\)</span> <span class="math inline">\(\mathcal{X} \times \mathcal{X}\)</span> we obtain binary feedback <span class="math inline">\(\{0,1\}\)</span> indicating whether or not <span class="math inline">\(\mathbf{x}\)</span> is preferred over <span class="math inline">\(\mathbf{x}^{\prime}\)</span> (<span class="math inline">\(g(\mathbf{x}) &lt; g(\mathbf{x}^{\prime})\)</span>). We consider that <span class="math inline">\(\mathbf{x}\)</span> is the winner of the duel if the output is <span class="math inline">\(\{1\}\)</span> and that <span class="math inline">\(\mathbf{x}^{\prime}\)</span> wins the duel if the output is <span class="math inline">\(\{0\}\)</span>. The aim is to find <span class="math inline">\(\mathbf{x}_{\min }\)</span> by reducing as much as possible the number of queried duels.</p>
+<p>The key idea in PBO is to learn a preference function in the space of duels using a Gaussian process. We define a joint reward <span class="math inline">\(f\left(\left[\mathbf{x}, \mathbf{x}^{\prime}\right]\right)\)</span> on each duel which is never directly observed. Instead, the feedback we obtain after each pair is a binary output <span class="math inline">\(y \in\)</span> <span class="math inline">\(\{0,1\}\)</span> indicating which of the two inputs is preferred. One definition of f we will use (though others are possible) is <span class="math inline">\(f\left(\left[\mathbf{x}, \mathbf{x}^{\prime}\right]\right)=g\left(\mathbf{x}^{\prime}\right)-g(\mathbf{x})\)</span>. The more <span class="math inline">\(\mathbf{x}^{\prime}\)</span> is preferred over <span class="math inline">\(\mathbf{x}\)</span>, the bigger the reward.</p>
+<p>We define the model of preference using a Bernoulli likelihood, where <span class="math inline">\(p\left(y=1 \mid\left[\mathbf{x}, \mathbf{x}^{\prime}\right]\right)=\pi_f\left(\left[\mathbf{x}, \mathbf{x}^{\prime}\right]\right)\)</span> and <span class="math inline">\(p\left(y=0 \mid\left[\mathbf{x}, \mathbf{x}^{\prime}\right]\right)=\pi_f\left(\left[\mathbf{x}^{\prime}, \mathbf{x}\right]\right)\)</span> for some inverse link function <span class="math inline">\(\pi: \Re \times \Re \rightarrow[0,1]\)</span>. <span class="math inline">\(\pi_f\)</span> has the property that <span class="math inline">\(\pi_f\left(\left[\mathbf{x}^{\prime}, \mathbf{x}\right]\right)=1-\pi_f\left(\left[\mathbf{x}, \mathbf{x}^{\prime}\right]\right)\)</span>. A natural choice for <span class="math inline">\(\pi_f\)</span> is the logistic function <span class="math display">\[\label{eq:bernoulli_pref}
+\pi_f\left(\left[\mathbf{x}, \mathbf{x}^{\prime}\right]\right)=\sigma\left(f\left(\left[\mathbf{x}, \mathbf{x}^{\prime}\right]\right)\right)=\frac{1}{1+e^{-f\left(\left[\mathbf{x}, \mathbf{x}^{\prime}\right]\right)}},\]</span> but others are possible. Therefore we have that for any duel <span class="math inline">\(\left[\mathbf{x}, \mathbf{x}^{\prime}\right]\)</span> in which <span class="math inline">\(g(\mathbf{x}) \leq g\left(\mathbf{x}^{\prime}\right)\)</span> it holds that <span class="math inline">\(\pi_f\left(\left[\mathbf{x}, \mathbf{x}^{\prime}\right]\right) \geq 0.5\)</span>. <span class="math inline">\(\pi_f\)</span> is a preference function that maps each query <span class="math inline">\(\left[\mathbf{x}, \mathbf{x}^{\prime}\right]\)</span> to the probability of having a preference on the left input <span class="math inline">\(\mathbf{x}\)</span> over the right input <span class="math inline">\(\mathbf{x}^{\prime}\)</span>.</p>
+<p>When we marginalize over the right input <span class="math inline">\(\mathbf{x}^{\prime}\)</span> of <span class="math inline">\(f\)</span> (is this correct?), the global minimum of <span class="math inline">\(f\)</span> in <span class="math inline">\(\mathcal{X}\)</span> coincides with <span class="math inline">\(\mathbf{x}_{\min }\)</span>. We also introduce the definition of the <em>Copeland score function</em> for a point <span class="math inline">\(\mathbf{x}\)</span> as <span class="math display">\[S(\mathbf{x})=\operatorname{Vol}(\mathcal{X})^{-1} \int_{\mathcal{X}} \mathbb{I}_{\left\{\pi_f\left(\left[\mathbf{x}, \mathbf{x}^{\prime}\right]\right) \geq 0.5\right\}} d \mathbf{x}^{\prime}\]</span> where <span class="math inline">\(\operatorname{Vol}(\mathcal{X})=\int_{\mathcal{X}} d \mathbf{x}^{\prime}\)</span> is a normalizing constant that bounds <span class="math inline">\(S(\mathbf{x})\)</span> in the interval <span class="math inline">\([0,1]\)</span>. If <span class="math inline">\(\mathcal{X}\)</span> is a finite set, the Copeland score is simply the proportion of duels that a certain element <span class="math inline">\(\mathbf{x}\)</span> will win with probability larger than 0.5. A soft variant we will use instead of the Copeland score is the <em>soft-Copeland score</em>, defined as <span class="math display">\[\label{eq:soft-copeland}
+C(\mathbf{x})=\operatorname{Vol}(\mathcal{X})^{-1} \int_{\mathcal{X}} \pi_f\left(\left[\mathbf{x}, \mathbf{x}^{\prime}\right]\right) d \mathbf{x}^{\prime}\]</span> where the probability function <span class="math inline">\(\pi_f\)</span> is integrated over <span class="math inline">\(\mathcal{X}\)</span>. This score aims to capture the average probability of <span class="math inline">\(\mathbf{x}\)</span> being the winner of a duel.</p>
+<p>We define the <em>Condorcet winner</em> <span class="math inline">\(\mathbf{x}_c\)</span> as the point with maximal soft-Copeland score. Note that this corresponds to the global minimum of <span class="math inline">\(f\)</span>, since the defining integral takes maximum value for points <span class="math inline">\(\mathbf{x} \in \mathcal{X}\)</span> where <span class="math inline">\(f\left(\left[\mathbf{x}, \mathbf{x}^{\prime}\right]\right)=\)</span> <span class="math inline">\(g\left(\mathbf{x}^{\prime}\right)-g(\mathbf{x})&gt;0\)</span> or all <span class="math inline">\(\mathbf{x}^{\prime}\)</span>, occurring only if <span class="math inline">\(\mathbf{x}_c\)</span> is a minimum of <span class="math inline">\(f\)</span>. Therefore, if the preference function <span class="math inline">\(\pi_f\)</span> can be learned by observing the results of duels then our optimization problem of finding the minimum of <span class="math inline">\(f\)</span> can be solved by finding the Condorcet winner of the Copeland score.</p>
+</section>
+<section id="acquisition-functions-1" class="level3" data-number="4.2.2">
+<h3 data-number="4.2.2" class="anchored" data-anchor-id="acquisition-functions-1"><span class="header-section-number">4.2.2</span> Acquisition Functions</h3>
+<p>We describe several acquisition functions for sequential learning of the Condorcet winner. Our dataset <span class="math inline">\(\mathcal{D}=\left\{\left[\mathbf{x}_i, \mathbf{x}_i^{\prime}\right], y_i\right\}_{i=1}^N\)</span> represents the <span class="math inline">\(N\)</span> duels that have been performed so far. We aim to define a sequential policy <span class="math inline">\(\alpha\left(\left[\mathbf{x}, \mathbf{x}^{\prime}\right] ; \mathcal{D}_j, \theta\right)\)</span> for querying duels, where <span class="math inline">\(\theta\)</span> is a vector of model hyper-parameters, in order to find the minimum of the latent function <span class="math inline">\(g\)</span> as quickly as possible. Using Gaussian processes (GP) for classification with our dataset <span class="math inline">\(\mathcal{D}\)</span> allows us to perform inference over <span class="math inline">\(f\)</span> and <span class="math inline">\(\pi_f\)</span>.</p>
+<section id="pure-exploration" class="level4 unnumbered">
+<h4 class="unnumbered anchored" data-anchor-id="pure-exploration">Pure Exploration</h4>
+<p>The output variable <span class="math inline">\(y_{\star}\)</span> of a prediction follows a Bernoulli distribution with probability given by the preference function <span class="math inline">\(\pi_f\)</span>. To carry out exploration as a policy, one method is to search for the duel where GP is most uncertain about the probability of the outcome (has the highest variance of <span class="math inline">\(\sigma\left(f_{\star}\right)\)</span> ), which is the result of transforming out epistemic uncertainty about <span class="math inline">\(f\)</span>, modeled by a GP, through the logistic function. The first order moment of this distribution coincides with the expectation of <span class="math inline">\(y_{\star}\)</span> but its variance is <span class="math display">\[\begin{aligned}
+\mathbb{V}\left[\sigma\left(f_{\star}\right)\right] &amp; =\int\left(\sigma\left(f_{\star}\right)-\mathbb{E}\left[\sigma\left(f_{\star}\right)\right]\right)^2 p\left(f_{\star} \mid \mathcal{D},\left[\mathbf{x}, \mathbf{x}^{\prime}\right]\right) d f_{\star} \\
+&amp; =\int \sigma\left(f_{\star}\right)^2 p\left(f_{\star} \mid \mathcal{D},\left[\mathbf{x}, \mathbf{x}^{\prime}\right]\right) d f_{\star}-\mathbb{E}\left[\sigma\left(f_{\star}\right)\right]^2
+\end{aligned}\]</span> which explicitly takes into account the uncertainty over <span class="math inline">\(f\)</span>. Hence, pure exploration of duels space can be carried out by maximizing <span class="math display">\[\alpha_{\mathrm{PE}}\left(\left[\mathbf{x}, \mathbf{x}^{\prime}\right] \mid \mathcal{D}_j\right)=\mathbb{V}\left[\sigma\left(f_{\star}\right)\left|\left[\mathbf{x}_{\star}, \mathbf{x}_{\star}^{\prime}\right]\right| \mathcal{D}_j\right] .\]</span></p>
+<p>Note that in this case, duels that have been already visited will have a lower chance of being visited again even in cases in which the objective takes similar values in both players. In practice, this acquisition functions requires computation of an intractable integral, that we approximate using Monte-Carlo.</p>
+</section>
+<section id="principled-optimistic-preferential-bayesian-optimization-pop-bo" class="level4 unnumbered">
+<h4 class="unnumbered anchored" data-anchor-id="principled-optimistic-preferential-bayesian-optimization-pop-bo">Principled Optimistic Preferential Bayesian Optimization (POP-BO)</h4>
+<p>In a slightly modified problem setup <span class="citation" data-cites="xu2024principledpreferentialbayesianoptimization">(<a href="#ref-xu2024principledpreferentialbayesianoptimization" role="doc-biblioref">Xu et al. 2024</a>)</span>, the algorithm tries to solve for the MLE <span class="math inline">\(\hat{g}\)</span> and its confidence set <span class="math inline">\(\mathcal{B}_g\)</span> where <span class="math inline">\(g\)</span> is the ground truth black-box function. Assumptions include that <span class="math inline">\(g\)</span> is a member of a reproducing kernel Hilbert space (RKHS) <span class="math inline">\(\mathcal{H}_k\)</span> for some kernel function <span class="math inline">\(k: \mathbb{R}^d \times \mathbb{R}^d \rightarrow \mathbb{R}\)</span>, and <span class="math inline">\(\|g\|_k \leq B\)</span> so that <span class="math inline">\(\mathcal{B}_g = \left\{\tilde{g} \in \mathcal{H}_k \mid\|\tilde{g}\|_k \leq B\right\}\)</span>. Similarly defining <span class="math inline">\(f\left(\left[\mathbf{x}, \mathbf{x}^{\prime}\right]\right)=g\left(\mathbf{x}^{\prime}\right)-g(\mathbf{x})\)</span>, we model the preference function with a Bernoulli distribution as in Equation <a href="#eq:bernoulli_pref" data-reference-type="ref" data-reference="eq:bernoulli_pref">[eq:bernoulli_pref]</a> and also assume that probabilities follow the Bradley-Terry model, i.e. <span class="math display">\[\pi_f\left(\left[\mathbf{x}, \mathbf{x}^{\prime}\right]\right)=\sigma\left(f\left(\left[\mathbf{x}, \mathbf{x}^{\prime}\right]\right)\right)=\frac{e^{g(\mathbf{x})}}{e^{g(\mathbf{x})}+e^{g\left(\mathbf{x^{\prime}}\right)}}\]</span></p>
+<p>The update rule for MLE <span class="math inline">\(\hat{g}\)</span> is (equation 8,6,5) <span class="math display">\[\begin{aligned}
+\hat{g}_t^{\text {MLE }}&amp;:= \arg \underset{\tilde{g} \in \mathcal{B}^t_g}{\max}\ell_t(\tilde{g}) \\
+\ell_t(\tilde{g}) &amp;:= \log \prod_{\tau=1}^t y_\tau \pi_{\tilde{f}}([\mathbf{x_\tau}, \mathbf{x^{\prime}_\tau}])+\left(1-y_\tau\right)\left(1-\pi_{\tilde{f}}([\mathbf{x_\tau}, \mathbf{x^{\prime}_\tau}])\right) \\
+&amp;=\sum_{\tau=1}^t \log \left(\frac{e^{\tilde{g}(\mathbf{x_\tau})} y_\tau+e^{\tilde{g}(\mathbf{x_\tau^\prime})}\left(1-y_\tau\right)}{e^{\tilde{g}(\mathbf{x_\tau})}+e^{\tilde{g}(\mathbf{x_\tau^\prime})}}\right) \\
+&amp;=\sum_{\tau=1}^t\left(\tilde{g}(\mathbf{x_\tau}) y_\tau+\tilde{g}(\mathbf{x_\tau^\prime})\left(1-y_\tau\right)\right)-\sum_{\tau=1}^t \log \left(e^{\tilde{g}(\mathbf{x_\tau})}+e^{\tilde{g}(\mathbf{x_\tau^\prime})}\right)
+\end{aligned}\]</span></p>
+<p>(Eq 22 shows how to represent this as a convex optimisation problem so that it can be solved)</p>
+<p>The update rule for the confidence set <span class="math inline">\(\mathcal{B}_f^{t+1}\)</span> is, (eq 9, 10?)</p>
+<p><span class="math display">\[\begin{aligned}
+&amp;\forall \epsilon, \delta &gt; 0 \\
+&amp;\mathcal{B}_g^{t+1}:=\left\{\tilde{g} \in \mathcal{B}_g \mid \ell_t(\tilde{g}) \geq \ell_t\left(\hat{g}_t^{\mathrm{MLE}}\right)-\beta_1(\epsilon, \delta, t)\right\}
+\end{aligned}\]</span> where <span class="math display">\[\beta_1(\epsilon, \delta, t):=\sqrt{32 t B^2 \log \frac{\pi^2 t^2 \mathcal{N}\left(\mathcal{B}_f, \epsilon,\|\cdot\|_{\infty}\right)}{6 \delta}}+ C_L \epsilon t=\mathcal{O}\left(\sqrt{t \log \frac{t \mathcal{N}\left(\mathcal{B}_f, \epsilon,\|\cdot\|_{\infty}\right)}{\delta}}+\epsilon t\right),\]</span> with <span class="math inline">\(C_L\)</span> a constant independent of <span class="math inline">\(\delta, t\)</span> and <span class="math inline">\(\epsilon\)</span>. <span class="math inline">\(\epsilon\)</span> is typically chosen to be <span class="math inline">\(1 / T\)</span>, where T is the running horizon of the algorithm. This satisfies the theorem that, <span class="math display">\[\mathbb{P}\left(g \in \mathcal{B}_g^{t+1}, \forall t \geq 1\right) \geq 1-\delta .\]</span></p>
+<p>Intuitively, the confidence set <span class="math inline">\(\mathcal{B}_g^{t+1}\)</span> includes the functions with the log-likelihood value that is only ‘a little worse’ than the maximum likelihood estimator, and the theorem states that <span class="math inline">\(\mathcal{B}_g^{t+1}\)</span> contains the ground-truth function <span class="math inline">\(g\)</span> with high probability.</p>
+<p>Inner level optimization in Line 4 of the algorithm can also be represented as a convex optimisation problem so that it can be solved, Eq 24, 25. The outer optimisation can be solved using grid search or Eq 26 for medium size problems.</p>
+<div class="algorithm">
+<div class="algorithmic">
+<p>Given the initial point <span class="math inline">\(\mathbf{x_0} \in \mathcal{X}\)</span> and set <span class="math inline">\(\mathcal{B}_g^1 = \mathcal{B}_g\)</span> Set the reference point <span class="math inline">\(\mathbf{x_t^{\prime}} = \mathbf{x_{t-1}}\)</span> Compute <span class="math inline">\(\mathbf{x_t} \in \argmax_{\mathbf{x} \in \mathcal{X}} \max_{\tilde{g} \in \mathcal{B}_g^t} (\tilde{g}(\mathbf{x}) - \tilde{g}(\mathbf{x_t^{\prime}}))\)</span>, with the inner optimal function denoted as <span class="math inline">\(\tilde{g}_t\)</span> Obtain the output of the duel <span class="math inline">\(y_t\)</span> and append the new data point to <span class="math inline">\(\mathcal{D}_t\)</span> Update the maximum likelihood estimator <span class="math inline">\(\hat{g}_t^{\mathrm{MLE}}\)</span> and the posterior confidence set <span class="math inline">\(\mathcal{B}_g^{t+1}\)</span>.</p>
+</div>
+</div>
+</section>
+<section id="qeubo-decision-theoretic-eubo" class="level4 unnumbered">
+<h4 class="unnumbered anchored" data-anchor-id="qeubo-decision-theoretic-eubo">qEUBO: Decision-Theoretic EUBO</h4>
+<p>qEUBO <span class="citation" data-cites="astudillo2023qeubodecisiontheoreticacquisitionfunction">(<a href="#ref-astudillo2023qeubodecisiontheoreticacquisitionfunction" role="doc-biblioref">Astudillo et al. 2023</a>)</span> derives an acquisition function that extends duels to <span class="math inline">\(q&gt;2\)</span> options which we call <em>queries</em>. Let <span class="math inline">\(X=\left(\mathbf{x_1}, \ldots, \mathbf{x_q}\right) \in \mathcal{X}^q\)</span> denote a query containing two points or more, and let <span class="math inline">\(g: \mathcal{X} \rightarrow \Re\)</span> be the latent preference function. Then after <span class="math inline">\(n\)</span> user queries, we define the <em>expected utility of the best option</em> (qEUBO) as <span class="math display">\[\mathrm{qEUBO}_n(X)=\mathbf{E}_n\left[\max \left\{g\left(x_1\right), \ldots, g\left(x_q\right)\right\}\right].\]</span></p>
+<p>We now show that qEUBO is one-step Bayes optimal, meaning that each step chooses the query that maximises the expected utility received by the human. For a query <span class="math inline">\(X \in \mathcal{X}^q\)</span>, let <span class="math display">\[V_n(X)=\mathbf{E}_n\left[\max _{x \in \mathbb{X}} \mathbf{E}_{n+1}[g(x)] \mid X_{n+1}=X\right] .\]</span> Then <span class="math inline">\(V_n\)</span> defines the expected utility received if an additional query <span class="math inline">\(X_{n+1}=X\)</span> is performed, and maximizing <span class="math inline">\(V_n\)</span> is one-step Bayes optimal. Since <span class="math inline">\(\max _{x \in \mathbb{X}} \mathbf{E}_n[f(x)]\)</span> does not depend on <span class="math inline">\(X_{n+1}\)</span>, we can also equivalently maximize <span class="math display">\[\mathbf{E}_n\left[\max _{x \in \mathbb{X}} \mathbf{E}_{n+1}[g(x)]-\max _{x \in \mathbb{X}} \mathbf{E}_n[g(x)] \mid X_{n+1}=X\right],\]</span> which takes the same form as the knowledge gradient acquisition function <span class="citation" data-cites="wu2018parallelknowledgegradientmethod">(<a href="#ref-wu2018parallelknowledgegradientmethod" role="doc-biblioref">Wu and Frazier 2018</a>)</span> in standard Bayesian optimization.</p>
+<p><span class="math inline">\(V_n\)</span> involves a nested stochastic optimization task, while qEUBO is a much simpler policy. When human responses are noise-free, we are able to use qEUBO as a sufficient policy due to the following theorem:</p>
+<div class="theorem">
+<p><span class="math display">\[\underset{X \in \mathbb{X}^q}{\operatorname{argmax}} \mathrm{qEUBO}_n(X) \subseteq \underset{X \in \mathbb{X}^q}{\operatorname{argmax}} V_n(X) .\]</span></p>
+</div>
+<div class="proof">
+<p><span class="proof-title"><em>Proof</em>. </span><em>Proof.</em> For a query <span class="math inline">\(X \in \mathcal{X}^q\)</span>, let <span class="math inline">\(x^{+}(X, i) \in \operatorname{argmax}_{x \in \mathbb{X}} \mathbf{E}_n[g(x) \mid(X, i)]\)</span> and define <span class="math inline">\(X^{+}(X)=\)</span> <span class="math inline">\(\left(x^{+}(X, 1), \ldots, x^{+}(X, q)\right)\)</span>.</p>
+<p><strong>Claim 1</strong> <span class="math inline">\(V_n(X) \leq \mathrm{qEUBO}_n\left(X^{+}(X)\right) .\)</span> We see that <span class="math display">\[\begin{aligned}
+V_n(X) &amp; =\sum_{i=1}^q \mathbf{P}_n(r(X)=i) \mathbf{E}_n[g\left(x^{+}(X, i)\right) ] \\
+&amp; \leq \sum_{i=1}^q \mathbf{P}_n(r(X)=i) \mathbf{E}_n[\max _{i=1, \ldots, q} g(x^{+}(X, i))] \\
+&amp; =\mathbf{E}_n\left[\max _{i=1, \ldots, q} g\left(x^{+}(X, i)\right)\right] \\
+&amp; =\mathrm{qEUBO}_n\left(X^{+}(X)\right),
+\end{aligned}\]</span> as claimed.</p>
+<p><strong>Claim 2</strong> <span class="math inline">\(\mathrm{qEUBO}_n(X) \leq V_n(X) .\)</span> For any given <span class="math inline">\(X \in \mathbb{X}^q\)</span> we have <span class="math display">\[\mathbf{E}_n\left[f\left(x_{r(X)}\right) \mid(X, r(X))\right] \leq \max _{x \in \mathbb{X}} \mathbf{E}_n[f(x) \mid(X, r(X))] .\]</span> Since <span class="math inline">\(f\left(x_{r(X)}\right)=\max _{i=1, \ldots, q} f\left(x_i\right)\)</span>, taking expectations over <span class="math inline">\(r(X)\)</span> on both sides obtains the required result.</p>
+<p>Now building on the arguments above, let <span class="math inline">\(X^* \in \operatorname{argmax}_{X \in \mathbb{X}^q} \mathrm{qEUBO}_n(X)\)</span> and suppose for contradiction that <span class="math inline">\(X^* \notin \operatorname{argmax}_{X \in \mathbb{X}^q} V_n(X)\)</span>. Then, there exists <span class="math inline">\(\widetilde{X} \in \mathbb{X}^q\)</span> such that <span class="math inline">\(V_n(\widetilde{X})&gt;V_n\left(X^*\right)\)</span>. We have <span class="math display">\[\begin{aligned}
+\operatorname{qEUBO}_n\left(X^{+}(\tilde{X})\right) &amp; \geq V_n(\tilde{X}) \\
+&amp; &gt;V_n\left(X^*\right) \\
+&amp; \geq \operatorname{qEUBO}_n\left(X^*\right) \\
+&amp; \geq \operatorname{qEUBO}_n\left(X^{+}(\tilde{X})\right) .
+\end{aligned}\]</span></p>
+<p>The first inequality follows from (1). The second inequality is due to our supposition for contradiction. The third inequality is due to (2). Finally, the fourth inequality holds since <span class="math inline">\(X^* \in \operatorname{argmax}_{X \in \mathbb{X}^q} \mathrm{qEUBO}_n(X)\)</span>. This contradiction concludes the proof. ◻</p>
+</div>
+<p>Therefore a sufficient condition for following one-step Bayes optimality is by maximizing <span class="math inline">\(\text{qEUBO}_n\)</span>.</p>
+<p>In experiments that were ran comparing qEUBO to other state-of-the-art acquisition functions, qEUBO consistently outperformed on most problems and was closely followed by qEI and qTS. These results also extended to experiments with multiple options when <span class="math inline">\(q&gt;2\)</span>. In fact, there is faster convergence in regret when using more options in human queries. [Prove Theorem 3: Regret analysis]</p>
+</section>
+<section id="qei-batch-expected-improvement" class="level4 unnumbered">
+<h4 class="unnumbered anchored" data-anchor-id="qei-batch-expected-improvement">qEI: Batch Expected Improvement</h4>
+<p><span class="math display">\[\begin{aligned}
+\mathrm{qEI}= &amp; \mathbb{E}_{\mathbf{y}}\left[\left(\max _{i \in[1, \ldots, q]}\left(\mu_{\min }-y_i\right)\right)_{+}\right] \\
+= &amp; \sum_{i=1}^q \mathbb{E}_{\mathbf{y}}\left(\mu_{\min }-y_i \mid y_i \leq \mu_{\min }, y_i \leq y_j \forall j \neq i\right) \\
+&amp; p\left(y_i \leq \mu_{\min }, y_i \leq y_j \forall j \neq i\right) .
+\end{aligned}\]</span></p>
+</section>
+<section id="qts-batch-thompson-sampling" class="level4 unnumbered">
+<h4 class="unnumbered anchored" data-anchor-id="qts-batch-thompson-sampling">qTS: Batch Thompson Sampling</h4>
+<div class="algorithm">
+<div class="algorithmic">
+<p>Initial data <span class="math inline">\(\mathcal{D}_{\mathcal{I}(1)}=\{(\mathbf{x}_i, y_i)\}_{i \in \mathcal{I}(1)}\)</span> Compute current posterior <span class="math inline">\(p(\boldsymbol{\theta} \mid \mathcal{D}_{\mathcal{I}(t)})\)</span> Sample <span class="math inline">\(\boldsymbol{\theta}\)</span> from <span class="math inline">\(p(\boldsymbol{\theta} \mid \mathcal{D}_{\mathcal{I}(t)})\)</span> Select <span class="math inline">\(k \leftarrow \argmax_{j \notin \mathcal{I}(t)} \mathbf{E}[y_j \mid \mathbf{x}_j, \boldsymbol{\theta}]\)</span> Collect <span class="math inline">\(y_k\)</span> by evaluating <span class="math inline">\(f\)</span> at <span class="math inline">\(\mathbf{x}_k\)</span> <span class="math inline">\(\mathcal{D}_{\mathcal{I}(t+1)} \leftarrow \mathcal{D}_{\mathcal{I}(t)} \cup \{(\mathbf{x}_k, y_k)\}\)</span></p>
+</div>
+</div>
+<div class="algorithm">
+<div class="algorithmic">
+<p>Initial data <span class="math inline">\(\mathcal{D}_{\mathcal{I}(1)}=\{\mathbf{x}_i, y_i\}_{i \in \mathcal{I}(1)}\)</span>, batch size <span class="math inline">\(S\)</span> Compute current posterior <span class="math inline">\(p(\boldsymbol{\theta} \mid \mathcal{D}_{\mathcal{I}(t)})\)</span> Sample <span class="math inline">\(\boldsymbol{\theta}\)</span> from <span class="math inline">\(p(\boldsymbol{\theta} \mid \mathcal{D}_{\mathcal{I}(t)})\)</span> Select <span class="math inline">\(k(s) \leftarrow \argmax_{j \notin \mathcal{I}(t)} \mathbf{E}[y_j \mid \mathbf{x}_j, \boldsymbol{\theta}]\)</span> <span class="math inline">\(\mathcal{D}_{\mathcal{I}(t+1)} = \mathcal{D}_{\mathcal{I}(t)} \cup \{\mathbf{x}_{k(s)}, y_{k(s)}\}_{s=1}^S\)</span></p>
+</div>
+</div>
+</section>
+</section>
+<section id="regret-analysis" class="level3" data-number="4.2.3">
+<h3 data-number="4.2.3" class="anchored" data-anchor-id="regret-analysis"><span class="header-section-number">4.2.3</span> Regret Analysis</h3>
+<section id="qeubo-regret" class="level4 unnumbered">
+<h4 class="unnumbered anchored" data-anchor-id="qeubo-regret">qEUBO Regret</h4>
+<p>With the definition of Bayesian simple regret, we have that qEUBO converges to zero at a rate of <span class="math inline">\(o(1/n)\)</span>, i.e.</p>
+<div class="theorem">
+<p><span class="math display">\[\label{th:quebo_regret}
+\mathbf{E}\left[f\left(x^*\right)-f\left(\widehat{x}_n^*\right)\right]=o(1 / n)\]</span></p>
+</div>
+<p>where <span class="math inline">\(x^*=\operatorname{argmax}_{x \in \mathrm{X}} f(x)\)</span> and <span class="math inline">\(\widehat{x}_n^* \in \operatorname{argmax}_{x \in \mathrm{X}} \mathbf{E}_n[f(x)]\)</span>.</p>
+<p>This theorem holds under the following assumptions:</p>
+<ol type="1">
+<li><p><strong><span class="math inline">\(f\)</span> is injective</strong> <span class="math inline">\(\mathbf{P}(f(x)=f(y))=0\)</span> for any <span class="math inline">\(x, y \in \mathbb{X}\)</span> with <span class="math inline">\(x \neq y\)</span>.</p></li>
+<li><p><strong><span class="math inline">\(f\)</span> represents the preferred option</strong> <span class="math inline">\(\exists a&gt;1 / 2\)</span> s.t. <span class="math inline">\(\mathbf{P}\left(r(X) \in \operatorname{argmax}_{i=1, \ldots, 2} f\left(x_i\right) \mid f(X)\right) \geq a \forall\)</span> <span class="math inline">\(X=\left(x_1, x_2\right) \in \mathbb{X}^2\)</span> with <span class="math inline">\(x_1 \neq x_2\)</span> almost surely under the prior on <span class="math inline">\(f\)</span>.</p></li>
+<li><p><strong>Expected difference in utility is proportional to probability of greater utility</strong> <span class="math inline">\(\exists \Delta \geq \delta&gt;0\)</span> s.t. <span class="math inline">\(\forall \mathcal{D}^{(n)} \text{and} \forall x, y \in \mathbb{X}\)</span> (potentially depending on <span class="math inline">\(\mathcal{D}^{(n)}\)</span>), <span class="math display">\[\delta \mathbf{P}^{(n)}(f(x)&gt;f(y)) \leq \mathbf{E}^{(n)}\left[\{f(x)-f(y)\}^{+}\right] \leq \Delta \mathbf{P}^{(n)}(f(x)&gt;f(y))\]</span> almost surely under the prior on <span class="math inline">\(f\)</span>.</p></li>
+</ol>
+<p>Further lemmas leading to a proof of Theorem <a href="#th:quebo_regret" data-reference-type="ref" data-reference="th:quebo_regret">[th:quebo_regret]</a> is given in <span class="citation" data-cites="astudillo2023qeubodecisiontheoreticacquisitionfunction">(<a href="#ref-astudillo2023qeubodecisiontheoreticacquisitionfunction" role="doc-biblioref">Astudillo et al. 2023</a>)</span> Section B.</p>
+</section>
+<section id="qei-regret" class="level4 unnumbered">
+<h4 class="unnumbered anchored" data-anchor-id="qei-regret">qEI Regret</h4>
+<p>The following theorem shows that, under the same assumptions used for qEUBO regret, simple regret of qEI can fail to converge to 0.</p>
+<div class="theorem">
+<p>There exists a problem instance (i.e., <span class="math inline">\(\mathbb{X}\)</span> and Bayesian prior distribution over f) satisfying the assumptions described in Theorem <a href="#th:quebo_regret" data-reference-type="ref" data-reference="th:quebo_regret">[th:quebo_regret]</a> such that if the sequence of queries is chosen by maximizing qEI, then <span class="math inline">\(\mathbf{E}\left[f\left(x^*\right)-\right.\)</span> <span class="math inline">\(\left.f\left(\widehat{x}_n^*\right)\right] \geq R\)</span> for all <span class="math inline">\(n\)</span>, for a constant <span class="math inline">\(R&gt;0\)</span>.</p>
+</div>
+<div class="proof">
+<p><span class="proof-title"><em>Proof</em>. </span><em>Proof.</em> Let <span class="math inline">\(X = \{1, 2, 3, 4\}\)</span> and consider the functions <span class="math inline">\(f_i:X \rightarrow R\)</span>, for <span class="math inline">\(i=1,2,3,4\)</span>, given by <span class="math inline">\(f_i(1) = -1\)</span> and <span class="math inline">\(f_i(2) = 0\)</span> for all <span class="math inline">\(i\)</span>, and <span class="math display">\[\begin{aligned}
+    f_1(x) = \begin{cases}
+    1, &amp;\ x=3\\
+    \frac{1}{2}, &amp;\ x=4
+    \end{cases},
+\hspace{0.5cm}
+f_2(x) = \begin{cases}
+    \frac{1}{2}, &amp;\ x=3\\
+    1, &amp;\ x=4
+    \end{cases},
+\hspace{0.5cm}
+f_3(x) = \begin{cases}
+    -\frac{1}{2}, &amp;\ x=3\\
+    -1, &amp;\ x=4
+    \end{cases},
+\hspace{0.5cm}
+f_4(x) = \begin{cases}
+    -1, &amp;\ x=3\\
+    -\frac{1}{2}, &amp;\ x=4
+    \end{cases}.
+\end{aligned}\]</span></p>
+<p>Let <span class="math inline">\(p\)</span> be a number with <span class="math inline">\(0 &lt; p &lt; 1/3\)</span> and set <span class="math inline">\(q=1-p\)</span>. We consider a prior distribution on <span class="math inline">\(f\)</span> with support <span class="math inline">\(\{f_i\}_{i=1}^4\)</span> such that <span class="math display">\[\begin{aligned}
+p_i = \prob(f=f_i) =   \begin{cases}
+                        p/2, \  i =1,2,\\
+                        q/2, \ i=3,4.
+                        \end{cases}
+\end{aligned}\]</span> We also assume the user’s response likelihood is given by <span class="math inline">\(\prob(r(X)=1\mid f(x_1) &gt; f(x_2)) = a\)</span> for some <span class="math inline">\(a\)</span> such that <span class="math inline">\(1/2 &lt; a &lt; 1\)</span>,</p>
+<p>Let <span class="math inline">\(D^{(n)}\)</span> denote the set of observations up to time <span class="math inline">\(n\)</span> and let <span class="math inline">\(p_i^{(n)} = \prob(f=f_i \mid \D^{(n)})\)</span> for <span class="math inline">\(i=1,2,3,4\)</span>. We let the initial data set be <span class="math inline">\(\D^{(0)} = \{(X^{(0)}, r^{(0)})\}\)</span>, where <span class="math inline">\(X^{(0)}= (1,2)\)</span>. We will prove that the following statements are true for all <span class="math inline">\(n\geq 0\)</span>.</p>
+<ol type="1">
+<li><p><span class="math inline">\(p_i^{(n)} &gt; 0\)</span> for <span class="math inline">\(i=1,2,3,4\)</span>.</p></li>
+<li><p><span class="math inline">\(p_1^{(n)} &lt; \frac{1}{2}p_3^{(n)}\)</span> and <span class="math inline">\(p_2^{(n)} &lt; \frac{1}{2}p_4^{(n)}\)</span>.</p></li>
+<li><p><span class="math inline">\(\argmax_{x\in\X}\E^{(n)}[f(x)]=\{2\}\)</span>.</p></li>
+<li><p><span class="math inline">\(\argmax_{X\in\X^2}\qei^{(n)}(X) = \{(3, 4)\}\)</span>.</p></li>
+</ol>
+<p>We prove this by induction over <span class="math inline">\(n\)</span>. We begin by proving this for <span class="math inline">\(n=0\)</span>. Since <span class="math inline">\(f_i(1) &lt; f_i(2)\)</span> for all <span class="math inline">\(i\)</span>, the posterior distribution on <span class="math inline">\(f\)</span> given <span class="math inline">\(\D^{(0)}\)</span> remains the same as the prior; i.e., <span class="math inline">\(p_i^{(0)} = p_i\)</span> for <span class="math inline">\(i=1,2,3,4\)</span>. Using this, statements 1 and 2 can be easily verified. Now note that <span class="math inline">\(\E^{(0)}[f(1)]=-1\)</span>, <span class="math inline">\(\E^{(0)}[f(2)]=0\)</span>, and <span class="math inline">\(\E^{(0)}[f(3)] = \E^{(0)}[f(4)] = \frac{3}{2}(p - q)\)</span>. Since <span class="math inline">\(p &lt; q\)</span>, it follows that <span class="math inline">\(\argmax_{x\in\X}\E^{(n)}[f(x)]=\{2\}\)</span>; i.e., statement 3 holds. Finally, since <span class="math inline">\(\max_{x\in\{1,2\}}\E^{(0)}[f(x)] = 0\)</span>, the qEI acquisition function at time <span class="math inline">\(n=0\)</span> is given by <span class="math inline">\(\qei^{(0)}(X) = \E^{(0)}[\{\max\{f(x_1), f(x_2)\}\}^+]\)</span>. A direct calculation can now be performed to verify that statement 4 holds. This completes the base case.</p>
+<p>Now suppose statements 1-4 hold for some <span class="math inline">\(n\geq 0\)</span>. Since <span class="math inline">\(X^{(n+1)} = (3, 4)\)</span>, the posterior distribution on <span class="math inline">\(f\)</span> given <span class="math inline">\(D^{(n+1)}\)</span> is given by <span class="math display">\[\begin{aligned}
+p_i^{(n+1)} \propto \begin{cases}
+                        p_i^{(n)}\ell, \ i=1,3,\\
+                         p_i^{(n)} (1 - \ell), \ i=2,4,
+                        \end{cases}
+\end{aligned}\]</span> where <span class="math display">\[\ell = a I\{r^{(n+1)} = 1\} + (1-a)I\{r^{(n+1)} = 2\}.\]</span> Observe that <span class="math inline">\(0&lt; \ell &lt; 1\)</span> since <span class="math inline">\(0 &lt; a &lt; 1\)</span>. Thus, <span class="math inline">\(\ell &gt; 0\)</span> and <span class="math inline">\(1-\ell &gt; 0\)</span>. Since <span class="math inline">\(p_i^{(n)} &gt; 0\)</span> by the induction hypothesis, it follows from this that <span class="math inline">\(p_i^{(n+1)} &gt; 0\)</span> for <span class="math inline">\(i=1,2,3,4\)</span>. Moreover, since <span class="math inline">\(p_i^{(n+1)} \propto p_i^{(n)}\ell\)</span> for <span class="math inline">\(i=1,3\)</span> and <span class="math inline">\(p_1^{(n)} &lt; \frac{1}{2}p_3^{(n)}\)</span> by the induction hypothesis, it follows that <span class="math inline">\(p_1^{(n+1)} &lt; \frac{1}{2}p_3^{(n+1)}\)</span>. Similarly, <span class="math inline">\(p_2^{(n+1)} &lt; \frac{1}{2}p_4^{(n+1)}\)</span>. Thus, statements 1 and 2 hold at time <span class="math inline">\(n+1\)</span>.</p>
+<p>Now observe that <span class="math display">\[\begin{aligned}
+    \E^{(n+1)}[f(3)] &amp;= p_1^{(n+1)} + \frac{1}{2}p_2^{(n+1)} - \frac{1}{2}p_3^{(n+1)} - p_4^{(n+1)}\\
+    &amp;= \left(p_1^{(n+1)} - \frac{1}{2}p_3^{(n+1)}\right) + \left(\frac{1}{2}p_2^{(n+1)} - p_4^{(n+1)}\right)\\
+    &amp;\leq \left(p_1^{(n+1)} - \frac{1}{2}p_3^{(n+1)}\right) + \left(p_2^{(n+1)} - \frac{1}{2}p_4^{(n+1)}\right)\\
+    &amp;\leq 0,
+\end{aligned}\]</span> where the last inequality holds since <span class="math inline">\(p_1^{(n+1)} &lt; \frac{1}{2}p_3^{(n+1)}\)</span> and <span class="math inline">\(p_2^{(n+1)} &lt; \frac{1}{2}p_4^{(n+1)}\)</span>. Similarly, we see that <span class="math inline">\(\E^{(n+1)}[f(4)] \leq 0\)</span>. Since <span class="math inline">\(\E^{(n+1)}[f(1)]=-1\)</span> and <span class="math inline">\(\E^{(n+1)}[f(2)]=0\)</span>, it follows that <span class="math inline">\(\argmax_{x\in\X}\E^{(n+1)}[f(x)]=\{2\}\)</span>; i.e., statement 3 holds at time <span class="math inline">\(n+1\)</span>.</p>
+<p>Since <span class="math inline">\(\max_{x\in\X}\E^{(0)}[f(x)] = 0\)</span>, the qEI acquisition function at time <span class="math inline">\(n+1\)</span> is given by <span class="math inline">\(\qei^{(n+1)}(X) = \E^{(n+1)}[\{\max\{f(x_1), f(x_2)\}\}^+]\)</span>. Since <span class="math inline">\(f(1) \leq f(x)\)</span> almost surely under the prior for all <span class="math inline">\(x\in\X\)</span>, there is always a maximizer of qEI that does not contain <span class="math inline">\(1\)</span>. Thus, to find the maximizer of qEI, it suffices to analyse its value at the pairs <span class="math inline">\((2, 3)\)</span>, <span class="math inline">\((3,4)\)</span> and <span class="math inline">\((4,2)\)</span>. We have <span class="math display">\[\qei^{(n+1)}(2, 3) = p_1^{(n+1)} + 1/2 p_2^{(n+1)},\]</span> <span class="math display">\[\operatorname{qEI}^{(n+1)}(3, 4) = p_1^{(n+1)} + p_2^{(n+1)}\]</span> and <span class="math display">\[\operatorname{qEI}^{(n+1)}(4, 2) = 1/2p_1^{(n+1)} + p_2^{(n+1)}.\]</span> Since <span class="math inline">\(p_1^{(n+1)} &gt; 0\)</span> and <span class="math inline">\(p_2^{(n+1)} &gt; 0\)</span>, it follows that <span class="math inline">\(\argmax_{X \in X^2}\text{qEI}^{(n+1)}(X) = \{(3, 4)\}\)</span>, which concludes the proof by induction.</p>
+<p>Finally, since <span class="math inline">\(\argmax_{x\in X}\E^{(n)}[f(x)]=\{2\}\)</span> for all <span class="math inline">\(n\)</span>, the Bayesian simple regret of qEI is given by <span class="math display">\[\begin{aligned}
+    \E\left[f(x^*) - f(2)\right] &amp;= \sum_{i=1}p_i\left(\max_{x\in X}f_i(x) - f_i(2)\right)\\
+    &amp;= p
+\end{aligned}\]</span> for all <span class="math inline">\(n\)</span>. ◻</p>
+</div>
+</section>
+<section id="pop-bo-regret" class="level4 unnumbered">
+<h4 class="unnumbered anchored" data-anchor-id="pop-bo-regret">POP-BO Regret</h4>
+<p>Commonly used kernel functions within the RKHS are:</p>
+<ol type="1">
+<li><p>Linear: <span class="math display">\[k(x, \bar{x})=x^{\top} \bar{x} .\]</span></p></li>
+<li><p>Squared Exponential (SE): <span class="math display">\[k(x, \bar{x})=\sigma_{\mathrm{SE}}^2 \exp \left\{-\frac{\|x-\bar{x}\|^2}{l^2}\right\},\]</span> where <span class="math inline">\(\sigma_{\mathrm{SE}}^2\)</span> is the variance parameter and <span class="math inline">\(l\)</span> is the lengthscale parameter.</p></li>
+<li><p>Matérn: <span class="math display">\[k(x, \bar{x})=\frac{2^{1-\nu}}{\Gamma(\nu)}\left(\sqrt{2 \nu} \frac{\|x-\bar{x}\|}{\rho}\right)^\nu K_\nu\left(\sqrt{2 \nu} \frac{\|x-\bar{x}\|}{\rho}\right),\]</span> where <span class="math inline">\(\rho\)</span> and <span class="math inline">\(\nu\)</span> are the two positive parameters of the kernel function, <span class="math inline">\(\Gamma\)</span> is the gamma function, and <span class="math inline">\(K_\nu\)</span> is the modified Bessel function of the second kind. <span class="math inline">\(\nu\)</span> captures the smoothness of the kernel function.</p></li>
+</ol>
+<p>With the definition of Bayesian simple regret, we have the following theorem defining the regret bound:</p>
+<div class="theorem">
+<p>With probability at least <span class="math inline">\(1-\delta\)</span>, the cumulative regret of POP-BO satisfies, <span class="math display">\[R_T=\mathcal{O}\left(\sqrt{\beta_T \gamma_T^{f f^{\prime}} T}\right),\]</span> where <span class="math display">\[\beta_T=\beta(1 / T, \delta, T)=\mathcal{O}\left(\sqrt{T \log \frac{T \mathcal{N}\left(\mathcal{B}_f, 1 / T,\|\cdot\|_{\infty}\right)}{\delta}}\right).\]</span></p>
+</div>
+<p>The guaranteed convergence rate is characterised as:</p>
+<div class="theorem">
+<p>[]{#th: popbo_converge label=“th: popbo_converge”} Let <span class="math inline">\(t^{\star}\)</span> be defined as in Eq. (19). With probability at least <span class="math inline">\(1-\delta\)</span>, <span class="math display">\[f\left(x^{\star}\right)-f\left(x_{t^{\star}}\right) \leq \mathcal{O}\left(\frac{\sqrt{\beta_T \gamma_T^{f f^{\prime}}}}{\sqrt{T}}\right)\]</span></p>
+</div>
+<p>Theorem <a href="#th:%20popbo_converge" data-reference-type="ref" data-reference="th: popbo_converge">[th: popbo_converge]</a> highlights that by minimizing the known term <span class="math inline">\(2\left(2 B+\lambda^{-1 / 2} \sqrt{\beta\left(\epsilon, \frac{\delta}{2}, t\right)}\right) \sigma_t^{f f^{\prime}}\left(\left(x_t, x_t^{\prime}\right)\right)\)</span>, the reported final solution <span class="math inline">\(x_{t^{\star}}\)</span> has a guaranteed convergence rate.</p>
+<p>Further kernel-specific regret bounds for POP-BO are calculated as follows:</p>
+<div class="theorem">
+<p>Setting <span class="math inline">\(\epsilon=1 / T\)</span> and running our POP-BO algorithm in Alg. 1,</p>
+<ol type="1">
+<li><p>If <span class="math inline">\(k(x, y)=\langle x, y\rangle\)</span>, we have, <span class="math display">\[R_T=\mathcal{O}\left(T^{3 / 4}(\log T)^{3 / 4}\right) .\]</span></p></li>
+<li><p>If <span class="math inline">\(k(x, y)\)</span> is a squared exponential kernel, we have, <span class="math display">\[R_T=\mathcal{O}\left(T^{3 / 4}(\log T)^{3 / 4(d+1)}\right) .\]</span></p></li>
+<li><p>If <span class="math inline">\(k(x, y)\)</span> is a Matérn kernel, we have, <span class="math display">\[\left.R_T=\mathcal{O}\left(T^{3 / 4}(\log T)^{3 / 4} T^{\frac{d}{\nu}\left(\frac{1}{4}+\frac{d+1}{4+2(d+1)^d / \nu}\right.}\right)\right).\]</span></p></li>
+</ol>
+</div>
+
+
+</section>
+</section>
+</section>
+<section id="bibliography" class="level1 unnumbered">
+<h1 class="unnumbered">References</h1>
+<div id="refs" class="references csl-bib-body hanging-indent" data-entry-spacing="0" role="list">
+<div id="ref-astudillo2023qeubodecisiontheoreticacquisitionfunction" class="csl-entry" role="listitem">
+Astudillo, Raul, Zhiyuan Jerry Lin, Eytan Bakshy, and Peter I. Frazier. 2023. <span>“qEUBO: A Decision-Theoretic Acquisition Function for Preferential Bayesian Optimization.”</span> <a href="https://arxiv.org/abs/2303.15746">https://arxiv.org/abs/2303.15746</a>.
+</div>
+<div id="ref-auer_cesa-bianchi_fischer_2002" class="csl-entry" role="listitem">
+Auer, Peter, Nicolò Cesa-Bianchi, and Paul Fischer. 2002. <span>“Finite-Time Analysis of the Multiarmed Bandit Problem.”</span> <em>Machine Learning</em> 47 (2). <a href="https://doi.org/10.1023/A:1013689704352">https://doi.org/10.1023/A:1013689704352</a>.
+</div>
+<div id="ref-bastani2020online" class="csl-entry" role="listitem">
+Bastani, Hamsa, and Mohsen Bayati. 2020. <span>“Online Decision Making with High-Dimensional Covariates.”</span> <em>Operations Research</em> 68 (1): 276–94. <a href="https://doi.org/10.1287/opre.2019.1902">https://doi.org/10.1287/opre.2019.1902</a>.
+</div>
+<div id="ref-bouneffouf2012a" class="csl-entry" role="listitem">
+Bouneffouf, Djallel, Amel Bouzeghoub, and Alda Lopes Gançarski. 2012. <span>“A Contextual-Bandit Algorithm for Mobile Context-Aware Recommender System.”</span> In <em>Neural Information Processing</em>, edited by Tingwen Huang, Zhigang Zeng, Chuandong Li, and Chi Sing Leung, 324–31. Berlin, Heidelberg: Springer Berlin Heidelberg.
+</div>
+<div id="ref-bouneffouf2020survey" class="csl-entry" role="listitem">
+Bouneffouf, Djallel, Irina Rish, and Charu Aggarwal. 2020. <span>“Survey on Applications of Multi-Armed and Contextual Bandits.”</span> In <em>2020 IEEE Congress on Evolutionary Computation (CEC)</em>, 1–8. Glasgow, United Kingdom: IEEE Press. <a href="https://doi.org/10.1109/CEC48606.2020.9185782">https://doi.org/10.1109/CEC48606.2020.9185782</a>.
+</div>
+<div id="ref-bouneffouf2017bandit" class="csl-entry" role="listitem">
+Bouneffouf, Djallel, Irina Rish, and Guillermo A. Cecchi. 2017. <span>“Bandit Models of Human Behavior: Reward Processing in Mental Disorders.”</span> In <em>Artificial General Intelligence</em>, edited by Tom Everitt, Ben Goertzel, and Alexey Potapov, 237–48. Cham: Springer International Publishing.
+</div>
+<div id="ref-ding2019interactive" class="csl-entry" role="listitem">
+Ding, Kaize, Jundong Li, and Huan Liu. 2019. <span>“Interactive Anomaly Detection on Attributed Networks.”</span> In <em>Proceedings of the Twelfth ACM International Conference on Web Search and Data Mining</em>, 357–65. WSDM ’19. New York, NY, USA: Association for Computing Machinery. <a href="https://doi.org/10.1145/3289600.3290964">https://doi.org/10.1145/3289600.3290964</a>.
+</div>
+<div id="ref-Contextual_Dueling" class="csl-entry" role="listitem">
+Dudík, Miroslav, Katja Hofmann, Robert E. Schapire, Aleksandrs Slivkins, and Masrour Zoghi. 2015. <span>“Contextual Dueling Bandits.”</span> In <em>Proceedings of the 28th Conference on Learning Theory</em>, edited by Peter Grünwald, Elad Hazan, and Satyen Kale, 40:563–87. Proceedings of Machine Learning Research. Paris, France: PMLR. <a href="https://proceedings.mlr.press/v40/Dudik15.html">https://proceedings.mlr.press/v40/Dudik15.html</a>.
+</div>
+<div id="ref-huo2017risk" class="csl-entry" role="listitem">
+Huo, Xiaoguang, and Feng Fu. 2017. <span>“Risk-Aware Multi-Armed Bandit Problem with Application to Portfolio Selection.”</span> <em>Royal Society Open Science</em> 4 (November). <a href="https://doi.org/10.1098/rsos.171377">https://doi.org/10.1098/rsos.171377</a>.
+</div>
+<div id="ref-kahneman_tversky_1979" class="csl-entry" role="listitem">
+Kahneman, Daniel, and Amos Tversky. 1979. <span>“Prospect Theory: Analysis of Decision Under Risk.”</span> <em>Econometrica</em> 47 (2). <a href="https://doi.org/10.2307/1914185">https://doi.org/10.2307/1914185</a>.
+</div>
+<div id="ref-LAI19854" class="csl-entry" role="listitem">
+Lai, T. L, and Herbert Robbins. 1985. <span>“Asymptotically Efficient Adaptive Allocation Rules.”</span> <em>Advances in Applied Mathematics</em> 6 (1): 4–22. https://doi.org/<a href="https://doi.org/10.1016/0196-8858(85)90002-8">https://doi.org/10.1016/0196-8858(85)90002-8</a>.
+</div>
+<div id="ref-liu2018customized" class="csl-entry" role="listitem">
+Liu, Bing, Tong Yu, Ian Lane, and Ole J. Mengshoel. 2018. <span>“Customized Nonlinear Bandits for Online Response Selection in Neural Conversation Models.”</span> In <em>Proceedings of the Thirty-Second AAAI Conference on Artificial Intelligence and Thirtieth Innovative Applications of Artificial Intelligence Conference and Eighth AAAI Symposium on Educational Advances in Artificial Intelligence</em>. AAAI’18/IAAI’18/EAAI’18. New Orleans, Louisiana, USA: AAAI Press.
+</div>
+<div id="ref-mansour2019bayesianincentivecompatiblebanditexploration" class="csl-entry" role="listitem">
+Mansour, Yishay, Aleksandrs Slivkins, and Vasilis Syrgkanis. 2019. <span>“Bayesian Incentive-Compatible Bandit Exploration.”</span> <a href="https://arxiv.org/abs/1502.04147">https://arxiv.org/abs/1502.04147</a>.
+</div>
+<div id="ref-mansour2021bayesianexplorationincentivizingexploration" class="csl-entry" role="listitem">
+Mansour, Yishay, Aleksandrs Slivkins, Vasilis Syrgkanis, and Zhiwei Steven Wu. 2021. <span>“Bayesian Exploration: Incentivizing Exploration in Bayesian Games.”</span> <a href="https://arxiv.org/abs/1602.07570">https://arxiv.org/abs/1602.07570</a>.
+</div>
+<div id="ref-misra2019dynamic" class="csl-entry" role="listitem">
+Misra, Kanishka, Eric M. Schwartz, and Jacob Abernethy. 2019. <span>“Dynamic Online Pricing with Incomplete Information Using Multiarmed Bandit Experiments.”</span> <em>Marketing Science</em> 38 (2): 226–52. <a href="https://doi.org/10.1287/mksc.2018.1129">https://doi.org/10.1287/mksc.2018.1129</a>.
+</div>
+<div id="ref-perez2018contextual" class="csl-entry" role="listitem">
+perez, julien, and Tomi Silander. 2018. <span>“Contextual Memory Bandit for Pro-Active Dialog Engagement.”</span> <a href="https://openreview.net/forum?id=SJiHOSeR-">https://openreview.net/forum?id=SJiHOSeR-</a>.
+</div>
+<div id="ref-russo2015informationtheoreticanalysisthompsonsampling" class="csl-entry" role="listitem">
+Russo, Daniel, and Benjamin Van Roy. 2015. <span>“An Information-Theoretic Analysis of Thompson Sampling.”</span> <a href="https://arxiv.org/abs/1403.5341">https://arxiv.org/abs/1403.5341</a>.
+</div>
+<div id="ref-shen2015portfolio" class="csl-entry" role="listitem">
+Shen, Weiwei, Jun Wang, Yu-Gang Jiang, and Hongyuan Zha. 2015. <span>“Portfolio Choices with Orthogonal Bandit Learning.”</span> In <em>Proceedings of the 24th International Conference on Artificial Intelligence</em>, 974–80. IJCAI’15. Buenos Aires, Argentina: AAAI Press.
+</div>
+<div id="ref-advancements_dueling" class="csl-entry" role="listitem">
+Sui, Yanan, Masrour Zoghi, Katja Hofmann, and Yisong Yue. 2018. <span>“Advancements in Dueling Bandits.”</span> <em>Proceedings of the Twenty-Seventh International Joint Conference on Artificial Intelligence</em>. <a href="https://doi.org/10.24963/ijcai.2018/776">https://doi.org/10.24963/ijcai.2018/776</a>.
+</div>
+<div id="ref-tucker2020preferencebased" class="csl-entry" role="listitem">
+Tucker, Maegan, Ellen Novoseller, Claudia Kann, Yanan Sui, Yisong Yue, Joel Burdick, and Aaron D. Ames. 2020. <span>“Preference-Based Learning for Exoskeleton Gait Optimization.”</span> <a href="https://arxiv.org/abs/1909.12316">https://arxiv.org/abs/1909.12316</a>.
+</div>
+<div id="ref-upadhyay2019a" class="csl-entry" role="listitem">
+Upadhyay, Sohini, Mayank Agarwal, Djallel Bouneffouf, and Yasaman Khazaeni. 2019. <span>“A Bandit Approach to Posterior Dialog Orchestration Under a Budget.”</span>
+</div>
+<div id="ref-wu2018parallelknowledgegradientmethod" class="csl-entry" role="listitem">
+Wu, Jian, and Peter I. Frazier. 2018. <span>“The Parallel Knowledge Gradient Method for Batch Bayesian Optimization.”</span> <a href="https://arxiv.org/abs/1606.04414">https://arxiv.org/abs/1606.04414</a>.
+</div>
+<div id="ref-xu2024principledpreferentialbayesianoptimization" class="csl-entry" role="listitem">
+Xu, Wenjie, Wenbin Wang, Yuning Jiang, Bratislav Svetozarevic, and Colin N. Jones. 2024. <span>“Principled Preferential Bayesian Optimization.”</span> <a href="https://arxiv.org/abs/2402.05367">https://arxiv.org/abs/2402.05367</a>.
+</div>
+<div id="ref-YUE20121538" class="csl-entry" role="listitem">
+Yue, Yisong, Josef Broder, Robert Kleinberg, and Thorsten Joachims. 2012. <span>“The k-Armed Dueling Bandits Problem.”</span> <em>Journal of Computer and System Sciences</em> 78 (5): 1538–56. https://doi.org/<a href="https://doi.org/10.1016/j.jcss.2011.12.028">https://doi.org/10.1016/j.jcss.2011.12.028</a>.
+</div>
+<div id="ref-IR" class="csl-entry" role="listitem">
+Yue, Yisong, and Thorsten Joachims. 2009. <span>“Interactively Optimizing Information Retrieval Systems as a Dueling Bandits Problem.”</span> <em>Proceedings of the 26th Annual International Conference on Machine Learning</em>. <a href="https://doi.org/10.1145/1553374.1553527">https://doi.org/10.1145/1553374.1553527</a>.
+</div>
+<div id="ref-fgts_cdb" class="csl-entry" role="listitem">
+Zhang, Tong. 2021. <span>“Feel-Good Thompson Sampling for Contextual Bandits and Reinforcement Learning.”</span> <em>CoRR</em> abs/2110.00871. <a href="https://arxiv.org/abs/2110.00871">https://arxiv.org/abs/2110.00871</a>.
+</div>
+<div id="ref-zhou2017large" class="csl-entry" role="listitem">
+Zhou, Qian, XiaoFang Zhang, Jin Xu, and Bin Liang. 2017. <span>“Large-Scale Bandit Approaches for Recommender Systems.”</span> In <em>Neural Information Processing</em>, edited by Derong Liu, Shengli Xie, Yuanqing Li, Dongbin Zhao, and El-Sayed M. El-Alfy, 811–21. Cham: Springer International Publishing.
+</div>
+</div>
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const disableStylesheet = (stylesheets) => {
+    for (let i=0; i < stylesheets.length; i++) {
+      const stylesheet = stylesheets[i];
+      stylesheet.rel = 'prefetch';
+    }
+  }
+  const enableStylesheet = (stylesheets) => {
+    for (let i=0; i < stylesheets.length; i++) {
+      const stylesheet = stylesheets[i];
+      stylesheet.rel = 'stylesheet';
+    }
+  }
+  const manageTransitions = (selector, allowTransitions) => {
+    const els = window.document.querySelectorAll(selector);
+    for (let i=0; i < els.length; i++) {
+      const el = els[i];
+      if (allowTransitions) {
+        el.classList.remove('notransition');
+      } else {
+        el.classList.add('notransition');
+      }
+    }
+  }
+  const toggleGiscusIfUsed = (isAlternate, darkModeDefault) => {
+    const baseTheme = document.querySelector('#giscus-base-theme')?.value ?? 'light';
+    const alternateTheme = document.querySelector('#giscus-alt-theme')?.value ?? 'dark';
+    let newTheme = '';
+    if(darkModeDefault) {
+      newTheme = isAlternate ? baseTheme : alternateTheme;
+    } else {
+      newTheme = isAlternate ? alternateTheme : baseTheme;
+    }
+    const changeGiscusTheme = () => {
+      // From: https://github.com/giscus/giscus/issues/336
+      const sendMessage = (message) => {
+        const iframe = document.querySelector('iframe.giscus-frame');
+        if (!iframe) return;
+        iframe.contentWindow.postMessage({ giscus: message }, 'https://giscus.app');
+      }
+      sendMessage({
+        setConfig: {
+          theme: newTheme
+        }
+      });
+    }
+    const isGiscussLoaded = window.document.querySelector('iframe.giscus-frame') !== null;
+    if (isGiscussLoaded) {
+      changeGiscusTheme();
+    }
+  }
+  const toggleColorMode = (alternate) => {
+    // Switch the stylesheets
+    const alternateStylesheets = window.document.querySelectorAll('link.quarto-color-scheme.quarto-color-alternate');
+    manageTransitions('#quarto-margin-sidebar .nav-link', false);
+    if (alternate) {
+      enableStylesheet(alternateStylesheets);
+      for (const sheetNode of alternateStylesheets) {
+        if (sheetNode.id === "quarto-bootstrap") {
+          toggleBodyColorMode(sheetNode);
+        }
+      }
+    } else {
+      disableStylesheet(alternateStylesheets);
+      toggleBodyColorPrimary();
+    }
+    manageTransitions('#quarto-margin-sidebar .nav-link', true);
+    // Switch the toggles
+    const toggles = window.document.querySelectorAll('.quarto-color-scheme-toggle');
+    for (let i=0; i < toggles.length; i++) {
+      const toggle = toggles[i];
+      if (toggle) {
+        if (alternate) {
+          toggle.classList.add("alternate");     
+        } else {
+          toggle.classList.remove("alternate");
+        }
+      }
+    }
+    // Hack to workaround the fact that safari doesn't
+    // properly recolor the scrollbar when toggling (#1455)
+    if (navigator.userAgent.indexOf('Safari') > 0 && navigator.userAgent.indexOf('Chrome') == -1) {
+      manageTransitions("body", false);
+      window.scrollTo(0, 1);
+      setTimeout(() => {
+        window.scrollTo(0, 0);
+        manageTransitions("body", true);
+      }, 40);  
+    }
+  }
+  const isFileUrl = () => { 
+    return window.location.protocol === 'file:';
+  }
+  const hasAlternateSentinel = () => {  
+    let styleSentinel = getColorSchemeSentinel();
+    if (styleSentinel !== null) {
+      return styleSentinel === "alternate";
+    } else {
+      return false;
+    }
+  }
+  const setStyleSentinel = (alternate) => {
+    const value = alternate ? "alternate" : "default";
+    if (!isFileUrl()) {
+      window.localStorage.setItem("quarto-color-scheme", value);
+    } else {
+      localAlternateSentinel = value;
+    }
+  }
+  const getColorSchemeSentinel = () => {
+    if (!isFileUrl()) {
+      const storageValue = window.localStorage.getItem("quarto-color-scheme");
+      return storageValue != null ? storageValue : localAlternateSentinel;
+    } else {
+      return localAlternateSentinel;
+    }
+  }
+  const darkModeDefault = false;
+  let localAlternateSentinel = darkModeDefault ? 'alternate' : 'default';
+  // Dark / light mode switch
+  window.quartoToggleColorScheme = () => {
+    // Read the current dark / light value 
+    let toAlternate = !hasAlternateSentinel();
+    toggleColorMode(toAlternate);
+    setStyleSentinel(toAlternate);
+    toggleGiscusIfUsed(toAlternate, darkModeDefault);
+  };
+  // Ensure there is a toggle, if there isn't float one in the top right
+  if (window.document.querySelector('.quarto-color-scheme-toggle') === null) {
+    const a = window.document.createElement('a');
+    a.classList.add('top-right');
+    a.classList.add('quarto-color-scheme-toggle');
+    a.href = "";
+    a.onclick = function() { try { window.quartoToggleColorScheme(); } catch {} return false; };
+    const i = window.document.createElement("i");
+    i.classList.add('bi');
+    a.appendChild(i);
+    window.document.body.appendChild(a);
+  }
+  // Switch to dark mode if need be
+  if (hasAlternateSentinel()) {
+    toggleColorMode(true);
+  } else {
+    toggleColorMode(false);
+  }
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const onCopySuccess = function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  }
+  const getTextToCopy = function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+    text: getTextToCopy
+  });
+  clipboard.on('success', onCopySuccess);
+  if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+    // For code content inside modals, clipBoardJS needs to be initialized with a container option
+    // TODO: Check when it could be a function (https://github.com/zenorocha/clipboard.js/issues/860)
+    const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+      text: getTextToCopy,
+      container: window.document.getElementById('quarto-embedded-source-code-modal')
+    });
+    clipboardModal.on('success', onCopySuccess);
+  }
+    var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+    var mailtoRegex = new RegExp(/^mailto:/);
+      var filterRegex = new RegExp('/' + window.location.host + '/');
+    var isInternal = (href) => {
+        return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+    }
+    // Inspect non-navigation links and adorn them if external
+ 	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+    for (var i=0; i<links.length; i++) {
+      const link = links[i];
+      if (!isInternal(link.href)) {
+        // undo the damage that might have been done by quarto-nav.js in the case of
+        // links that we want to consider external
+        if (link.dataset.originalHref !== undefined) {
+          link.href = link.dataset.originalHref;
+        }
+      }
+    }
+  function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+    const config = {
+      allowHTML: true,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start',
+    };
+    if (contentFn) {
+      config.content = contentFn;
+    }
+    if (onTriggerFn) {
+      config.onTrigger = onTriggerFn;
+    }
+    if (onUntriggerFn) {
+      config.onUntrigger = onUntriggerFn;
+    }
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      if (note) {
+        return note.innerHTML;
+      } else {
+        return "";
+      }
+    });
+  }
+  const xrefs = window.document.querySelectorAll('a.quarto-xref');
+  const processXRef = (id, note) => {
+    // Strip column container classes
+    const stripColumnClz = (el) => {
+      el.classList.remove("page-full", "page-columns");
+      if (el.children) {
+        for (const child of el.children) {
+          stripColumnClz(child);
+        }
+      }
+    }
+    stripColumnClz(note)
+    if (id === null || id.startsWith('sec-')) {
+      // Special case sections, only their first couple elements
+      const container = document.createElement("div");
+      if (note.children && note.children.length > 2) {
+        container.appendChild(note.children[0].cloneNode(true));
+        for (let i = 1; i < note.children.length; i++) {
+          const child = note.children[i];
+          if (child.tagName === "P" && child.innerText === "") {
+            continue;
+          } else {
+            container.appendChild(child.cloneNode(true));
+            break;
+          }
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(container);
+        }
+        return container.innerHTML
+      } else {
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        return note.innerHTML;
+      }
+    } else {
+      // Remove any anchor links if they are present
+      const anchorLink = note.querySelector('a.anchorjs-link');
+      if (anchorLink) {
+        anchorLink.remove();
+      }
+      if (window.Quarto?.typesetMath) {
+        window.Quarto.typesetMath(note);
+      }
+      // TODO in 1.5, we should make sure this works without a callout special case
+      if (note.classList.contains("callout")) {
+        return note.outerHTML;
+      } else {
+        return note.innerHTML;
+      }
+    }
+  }
+  for (var i=0; i<xrefs.length; i++) {
+    const xref = xrefs[i];
+    tippyHover(xref, undefined, function(instance) {
+      instance.disable();
+      let url = xref.getAttribute('href');
+      let hash = undefined; 
+      if (url.startsWith('#')) {
+        hash = url;
+      } else {
+        try { hash = new URL(url).hash; } catch {}
+      }
+      if (hash) {
+        const id = hash.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note !== null) {
+          try {
+            const html = processXRef(id, note.cloneNode(true));
+            instance.setContent(html);
+          } finally {
+            instance.enable();
+            instance.show();
+          }
+        } else {
+          // See if we can fetch this
+          fetch(url.split('#')[0])
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.getElementById(id);
+            if (note !== null) {
+              const html = processXRef(id, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      } else {
+        // See if we can fetch a full url (with no hash to target)
+        // This is a special case and we should probably do some content thinning / targeting
+        fetch(url)
+        .then(res => res.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const htmlDoc = parser.parseFromString(html, "text/html");
+          const note = htmlDoc.querySelector('main.content');
+          if (note !== null) {
+            // This should only happen for chapter cross references
+            // (since there is no id in the URL)
+            // remove the first header
+            if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+              note.children[0].remove();
+            }
+            const html = processXRef(null, note);
+            instance.setContent(html);
+          } 
+        }).finally(() => {
+          instance.enable();
+          instance.show();
+        });
+      }
+    }, function(instance) {
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            div.style.left = 0;
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+        // Handle positioning of the toggle
+    window.addEventListener(
+      "resize",
+      throttle(() => {
+        elRect = undefined;
+        if (selectedAnnoteEl) {
+          selectCodeLines(selectedAnnoteEl);
+        }
+      }, 10)
+    );
+    function throttle(fn, ms) {
+    let throttle = false;
+    let timer;
+      return (...args) => {
+        if(!throttle) { // first call gets through
+            fn.apply(this, args);
+            throttle = true;
+        } else { // all the others get throttled
+            if(timer) clearTimeout(timer); // cancel #2
+            timer = setTimeout(() => {
+              fn.apply(this, args);
+              timer = throttle = false;
+            }, ms);
+        }
+      };
+    }
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+<nav class="page-navigation">
+  <div class="nav-page nav-page-previous">
+      <a href="./003-measure.html" class="pagination-link" aria-label="Model-Based Preference Optimization">
+        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text"><span class="chapter-number">3</span>&nbsp; <span class="chapter-title">Model-Based Preference Optimization</span></span>
+      </a>          
+  </div>
+  <div class="nav-page nav-page-next">
+      <a href="./005-align.html" class="pagination-link" aria-label="Human Values and AI Alignment">
+        <span class="nav-page-text"><span class="chapter-number">5</span>&nbsp; <span class="chapter-title">Human Values and AI Alignment</span></span> <i class="bi bi-arrow-right-short"></i>
+      </a>
+  </div>
+</nav>
+</div> <!-- /content -->
+
+
+
+
+<footer class="footer"><div class="nav-footer"><div class="nav-footer-center"><div class="toc-actions d-sm-block d-md-none"><ul><li><a href="https://github.com/sangttruong/mlhp/blob/main/004-optim.qmd" class="toc-action"><i class="bi bi-github"></i>View source</a></li><li><a href="https://github.com/sangttruong/mlhp/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></div></div></footer></body></html>

@@ -1,0 +1,3209 @@
+{{< include _setup.qmd >}}
+# Model-Based Preference Optimization
+
+Active learning implements the idea of improving one's current model by
+strategically querying new data and training on it. The new data starts
+unlabelled and could be costly to acquire or annotate. The general
+strategy for query selection is to predict what would happen if a
+prospective point were collected, annotated, and added to the training
+data. Within this decision process (Figure
+[1.1](#fig:schema){reference-type="ref" reference="fig:schema"}), the
+model is never actually trained on those prospective points. The
+estimate of the added value of a point can be correct, but it can also
+diverge from reality. If the strategy used is effective, then the model
+not only improves, but it could also do so using much less data than if
+it was trained on a dataset built manually, without exploiting model
+feedback.
+
+Active learning can enhance real-world systems that employ machine
+learning models. For example, active learning may be used to improve the
+computer vision models used in autonomous vehicles [@AL_app_autonomous],
+where driving scenes can take infinitely many forms and gathering an
+exhaustive data set is impossible. Instead, probing a model and
+understanding what type of data it would benefit from sounds more
+practical. In robotics, autonomous agents may query humans when unsure
+how to act or face new situations [@AL_app_robotics]. In this space,
+there is often a significant financial and time cost incurred for
+collecting data: the robot must act in real-time in the real world, and
+while parallelization is possible, being strategic about which examples
+should be collected to best benefit the model helps. In meteorology,
+active learning can help decide where to place additional sensors for
+weather predictions [@AL_app_sensors]. Sensor placement involves
+deploying teams of people to remote locations and expensive construction
+for an extra data point. Choosing these locations and where to allocate
+resources wisely interests governments and businesses. Active learning
+could also be employed to select data for fine-tuning LLMs for specific
+downstream tasks [@AL_app_LLMs]. In this space, it might be difficult to
+fully describe an NLP task one might want an LLM to solve. Often,
+instead of defining a task via a dataset of examples, it may be easier
+for the human to interact with the LLM for a specific use case, find
+holes in the model, and cover those using active learning.
+
+![General active learning system diagram: Current model trained on
+current data set $\mathcal{D}$, potential points
+$\tilde{x}_1...\tilde{x}_m$ are being investigated. One of them will be
+added to the data set. Relative to the model, a proxy highlights the
+relative value of each point to model improvement
+($v(\tilde{x}_1), \ldots, v(\tilde{x}_m)$), the point with maximum value
+is selected and added to $\mathcal{D}$. The cycle repeats until we
+collect enough data.](Figures/active_learning_schema.png){#fig:schema
+width="30%"}
+
+## Introduction to Active Preference Learning
+
+Imagine you are training a robot to assist people in feeding; how can
+you possibly allow robots to properly learn the required actions, how
+far to go, how to detect a mouth, and most importantly, human
+preferences? In most cases and research, robots learn from human
+demonstrations, watching many ways a person would do the task. However,
+such an approach is impractical as expert demonstrations are limited,
+and properly training a supervised learning model on such data will
+require huge datasets of many demonstrations. Another disadvantage is
+that such demonstrations depend on an individual human, so they are
+variable and difficult to collect. Alternatives to suboptimal
+demonstrations include approaches using pairwise comparisons, where two
+trajectories of an action are chosen, and the human evaluates which one
+is better, and physical corrections, where reward functions are learned
+from human-robot interactions with the help of a human along the action
+performed.
+
+In this chapter, we will cover the theory behind pairwise comparisons,
+extensions of the approach that overcome some of the challenges found in
+this space, and practical examples where such an approach will be
+helpful. Further, we will talk about using LLMs and their role in
+assisting robots through corrections, as well as the applications of
+such an approach.
+
+## Acquisition Function
+
+The proxy used to estimate the value of a point in the active learning
+decision loop can be of various flavors. We summarize some of the known
+active learning methods and the proxies they rely on:
+
+-   Expected model change [@AL_expmodelchange]: This approach focuses on
+    labeling points that would have the most impact on changing the
+    current model parameters.
+
+-   Expected error reduction [@AL_experrorredn]: Points that would most
+    effectively reduce the model's generalization error are labeled
+    using this strategy.
+
+-   Variance reduction [@AL_variance]: This approach labels points that
+    would minimize output variance, which is one component of error. By
+    selecting points that reduce variability in the model's predictions,
+    it aims to improve its overall performance.
+
+-   Uncertainty sampling [@AL_uncertainty]: Points for which the model
+    is least certain about the correct output are labeled using this
+    strategy.
+
+    -   Entropy Sampling: This technique computes the entropy of each
+        sample, and the one with the highest entropy is considered the
+        least certain.
+
+    -   Margin Sampling: The sample with the smallest difference between
+        the two highest class probabilities is deemed the most
+        uncertain.
+
+    -   Least Confident Sampling: The sample with the smallest best
+        probability is considered the most uncertain.
+
+-   User Centered Labeling Strategies [@AL_usercentered]: This approach
+    involves actively involving the user in the labeling process by
+    visualizing data through dimensionality reduction techniques. The
+    user then provides labels for the compiled data based on their
+    domain expertise and preferences. This strategy leverages user input
+    to improve the quality and relevance of the labeled data.
+
+-   Balance exploration and exploitation [@AL_exploreexploit]: This
+    strategy involves finding a balance between exploring new data and
+    exploiting existing knowledge. For example, the Active Thompson
+    Sampling (ATS) algorithm assigns a sampling distribution to the data
+    pool, samples a point from this distribution, and queries the oracle
+    for its label.
+
+-   Query by committee [@AL_committee]: This active learning strategy
+    involves training multiple models on labeled data and using them to
+    vote on the label for unlabeled data. Points for which the committee
+    of models disagrees the most are selected for labeling.
+
+-   Querying from diverse subspaces or partitions [@AL_partition]: When
+    using a forest of trees as the underlying model, the leaf nodes can
+    represent overlapping partitions of the feature space. This strategy
+    selects instances from non-overlapping or minimally overlapping
+    partitions for labeling.
+
+-   Conformal prediction [@AL_conformal]: This method predicts that a
+    new data point will have a label similar to old data points in some
+    specified way. The degree of similarity within the old examples is
+    used to estimate the confidence in the prediction.
+
+-   Mismatch-first farthest-traversal [@AL_mismatch]: This strategy
+    first prioritizes data points that are wrongly predicted by the
+    current model compared to the nearest-neighbor prediction. The
+    second criterion is the distance to previously selected data, with
+    preference given to those that are farthest away. The goal is to
+    optimize both the correction of mispredictions and the diversity of
+    the selected data.
+
+### Active Learning by Variance Reduction
+
+[@AL_variance] The first paper explored employs active learning to
+improve models using the proxy of *expected variance of the learner* for
+measuring the value of a prospective point if added to the training set.
+The idea is that at every iteration in the active learning process, in
+this work, they ask: "Which new point $\tilde{x} \sim P(X=x)$, for which
+the model currently believes $P(\tilde{Y}|\tilde{X}=\tilde{x})$, if
+annotated as $y(\tilde{x})$ and added to the training data
+$\mathcal{D}$, would potentially lower the *expected variance of the
+learner* across $P(X=x)$?\" We describe the expected learner variance
+proxy for model improvement in section
+[\[sec:ELV\]](#sec:ELV){reference-type="ref" reference="sec:ELV"}.
+
+In other words, what the authors claim is that, without the true label
+$y(\tilde{x})$ and *without retraining*, they visualize a *hypothetical*
+future where the model is actually trained on
+$(\tilde{x}, f(\tilde{x}))$, using $P(\tilde{Y}|\tilde{X}=\tilde{x})$ as
+a proxy for $y(\tilde{x})$. In the following sections we: define the
+expected learner variance (ELV)
+([\[sec:ELV\]](#sec:ELV){reference-type="ref" reference="sec:ELV"}),
+derive an active learning algorithm which employs ELV for model
+improvement ([\[sec:algo\]](#sec:algo){reference-type="ref"
+reference="sec:algo"}) and discuss emiprical results when this algorithm
+is used on two models, namely: a Gaussian mixture model and a
+locally-weighted regression model (fig
+[1.2](#fig:two_models){reference-type="ref"
+reference="fig:two_models"}), for which the ELV proxy can be computed
+accurately and efficiently.
+
+The authors derive a notion of expected learner variance starting from
+machine learning first principles, in a model and data-agnostic fashion
+to glean a general understanding of the proxy the authors plug into the
+general active learning process described in figure
+[1.1](#fig:schema){reference-type="ref" reference="fig:schema"}.
+
+If we are probing around a prospective point $x$ that we potentially
+could add to our dataset, we can consider the expected error at x
+(across choosable datasets $\mathcal{D}$ and annotations strategies
+$P(Y|X=x)$), where $y(x)$ is the true label of the point which we do not
+posess:
+$$\mathbb{E} _{P(Y|X=x), P(\mathcal{D})}[\ (\hat{y}(x; \mathcal{D}) - y(x))^2\ ]$$
+Note that the expectation wraps around the stochasticity in annotations
+and in the dataset $\mathcal{D}$ picked so far, used to train the
+learner $\hat{y}$. Since $\mathcal{D}$ is being picked, $P(\mathcal{D})$
+may be very different from the joint distribution of data points and
+their labels: $P(X=x,Y=y)$.
+
+Expanding the expectation to expose the bias-variance tradeoff (see
+[@bias_variance_orig_paper]) yields the following expression:
+$$\mathbb{E}_{y|x}[(y(x) - \mathbb{E}[y|x])^2] \\ + (\mathbb{E}_{\mathcal{D}}[\hat{y}(x; \mathcal{D})] - \mathbb{E}[y|x])^2 \\+ \mathbb{E}_{\mathcal{D}}[(\hat{y}(x; \mathcal{D}) - \mathbb{E}_{\mathcal{D}}[\hat{y}(x; \mathcal{D})])^2].$$
+
+The first, second and third additive terms characterize: the noise in
+the true annotation of $x$ which is independent of the learner, the
+learner squared bias at $x$ and the learner variance at $x$,
+respectively.
+
+Authors isolate the learner variance at $x$ and denote it by
+$\sigma_{\hat{y}}^2(x, \mathcal{D})$, namely:
+$$\sigma_{\hat{y}}^2(x, \mathcal{D}) = \mathbb{E}_{\mathcal{D}}[(\hat{y}(x; \mathcal{D}) - \mathbb{E}_{\mathcal{D}}[\hat{y}(x; \mathcal{D})])^2]$$
+
+The authors let
+$\bar{\mathcal{D}} = \mathcal{D} \cup (\tilde{x}, \tilde{y})$ represent
+the prospective *future* dataset where current dataset $\mathcal{D}$ is
+merged with prospective point $\tilde{x}$ and the label $\tilde{y}$
+which is our best estimate of its annotation. The authors estimate
+learner variance at $x$, if the learner was trained on
+$\bar{\mathcal{D}}$ as:
+$$\tilde{\sigma}_{\hat{y}}^2(x, \mathcal{\bar{D}})= \mathbb{E}_{\bar{\mathcal{D}}}[(\hat{y}(x; \bar{\mathcal{D}}) - \mathbb{E}_{\bar{\mathcal{D}}}[\hat{y}(x; \bar{\mathcal{D}})])^2]$$
+
+The *expected* learner variance, the proxy the authors are after, where
+the expectation is taken over our estimated belief
+$P(\tilde{Y}|\tilde{X}=\tilde{x})$ of the label $\tilde{y}$ is the
+following: $$\label{eqn:ELV_at_x}
+  \langle\tilde{\sigma}_{\hat{y}}^2(x, \mathcal{\bar{D}})\rangle= \mathbb{E}_{P(\tilde{Y} | \tilde{X}=\tilde{x})}[\tilde{\sigma}_{\hat{y}}^2]. \tag{1}$$
+
+We notice here that the key to being able to compute the ELV given a
+model, hinges on the ability to compute estimated belief
+$P(\tilde{Y}|\tilde{X}=\tilde{x})$ for the annotation $\tilde{y}$ of any
+prospective data point $\tilde{x}$.
+
+Finally, when deciding whether to include data point
+$(\tilde{x}, \tilde{y})$ into the training dataset, we are interested in
+the expected learner variance across the *entire input distribution*,
+which we characterize as the following integral over the input
+distribution:
+$$\int_x P(X=x) \langle\tilde{\sigma}_{\hat{y}}^2(x, \mathcal{\bar{D}})\rangle dx.$$
+
+We note to the reader that $P(X=x)$ is a distribution with
+potentially-infinite support and the authors do not compute this
+integral exactly. Instead, the computational estimate of that integral
+consists of sampling several points $x \sim P(X=x)$ and averaging the
+quantity inside the integral over these points until convergence using
+Monte-Carlo sampling approaches (see [@monte-carlo]). We refer the
+reader to the algorithm in
+[\[sec:algo\]](#sec:algo){reference-type="ref" reference="sec:algo"} for
+an exact instantiation of this idea.
+
+We note that the paper derives closed-form solutions to the expected
+learner variance (equation
+[\[eqn:ELV_at_x\]](#eqn:ELV_at_x){reference-type="eqref"
+reference="eqn:ELV_at_x"}) for two models (fig
+[1.2](#fig:two_models){reference-type="ref"
+reference="fig:two_models"}): (1) a mixture of Gaussian model and (2) a
+locally-weighted regression model (fig
+[1.2](#fig:two_models){reference-type="ref"
+reference="fig:two_models"}). We refer the reader to the paper for the
+mathematical derivation of those quantities. We cite the empirical
+results seen when training these two models in section
+[\[sec:empirical\]](#sec:empirical){reference-type="ref"
+reference="sec:empirical"}, where authors use the algorithm which they
+describe in [\[sec:algo\]](#sec:algo){reference-type="ref"
+reference="sec:algo"}, which in turn employs the expected learner
+variance they derived above, as a proxy for model improvement.
+
+[]{#sec:two_models label="sec:two_models"}
+
+![Two models explored empirically in
+[\[sec:empirical\]](#sec:empirical){reference-type="ref"
+reference="sec:empirical"}. These two models lead to closed-form,
+accurately and efficiently-computed expected learner variance which can
+be plugged into the algorithm described in
+[\[sec:algo\]](#sec:algo){reference-type="ref"
+reference="sec:algo"}.](Figures/1_two_models.png){#fig:two_models
+width="100%"}
+
+With the expected learner proxy defined
+([\[sec:ELV\]](#sec:ELV){reference-type="ref" reference="sec:ELV"}) for
+estimating how much a prospective data point would improve a model, the
+general active learning loop ([1.1](#fig:schema){reference-type="ref"
+reference="fig:schema"}) for the ELV proxy can be instantiated,
+specifically, in the form of the following algorithm:\
+\
+[]{#sec:algo label="sec:algo"} $\mathcal{D} = \{\}$, iterate until
+$\mathcal{D}$ is large enough:
+
+1.  Sample candidate points $\tilde{x}_1,\ldots,\tilde{x}_m$ from
+    $P(X=x)$
+
+2.  Compute current belief $P(\tilde{Y}|\tilde{X}=\tilde{x})$ for each
+    point
+
+3.  Calculate $\langle\tilde{\sigma}_{\hat{y}}^2(x, \mathcal{D})\rangle$
+    on each point using current beliefs from last step
+
+4.  Calculate ELV integral via Monte Carlo sampling from $P(X=x)$
+
+5.  Label point with lowest ELV:
+    $\tilde{x}^* \rightarrow y(\tilde{x}^*)$
+
+6.  $\mathcal{D} = \mathcal{D} \cup \{(\tilde{x}^*, y(\tilde{x}^*))\}$
+
+7.  Retrain on $\mathcal{D}$
+
+While there is no general recipe for the number of iterations to
+perform, one could imagine relying on some empirical measure like a loss
+on left-out labelled data to gauge model improvement (as seen in figs
+[1.4](#fig:empirical:gauss){reference-type="ref"
+reference="fig:empirical:gauss"},
+[1.5](#fig:empirical:regress){reference-type="ref"
+reference="fig:empirical:regress"}). Intuitively, the size of the data
+set and its relationship to the loss is intimately tied to the model
+complexity which impacts its data-thirstiness.
+
+Arm2D (fig [1.3](#fig:arm2D){reference-type="ref"
+reference="fig:arm2D"}) is a kinematics problem where learner has to
+predict the tip position of a robotic arm given a set of joint angles
+$\mathbf{\theta_1}, \mathbf{\theta_2}$. In this analysis, the two models
+seen in [\[sec:two_models\]](#sec:two_models){reference-type="ref"
+reference="sec:two_models"}, namely the Gaussian mixture model and
+locally-weighted regression, were trained using the algorithm described
+in [\[sec:algo\]](#sec:algo){reference-type="ref" reference="sec:algo"}.
+
+![The arm kinematics problem. The learner attempts to predict tip
+position given a set of joint angles
+$\mathbf{\theta_1}, \mathbf{\theta_2}$](Figures/1_experiment_setup.png){#fig:arm2D
+width="40%"}
+
+![Variance and MSE learning curves for mixture of 60 Gaussians trained
+on the Arm2D domain. Dotted lines denote standard error for average of
+10 runs, each started with one initial random
+example.](Figures/1_experiment_results_gaussian.png){#fig:empirical:gauss
+width="100%"}
+
+What is interesting in the results seen (figs
+[1.4](#fig:empirical:gauss){reference-type="ref"
+reference="fig:empirical:gauss"},
+[1.5](#fig:empirical:regress){reference-type="ref"
+reference="fig:empirical:regress"}) is that beyond the variance of the
+learner decreasing, as we would expect, given that authors chose points
+to reduce the expected variance, we do also see a related decrease in
+mean square error (MSE) of the models, as the size of the collected data
+set increases, for *both* models. This is a cool result because the
+expected learner variance for these models can be computed, relative to
+a new point, accurately and efficiently, and we see that when plugged
+into the general active learning loop
+[1.1](#fig:schema){reference-type="ref" reference="fig:schema"} to yield
+algorithm [\[sec:algo\]](#sec:algo){reference-type="ref"
+reference="sec:algo"}, model performance is enhanced significantly.
+
+What is surprising in the case of the locally-weighted regression model
+(fig [1.5](#fig:empirical:regress){reference-type="ref"
+reference="fig:empirical:regress"}) is that if points were to be chosen
+randomly, the MSE would be extremely unstable and have sharp increases
+and decreases. But when the algorithm described in
+[\[sec:algo\]](#sec:algo){reference-type="ref" reference="sec:algo"} is
+used, with the expected learner variance as proxy, the MSE decreases
+almost smoothly bar some preliminary instabilities.
+
+![Variance and MSE learning curves for LOESS model trained on the Arm2D
+domain. Dotted lines denote standard error for average of 60 runs, each
+started with a single initial random
+example.](Figures/1_experiment_results_regression.png){#fig:empirical:regress
+width="100%"}
+
+### Active Learning in Ranking and Comparison
+
+Many researchers have shown that making comparisons is an easier and
+more convenient method for users than assigning a specific score for
+each of the items demonstrated. Individual comparisons give out a full
+ranking over a set of $n$ objects
+$\Theta = (\theta_1, \theta_2, ..., \theta_n$). That ranking will be
+defined as a mapping $\sigma : \{1,...,n\} \rightarrow \{1,...,n\}$ that
+prescribes an order to the set of objects $\Theta$. More specifically,
+for a single $\sigma$,
+$\sigma(\Theta) = \theta_{\sigma(1)} < \theta_{\sigma(2)} < ... < \theta_{\sigma(n-1)} < \theta_{\sigma(n)}$,
+where $\theta_{i} < \theta_{j}$ means that $\theta_{i}$ is worse in
+rating compared to $\theta_{j}$.
+
+For any $n$ elements that there are to rank, there are $n!$ possible
+orderings over these elements that can result in the correct complete
+ranking. Using the fact that a lower bound on sorting is $n\log n$, to
+get a guaranteed true rating over $n$ objects one will need $n\log n$
+pairwise comparisons if those comparisons are picked at random. That
+number can be quite high and costly in many applications, especially
+since most of the ranking information comes from humans, so the more
+comparisons they have to make, the more money and time is spent. This
+also might be inefficient since some comparisons can provide more value
+to the learning process than others, meaning that some comparisons are a
+waste to the process of deriving the ranking. This can be detrimental in
+psychology and market research, as those fields utilize comparisons the
+most, and a faster process might give a lot of benefits.
+
+The reason the lower bound on the number of comparisons is $n\log n$ is
+that it does not assume any information about the underlying space and
+field, so the comparisons are chosen at random. However, if one is to
+take advantage of the structures that are in the comparison space, it
+might lead to more information about which comparisons will be most
+valuable to ask for. For example, if abstracting to humans for a moment,
+[@geo_paper] discusses how eye doctors have a big range of options to
+choose from when assigning prescriptions for glasses, however, patients
+don't see them doing that many comparisons before they decide which is
+the best option for a specific client. That is because eye doctors have
+domain knowledge about the field which they incorporate into the
+process, and only ask clients questions for comparisons when needed.
+That gives rise to using similar knowledge in the ranking field, which
+results in an active learning approach that selects data based on the
+relevance of a comparison query toward finding the final
+$\sigma(\Theta)$.
+
+#### Geometric Approach to Comparisons
+
+In this part, we will go over a paper [@geo_paper], which dives deep
+into active learning over the data that can be embedded into a
+multi-dimensional space. In that case, the comparison that is done
+between two different objects splits the space into halves, where in
+each half one object is better than the other. By utilizing such spatial
+information, the paper creates a geometric approach to ranking and
+active learning, and this spatial information will be the domain
+knowledge that will help to determine which comparisons to perform to
+get the ranking.
+
+For this application, the following terms are defined:
+
+1.  $R^d$ is the space in which objects can be embedded
+
+2.  $\theta_1,...,\theta_n$ the objects, and now will represent the
+    locations of those objects in $R^d$
+
+3.  For each ranking $\sigma$ there is a reference point
+    $r_{\sigma} \in R^d$, such that if according to ranking $\sigma$,
+    $\theta_{i} < \theta_{j}$ (object $i$ is worse than $j$), then
+    $||\theta_i - r_{\sigma}|| < ||\theta_j - r_{\sigma}||$, or
+    otherwise object $i$ is closer to the reference point $r_\theta$ of
+    the ranking than object $j$.
+
+4.  $\Sigma_{n,d}$ will be the set of all possible rankings of the $n$
+    objects that satisfy the embedding distances in the space $R^d$
+    defined in the previous term. Note that not all possible rankings
+    will satisfy the embedding conditions, but on the other side, there
+    might be multiple rankings that can satisfy all of those conditions
+    too.
+
+5.  For every ranking $\sigma$ there is $M_n(\sigma)$ as the number of
+    pairwise comparisons needed to identify the ranking. When
+    comparisons are done at random $E[M_n(\sigma)] = n\log n$, so the
+    paper [@geo_paper] will reason about this quantity to show that it
+    can be smaller if incorporating the space knowledge.
+
+6.  $q_{i,j}$ will be the query of comparison between objects $i$ and
+    $j$.
+
+#### Embedding Space
+
+![Objects $\theta_1, \theta_2, \theta_3$ and queries in $R^2$. The
+$r_\theta$ lies in the shaded region which represents
+$\Sigma_{n,2}$(consistent with the labels of
+$q_{1,2}, q_{1,3}, q_{2,3}$). The dotted (dashed) lines represent new
+queries whose labels are (are not)
+ambiguous.](Figures/SPACE.png){#fig:dim-space width="40%"}
+
+Next, we will discuss embedding space. To properly understand how to
+select the most valuable queries, it is essential to discuss the space
+where the objects exist and how the queries divide that space to find
+the proper rankings. For this example, in Figure
+[1.6](#fig:dim-space){reference-type="ref" reference="fig:dim-space"},
+the paper [@geo_paper] works in $R^2$ space, with three objects
+$\theta_1$, $\theta_2$, and $\theta_3$. There are pairwise queries
+$q_{1,3}$, $q_{2,3}$, $q_{1,2}$ between them that are denoted by the
+solid lines that are equidistant from the two objects that they are
+comparing, those lines respectively split the $R^2$ space into halves,
+where each of the halves is closer to one of the two objects. The paper
+starts coloring dark grey on the side of the worse object for each of
+the queries and take the intersection of those halves, which ends up in
+the dark grey region on the image, which actually indicates the
+$\Sigma_{n,2}$ since all of those points follow the embedding
+conditions. In particular, for every point $r$ in the dark grey area
+$||\theta_3 - r|| < ||\theta_2 - r|| < ||\theta_1 -  r||$, which in turn
+means that $\theta_3 < \theta_2 < \theta_1$. So that means every point
+$r$ is one of the $r_\sigma$ that represent their respective rankings
+$\sigma \in \Sigma_{n,2}$. In other words, the paper is trying to have
+the reference points and dark grey region to be closest to the worst
+object, and furthest from the best object.
+
+Authors also denote the label for each of the queries $q_{i,j}$, such as
+label $y_{i,j} = 1\{q_{i,j}\}$ (for example $y_{1,2} = 0, y_{3,2} = 1$).
+This allows to decide how to label the new queries that are represented
+by the dashed and the dotted lines. It depends on which objects each of
+those queries are comparing. Let's focus on the dotted line and call it
+$q_{i,4}$, where $i={1,2,3}$ and consider potential locations of
+$\theta_4$. Since the line has to be equidistant from one of the three
+objects in the picture and $\theta_4$, that means $\theta_4$ can be
+placed in 3 different places. If the query performed is $q_{2,4}$ then
+$\theta_4$ will lay closer to the dark grey area than $\theta_2$, and
+thus $y_{2,4} = 0$. However, if $q_{1,4}$ or $q_{3,4}$ are done, in both
+cases $\theta_4$ will be further from dark grey area than $\theta_1$ or
+$\theta_3$, which means $y_{1,4} = y_{3,4} = 1$. In this case, the
+labels are contradictory and depend on which object they are compared
+with, which means that such a query $q_{i,4}$ can be called ambiguous.
+
+In contrast, authors analyze the dashed line and call it $q_{i,5}$,
+where $i={1,2,3}$ and consider potential locations of $\theta_5$. Since
+the line has to be equidistant from one of the three objects in the
+picture and $\theta_5$, that means it can be placed in 3 different
+places. If one of the three potential queries is done, $\theta_5$ will
+be closer to dark grey area than $\theta_1$, $\theta_2$, and $\theta_3$,
+which means $y_{1,5} = y_{2,5} = y_{3,5} = 0$. In this case, all labels
+are the same no matter which object isu sed, which means that such a
+query won't be contradictory, as all of them agree on the label.
+
+The goal is to try to do as many ambiguous queries as possible and skip
+the non-ambiguous queries to decrease the total $M_n(\sigma)$.
+Intuitively, if there is contradictory information about a query then it
+needs to be done, so the human can clarify which way it actually leans.
+Whereas, if all of the sources of information from the domain space
+agree on the query's label then that information can be used without
+asking a human, incorporating the knowledge of the embedding distances.
+
+Lastly, to consider the general case of the $R^d$ space, rather than
+talk about halves of the image, it is essential to discuss half-spaces,
+similarly considering the half-space that assigns a label of $1$ to the
+query, and half-space assigning a label of $0$. If both half-spaces take
+place to exist, they have conflicting information on the query, which
+makes the query ambiguous. However, if one of the half-spaces does not
+exist, it means that the other is actually the full space, which
+represents consistency in the label assignment, and a non-ambiguous
+query.
+
+##### Algorithms for Ambiguous Query Selection
+
+:::: algorithm
+::: algorithmic
+**input:** $n$ objects in $\mathbb{R}^d$ **initialize:** objects
+$\theta_1, \dots, \theta_n$ in uniformly random order request
+$q_{i,j}$'s label from reference impute $q_{i,j}$'s label from
+previously labeled queries **output:** ranking of $n$ objects
+:::
+::::
+
+The standard algorithm in
+[\[fig:qsa_alg\]](#fig:qsa_alg){reference-type="ref"
+reference="fig:qsa_alg"} requests labels for $q_{i,j}$ if those queries
+are ambiguous, but otherwise, it infers the information from prior
+comparisons and their labels.
+
+Now it is important to demonstrate that the number of comparisons
+decreases. In particular [@geo_paper] show that this algorithm has
+$E[M_n(\sigma)] = O(d\log n)$, where $d$ is the dimension of the space
+and $d < n$, which improves on the $O(n\log n)$ baseline. The proof can
+be studied deeper in the paper itself, but on a high level, it starts
+reasoning about the probability of the query being ambiguous and a
+comparison being requested from a human, thus representing
+$M_n = \Sigma_{k=1}^{n-1}\Sigma_{i=1}^k 1\{Requestq_{i,k+1}\}$. For
+that, authors define $Q(i,j)$, which represents the number of different
+rankings that exist for $i$ elements in $j$-dimensional space (e.g.
+$Q(1,d) = 1, Q(n,0) = 1, Q(n,1) = n!$). In that case,
+$|\Sigma_{n,d}| = Q(n,d)$. Further, using recurrence relations for
+$Q(i,j)$, authors derive that $|\Sigma_{n,d}| = Q(n,d) = O(n^{2d})$,
+which is omitted here. Analogously authors define $P(i,j)$ that
+represents the number of rankings in $\Sigma_{n,d}$ that will still be
+possible with adding a new element $i+1$ to the ranking objects. Going
+back to Figure [1.6](#fig:dim-space){reference-type="ref"
+reference="fig:dim-space"}, $P(i,j)$ estimates how much of the dark grey
+area will still exist after making a query for $i+1$. As was indicated
+there, the dotted line ambiguous query did not change the dark grey area
+at all ($P(n,d) = Q(n,d)$), whereas the dashed non-ambiguous query would
+cut a piece from it ($P(n,d) < Q(n,d)$). Thus,
+$Request q_{i,k+1} = P(k,d) / Q(k,d)$, so a higher value indicates more
+possible rankings and an ambiguous query that needs to be requested to
+get more useful information. With this in mind, authors derive that
+$E[M_n(\sigma)] = O(d\log n)$, showing that fewer queries are needed for
+effective ranking.
+
+The issue with this algorithm is that only one human provides the
+answers to the requested queries, which means it does not account for
+their biases. An alternative approach is a Robust Query Selection
+Algorithm (RQSA) [@geo_paper], which uses majority voting for every
+query, which will indicate the ground truth of the query's label.
+However, a consideration the authors took is that a group of people can
+still give incorrect or divided responses. In the case that the votes
+for each answer are almost equal in number, the authors pushed that
+query to the end of the algorithm, to see if it can become a
+non-ambiguous query with more information learned. But if it does not,
+the odd number of voters is used to determine the final ranking.
+[]{#section:QSA label="section:QSA"}
+
+##### Performance Analysis
+
+![Mean and standard deviation of requested queries (solid) in the
+noiseless case for $n = 100$; $\log_2|\Sigma_{n,d}|$ is a lower bound
+(dashed).](Figures/Dim:query_graph.png){#fig:rand_n width="60%"}
+
+::: {#fig:geo_acc}
+  Dimension                           2      3
+  --------------- ----------------- ------ ------
+  \% of queries         mean         14.5   18.5
+  requested              std         5.3     6
+  Average error    $d(\bar{y}, y)$   0.23   0.21
+                   $d(\bar{y}, y)$   0.31   0.29
+
+  : Statistics for the Robust Query Selection Algorithm (RQSA)
+  [@geo_paper] discussed at the end of
+  [\[section:QSA\]](#section:QSA){reference-type="ref"
+  reference="section:QSA"} and the baseline of conducting all
+  comparisons. $y$ serves as a noisy ground truth, $\tilde{y}$ is the
+  result of all comparisons, and $\hat{y}$ is the output of the RQSA.
+:::
+
+Figure [1.7](#fig:rand_n){reference-type="ref" reference="fig:rand_n"}
+shows that the number of comparisons fits within the expected bounds, as
+$\log|\Sigma_{n,d}| = \log(n^d) = d\log n$. To derive that graph,
+authors [@geo_paper] sampled 100 random data points in a $R^d$ space,
+where $d$ took on 10 different values as indicated on the graph. Each
+dimension's experiments were repeated 25 times for consistency.
+
+With regard to the accuracy and performance of the method, the authors
+did a ranking experiment on 100 different audio signals, results of
+which can be seen in Table [1.1](#fig:geo_acc){reference-type="ref"
+reference="fig:geo_acc"}. The ground truth labels came from humans,
+indicated by $y$ in the table. That resulted in the existence of noise
+and potential errors in the ground truth, which could influence the
+performance of both the baseline algorithm that does all comparisons
+($\Tilde{y}$) and the Robust Query Selection Algorithm (RQSA) proposed
+in [\[section:QSA\]](#section:QSA){reference-type="ref"
+reference="section:QSA"} ($\hat{y}$). As can be seen in both 2 and
+3-dimensional spaces RQSA performed worse by $8\%$ compared to the
+baseline, which indicates that active learning that uses the domain
+information can still be erroneous due to the inference of certain
+comparisons that sometimes may not be entirely correct. However, as can
+be seen by the upper part of Figure
+[1.1](#fig:geo_acc){reference-type="ref" reference="fig:geo_acc"},
+significantly less queries were requested compared to the baseline,
+which means that the approach can have a significant benefit at a cost
+of slight loss in accuracy. []{#sec:geo_app label="sec:geo_app"}
+
+#### User Information as Domain Knowledge for Active Learning
+
+An alternative source of domain knowledge could be users themselves, who
+can indicate their uncertainty when it comes to comparing two objects.
+Prior studies have shown [@unnoisy_humans] that when presented with only
+two options when selecting which object is better, but not being able to
+properly decide, users would get frustrated and tend to respond more
+faultyly, creating noise and incorrect responses in the data. Through
+feedback and other studies [@noisy_humans] it was determined that
+presenting users with an option of indifference between the two objects
+can remove those problems. Moreover, in connection to active learning,
+the authors show that such an option helps to select more informative
+queries since it provides more domain knowledge that can be used,
+resulting in a decrease in the number of queries required.
+
+For this problem, the following terms are defined:
+
+1.  $c$ - a cost function that represents user preferences, and the
+    result the model has to determine at the end of training. The
+    preferred items will have lower costs, and less preferred ones will
+    have higher costs. The goal is to determine this function with the
+    fewest possible number of queries using active learning.
+
+2.  $H$ - a set of hypotheses over the possible cost functions, where
+    for each $h \in H$ there is a cost function $c_h$ associated with
+    it.
+
+3.  $h^*$ - a true hypothesis that the model needs to determine, which
+    has cost $c_{h^*}$ associated with it
+
+4.  $t(x,y)$ - a test performed to compare items $x$ and $y$ (the user
+    is being asked to provide a response to which item is better). Those
+    tests result in changes and adjustments to $H$ as more information
+    is learned.
+
+5.  $o(x,y)$ - observation or result of $t(x,y)$, where
+    $o(x,y) \in \{x<y, x>y\}$
+
+6.  $S = \{(t_1, o_1), (t_2, o_2),...,(t_m, o_m)\}$ - a sequence of $m$
+    pairs of tests and observations
+
+7.  $w(H|S)$ - probability mass of all hypotheses that are still
+    consistent with the observations (similar to the dark grey area from
+    Figure [1.6](#fig:dim-space){reference-type="ref"
+    reference="fig:dim-space"} and $Q(i,j)$ discussed in
+    [\[section:QSA\]](#section:QSA){reference-type="ref"
+    reference="section:QSA"}). This means that if $h \in H$ is
+    inconsistent with user responses received, it is removed from $H$.
+
+With the key terms defined, let's consider the noiseless base setting
+where users only have two options for response. Those components will
+also later be translated to the setting with the third option so the
+true cost function can be determined there. $w(H|S)$ is the sum of the
+weights of all hypotheses that are still consistent with the evidence.
+$$\begin{aligned}
+    w(H|S) = \sum_{h \in H} w(h | S)\\
+\end{aligned}$$ Each $w(h|S)$ is a probability of the evidence's
+existence given such hypothesis: $$\begin{aligned}
+    w(h|S) = p(S|h)
+\end{aligned}$$ Such probability comes from the test-observation pairs
+since they compose the set $S$. Moreover, each test is independent of
+other tests, which gives: $$\begin{aligned}
+    p(S|h) = \prod_{(t,o) \in S} p((t,o) | h)
+\end{aligned}$$ In the noiseless setting, users will select an option
+that minimizes their cost function (selecting more preferred items),
+mathematically defined as: $$\begin{aligned}
+    p((t, o = x) | h) = 
+    \begin{cases}
+        1 & c_h(x) < c_h(y)\\
+        0 & else
+    \end{cases}
+    \label{eq:prob_base}
+\end{aligned}$$
+
+**6.3.3.1 User Noise Modeling**
+
+As has been discussed, users are not perfect evaluators and even get
+frustrated if unable to select the better option. Prior work
+[@unnoisy_humans] has shown that treating users as perfect can lead to
+poor performance. That gave rise to accounting for noise in users'
+responses, but a majority of such work applies the same noise to all
+queries and all responses. While those led to great performance results
+[@noisy_humans], they don't accurately reflect the real world, which
+gave rise to the idea of creating query-based noise.
+
+Effectively, for some of the queries it is important to incorporate the
+fact that the user is unsure and noisy, but for others, if the user is
+confident, noise in the response is not needed at all. For
+comparison-based learning, this means that the noise is related to the
+costs of the two items compared. Specifically for items $x$ and $y$, if
+$c_{h^*}(x) \simeq c_{h^*}(y)$ then the items are hard to distinguish
+for the user, so here it is preferred to incorporate user uncertainty
+and noise. But if $c_{h^*}(x) >> c_{h^*}(y)$, the user will certainly
+select $y$ and the other way around, which is where the noise is not
+needed.
+
+Query-dependent noise is also supported in the psychology literature,
+which means that such an approach is more related to the real world. In
+particular, psychologists talk about the Luce-Sheppard Choice rule
+[@lus-shep] when talking about comparisons. This rule previously gave
+rise to a logistic model based on the noise [@lus-log] where the
+probability of observation for a given test is: $$\begin{aligned}
+    p((t, o = x) | h) \propto exp(-\gamma * c_h(x))
+    \label{eq:noise_model}
+\end{aligned}$$
+
+![User response model in the noiseless
+setting](Figures/Noiseless probs.png){#fig:noiseless_1 width="100%"}
+
+![User response with Luce Sheppard noise
+model](Figures/Noise probs.png){#fig:noiseless_2 width="100%"}
+
+Figures [1.8](#fig:noiseless_1){reference-type="ref"
+reference="fig:noiseless_1"} and
+[1.9](#fig:noiseless_2){reference-type="ref"
+reference="fig:noiseless_2"} demonstrate the difference between the
+noiseless setting and incorporating the Luce-Sheppard Choice rule. GBS
+is the baseline model with only 2 response options, and CLAUS is the
+model with the uncertainty option added. The figures show how
+incorporating such noise influences and smoothes the probability
+distribution of the user's response.
+
+**6.3.3.2 User Uncertainty**
+
+We will now discuss the functionality of CLAUS, which is an algorithm
+designed by [@claus] that allows users to select an uncertain response
+about the two options that they need to rank. The authors model such
+uncertainty as $\epsilon$ and it is associated with each $c_h$, so now
+every hypothesis $h$ is defined over a pair of $(c_h, \epsilon_h)$. It
+is important to note that the goal is to still learn and maintain our
+objective on $c$, $\epsilon$ is only necessary to model the users'
+responses. The uncertainty relates to the cost function in the following
+way: $$\begin{aligned}
+    |c_h(x) - c_h(y)| < \epsilon_h
+\end{aligned}$$ this means that the user is uncertain between items $x$
+and $y$ and their cost difference is negligible such that the user is
+not able to select which item is better. This in turn gives more
+information about the real value of the two items, as a binary response
+would indicate the user's preference towards one item, which will not be
+real and will skew the cost functions.
+
+This causes modifications of the problem set-up:
+
+1.  For test $t(x,y)$ the observation will be
+    $o(x,y) \in \{x<y, x>y, \Tilde{xy}\}$, where $\Tilde{xy}$ is the
+    uncertain response.
+
+2.  The probability distribution over the user's response
+    [\[eq:prob_base\]](#eq:prob_base){reference-type="ref"
+    reference="eq:prob_base"} will now be defined as: $$\begin{aligned}
+            p((t, o = x) | h) = 
+            \begin{cases}
+                1 & c_h(x) < c_h(y) - \epsilon_h\\
+                0 & else
+            \end{cases}
+            
+    \end{aligned}$$ $$\begin{aligned}
+            p((t, o = \Tilde{xy}) | h) = 
+            \begin{cases}
+                1 & |c_h(x) - c_h(y)|^2 < \epsilon_h^2\\
+                0 & else
+            \end{cases}
+            
+    \end{aligned}$$ This means the user confidently selects $x$ when it
+    is better than $y$ by more than $\epsilon$, but if the squared
+    difference of the cost functions of two items is negligible by
+    $\epsilon$ user will choose the indifferent option.
+
+3.  Finally this also updates the noise model
+    [\[eq:noise_model\]](#eq:noise_model){reference-type="ref"
+    reference="eq:noise_model"}: $$\begin{aligned}
+                p((t, o = x) | h) \propto \exp(-\gamma * [c_h(x) - c_h(y)]) \label{eq:noise_model}
+            
+    \end{aligned}$$ $$\begin{aligned}
+                p((t, o = \Tilde{xy}) | h) \propto exp(-1/\epsilon_h^2 * [c_h(x) - c_h(y)]^2)
+            
+    \end{aligned}$$
+
+**6.3.3.3 Performance Analysis**
+
+![CLAUS using equivalence classes. Each cost function $c$ corresponds to
+an equivalence class (blue ellipse). Hypotheses (black dots) are
+$\{c_h,\epsilon_h\}$ pairs. Hypotheses sharing a cost $c$ are said to be
+inside the equivalence class of $c$. After performing a test and
+receiving an observation, the evidence results in downweighting
+connections among some of the
+hypotheses.](Figures/equiv.png){#fig:equiv_c width="60%"}
+
+Before diving deeper into the comparisons of performance, it is
+important to indicate that rather than predicting a specific pair
+$(c_h, \epsilon_h)$, the algorithm focuses on predicting a group of
+pairs that are similar to one another, otherwise called equivalence
+class (Figure [1.10](#fig:equiv_c){reference-type="ref"
+reference="fig:equiv_c"}), which indicates not essentially different
+hypothesis for the cost function and uncertainty. That information is
+learned through each new test, as the algorithm updates the information
+about $c$ and $\epsilon$ that distinguishes between the distinct $h$,
+finding the equivalence groups among them. Moreover, the authors tweaked
+the parameter responsible for the size of the equivalence class (how
+many hypotheses can be grouped together at a time).
+
+![NO CAPTION, ADD CAPTION](Figures/GBS:CLAUS.png){#fig:claus_num
+width="60%"}
+
+::: {#fig:claus_tab}
+  Category                            Accuracy                           Query Count
+  --------------------- ------------------------------------ ------------------------------------
+  GBS - About Equal               $94.15 \pm 0.52$                     $36.02 \pm 0.03$
+  GBS - Not Sure         $\textbf{94.66} \pm \textbf{0.55}$            $35.95 \pm 0.04$
+  CLAUS - About Equal             $91.56 \pm 0.84$            $\textbf{25.93} \pm \textbf{0.41}$
+  CLAUS - Not Sure                $90.86 \pm 0.74$                     $26.98 \pm 0.47$
+
+  : NO CAPTION, ADD CAPTION
+:::
+
+The first performance evaluation is done on the number of queries and
+confirms that it decreases in Figure
+[1.11](#fig:claus_num){reference-type="ref" reference="fig:claus_num"}.
+The GBS model serves as the baseline, as it will do all of the
+comparison queries using the binary response options. The CLAUS model is
+measured over different values of $\epsilon$ on the x-axis and over
+different sizes of the equivalence sets indicated by different shades of
+blue. Figure shows that all variants of CLAUS use approximately 10 fewer
+queries on average compared to GBS. Moreover, using bigger-sized
+equivalence classes can further decrease the number of needed queries.
+The most optimal $\epsilon \simeq 0.07$, after which higher $\epsilon$
+does not provide any benefit.
+
+Lastly, the authors considered the performance difference, which is
+indicated in Figure [1.2](#fig:claus_tab){reference-type="ref"
+reference="fig:claus_tab"}. For that authors used two different labels
+for the uncertainty button in CLAUS, it was either labeled as \"About
+Equal\" or \"Not Sure\" as those can provoke different responses and
+feelings in users. Moreover, GBS and CLAUS-type responses were mixed in
+the same set of questions to the user, which splits the metrics for both
+in two as can be seen in Figure
+[1.2](#fig:claus_tab){reference-type="ref" reference="fig:claus_tab"}.
+The performance of CLAUS is lower by $3\%$ on average, indicating
+similar results to [\[sec:geo_app\]](#sec:geo_app){reference-type="ref"
+reference="sec:geo_app"}, showing that a smaller number of queries can
+still lead to a performance loss. However, the second column of Figure
+[1.2](#fig:claus_tab){reference-type="ref" reference="fig:claus_tab"}
+supports the information in Figure
+[1.11](#fig:claus_num){reference-type="ref" reference="fig:claus_num"},
+as it also shows that 10 fewer queries were conducted on average.
+
+### Active Preference-Based Learning of Reward Functions
+
+Active learning can be essential in learning within dynamic systems and
+environments. Say we have an agent in an environment, and we want it to
+conform to a certain behavior as set by a human. How exactly do we go
+about doing this? In a traditional RL setting, this is solved by a class
+of algorithms under Inverse Reinforcement Learning. Techniques such as
+VICE and GAIL attempt to learn a reward function that can distinguish
+between states visited by the agent and states desired to be visited as
+defined by a human. In effect, a human will demonstrate what it would
+like the agent to do in the environment, and from there, learning is
+done. However, what if humans do not precisely know how an agent should
+optimally behave in an environment but still have some opinion on what
+trajectories would be better than others? This is where a paper like
+Active Preference-Based Learning of Reward Functions comes into the
+picture. The paper aims to use human preferences to aid an agent's
+learning within a dynamic system.
+
+A dynamic system contains human input, robotic input, and an environment
+state. The transitions between states is defined by $f_{HR}$, so that we
+have: $$x^{t+1} = f_{HR}(x^t, u_R, u_H)$$ At a given time step $t$, we
+have $x_t$, $u_R^t$, and $u_H^t$. This can be encapsulated into a single
+$d$ dimensional feature vector that the authors denote as $\phi$. The
+paper then assumes that the underlying reward model we are trying to
+learn can be represented linearly. If we have our human reward
+preference function defined as $r_H$, this means we can write $r_H$ as:
+$$r_H(x^t, u_R^t, u_H^t) = w^{\intercal}\phi(x^t, u_R^t, u_H^t)$$
+Because the reward function is linear, we can take the weight vector out
+of the summation if we want to calculate the reward over an entire
+trajectory:
+$$R_{H}(x^0, u_R, u_H) = \sum_{t=0}^{N} r_{H}(x^t, u^t, u_H^t)$$
+$$\Phi = \sum \phi(x^t, u_R^t, u_H^t)$$ $$R_H(traj) = w\cdot\Phi(traj)$$
+
+#### Properties of W
+
+First, the scale of $w$ does not matter because we only care about the
+relative rewards produced with $w$ (given two different trajectories, we
+want to answer the question of which trajectory a human would prefer,
+i.e. which one has a higher preference reward). This means we can
+constrain $||w|| <= 1$, so the initial prior is uniform over a unit
+ball. From here, we can determine a probabilistic expression to assess
+whether we should prefer trajectory A or B (because it can be noisy with
+human input). Let $I_t = +1$ if the human prefers trajectory $A$ and let
+$I_t = -1$ if the human prefers trajectory $B$. We get the following for
+$p(I_t | w)$.
+
+$$p(I_t = +1|w) = \frac{exp(R_H(traj_A))}{exp(R_H(traj_A)) + exp(R_H(traj_B)}$$
+$$p(I_t = -1|w) = \frac{exp(R_H(traj_B))}{exp(R_H(traj_A)) + exp(R_H(traj_B)}$$
+
+We can re-write this expression to make it cleaner, using the following
+substitution: $$\psi = \Phi(traj_a) - \Phi(traj_b)$$
+$$f_{\psi} (w) = p(I_t|w) = \frac{1}{1 + exp(-I_tw^{\intercal}\psi}$$
+
+The idea now is that we can update $p(w)$ everytime we get a result from
+a human preference query using Bayes:
+
+$$p(w|I_t) <- p(w) \cdot p(I_t|w)$$
+
+We don't need to know $p(I_t)$ because we can use an algorithm like the
+Metropolis algorithm to actually sample.
+
+#### Generating Queries
+
+This is where the interesting part of the paper comes into play. How do
+we actually generate queries for the user to pick between? This paper
+synthetically generates queries through an optimization process and then
+presents them to a human to pick between. The idea is that we want to
+generate a query that maximizes the conditional entropy $H(I|w)$. There
+are a few ways to think about this -- intuitively we want to pick a
+query that we are most uncertain about given our current weights (thus
+having the highest conditional entropy given the weights). The way the
+authors of the paper frame this originally in the paper is that \"we
+want to find the next query such that it will help us remove as much
+volume (the integral of the unnormalized pdf over w) as possible from
+the space of possible rewards.\" Mathematically this can be written as:
+
+$$max_{x^0, u_R, u_H^A, u_H^B} min\{E[1-f_{\psi}(w)], E[1 - f_{-\psi}(w)]\}$$
+
+But how exactly do we optimize this expression mathematically? After
+all, we need to use this expression to generate synthetic queries. The
+answer is to sample $w_1, ... w_m$ from $p(w)$. We can assume we are
+sampling points from a point cloud, thus approximating the distribution
+$p(w)$ as
+
+$$p(w) = \frac{1}{M} \sum \delta (w_i)$$. We can now approximate the
+expectation expression like so:
+$$E[1 - f_{\psi}(w)] = \frac{1}{M} (\sum 1 - f_{\psi}(w_i))$$
+
+and now we can optimize the expression to generate a synthetic query!
+Altogether, the algorithm looks like the following:
+
+:::: algorithm
+::: algorithmic
+**input:** features $\phi$, horizon $N$, dynamics $f$, $iter$
+**initialize:** $p(w) \sim Uniform(B)$, for a unit ball $B$ $W \gets M$
+samples from $AdaptiveMetropolis(p(w))$
+$(x^0, u_R, u^A_H, u^B_H) \gets SynthExps(W,f)$
+$I_t \gets QueryHuman(x^0, u_R, u^A_H, u^B_H)$
+$\varphi = \Phi(x^0, u_R, u^A_H) - \Phi(x^0, u_R, u^B_H)$
+$f_\varphi(w) = \min(1, I_t\exp(w^\top \varphi))$
+$p(w) \gets p(w) \cdot f_\varphi(w)$ $t \gets t+1$ **output:**
+distribution of $w: p(w)$
+:::
+::::
+
+#### Batching Queries
+
+The algorithm itself works well, however there ends up being a bottle
+neck that each query needs to be synthesized before being sent to the
+human -- one at a time. In other words, the human gives their feedback,
+waits for a query to be synthesized, and then gives another data point
+of feedback. There is no room for parallelization and so the authors
+proposed a second algorithm in a separate paper that allows for the
+batching of queries. Simply put, we change the mathematical expression
+to the following:
+
+$$max_{\xi_{ib+1_A}, \xi_{ib+1_B}, ... , \xi_{ib+b_A}, \xi_{ib+b_B} H(I_{ib+1}, I_{ib+2}, .., I_{ib+b} | w)}$$
+
+Naively, we could consider optimizing this in the greedy fashion. This
+would mean just synthetically generating $b$ independent queries. The
+obvious drawback of this method would be that the queries would likely
+be very similar to each other. The authors propose a few other
+heuristics that would help guide the algorithm away from generating very
+similar queries. As an example, the authors propose Medioid Selection
+where we have to cluster $B$ greedy vectors into $b < B$ groups and pick
+one vector frmo each group (the medioid). The authors also propose two
+other methods rooted in providing different queries: boundary medioids
+selection and successive elimination. They are best visually depicted
+as:
+
+![image](Figures/greedy.png){width="75%"}
+
+#### Results
+
+The authors test both the non-batched and variety of batched learning
+algorithms on multiple environments:
+
+![image](Figures/activeresults.png){width="75%"}
+
+What is interesting to note is that when graphed over $N$ the
+non-batched active learning approach does in the same ball-park of
+performance as the batched approaches. However, if you graph it over
+time, we see that learning is a much slower process when not-batched.
+
+## Foundation Models for Robotics
+
+Modern foundation models have been ubiquitous in discussions of
+powerful, general purpose AI systems that can accomplish myriad tasks
+across many disciplines such as programming, medicine, law, open
+question-answering and much more, with rapidly increasing capabilities
+[@bommasani2022opportunities]. However, despite successes from large
+labs in controlled environments [@brohan2023rt2] foundation models have
+not seen ubiquitous use in robotics due to shifting robot morphology,
+lack of data, and the sim to real gap in robotics
+[@walke2023bridgedata]. For this subsection we explore two promising
+approaches known as R3M and Voltron which are the first to leverage
+pre-training on vast amounts of data towards performance improvement on
+downstream robotic tasks despite the aforementioned issues
+[@nair2022r3m; @karamcheti2023languagedriven].
+
+### R3M: Universal Visual Representation for Robotics
+
+![R3M pipeline](Figures/r3m.png){width="95%"}
+
+R3M represents a significant advancement in the field of robotic
+manipulation and learning. This model diverges from traditional
+approaches that rely on training from scratch within the same domain on
+the same robot data as instead it leverags pretraining on large
+datasets, akin to the practices in computer vision and natural language
+processing (NLP) where models are trained on diverse, large-scale
+datasets to create reusable, general-purpose representations.
+
+The core principle behind R3M is its training methodology. It is
+pre-trained on a wide array of human videos, encompassing various
+activities and interactions. This diverse dataset enables the model to
+capture a broad spectrum of physical interactions and dynamics, which
+are crucial for effective robotic manipulation known as EGO4D
+[@grauman2022ego4d]. However, prior papers could not fit this dataset
+well, and R3M leveraged. The training utilizes a unique objective that
+combines time contrastive learning, video-language alignment, and a
+sparsity penalty. This objective ensures that R3M not only understands
+the temporal dynamics of scenes (i.e., how states transition over time)
+but also focuses on semantically relevant features, such as objects and
+their interrelations, while maintaining a compact and efficient
+representation.
+
+What sets R3M apart in the realm of robotics is its efficiency and
+effectiveness in learning from a limited amount of data. The model
+demonstrates remarkable performance in learning tasks in the real world
+with minimal human supervision -- typically less than 10 minutes. This
+is a stark contrast to traditional models that require extensive and
+often prohibitively large datasets for training. Furthermore, R3M's
+pre-trained nature allows for its application across a variety of tasks
+and environments without the need for retraining from scratch, making it
+a versatile tool in robotic manipulation. The empirical results from
+using R3M are compelling, leading to a 10% improvement over training
+from a pretrained image-net model, self-supervised approaches such as
+MoCo or even CLIP
+[@deng2009imagenet; @he2020momentum; @radford2021learning]. Note
+however, that R3m does **not** use any language data which leaves quite
+a bit of supervision to be desired.
+
+### Voltron: Language Driven Representation Learning for Robotics
+
+Building off the success of R3M, Voltron proposes a further extension of
+leveraging self-supervision and advancements in foundation models, and
+multi-modality. Voltron takes on an intuitive and simple dual use
+objective, where the trained model alternates between predicting the
+task in an image through natural language and classifying images based
+on a natural text label. This forces a nuanced understanding of both
+modalities [@radford2021learning].
+
+Voltron's approach is distinguished by its versatility and depth of
+learning. It is adept at handling a wide range of robotic tasks, from
+low-level spatial feature recognition to high-level semantic
+understanding required in language-conditioned imitation and intent
+scoring. This flexibility makes it suitable for various applications in
+robotic manipulation, from grasping objects based on descriptive
+language to performing complex sequences of actions in response to
+verbal instructions.
+
+![Voltron pipeline](Figures/voltron.png){width="95%"}
+
+The authors rigorously test Voltron in scenarios such as dense
+segmentation for grasp affordance prediction, object detection in
+cluttered scenes, and learning multi-task language-conditioned policies
+for real-world manipulation with up to 15% improvement over baselines.
+In each of these domains, Voltron has shown a remarkable ability to
+outperform existing models like MVP and R3M, showcasing its superior
+adaptability and learning capabilities [@xiao2022masked].
+
+Moreover, Voltron's framework allows for a balance between encoding
+low-level and high-level features, which is critical in the context of
+robotics. This balance enables the model to excel in both control tasks
+and those requiring deeper semantic understanding, offering a
+comprehensive solution in the realm of robotic vision and manipulation.
+
+Voltron stands as a groundbreaking approach in the field of robotics,
+offering a language-driven, versatile, and efficient approach to
+learning and manipulation. Its ability to seamlessly integrate visual
+and linguistic data makes it a potent tool in the ever-evolving
+landscape of robotic technology, with potential applications that extend
+far beyond current capabilities. Interesting the authors show Voltron
+does not beat R3M off the shelf but only when trained on similar amounts
+of data. Nevertheless, Voltron's success in diverse tasks and
+environments heralds a new era in robotic manipulation, where language
+and vision coalesce to create more intelligent, adaptable, and capable
+robotic systems.
+
+## Conclusion
+
+On the note of applying active learning to RL and environment settings,
+there have been many recent papers that have attempted to extend this to
+more modern RL environments. For example, the paper \"When to Ask for
+Help\" [@ask_help] examines the intersection of autonomous and active
+learning. Instead of just expecting an RL agent to autonomously solve a
+task, making the assumption that an agent could get stuck and need human
+input to get \"unstuck\" is a key insight of the paper. In general,
+there has been an emphasis in recent literature in robotics on not just
+blindly using demonstration data as a form of human input, but rather
+actively querying a human and using this to better synthesize correct
+actions.
+
+Active learning holds promise for enhancing AI models in real-world
+scenarios, yet several challenges persist. This discussion aims to
+provide an overview of these challenges.
+
+**Task-Specific Considerations:**
+
+For certain tasks, the input space of a model may have some rare yet
+extremely important pockets which may never be discovered by active
+learning and may cause severe blindspots in the model. In medical
+imaging for instance, there can be rare yet critical diseases. Designing
+AL strategies for medical image analysis must prioritize rare classes,
+such as various forms of cancers. Oftentimes, collecting data around
+those rare classes is not a recommendation of the active learning
+process because these examples constitute heavy distribution drifts from
+the input distribution a model has seen.
+
+**Complex Task Adaptation:**
+
+AL has predominantly been adopted for simple classification tasks,
+leaving more other types of tasks (generative ones for instance), less
+explored. In Natural Language Processing, tasks like natural language
+inference, question-answering pose additional complexities that affect
+the direct application of the active learning process. While machine
+translation has seen AL applications, generation tasks in NLP require
+more thorough exploration. Challenges arise in obtaining unlabeled data,
+particularly for tasks with intricate inputs.
+
+**Unsupervised and Semi-Supervised Approaches:**
+
+In the presence of large datasets without sufficient labels,
+unsupervised and semi-supervised approaches become crucial. These
+methods offer a means to extract information without relying on labeled
+data for every data point, potentially revolutionizing fields like
+medical image analysis. There is an ongoing need for methods that
+combine self/semi-supervised learning with active learning.
+
+**Algorithm Scalability:**
+
+Scalability is a critical concern for online AL algorithms, particularly
+when dealing with large datasets and high-velocity data streams. The
+computational demands of AL can become prohibitive as data volume
+increases, posing challenges for practical deployment. Issues of
+catastrophic forgetting and model plasticity further complicate
+scalability, requiring careful consideration in algorithm design.
+
+**Labeling Quality Assurance:**
+
+The effectiveness of most online AL strategies hinges on the quality of
+labeled data. Ensuring labeling accuracy in real-world scenarios is
+challenging, with human annotators prone to errors, biases, and diverse
+interpretations. Addressing imperfections in labeling through
+considerations of oracle imperfections becomes essential in real-life AL
+applications. Solutions for cleaning up data and verifying its quality
+need to be more aggressively pursued.
+
+**Data Drift Challenges:**
+
+Real-world settings introduce data drift, where distributions shift over
+time, challenging models to adapt for accurate predictions. These shifts
+can impact the quality of labeled data acquired in the AL process. For
+example, the criterion or proxy used for selecting informative instances
+may be thrown off when the distribution a model is trained on, and the
+distribution we want it to perform well on, are too far away from one
+another.
+
+**Evaluation in Real-Life Scenarios**:
+
+While AL methods are often evaluated assuming access to ground-truth
+labels, the real motivation for AL lies in label scarcity. Assessing the
+effectiveness of AL strategies becomes challenging in real-life
+scenarios where ground-truth labels may be limited. In other words, one
+may verify the goodness of an AL algorithm within the lab, but once the
+algorithm is deployed for improving all sorts of models on all sorts of
+data distributions, verifying whether AL is actually improving a model
+is tricky, especially when collecting and labeling data from the target
+distribution is expensive and defeats the purpose of using AL in the
+first place.
+
+By systematically addressing these challenges, the field of active
+learning in AI can progress towards more effective and practical
+applications.
+
+In summary, active learning is a promising modern tool to model training
+that presents potential benefits. As was mentioned at the start, there
+are numerous approaches that can be employed by active learning,
+starting from reducing error of model's prediction, reducing variance,
+to more conformal predictions. The flavor of active learning heavily
+depends on the applications, which include robotics, LLM, autonomous
+vehicles, and more. We discussed in more detail how to perform active
+learning for variance reduction in the case of predicting kinematics of
+the robotic arms, which showed decrease in MSE as well as more stable
+reduction in it. Next we talked about using active learning for reducing
+the number of comparisons required to create a ranking of objects, and
+the examples discussed were able to achieve that but with some loss in
+the prediction accuracy. Finally, we discussed how active learning can
+be used for modeling of reward functions within a dynamical system,
+which demonstrated improvements in performance and time required to
+achieve it. For a more hands-on experience with active learning and
+demonstrated example, we encourage the readers to explore a blogpost by
+Max Halford [@max_halford].
+
+## Introduction to Performance Metric Elicitation
+
+In binary classification problems, one important consideration is the
+selection of an appropriate performance metric corresponding to the
+real-world task at hand. The problem of *metric elicitation* attempts to
+characterize and discover the performance metric of a practitioner,
+reflecting the rewards or costs that come with correct or incorrect
+classification. For example, in medical contexts such as diagnosing a
+disease or choosing whether a given treatment is appropriate for a
+certain condition, tradeoffs are made for incorrect decisions; for
+example, not administering a treatment could lead to the worsening of a
+disease (a false negative), whereas delivering the wrong kind of
+treatment could lead to adverse side effects that would be worse than
+not treating the condition (a false positive).
+
+Rather than choosing from a limited set of default choices like the
+F1-score or weighted accuracy, metric elicitation considers the process
+by which we can devise a metric that best matches the preferences of the
+practitioners or users, by querying an "oracle\" who provides feedback
+on proposed potential metrics in the form of pairwise comparisons.
+Because queries to humans are often expensive, the aim is to minimize
+the amount of comparisons needed.
+
+**Note:** Almost all of the content in this chapter comes from
+"Performance Metric Elicitation from Pairwise Classifier Comparisons" by
+Hiranandani et al.  [@pmlr-v89-hiranandani19a], which introduced the
+problem of metric elicitation and the framework for binary-class metric
+elicitation from pairwise comparisons. In this chapter, we aim to
+present their work expository while providing additional motivation and
+intuitive explanations to supplement their work.
+
+The motivation for the pairwise comparison portion of metric elicitation
+comes from a rich history of literature in psychology, economics, and
+computer science  [@pref1; @pref2; @pref3; @pref4; @ab] demonstrating
+that humans are often ineffective at providing absolute feedback on
+things like potential prices, user interfaces, or even ML model outputs
+(hence the comparison-based structure of RLHF, for instance). In
+addition, confusion matrices are a way to accurately capture binary
+metrics such as accuracy, $F_\beta$, and Jaccard similarity by recording
+the number of false positives, true positives, false negatives, and true
+negatives obtained by a certain classifier. The main goal of this
+chapter is to introduce two binary-search procedures that can be used to
+approximate the oracle's performance metric for two types of metrics
+(linear and linear-fractional performance metrics) by presenting the
+oracle with confusion matrices generated by various classifiers; in
+essence, we are learning an optimal threshold for classification given a
+decision boundary for a binary classification problem.
+
+First, we introduce some relevant notation that will later be used to
+formalize notions of oracle queries, classifiers, and metrics.
+
+-   $X \in \mathcal{X}$ is an input random variable.
+
+-   $Y \in \{0, 1\}$ is the output random variable.
+
+-   We learn from a dataset of size $n$, denoted by
+    $\{(x, y)_i\}^n_{i=1}$, generated iid from some distribution
+    $\mathbb{P}(X, Y)$.
+
+-   $\eta(\vec{x}) = \mathbb{P}(Y=1 | X=x)$ is the conditional
+    probability of the positive class, given some sample $x$.
+
+-   $\zeta = \mathbb{P}(Y=1)$ is the unconditional probability of the
+    positive class
+
+-   The set of all potential classifiers is
+    $\mathcal{H} = \{h : \mathcal{X} \rightarrow \{0,1\}\}$
+
+-   The confusion matrix for some classifier $h$ is
+    $C(h, \mathbb{P}) \in \mathbb{R}^{2 \times 2}$, where
+    $C_{ij}(h, \mathbb{P}) = \mathbb{P}(Y=i, h=j)$ for
+    $i, j \in \{0,1\}$; these represent the false positives, true
+    positives, false negatives, and true negatives, so
+    $\sum_{i,j}C_{ij}=1$.
+
+-   $\mathcal{C}$ is the set of all confusion matrices
+
+-   Note: Since $FN(h, \mathbb{P}) =\zeta - TP(h, \mathbb{P})$ and
+    $FP(h, \mathbb{P}) = 1 - \zeta - TN(h, \mathbb{P})$; $\mathcal{C}$
+    is in fact a 2-dimensional space, not a 4-dimensional space
+
+-   Any hyperplane (line) in $(tp, tn)$ given by
+    $\ell := a \cdot tp + b \cdot tn = c; a, b, c\in \mathbb{R}$
+
+-   Given a classifier $h$, we define a performance metric
+    $\phi : [0, 1]^{2 \times 2} \rightarrow \mathbb{R}$. We refer to the
+    value $\phi(C(h))$, which represents the performance of a certain
+    classifier with respect to a certain metric, as the *utility* of the
+    classifier $h$. We assume, without loss of generality, that a higher
+    value of $\phi$ means $h$ is a better performance metric.
+
+Our focus is to recover some metric $\phi$ using comparisons between
+confusion matrices $C(h)$, determined by classifiers $h$, which comes
+close to the oracle's "ground-truth\" metric $\phi^*$.
+
+Next, we introduce two classes of performance metrics, for which we will
+present two elicitation algorithms. A *linear performance metric (LPM)*,
+given some constants
+$\{a_{11}, a_{01}, a_{10}, a_{00}\} \in \mathbb{R}^{4}$, is of the form
+$$\begin{aligned}
+\phi(C) & = a_{11} T P + a_{01} F P + a_{10} F N + a_{00} TN  = m_{11} T P + m_{00} T N + m_{0},
+\end{aligned}$$ where $m_{11} = (a_{11} - a_{10})$,
+$m_{00} = (a_{00} - a_{01})$, and
+$m_{0} = a_{10} \zeta + a_{01} (1 - \zeta)$; the second line is a useful
+parametrization of the metric, constructed using our observation about
+the dimensionality of $\mathcal{C}$. For example, one common LPM is
+weighted accuracy: $WA = w_1TP + w_2TN$, where varying the proportion
+between $w_1$ and $w_2$ corresponds to different importances afforded to
+various types of misclassification.
+
+A slightly more complicated class of metrics are the *Linear-Fractional
+Performance Metrics (LFPM)*; given constants
+$\{a_{11}, a_{01}, a_{10}, a_{00}, b_{11}, b_{01}, b_{10}, b_{00}\} \in \mathbb{R}^{8}$,
+an LFPM is defined as: $$\begin{aligned}
+\phi(C) & = \frac{a_{11} T P + a_{01} F P + a_{10} F N + a_{00} T N}{b_{11} T P + b_{01} F P + b_{10} F N + b_{00} T N} = \frac{p_{11} T P + p_{00} T N + p_{0}}{q_{11} T P + q_{00} T N + q_{0}}
+\end{aligned}$$ where $p_{11} = (a_{11} - a_{10})$,
+$p_{00} = (a_{00} - a_{01})$, $q_{11} = (b_{11} - b_{10})$,
+$q_{00} = (b_{00} - b_{01})$,
+$p_{0} = a_{10} \zeta + a_{01} (1 - \zeta)$, and
+$q_{0} = b_{10} \zeta + b_{01} (1 - \zeta)$; again, these are useful
+reparametrizations that will simplify the elicitation process by
+reducing the number of variables to consider. Some commonly-used LFPMs
+are $F_\beta$ score and Jaccard similarity, given by
+$$F_{\beta}=\frac{T P}{\frac{T P}{1+\beta^{2}}-\frac{T N}{1+\beta^{2}}+\frac{\beta^{2} \zeta+1-\zeta}{1+\beta^{2}}}, J A C=\frac{T P}{1-T N};$$
+Taking $\beta = 1$, for example, gives the familiar F1 score, which is
+often used as a metric in ML classification problems.
+
+Defining these notions of LPMs and LFPMs will allow us to consider a far
+more general array of metrics for learning problems, potentially
+allowing us to align better with practitioners' preferences.
+
+## Bayes Optimal and Inverse-Optimal Classifiers
+
+In addition, we define the notions of Bayes optimal and inverse-optimal
+classifiers. Given a performance metric $\phi$, we define:
+
+-   the *Bayes utility* as
+    $\bar{\tau} := \sup_{h \in \mathcal{H}} \phi(C(h)) = \sup_{C \in \mathcal{C}} \phi(C)$;[^1]
+    this is the highest achievable utility (using the metric $\phi$)
+    over all classifiers $h \in \mathcal{H}$ for a given problem.
+
+-   the *Bayes classifier* as
+    $\bar{h} := \arg \max_{h \in \mathcal{H}} \phi(C(h))$; this is the
+    classifier $h$ corresponding to the Bayes utility.
+
+-   the *Bayes confusion matrix* as
+    $\bar{C} := \arg \max_{C \in \mathcal{C}} \phi(C)$; this is the
+    confusion matrix corresponding to the Bayes utility and classifier.
+
+Similarly, the inverse Bayes utility, classifier, and confusion matrix
+can be defined by replacing "$\sup$\" with "$\inf$\"; they represent the
+classifier and confusion matrix corresponding to the lower bound on
+utility for a given problem.
+
+We also have the following useful proposition:
+
+::: prop
+Let $\phi \in \varphi_{L P M}$. Then
+
+$$\bar{h}(x)=\left\{\begin{array}{lr}
+\mathbbm{1}\left[\eta(x) \geq \frac{m_{00}}{m_{11}+m_{00}}\right], & m_{11}+m_{00} \geq 0 \\
+\mathbbm{1}\left[\frac{m_{00}}{m_{11}+m_{00}} \geq \eta(x)\right], & \text { o.w. }
+\end{array}\right\}$$
+
+is a Bayes optimal classifier w.r.t $\phi$. The inverse Bayes classifier
+is given by $\underline{h}=1-\bar{h}$.
+:::
+
+This is a simple derivation based on the fact that we only get rewards
+from true positives and true negatives. Essentially, if we recover an
+LPM, we can use it to determine the best-performing classifier, obtained
+by placing a threshold on the conditional probability of a given sample,
+that corresponds to a confusion matrix. Therefore, the three notions of
+Bayes utility, classifier, and confusion matrix are functionally
+equivalent in our setting.
+
+## Metric Elicitation Problem Setup {#sec:metric-elicitation}
+
+Finally, we will formalize the problem of metric elicitation.
+
+Given two classifiers $h, h'$ (or equivalently, two confusion matrices
+$C, C'$), we define an *oracle query* as the function
+$\Gamma\left(h, h^{\prime}\right)=\Omega\left(C, C^{\prime}\right)=\mathbbm{1}\left[\phi(C)>\phi\left(C^{\prime}\right)\right]=: \mathbbm{1}\left[C \succ C^{\prime}\right]$,
+which represents the classifier that is preferred by the practitioner.
+
+Then, we can define the metric elicitation problem for populations.
+
+::: defn
+Suppose the true (oracle) performance metric is $\phi$. The goal is to
+recover a metric $\hat{\phi}$ by querying the oracle for as few pairwise
+comparisons of the form $\Omega\left(C, C^{\prime}\right)$ so that
+$\|\phi-\hat{\phi}\|_{--}<\kappa$ for a sufficiently small $\kappa > 0$
+and for any suitable norm $\|\cdot\|_{--}$.
+:::
+
+In practice, we would not have access to the true probability
+distribution or the population, which would give us the true values of
+$C$ and $C'$. We can, however, subtly alter this problem description to
+use $\hat{C}$ and $\hat{C}^{\prime}$, which come from our dataset of $n$
+samples.
+
+::: defn
+Suppose the true (oracle) performance metric is $\phi$. The aim is to
+recover a metric $\hat{\phi}$ by querying the oracle for as few pairwise
+comparisons of the form $\Omega\left(\hat{C}, \hat{C}^{\prime}\right)$
+so that $\|\phi-\hat{\phi}\|_{--}<\kappa$ for a sufficiently small
+$\kappa > 0$ and for any suitable norm $\|\cdot\|_{--}$.
+:::
+
+As is common in theoretical ML research, we solve the population problem
+and then consider ways to extend this to practical settings where we
+only have limited datasets of samples. In our case, this would
+correspond to calculating the confusion matrices from a portion of the
+dataset we have access to.
+
+## Confusion Matrices {#subsec:confusion-matrices}
+
+Since we are considering all possible metrics in the LPM and LFPM
+families, we need to make certain assumptions about $\mathcal{C}$.
+Particularly, we will assume that $g(t) = \mathbb{P}[\eta(X) \geq t]$ is
+continuous and strictly decreasing for $t \in [0, 1]$; essentially,
+$\eta$ has positive density and zero probability.
+
+In addition, $\mathcal{C}$ is convex, closed, and contained in the
+rectangle $[0, \zeta] \times[0,1-\zeta]$, and rotationally symmetric
+around its center, $(\frac{\zeta}{2}, \frac{1-\zeta}{2})$, where the
+axes represent the proportion of true positives and negatives. Also, the
+only vertices of $\mathcal{C}$ are $(0,1-\zeta)$ and $(\zeta, 0)$,
+corresponding to predicting all $0$'s or all $1$'s on a given dataset.
+Therefore, $\mathcal{C}$ is strictly convex, and any line that is
+tangent to it is tangent at exactly one point, corresponding to one
+particular confusion matrix; these properties can be visually observed
+in Figure [1.12](#fig:c){reference-type="ref" reference="fig:c"}.
+
+![Visual representation of
+$\mathcal{C}$](Figures/Screenshot 2023-11-13 at 6.56.44 PM.png){#fig:c
+width="50%"}
+
+Next, recall that an LPM is represented in terms of three parameters
+($\phi = m_{11}TP + m_{00}TN + m_0$). We have just seen that this LPM
+and its corresponding confusion matrix correspond to a certain point on
+the boundary of $\mathcal{C}$. We first note that this point is
+independent of $m_0$. In addition, we only care about the relative
+weightings of $m_{11}$ and $m_{00}$, not their actual values--they are
+scale invariant. Therefore, we can parametrize the space of LPMs as
+$\varphi_{L P M}=\{\mathbf{m}=(\cos \theta, \sin \theta): \theta \in[0,2 \pi]\}$,
+where $\cos \theta$ corresponds to $m_{00}$ and $\sin \theta$
+corresponds to $m_{11}$. And, as we already know, we can recover the
+Bayes classifier given $\mathbf{m}$, and it is unique, corresponding to
+one point on the boundary of $\mathcal{C}$, due to its convexity. The
+supporting hyperplane at this point is defined as
+
+$$\bar{\ell}_{\mathbf{m}}:=m_{11} \cdot tp+m_{00} \cdot tn=m_{11} \overline{TP}_{\mathbf{m}}+m_{00} \overline{TN}_{\mathbf{m}}$$
+
+We note that if $m_{00}$ and $m_{11}$ have opposite signs, then
+$\bar{h}_m$ is the trivial classifier predicting all 1's or all 0's,
+since either predicting true positives or true negatives results in
+negative reward. This corresponds to a supporting hyperplane with
+positive slope, so it can only be tangent at the vertices.
+
+In addition, the boundary $\partial \mathcal{C}$ can be split into upper
+and lower boundaries
+($\partial \mathcal{C}_{+}, \partial \mathcal{C}_{-}$), corresponding to
+$\theta \in (0, \pi/2)$ and $\theta \in (\pi, 3\pi/2)$ respectively (and
+whether $m_{00}, m_{11}$ are positive or negative).
+
+## LPM and LFPM Metric Elicitation Algorithms {#sec:orga500da0}
+
+Now that we have established all of this background, we are ready to
+present the main two results of this section. First, we introduce an
+algorithm for LPM elicitation, which also forms the backbone for LFPM
+elicitation.
+
+### LPM Elicitation {#sec:orgb6dac4e}
+
+For LPM elicitation, we need one more proposition.
+
+::: prop
+For a metric $\psi$ (quasiconvex and monotone increasing in TP/TN) or
+$\phi$ (quasiconcave and monotone increasing), and parametrization
+$\rho^+$/$\rho^-$ of upper/lower boundary, composition
+$\psi \circ \rho^-$ is quasiconvex and unimodal on \[0, 1\], and
+$\phi \circ \rho^+$ is quasiconcave and unimodal on \[0, 1\].
+:::
+
+Quasiconcavity and quasiconvexity are slightly more general variations
+on concavity and convexity. Their main useful property in our setting is
+that they are unimodal (they have a singular extremum), so we can devise
+a binary-search-style algorithm for eliciting the Bayes optimal and
+inverse-optimal confusion matrices for a given setting, as well as the
+corresponding $\phi$'s.
+
+We first note that to maximize a quasiconcave metric, in which $\phi$ is
+monotonically increasing in $TP$ and $TN$, we note that the resulting
+maximizer (and supporting hyperplane) will occur on the upper boundary
+of $\mathcal{C}$. We thus set our initial search range to be
+$[0, \pi/2]$ and repeatedly divide it into four regions. Then, we
+calculate the resulting CM on the 5 resulting boundaries of these
+regions and query the oracle $4$ times. We repeat this in each iteration
+of the binary search until a maximizer is found.
+
+::: rem
+In the case of quasiconcave and quasiconvex search ranges, a slightly
+more sophisticated variation on typical binary search must be used. To
+illustrate this, we provide the following example.
+
+<figure id="bsearch">
+<figure>
+<img src="Figures/normaldistribution.png" />
+</figure>
+<figure>
+<img src="Figures/normaldistribution copy.png" />
+</figure>
+<figcaption>Binary search algorithm example for quasiconvex
+functions</figcaption>
+</figure>
+
+Consider the two distributions in Figure
+[1.13](#bsearch){reference-type="ref" reference="bsearch"}. Note that
+if, for both the symmetric and skewed distributions, we were to divide
+the search range into two portions and compare $A$, $C$, and $E$, we
+would find that $C>A$ and $C>E$. In both of these cases, this does not
+help us reduce our search range, since the true maximum could lie on
+either of the two intervals (as in the second case), or at $C$ itself
+(as in the first case). Therefore, we must make comparisons between all
+five points $A, B, C, D, E$. This allows us to correctly restrict our
+search range to $[B, D]$ in the first case and $[C, E]$ in the second.
+These extra search requirements are due to the quasiconcavity of the
+search space we are considering, in which there exists a maximum but we
+need to make several comparisons at various points throughout the search
+space to be able to reduce its size in each iteration.
+:::
+
+:::: algorithm
+::: algorithmic
+**input:** $\epsilon > 0$ and oracle $\Omega$ **initialize:**
+$\theta_a = 0, \theta_b = \frac{\pi}{2}$ set
+$\theta_c = \frac{3\theta_a+\theta_b}{4}$,
+$\theta_d = \frac{\theta_a+\theta_b}{2}$, and
+$\theta_e = \frac{\theta_a+3\theta_b}{4}$
+
+obtain $h\theta_a, h\theta_c, h\theta_d, h\theta_e, h\theta_b$ using
+Proposition 1
+
+Compute $C\theta_a, C\theta_c, C\theta_d, C\theta_e, C\theta_b$ using
+(1)
+
+Query
+$\Omega(C\theta_c, C\theta_a), \Omega(C\theta_d, C\theta_c), \Omega(C\theta_e, C\theta_d)$,
+and $\Omega(C\theta_b, C\theta_e)$
+
+request $q_{i,j}$'s label from reference impute $q_{i,j}$'s label from
+previously labeled queries
+
+assume the default order $C\theta \prec C\theta' \prec C\theta''$
+
+assume the default order $C\theta \prec C\theta' \prec C\theta''$
+
+Set $\theta_b = \theta_d$ Set $\theta_b = \theta_d$ Set
+$\theta_a = \theta_c$ Set $\theta_b = \theta_e$ Set
+$\theta_a = \theta_d$ Set $\theta_a = \theta_d$ **output:**
+$\vec{m}, C$, and $\vec{l}$, where
+$\vec{m} = m_l(\theta_d), C = C\theta_d$, and
+$\vec{l} := (\vec{m}, (tp, tn)) = (\vec{m}, C)$
+:::
+::::
+
+To elicit LPMs, we run Algorithm 1 [\[lpm\]](#lpm){reference-type="ref"
+reference="lpm"}, querying the oracle in each iteration, and set the
+elicited metric $\hat{m}$ (which is the maximizer on $\mathcal{C}$) to
+be the slope of the resulting hyperplane, since the metric is linear.
+
+::: rem
+To find the minimum of a quasiconvex metric, we flip all instances of
+$\prec$ and $\succ$, and use an initial search range of $[\pi, 3\pi/2]$;
+we use this algorithm, which we refer to as Algorithm 2, in our
+elicitation of LFPMs.
+:::
+
+Next, we provide a Python implementation of Algorithm 1.
+
+::: python
+def get_m(theta): \"\"\" Inputs: - theta: the value that parametrizes m
+Outputs: - m_0 and m_1 for the LPM \"\"\"
+
+return (math.cos(theta), math.sin(theta))
+
+def lpm_elicitation(epsilon, oracle): \"\"\" Inputs: - epsilon: some
+epsilon \> 0 representing threshold of error - oracle: some function
+that accepts 2 confusion matrices and returns true if the first is
+preferred and false otherwise Outputs: - estimate for m, which is used
+to compute the LPM as described above \"\"\"
+
+a = 0 b = math.pi/2 while (b - a \> epsilon): c = (3 \* a + b) / 4 d =
+(a + b) / 2 e = (a + 3 \* b) / 4
+
+m_a, m_b, m_c, m_d, m_e = (get_m(x) for x in \[a,b,c,d,e\]) \# using
+definition of m c_a, c_b, c_c, c_d, c_e = (get_c(x) for x in \[m_a, m_b,
+m_c, m_d, m_e\]) \# compute classifier from m's then calculate confusion
+matrices
+
+response_ac = oracle(c_a, c_c) response_cd = oracle(c_c, c_d)
+response_de = oracle(c_d, c_e) response_eb = oracle(c_e, c_b)
+
+\# update ranges to keep the peak if response_ac: b = d elif
+response_cd: b = d elif response_de: a = c b = e elif response_eb: a = d
+else: a = d return get_m(d), get_c(d)
+:::
+
+### LFPM Elicitation {#sec:orga500da1}
+
+Now, we present the next main result, which is an algorithm to elicit
+linear-fractional performance metrics. For this task, we will need the
+following assumption:
+
+Let $\phi \in \varphi_{L F P M}$. We assume
+$p_{11}, p_{00} \geq 0, p_{11} \geq q_{11}, p_{00} \geq q_{00},$
+$p_{0}=0, q_{0}=$
+$\left(p_{11}-q_{11}\right) \zeta+\left(p_{00}-q_{00}\right)(1-\zeta)$,
+and $p_{11}+p_{00}=1$.
+
+These assumptions guarantee that the LFPM $\phi$ which we are trying to
+elicit is monotonically increasing in $TP$ and $TN$, just as in the LPM
+elicitation case.
+
+We first provide motivation and an overview of the approach for LFPM
+elicitation and then present pseudocode for the algorithm.
+
+The general idea of the algorithm is to use Algorithm 1 to obtain a
+maximizer and a minimizer for the given dataset; these result in two
+systems of equations involving the true LFPM $\phi^*$ with 1 degree of
+freedom. Then, we run a grid search that is independent of oracle
+queries to find the point where solutions to the systems match pointwise
+on the resulting confusion matrices; this occurs close to where the true
+metric lies.
+
+More formally, suppose that the true metric is
+$$\phi^{*}(C)=\frac{p_{11}^{*} T P+p_{00}^{*} T N}{q_{11}^{*} T P+q_{00}^{*} T N+q_{0}^{*}}.$$
+Then, let $\bar{\tau}$ and $\underline{\tau}$ represent the maximizer
+and minimizer of $\phi$ over $\mathcal{C}$, respectively. There exists a
+hyperplane $$\begin{aligned}
+\bar{\ell}_{f}^{*}:=\left(p_{11}^{*}-\bar{\tau}^{*} q_{11}^{*}\right) t p+\left(p_{00}^{*}-\bar{\tau}^{*} q_{00}^{*}\right) t n=\bar{\tau}^{*} q_{0}^{*},
+\end{aligned}$$ which touches $\mathcal{C}$ at
+$\left(\overline{T P}^{*}, \overline{T N}^{*}\right)$ on
+$\partial \mathcal{C}_{+}$.
+
+Correspondingly, there also exists a hyperplane $$\begin{aligned}
+\underline{\ell}_{f}^{*}:=\left(p_{11}^{*}-\underline{\tau}^{*} q_{11}^{*}\right) t p+\left(p_{00}^{*}-\underline{\tau}^{*} q_{00}^{*}\right) \operatorname{tn}=\underline{\tau}^{*} q_{0}^{*},
+\end{aligned}$$ which touches $\mathcal{C}$ at
+$\left(\underline{TP}^{*}, \underline{T N}^{*}\right)$ on
+$\partial \mathcal{C}_{-}$. Figure [1.14](#minmax){reference-type="ref"
+reference="minmax"} illustrates this visually on $\mathcal{C}$.
+
+![Visual representation of the minimizer and maximizer on
+$\mathcal{C}$](Figures/Screenshot 2023-11-13 at 6.56.52 PM.png){#minmax
+width="50%"}
+
+While we are unable to obtain 1.1 and 1.2 directly, we can use Algorithm
+1 to get a hyperplane
+$$(]\bar{\ell}:=\bar{m}_{11} t p+\bar{m}_{00} t n= \bar{m}_{11} \overline{T P}^{*}+\bar{m}_{00} \overline{T N}^{*} = \bar{C}_{0},$$
+which is equivalent to $\bar{\ell}_{f}^{*}$ (1.1) up to a constant
+multiple. From here, we can obtain the system of equations
+
+$$p_{11}^{*}-\bar{\tau}^{*} q_{11}^{*}=\alpha \bar{m}_{11}, p_{00}^{*}-\bar{\tau}^{*} q_{00}^{*}=\alpha \bar{m}_{00}, \bar{\tau}^{*} q_{0}^{*}=\alpha \bar{C}_{0},$$
+where $\alpha > 0$ (we know it is $\geq0$ due to our assumptions earlier
+and because $\bar{m}$ is positive, but if it is equal to $0$ then
+$\phi^*$ would be constant. So, our resulting system of equations is
+$$\begin{aligned}
+    p_{11}^{\prime}-\bar{\tau}^{*} q_{11}^{\prime}=\bar{m}_{11}, p_{00}^{\prime}-\bar{\tau}^{*} q_{00}^{\prime}=\bar{m}_{00}, \bar{\tau}^{*} q_{0}^{\prime}=\bar{C}_{0}.
+\end{aligned}$$
+
+Now, similarly, we can approximate 1.2 using the algorithm we defined
+for quasiconvex metrics (Algorithm 2), where we altered the search range
+and comparisons. After finding the minimizer, we obtain the hyperplane
+$$\underline{\ell}:=\underline{m}_{11} t p+\underline{m}_{00} t n=\underline{m}_{11} \underline{TP}^{*}+\underline{m}_{00} \underline{TN}^{*} = \underline{C}_{0},$$
+which is equivalent to $\underline{\ell}_{f}^{*}$ (1.2) up to a constant
+multiple. So then, our system of equations is
+$$p_{11}^{*}-\underline{\tau}^{*} q_{11}^{*}=\gamma \underline{m}_{11}, p_{00}^{*}-\underline{\tau}^{*} q_{00}^{*}=\gamma \underline{m}_{00}, \underline{\tau}^{*} q_{0}^{*}=\gamma \underline{C}_{0},$$
+where $\gamma <0$ (for a reason analogous to why we have $\alpha >0$),
+meaning our resulting system of equations is $$\begin{aligned}
+    p_{11}^{\prime \prime}-\underline{\tau}^{*} q_{11}^{\prime \prime}=\underline{m}_{11}, p_{00}^{\prime \prime}-\underline{\tau}^{*} q_{00}^{\prime \prime}=\underline{m}_{00}, \underline{\tau}^{*} q_{0}^{\prime \prime}=\underline{C}_{0}.
+\end{aligned}$$
+
+1.3 and 1.4 form the two systems of equations mentioned in our overview
+of the algorithm. Next, we demonstrate that they have only one degree of
+freedom. Note that if we know $p_{11}'$, we could solve both systems of
+equations as follows: $$\begin{aligned}
+    p_{00}^{\prime}  &=1-p_{11}^{\prime}, q_{0}^{\prime}=\bar{C}_{0} \frac{P^{\prime}}{Q^{\prime}}\\
+    q_{11}^{\prime}  &=\left(p_{11}^{\prime}-\bar{m}_{11}\right) \frac{P^{\prime}}{Q^{\prime}} \\
+    q_{00}^{\prime}&=\left(p_{00}^{\prime}-\bar{m}_{00}\right) \frac{P^{\prime}}{Q^{\prime}},
+\end{aligned}$$ where
+$P^{\prime}=p_{11}^{\prime} \zeta+p_{00}^{\prime}(1-\zeta)$ and
+$Q^{\prime}=P^{\prime}+\bar{C}_{0}-$
+$\bar{m}_{11} \zeta-\bar{m}_{00}(1-\zeta).$
+
+Now, suppose that we were to know $p_{11}'$. Then, we could use this
+value to solve both of the systems 1.3 and 1.4, which would give us two
+metrics $\phi'$ and $\phi''$, which come from the maximizer and
+minimizer respectively. Importantly, when
+$$p_{11}^{*} / p_{00}^{*}=p_{11}^{\prime} / p_{00}^{\prime}=p_{11}^{\prime \prime} / p_{00}^{\prime \prime},$$
+then
+$\phi^{*}(C)=\phi^{\prime}(C) / \alpha=-\phi^{\prime \prime}(C) / \gamma$.
+Essentially, when we have found a value of $p_{11}'$ that results in
+$\phi'$, $\phi''$ having constant ratios on all points of the boundary
+of $\mathcal{C}$, then we can obtain $\phi^*$, since it is obtainable
+from $\phi'$ and $\alpha$ (or, alternatively, $\phi''$ and $\gamma$.)
+
+So, we will grid search for $p_{11}'$ on $[0,1]$. For each point in our
+search, we will compute $\phi'$ and $\phi''$. Then, we will generate a
+number of confusion matrices on the boundaries, and calculate the ratio
+$\phi'' / \phi'$ on each of them. We will select the value of $p_{11}'$
+for which the ratio $\phi'' / \phi'$ is the closest to constant, and use
+it to compute the elicited metric $\hat{\phi}$.
+
+The pseudocode for LFPM elicitation is given in Figure
+[1.15](#lfpm){reference-type="ref" reference="lfpm"}.
+
+<figure id="lfpm">
+<p><img src="Figures/Screenshot 2023-11-13 at 6.57.23 PM.png"
+style="width:70.0%" alt="image" /> <img
+src="Figures/Screenshot 2023-10-16 at 10.52.44 AM.png"
+style="width:70.0%" alt="image" /></p>
+<figcaption>LFPM Elicitation Algorithm</figcaption>
+</figure>
+
+Note that Algorithm 3, the grid search, is independent of oracle
+queries, rendering it especially ideal for LFPM elicitation since, as a
+result, our algorithm has the same algorithmic complexity as LPM
+elicitation.
+
+We provide a Python implementation below.
+
+::: python
+def lfpm_elicitation(k, delta): \"\"\" Inputs: - k: the number of
+confusion matrices to evaluate on - delta: the spacing for the grid
+search Outputs: - p_11', which will allow us to compute the elicited
+LFPM \"\"\"
+
+sigma_opt = np.inf p11_opt = 0 C = compute_confusion_matrices(k) \#
+generates k confusion matrices to evaluate on
+
+for i in range(int(1/delta)): p11 = i \* delta phi1 =
+compute_upper_metric(p11) \# solves the first system of equations with
+p11 phi2 = compute_lower_metric(p11) \# solves the second system of
+equations with p11 utility_1 = \[phi1(c) for c in C\] #calculate phi for
+both systems of equations utility_2 = \[phi2(c) for c in C\]
+
+r = \[\] for i in range(k): r.append(utility_1\[i\] / utility_2\[i\])
+sigma = np.std(r)
+
+if(sigma \< sigma_opt): sigma_opt = sigma p11_opt = p11 return p11_opt
+:::
+
+In summary, to elicit LFPMs, we utilize a special property of the LPM
+minimizer and maximizer on $\mathcal{C}$--namely, that we can use the
+corresponding supporting hyperplanes to form a system of equations that
+can be used to approximate $\phi^*$ if one parameter ($p_{11}'$) is
+found, and that this parameter can be found using an oracle-independent
+grid search.
+
+## Guarantees {#sec:orga500da2}
+
+Importantly, these algorithms can be shown to satisfy some important
+theoretical guarantees. We provide a formal statement and intuitive
+interpretation of them here, and their proofs can be found in the
+appendix of the original paper.
+
+First, we define the oracle noise $\epsilon_{\Omega}$, which comes from
+the oracle potentially flipping the comparison output on two confusion
+matrices that are close enough in utility.
+
+::: thm
+Given $\epsilon, \epsilon_{\Omega} \geq 0$ and a metric $\phi$
+satisfying our assumptions, Algorithm 1/2 finds an approximate
+maximizer/minimizer and supporting hyperplane. Also, the value of $\phi$
+at that point is within
+$O\left(\sqrt{\epsilon_{\Omega}}+\epsilon\right)$ of the optimum, and
+the number of queries is $O\left(\log \frac{1}{\epsilon}\right)$.
+:::
+
+::: thm
+Let $\mathbf{m}^{*}$ be the true performance metric. Given
+$\epsilon>0, L P M$ elicitation outputs a performance metric
+$\hat{\mathbf{m}}$, s.t.
+$\left\|\mathbf{m}^{*}-\hat{\mathbf{m}}\right\|_{\infty} \leq \sqrt{2} \epsilon+\frac{2}{k_{0}} \sqrt{2 k_{1} \epsilon_{\Omega}}$.
+:::
+
+These two theorems ensure that Algorithms 1 and 2 find an appropriate
+maximizer and minimizer in the search space, within a certain range of
+accuracy that depends on oracle and sample noise, and in a certain
+number of queries. Both of these statements are guaranteed by the binary
+search approach.
+
+::: thm
+Let $h_{\theta}$ and $\hat{h}_{\theta}$ be two classifiers estimated
+using $\eta$ and $\hat{\eta}$, respectively. Further, let $\bar{\theta}$
+be such that
+$h_{\bar{\theta}}=\arg \max _{\theta} \phi\left(h_{\theta}\right)$. Then
+$\|C(\hat{h}_{\bar{\theta}})-C\left(h_{\bar{\theta}}\right)\|_{\infty}=O\left(\left\|\hat{\eta}_{n}-\eta\right\|_{\infty}\right)$.
+:::
+
+This says, importantly, that the drop in elicited metric quality caused
+by using a dataset of samples rather than population CMs is bounded by
+the drop in performance of the decision boundary $\eta$. These three
+guarantees together ensure that oracle noise and sample noise do not
+amplify drops in performance when using metric elicitation; rather,
+these drops in performance are bounded by the drops that would usually
+occur when using the typical machine learning paradigm of training a
+decision boundary and using a pre-established metric.
+
+## Summary and Further Expansions
+
+In this chapter, we have introduced the framework of metric elicitation
+for binary classification. After motivating the problem from a
+psychological and theoretical perspective, we have introduced the
+notions of linear performance metrics and linear-fractional performance
+metrics. Next, we set up the problem of metric elicitation from a
+population and sample perspective. We then made several key observations
+about the space of confusion matrices which, along with the notions of
+the Bayes utility and classifier, allow us to reduce the problem of
+linear performance metric elicitation to a binary search algorithm over
+a quasiconvex (or quasiconcave) space.
+
+Next, we presented an algorithm to elicit linear-fractional performance
+metrics that builds upon the method for eliciting linear performance
+metrics. We used a key result about the dimensionality of
+linear-fractional performance metrics to create a simple
+oracle-independent grid search algorithm, which, in conjunction with the
+linear performance metric elicitation algorithm, results in an algorithm
+with the same time complexity that can be used to elicit a much broader
+range of metrics. We also provided Python implementations for both of
+these algorithms.
+
+Lastly, we have described three important guarantees about the
+performance of these algorithms, which makes them suited to real-world,
+practical settings.
+
+For further interesting exploration of the types of problems that can be
+solved using the framework of metric elicitation, we refer the reader to
+[@nips], which performs metric elicitation to determine the oracle's
+ideal tradeoff between the classifier's overall performance and the
+discrepancy between its performance on certain protected groups.
+
+## Multiclass Performance Metric Elicitation
+
+Although the previous chapter only described metric elicitation for
+binary classification problems, the general framework can still be
+applied to multiclass classification problems, as described in
+"Multiclass Performance Metric Elicitation" by Hiranandani et
+al. [@NEURIPS2019_1fd09c5f]
+
+Consider the case of classifying subtypes of
+leukemia [@YangNaiman+2014+477+496]. We can train a neural network to
+predict conditional probability of a certain leukemia subtype given
+certain gene expressions. However, it may not be appropriate to classify
+the subtype purely based on whichever one has the highest confidence.
+For instance, a treatment for leukemia subtype C1 may be perfect for
+cases of C1, but it may be ineffective or harmful for certain other
+subtypes. Therefore, the final response from the classifier may not be
+as simple as as choosing the class with the highest conditional
+probability, just like how the threshold for binary classification may
+not always be 50%.
+
+With multiclass metric elicitation, we can show confusion matrices to an
+oracle (like the doctor in the leukemia example) to determine which
+classifier has the best tradeoffs. In [@NEURIPS2019_1fd09c5f], the
+authors focus on eliciting linear performance metrics, which is what we
+will describe in this chapter.
+
+## Preliminaries
+
+Most of the notation from Binary Metric Elicitation still persists, just
+modified to provide categorical responses:
+
+-   $X \in \mathcal{X}$ is the input random variable.
+
+-   $Y \in [k]$ is the output random variable, where $[k]$ is the index
+    set $\{1, 2, \dots, k\}$.
+
+-   The dataset of size $n$ is denoted by $\{(\vec{x}, y)\}_{i=1}^n$
+    generated independently and identically from $\mathbb{P}(X, Y)$.
+
+-   $\eta_i(\vec{x}) = \mathbb{P}(Y=i | X=\vec{x})$ gives the
+    conditional probability of class $i \in [k]$ given an observation.
+
+-   $\xi_i = \mathbb{P}(Y=i)$ is the marginal probability of class
+    $i \in [k]$.
+
+-   The set of all classifiers is
+    $\mathcal{H} = \{h : \mathcal{X} \rightarrow \Delta_k\}$, where
+    $\Delta_k$ is (k-1) dimensional simplex. In this case, the outputs
+    of classifiers are 1-hot vectors of size $k$ where the only index
+    with value 1 is the predicted class and all other positions have a
+    value of 0.
+
+-   The confusion matrix for a classifier, $h$, is
+    $C(h, \mathbb{P}) \in \mathbb{R}^{k \times k}$, where:
+    $$\begin{aligned}
+            C_{ij}(h, \mathbb{P}) = \mathbb{P}(Y=i, h=j) \text{\qquad for } i, j \in [k]
+        
+    \end{aligned}$$
+
+Note that the confusion matrices are $k\times k$ and store the joint
+probabilities of each type of classification for each possible class.
+This means that the sum of row $i$ in the confusion matrix equals
+$\xi_i$, because this is equivalent to adding over all possible
+classifications. Since we know the sums of each row, all diagonal
+elements can be reconstructed from just the off-diagonal elements, so a
+confusion matrix $C(h, \mathbb{P})$ can be expressed as a vector of
+off-diagonal elements,
+$\vec{c}(h, \mathbb{P}) = \textit{off-diag}(C(h, \mathbb{P}))$, and
+$\vec{c} \in \mathbb{R}^q$ where $q := k^2 - k$. The vector $\vec{c}$ is
+called the vector of *'off-diagonal confusions.'* The space of
+off-diagonal confusions is
+$\mathcal{C} = \{\vec{c}(h, \mathbb{P}) : h \in \mathcal{H}\}$.
+
+In cases where the oracle would care about the exact type of
+misclassification (i.e. misclassifying and object from class 1 as class
+2), this off-diagonal confusion matrix is necessary. However, there are
+many cases where the performance of a classifier is determined by just
+the probability of correct prediction for each class, which just
+requires the diagonal elements. In these cases, we can define the vector
+of *'diagonal confusions'* as
+$\vec{d}(h, \mathbb{P}) = \textit{diag}(C(h, \mathbb{P})) \in \mathbb{R}^k$.
+The space of diagonal confusions is
+$\mathcal{D} = \{\vec{d}(h, \mathbb{P}) : h \in \mathcal{H}\}$.
+
+Finally, the setup for metric elicitation is identical to the one
+examined in the previous chapter. We still assume access to an oracle
+that can choose between two classifiers or confusion matrices, using
+notation $\Gamma$ for comparing two classifiers and $\Omega$ for
+comparing confusion matrices, which returns 1 if the first classifier is
+better and 0 otherwise. We still assume that the oracle behaves
+according to some unknown performance metric, and we wish to recover
+this metric up to some small error tolerance (based on a suitable norm).
+
+The two different types of confusion vectors result in different
+algorithms for metric elicitation, which we will explore in later
+sections.
+
+## Diagonal Linear Performance Metric Elicitation
+
+In this section, we study metric elicitation in the case where the
+performance metric is linear and we only care about diagonal confusions.
+
+### DLPM
+
+A Diagonal Linear Performance Metric (DLPM) is a performance metric that
+only considers the diagonal elements in the confusion matrix. The metric
+is defined as $\psi(\vec{d}) = \langle \vec{a}, \vec{d} \rangle$, where
+$\vec{a} \in \mathbb{R}^k$ such that $||\vec{a}||_1 = 1$. It is also
+called weighted accuracy [@pmlr-v37-narasimhanb15].
+
+The family of DLPMs is denoted as $\varphi_{DLPM}$. Since these only
+consider the diagonal elements, which we want to maximize, we can focus
+on only eliciting monotonically increasing DLPMs, meaning that all
+elements in $\vec{a}$ are non-negative.
+
+### Bayes Optimal Classifiers
+
+The Bayes Optimal diagonal confusion given a metric $\psi$ is
+$\bar{d} = \arg\max_{\vec{d} \in \mathcal{D}} \psi(\vec{d})$.
+
+The Restricted Bayes Optimal (RBO) diagonal confusion is the diagonal
+confusion that maximizes metric $\psi$ given that it is only allowed to
+predict classes $k_1$ and $k_2$. It is denoted as
+$\bar{c}_{k_1, k_2} := \arg\max_{\vec{d} \in \mathcal{D}_{k_1, k_2}} \psi(\vec{d})$.
+
+### Geometry of Space of Diagonal Confusions D
+
+Consider the trivial classifiers that only predict a single class at all
+times. The diagonal confusions when only predicting class $i$ are
+$\vec{v}_i \in \mathbb{R}^k$ with $\xi_i$ at index $i$ and zero
+elsewhere. Note that this is the maximum possible value in index $i$,
+because this represents perfectly classifying all points that have a
+true class of $i$.
+
+We can consider the space of diagonal confusions, visualized in Figure
+[1.16](#diag_geom){reference-type="ref" reference="diag_geom"} (taken
+from [@NEURIPS2019_1fd09c5f]). The space of $\mathcal{D}$ is strictly
+convex, closed, and contained in the box
+$[0, \xi_1] \times \dots \times [0, \xi_k]$. We also know that the only
+vertices are $\vec{v}_i$ for each $i \in [k]^{(k-1)}$.
+
+![(a) Geometry of space of diagonal confusions for $k=3$. This is a
+convex region with three flat areas representing confusions when
+restricted to only two classes. (b) Geometry of diagonal confusions when
+restricted to classes $k_1$ and $k_2$. Notice how this is identical to
+the space of confusion matrices examined in the previous
+chapter.](Figures/diag_geometry.png){#diag_geom width="\\textwidth"}
+
+We know that this is strictly convex under the assumption that an object
+from any class can be misclassified as any other class. Mathematically,
+the assumption is that
+$g_{ij}(r) = \mathbb{P} \left[\frac{\eta_i(X)}{\eta_j(X)} \geq r \right]$
+$\forall i, j \in [k]$ are continuous and strictly decreasing for
+$r \in [0, \infty)$.
+
+We can also define the space of binary classification confusion matrices
+confined to classes $k_1$ and $k_2$, which is the 2-D $(k_1, k_2)$
+axis-aligned face of $\mathcal{D}$, denoted as $\mathcal{D}_{k_1, k_2}$.
+Note that this is strictly convex, since $\mathcal{D}$ itself is
+strictly convex, and it has the same geometry as the space of binary
+confusion matrices examined in the previous chapter. Therefore, we can
+construct an RBO classifier for $\psi \in \varphi_{DLPM}$, parameterized
+by $\vec{a}$, as follows: $$\begin{aligned}
+\bar{h}_{k_1, k_2}(\vec{x})= \left\{
+\begin{array}{ll}
+      k_1, \text{ if } a_{k_1} \eta_{k_1}(\vec{x}) \geq a_{k_2} \eta_{k_2}(\vec{x})\\
+k_2, \text{ o.w.}
+\end{array}
+\right\}.
+\label{rbo_eq}
+\end{aligned}$$
+
+We can parameterize the upper boundary of $\mathcal{D}_{k_1, k_2}$,
+denoted as $\partial \mathcal{D}^{+}_{k_1, k_2}$, using a single
+parameter $m \in [0, 1]$. Specifically, we can construct a DLPM by
+setting $a_{k_1} = m$, $a_{k_2} = 1 - m$, and all others to 0. Using
+equation [\[rbo_eq\]](#rbo_eq){reference-type="ref" reference="rbo_eq"},
+we can get the diagonal confusions, so varying $m$ parameterizes
+$\partial \mathcal{D}^{+}_{k_1, k_2}$. The parameterization is denoted
+as $\nu(m; k_1, k_2)$.
+
+### DLPM Elicitation
+
+Suppose the oracle follows a true metric, $\psi$, that is linear and
+monotone increasing across all axes. If we consider the composition
+$\psi \circ \nu(m; k_1, k_2): [0, 1] \rightarrow \mathbb{R}$, we know it
+must be concave and unimodal, because $\mathcal{D}_{k_1, k_2}$ is a
+convex set. Therefore, we can find the value of $m$ that maximizes
+$\psi \circ \nu(m; k_1, k_2)$ for any given $k_1$ and $k_2$ using a
+binary search procedure.
+
+Since the RBO classifier for classes $k_1$ and $k_2$ only rely on the
+relative weights of the classes in the DLPM (see equation
+[\[rbo_eq\]](#rbo_eq){reference-type="ref" reference="rbo_eq"}), finding
+the value of $m$ that maximizes $\psi \circ \nu(m; k_1, k_2)$ gives us
+the true relative ratio between $a_{k_1}$ and $a_{k_2}$. Specifically,
+from the definition of $\nu$, we know that
+$\frac{a_{k_2}}{a_{k_1}} = \frac{1-m}{m}$. We can therefore simply
+calculate the ratio between $a_1$ and all other weights to reconstruct
+an estimate for the true metric. A python implementation of this
+algorithm is provided below.
+
+::: python
+import numpy as np
+
+def rbo_dlpm(m, k1, k2, k): \"\"\" This constructs DLPM weights for the
+upper boundary of the restricted diagonal confusions, given a parameter
+m. This is equivalent to (m; k1, k2)
+
+Inputs: - m: parameter (between 0 and 1) for the upper boundary - k1:
+first axis for this face - k2: second axis for this face - k: number of
+classes Outputs: - DLPM weights for this point on the upper boundary
+\"\"\" new_a = np.zeros(k) new_a\[k1\] = m new_a\[k2\] = 1 - m return
+new_a
+
+def dlpm_elicitation(epsilon, oracle, get_d, k): \"\"\" Inputs: -
+epsilon: some epsilon \> 0 representing threshold of error - oracle:
+some function that accepts 2 confusion matrices and returns true if the
+first is preferred and false otherwise - get_d: some function that
+accepts dlpm weights and returns diagonal confusions - k: number of
+classes Outputs: - estimate for true DLPM weights \"\"\" a_hat =
+np.zeros(k) a_hat\[0\] = 1 for i in range(1, k): \# iterate over each
+axis to find appropriate ratio a = 0 \# lower bound of binary search b =
+1 \# upper bound of binary search
+
+while (b - a \> epsilon): c = (3 \* a + b) / 4 d = (a + b) / 2 e = (a +
+3 \* b) / 4
+
+\# get diagonal confusions for each point d_a, d_c, d_d, d_e, d_b =
+(get_d(rbo_dlpm(x, 0, i, k)) for x in \[a, c, d, e, b\])
+
+\# query oracle for each pair response_ac = oracle(d_a, d_c) response_cd
+= oracle(d_c, d_d) response_de = oracle(d_d, d_e) response_eb =
+oracle(d_e, d_b)
+
+\# update ranges to keep the peak if response_ac: b = d elif
+response_cd: b = d elif response_de: a = c b = e elif response_eb: a = d
+else: a = d
+
+midpt = (a + b) / 2 a_hat\[i\] = (1 - midpt) / midpt return a_hat /
+np.sum(a_hat)
+:::
+
+To use this algorithm for metric elicitation on a real dataset, we need
+to supply the "oracle" and "get_d" functions. The oracle function is an
+interface to an expert who judges which of two confusion matrices is
+better. The get_d function will need to construct a classifier given the
+DLPM weights, following the principles of the RBO classifier from
+equation [\[rbo_eq\]](#rbo_eq){reference-type="ref" reference="rbo_eq"},
+and calculate the confusion matrix from a validation set.
+
+### DLPM Elicitation Guarantees
+
+Using the same oracle feedback noise model from the binary metric
+elicitation, we can make the following guarantees:
+
+::: prop
+Given $\epsilon, \epsilon_\Omega \geq 0$, and a 1-Lipschitz DLPM
+$\varphi^*$ parameterized by $\vec{a}^*$. Then the output $\hat{a}$ of
+the DLPM elicitation algorithm after $O((k-1)\log\frac{1}{\epsilon})$
+queries to the oracle satisfies
+$||\vec{a}^* - \hat{a}||_\infty \leq O(\epsilon + \sqrt{\epsilon_\Omega})$,
+which is equivalent to
+$||\vec{a}^* - \hat{a}||_2 \leq O(\sqrt{k}(\epsilon + \sqrt{\epsilon_\Omega}))$.
+:::
+
+In other words, the maximum difference between the estimate and true
+value along any component (indicated by the L-infinity norm) is linearly
+bounded by the sum of the epsilon specified by the algorithm and the
+square root of the oracle's correctness guarantee ($\epsilon_\Omega$).
+
+## Linear Performance Metric Elicitation
+
+In this section, we study metric elicitation in the case where
+performance metric is linear and we care about the entire confusion
+matrix (i.e. the off-diagonal confusions).
+
+A Linear Performance Metric (LPM) is a performance metric that uses the
+off-diagonal confusions, which is equivalent to the whole confusion
+matrix. The metric is defined as
+$\phi(\vec{c}) = \langle \vec{a}, \vec{c} \rangle$, where
+$\vec{a} \in \mathbb{R}^q$ such that $||\vec{a}||_2 = 1$. As a reminder,
+$q = k^2 - k$, which is the number of off-diagonal elements of the
+confusion matrix. The family of LPMs is denoted as $\varphi_{LPM}$.
+Since these only consider the off-diagonal elements, which we want to
+minimize, we can focus on only eliciting monotonically decreasing LPMs,
+meaning all elements in $\vec{a}$ are non-positive. The Bayes Optimal
+confusion given a metric $\phi$ over a subset
+$\mathcal{S} \subseteq \mathcal{C}$ is
+$\bar{c} = \arg\max_{\vec{c} \in \mathcal{S}} \phi(\vec{c})$.
+
+### Geometry of Space of Off-Diagonal Confusions C
+
+Consider the trivial classifiers that only predict a single class at all
+times. The off-diagonal confusions when only predicting class $i$ are
+$\vec{u}_i \in \mathbb{R}^q$, and all $\xi_j$ (where $j \neq i$) will
+appear in this vector, because all classes other than $i$ will be
+incorrectly predicted.
+
+The space of off-diagonal confusions, $\mathcal{C}$ is convex and
+contained in the box
+$[0, \xi_1]^{(k-1)} \times \dots \times [0, \xi_k]^{(k-1)}$. We also
+know that each $\vec{u}_i$ is a vertex. Furthermore,
+$\vec{o} = \frac{1}{k} \sum_{i=1}^k \vec{u}_i$ is always contained in
+$\mathcal{C}$ and represents the confusion matrix for the classifier
+that chooses a class uniformly at random.
+
+Notice that $\mathcal{C}$ is not *strictly* convex, unlike
+$\mathcal{D}$. However, if we make the assumption that there exists a
+$q$-dimensional sphere $\mathcal{S}_\lambda \subset \mathcal{C}$ of
+radius $\lambda > 0$ centered at $\vec{o}$, we can now operate on this
+convex space. Note that this sphere always exists as long as there is
+some signal for non-trivial classification, so this assumption is safe
+in practice. Furthermore, since we are eliciting some linear metric with
+weights $\vec{a}$, we know the optimal off-diagonal confusion $\bar{c}$
+over $\mathcal{S}$ is a point on its boundary
+$\bar{c} = \lambda \vec{a} + \vec{o}$.
+
+Since we are only eliciting monotonically decreasing LPMs, we can
+parameterize the lower boundary of $\mathcal{S}_\lambda$, denoted as
+$\partial S^{-}_\lambda$, using sphere angles. Specifically, let
+$\vec{\theta}$ be a (q-1) dimensional vector of angles, with all angles
+in the second quadrant ($\theta_i \in [\pi/2, \pi]$), except for the
+primary angle, which is in the third quadrant
+($\theta_{(q-1)} \in [\pi, 3\pi/2]$. To construct the LPM, we can set
+$a_i = \prod_{j=1}^{i-1} \sin(\theta_j) \cos(\theta_i)$ for
+$i \in [q-1]$ while $a_q =  \prod_{j=1}^{q-1} \sin(\theta_j)$. This
+parameterization ensures that all elements in $\vec{a}$ are non-positive
+and the 2-norm is 1. This parameterization is denoted as
+$\mu(\vec{\theta})$.
+
+### LPM Elicitation {#lpm-elicitation}
+
+Unlike the diagonal case, $\mathcal{C}$ is not *strictly* convex, so the
+boundary may have flat regions. This means the DLPM elicitation
+algorithm cannot be used in this case. Instead, we can use the query
+space of the sphere $\mathcal{S}_\lambda$ to find an optimal point,
+allowing us to recover the metric.
+
+Drawing from Derivative-Free Optimization (DFO) [@NIPS2012_e6d8545d], we
+can perform binary search on one coordinate at a time and keep updating
+cyclically. This algorithm will converge, because the metric is unimodal
+(over the lower boundary of the sphere) so progress is guaranteed.
+
+A python implementation of this algorithm is provided below.
+
+::: python
+import numpy as np
+
+def get_lpm(theta): \"\"\" This constructs LPM weights for the lower
+boundary of the sphere.
+
+Inputs: - theta: parameter for the lower boundary Outputs: - LPM weights
+\"\"\" new_a = np.ones(theta.size + 1) sin_theta = np.sin(theta)
+new_a\[1:\] = sin_theta new_a\[:-1\] \*= np.cos(theta) return new_a
+
+def get_mod_lpm(theta, j, new_val): \"\"\" This constructs LPM weights
+where index j of the parameter is set to new_val \"\"\" new_theta =
+np.copy(theta) new_theta\[j\] = new_val return get_lpm(new_theta)
+
+def lpm_elicitation(epsilon, oracle, get_c, k, T): \"\"\" Inputs: -
+epsilon: some epsilon \> 0 representing threshold of error - oracle:
+some function that accepts 2 confusion matrices and returns true if the
+first is preferred and false otherwise - get_c: some function that
+accepts lpm weights and returns off-diagonal confusions - k: number of
+classes - T: maximum number of iterations Outputs: - estimate for true
+DLPM weights \"\"\" q = k \* k - k theta = np.random.rand(q-1)
+theta\[:-1\] = (1 + theta\[:-1\]) \* np.pi/2 \# initialize params to
+\[pi/2, pi\] theta\[:-1\] = (2 + theta\[:-1\]) \* np.pi/2 \# last param
+in \[pi, 3pi/2\]
+
+for t in range(T): j = t
+
+\# initialize range of binary search if j == q-2: a = np.pi b = 3 \*
+np.pi / 2 else: a = np.pi / 2 b = np.pi
+
+while (b - a \> epsilon): c = (3 \* a + b) / 4 d = (a + b) / 2 e = (a +
+3 \* b) / 4
+
+\# get confusions for each point c_a, c_c, c_d, c_e, c_b =
+(get_c(get_mod_lpm(theta, j, x)) for x in \[a, c, d, e, b\])
+
+\# query oracle for each pair response_ac = oracle(c_a, c_c) response_cd
+= oracle(c_c, c_d) response_de = oracle(c_d, c_e) response_eb =
+oracle(c_e, c_b)
+
+\# update ranges to keep the peak if response_ac: b = d elif
+response_cd: b = d elif response_de: a = c b = e elif response_eb: a = d
+else: a = d
+
+midpt = (a + b) / 2 theta\[j\] = midpt return get_lpm(theta)
+:::
+
+Similar to the DLPM case, we need to supply the "oracle" and "get_c"
+functions. The oracle function is an interface to an expert who judges
+which of two confusion matrices is better. The get_c function will need
+to construct a classifier given the LPM weights, following the fact that
+$\bar{c} = \lambda \vec{a} + \vec{o}$, and calculate the confusion
+matrix from a validation set. Using the same oracle feedback noise model
+from the binary metric elicitation, we can make the following
+guarantees:
+
+::: prop
+Given $\epsilon, \epsilon_\Omega \geq 0$, and a 1-Lipschitz LPM $\phi^*$
+parameterized by $\vec{a}^*$. Suppose $\lambda \gg \epsilon_\Omega$,
+then the output $\hat{a}$ of the LPM elicitation algorithm after
+$O(z_1 \log(z_2/(q\epsilon^2))(q-1) log(\frac{\pi}{2\epsilon}))$ queries
+to the oracle satisfies
+$||a^* - \hat{a}||_2 \leq O(\sqrt{q}(\epsilon + \sqrt{\epsilon_\Omega/\lambda}))$,
+where $z_1$ and $z_2$ are constants independent of $\epsilon$ and $q$.
+:::
+
+## Summary
+
+In this chapter, we explore multiclass performance metric elicitation,
+extending metric elicitation beyond binary classification. In practice,
+if weighted accuracy is all that is needed to determine if one
+classifier is better than another, the DLPM elicitation algorithm is
+preferred for its lower query complexity. However, if the type of
+misclassification is important, like in the leukemia example at the
+start of this chapter, the LPM elicitation algorithm enables more
+flexibility.
+
+## Linear Reward Estimation
+
+How exactly do robots learn human preferences from just the pairwise
+comparisons, if they need to learn how to act in the environment itself?
+The comparisons in turn help robots learn the reward function of the
+human, which allows them to further take actions in real settings.
+
+### Geometry of Pairwise Comparisons
+
+Let's say there are two trajectories $\xi_A$ and $\xi_B$ that might be
+taken as the next course of action in any context, like choosing the
+next turn, or choosing the next chatGPT response. The robot is offering
+both to a human for comparison. To answer which of them is better, the
+human would ask themselves if $R(\xi_A)$ or $R(\xi_B)$ is bigger, with
+$R(\xi) = w * \phi(\xi)$ being the reward function. In this equation $w$
+and $\phi(\xi)$ are vectors of weights and features of the trajectory,
+so alternatively, we can express this as:
+
+::: center
+$R(\xi) = \begin{bmatrix} w_1 \\ w_2 \\ ... \\ w_N \end{bmatrix} \cdot \begin{bmatrix} \phi_1(\xi) \\ \phi_2(\xi) \\ ... \\ \phi_N(\xi) \end{bmatrix}$
+:::
+
+If one says that they preferred $\xi_2$ less than $\xi_1$ then it means
+$\xi_2 < \xi_1 \implies R(\xi_2) < R(\xi_1) \implies w * \phi(\xi_2) < w * \phi(\xi_1) \implies 0 < w * (\phi(\xi_1) - \phi(\xi_2)) \implies 0 < w * \Phi$.
+Alternatively, if one preferred $\xi_2$ more than $\xi_1$, the signs
+would be flipped, resulting in $0 > w * \Phi$. The two results can be
+represented in the N-dimensional space, where when it is split by the
+decision boundary, it creates half-spaces indicating preferences for
+each of the sides. For example in
+[1.17](#fig:2dcomp){reference-type="ref" reference="fig:2dcomp"} we can
+see how a query between two objects can split the plain into two halves,
+indicating preference towards one of the objects. Such an image can be
+extended into bigger dimensions, where a line would become a separating
+hyperplane like in [1.17](#fig:2dcomp){reference-type="ref"
+reference="fig:2dcomp"}
+
+<figure id="fig:2dcomp">
+<p><img src="Figures/2D-comp.jpg" style="width:40.0%" alt="image" />
+<img src="Figures/3D-comp.png" style="width:40.0%" alt="image" /></p>
+<figcaption>(left) A single query for a comparison between the two
+objects splits 2D space into two halves, each of which prefers one of
+the objects based on feature weights <span
+class="math inline"><em>w</em><sub>1</sub></span> and <span
+class="math inline"><em>w</em><sub>2</sub></span>. (right) Extension
+into 3D space</figcaption>
+</figure>
+
+If one is to truly believe the answers of one person, they would remove
+everything from the other side of the hyperplane that does not agree
+with the received human preference. But since humans are noisy, that
+approach is not optimal, thus most applications up-weight the indicated
+side of the plane to emphasize that points on that side are better, and
+down-weight the other side as they do not agree with the provided
+comparison.
+
+How should someone choose which queries to conduct, otherwise, what is
+the most informative query sequence? After completing one query, the
+next query should be orthogonal to the previous one so that the
+potential space consistent with the preferences decreases in half. The
+intuition behind that is the potential space has all of the reward
+functions that agree with the provided answers, so to find a specific
+reward function for a human, decreasing the space narrows down the
+possible options. For example, orthogonal query to the query in
+[1.17](#fig:2dcomp){reference-type="ref" reference="fig:2dcomp"} is
+shown in [1.18](#fig:2dspace){reference-type="ref"
+reference="fig:2dspace"}. The original query created the blue space, and
+a new one created a red space, resulting in a purple intersection of the
+two which is still consistent with both of the queries's results. The
+image shows that the purple portion is exactly half of the blue portion.
+
+![Creating further comparisons limits the space that agrees with answers
+to all of them. The blue area demonstrates a preference for object 1
+over object 2. The red area demonstrates a preference for object 3 over
+object 4. Combination (purple area) shows the space that is consistent
+with both of those preferences.](Figures/2D-space.jpg){#fig:2dspace
+width="40%"}
+
+Mathematically, from [@pmlr-v87-biyik18a] this can be expressed as set
+$F$ of potential queries $\phi$, where
+$F = \{\phi: \phi = \Phi(\xi_A) - \Phi(\xi_B), \xi_A, \xi_B \in \Xi\}$
+(defining that a query is the difference between the features of two
+trajectories). Using that, the authors define a human update function
+$f_{\phi}(w) = \min(1, \exp(I^T\phi))$ that accounts for how much of the
+space will still be consistent with the preferences. Finally, for a
+specific query, they define the minimum volume removed as
+$\min\{\mathbb{E}[1 - f_{\phi}(w)], \mathbb{E}[1 - f_{-\phi}(w)]\}$
+(expected size of the two sides of the remaining space after it is split
+by a query - purple area in [1.18](#fig:2dspace){reference-type="ref"
+reference="fig:2dspace"}), and the final goal is to maximize that amount
+over all possible queries since it is optimal to get rid of as much
+space as possible to narrow down the options for the reward function:
+$\max_{\phi} \min\{ \mathbb{E}[1 - f_{\phi}(w)], \mathbb{E}[1 - f_{-\phi}(w)]\}$.
+Effectively this is finding such $\phi$ that maximizes the information
+one can get by asking the next comparison query. While this approach
+uses minimum volume removed, there can be other metrics inside the
+$\max$ function. Some applications like movie recommendations do not
+require extra constraints, however in robotics one might want to add
+more constraints that satisfy certain rules, so that the resulting query
+follows the dynamics of the physical world.
+
+### Driving Simulator Example
+
+The first real example of learning reward functions from pairwise
+comparisons is a 2D driving simulator from [@pmlr-v87-biyik18a]. In
+[1.19](#fig:car_direct){reference-type="ref" reference="fig:car_direct"}
+you can see the setting of a 3-lane road with the orange car being
+controlled by the computer.
+
+![The choices presented to a human for feedback are represented by green
+and red trajectories. White trajectory demonstrates the lane change of
+another vehicle in the space.
+[@pmlr-v87-biyik18a]](Figures/car_dir.png){#fig:car_direct width="40%"}
+
+The queries conducted for this problem are two different trajectories
+presented to the human, and they are asked to evaluate which one of them
+is better. For the features that contribute to the reward function, it
+is important to consider that robots might not find some of the
+information as informative for the learning process as a human would.
+For this example, the underlying features included the distance between
+lane boundaries, distance to other cars, and the heading and speed of
+the controlled car. The weights toward the last feature were weighted
+the highest according to the authors, since it takes a lot of effort for
+the car to change or correct its direction.
+
+At the start of the learning process, the car had no direction learned
+and was moving all over the road. In the middle of learning after 30
+queries, the simulator learned to follow the direction of the road and
+go straight but still experienced collisions. After 70 queries, the
+simulator learned to avoid collisions, as well as keep the car within
+the lane without swerving.
+
+### Active Learning for Pairwise Comparisons
+
+We have discussed that pairwise comparisons should be selected to
+maximize the minimum volume of remaining options removed. The question
+that can come out of the driving example is does it really matter to
+follow that goal or does random choice of queries performs as well? It
+turns out that indeed most active learning algorithms (purposefully
+selecting queries) over time converge with the performance of the random
+query selection, so in long term the performance is similar. However,
+what is different is that active learning achieves better performance
+earlier, which in time-sensitive tasks can be a critical factor.
+
+One example of such a setting can be exoskeletons for humans as part of
+the rehabilitation after surgery [@Li_2021]. Different people have
+significantly different walking patterns as well as rehabilitation
+requirements, so the exoskeleton needs to adapt to the human as soon as
+possible for a more successful rehabilitation. Figure
+[1.20](#fig:robotics){reference-type="ref" reference="fig:robotics"}
+demonstrates the difference in the time needed between the two
+approaches. In general, in robotics, the time differences that might
+seem small to a human might be detrimental to the final performance.
+
+![Performance of active learning and random query selection algorithms
+in the task of exoskeleton learning with human preferences.
+[@Li_2021]](Figures/robo_graph.png){#fig:robotics width="60%"}
+
+### Multi-Modal Reward Functions for Pairwise Comparisons
+
+What if one is working with multiple people and their responses to the
+queries for comparisons? It will be impossible to recover the different
+personalities based on the answers, and it might be necessary to conduct
+a full ranking before it is clear which responses belonged to which
+person, but the underlying theory for the number of comparisons is
+non-trivial. For that, the researchers [@myers2021learning] have used
+multi-modal models for reward function learning, which allows to account
+for different types of valid behaviours and trajectories that can come
+from different humans.
+
+![The negotiation setting with two people and three shared items. Each
+person has a desired number of items indicated in their utility box.
+Alice is the controlled agent that has many different response options
+that are illustrated by the approaches different models might take.
+[@kwon2021targeted]](Figures/negotiation.png){#fig:negotiation
+width="80%"}
+
+An example setting for such type of problem is negotiations
+[@kwon2021targeted]. Let's say there are some shared items and two
+people with different utilities and desires for items, where each person
+only knows their utility. In a specific case of
+[1.21](#fig:negotiation){reference-type="ref"
+reference="fig:negotiation"}, Bob as a proposing agent and Alice as a
+controlled agent who has many different ways of responding to Bob's
+proposals. Different methods can be used to design Alice as an AI agent.
+The first idea is reinforcement learning, where multiple rounds of
+negotiations are done, the model simulates game theory and sees how Bob
+reacts. Authors of this setting [@kwon2021targeted] show that over time
+the model learns to ask for the same thing over and over again, as Alice
+is not trained to be human-like or negotiable, and just tries to
+maximize Alice's utility. The second approach is supervised learning,
+where the model can be trained on some dataset, learning the history of
+negotiations. This results in Alice being very agreeable, which
+demonstrates two polar results of the two approaches, and it would be
+ideal to find a middle ground and combine both of them. The authors
+proposed the Targeted acquisition approach, which is based on active
+learning ideas. The model asks diverse questions at different cases and
+stages of negotiations like humans, determining which questions are more
+valuable to be asked throughout learning. Such an approach ended up in
+more fair and optimal results than supervised or reinforcement learning
+[@kwon2021targeted].
+
+In conclusion, pairwise comparisons show to be a great way of learning
+linear reward functions, but at times present challenges or
+incapabilities that can be further improved with additional
+incorporations of approaches like Active Learning. That improves many
+applications in terms of time spent getting to the result in case of
+exoskeleton adjustments, as well as getting to a middle ground between
+polar behaviors in applications like negotiations.
+
+## Guiding Human Demonstrations in Robotics
+
+A strong approach to learning policies for robotic manipulation is
+imitation learning, the technique of learning behaviors from human
+demonstrations. In particular, interactive imitation learning allows a
+group of humans to contribute their own demonstrations for a task,
+allowing for scalable learning. However, not all groups of demonstrators
+are equally helpful for interactive imitation learning.
+
+The ideal set of demonstrations for imitation learning would follow a
+single, optimal method for performing the task, which a robot could
+learn to mimic. Conversely, *multimodality*, the presence of multiple
+optimal methods in the demonstration set, is challenging for imitation
+learning since it has to learn from contradicting information for how to
+accomplish a task.
+
+A common reason for multimodality is the fact that different people
+often subconsciously choose different paths for execution, as
+illustrated in
+Figure [1.22](#fig:multimodalexecution){reference-type="ref"
+reference="fig:multimodalexecution"}.
+
+![Examples of two different ways to insert a nut onto a round peg. The
+orange demonstration picks up the nut from the hole while the blue
+demonstration picks up the nut from the side
+[@gandhi2022eliciting]](Figures/multimodal_peg.png){#fig:multimodalexecution
+width="50%"}
+
+Gandhi et al. [@gandhi2022eliciting] identifies whether demonstrations
+are compatible with one another and offer an active elicitation
+interface to guide humans to provide better demonstrations in
+interactive imitation learning. Their key motivation is to allow
+multiple users to contribute demonstrations over the course of data
+collection by guiding users towards compatible demonstrations.
+
+To identify whether a demonstration is "compatible" with a base policy
+trained with prior demonstrations, the researchers measure the
+*likelihood* of demonstrated actions under the base policy, and the
+*novelty* of the visited states. Intuitively, low likelihood and low
+novelty demonstrations should be excluded since they represent
+conflicting modes of behavior on states that the robot can already
+handle, and are therefore incompatible. This concept of compatibility is
+used for filtering a new set of demonstrations and actively eliciting
+compatible demonstrations.
+
+In the following subsections, we describe the process of estimating
+compatibility and active elicitation in more detal.
+
+### Estimating Compatiblity
+
+We want to define a compatibility measure $\mathcal{M}$, that estimates
+the performance of policy $\pi_{base}$ that is retrained on a union of
+$\mathcal{D}_{base}$, the known base dataset, and $\mathcal{D}_{new}$,
+the newly collected dataset. To define this compatibility measure in a
+way that is easy to compute, we can use two interpretable metrics:
+likelihood and novelty.
+
+The likelihood of actions $a_{new}$ in $\mathcal{D}_{new}$ is measured
+as the negative mean squared error between actions predicted by the base
+policy and this proposed action:
+
+$$\begin{aligned}
+    \textsc{likelihood}(s_{new}, a_{new}) = -\mathbb{E}[|| \pi_{base}(s_{new}) - a_{new} ||^2_2].
+\end{aligned}$$
+
+The novelty of the state $s_{new}$ in $\mathcal{D}_{new}$ is the
+standard deviation in the predicted actions under base policy:
+
+$$\begin{aligned}
+    \textsc{novelty}(s_{new}) = \mathrm{Var}[\pi_{base}(s_{new})].
+\end{aligned}$$
+
+We can plot likelihood and novelty on a 2D plane, as shown in Figure
+[1.23](#fig:likelihood_novelty){reference-type="ref"
+reference="fig:likelihood_novelty"}, and identify thresholds on
+likelihood and novelty, denoted as $\lambda$ and $\eta$ respectively.
+Intuitively, demonstrations with low likelihood in low novelty states
+should be excluded, because this indicates that there is a conflict
+between the base behavior and the new demonstration due to
+multimodality. Note that in high novelty states, the likelihood should
+be disregarded because the base policy does not have a concrete idea for
+how to handle these states anyways so more data is needed.
+
+![Examples of plots of likelihood and novelty for compatible and
+incompatible operators
+[@gandhi2022eliciting]](Figures/likelihood_novelty.png){#fig:likelihood_novelty
+width="80%"}
+
+The final compatibility metric, parameterized by the likelihood and
+novelty thresholds $\lambda$ and $\eta$, is
+$\mathcal{M}(\mathcal{D}_{base}, (s_{new}, a_{new})) \in [0, 1]$,
+defined as:
+
+$$\begin{aligned}
+    \mathcal{M} = \begin{cases} 
+        1 - \min(\frac{\mathbb{E}[|| \pi_{base}(s_{new}) - a_{new} ||^2_2]}{\lambda}, 1) & \text{ if } \textsc{novelty}(s_{new}) < \eta \\
+        1 & \text{ otherwise }
+       \end{cases}.
+\end{aligned}$$
+
+Note that $\lambda$ and $\eta$ need to be specified by hand. This is
+accomplished by assuming the ability to collect *a priori incompatible*
+demonstrations to identify reasonable thresholds that remove the most
+datapoints in the incompatible demonstrations while keeping the most
+datapoints in the compatible demonstrations.
+
+### Case Studies with Fixed Sets
+
+The researchers evaluate the utility of the compatibility metric on
+three tasks: placing a square nut on a square peg, placing a round nut
+on a round peg, and opening a drawer and placing a hammer inside. For
+each task, they train a base policy using a "proficient" operator's
+demonstration while sampling trajectories from other operators for the
+new set.
+
+The naive baseline is to use all datapoints while the
+$\mathcal{M}$-Filtered demonstrations use the compatibility metric to
+filter out incompatible demonstrations. The results are presented in
+Figure [1.3](#fig:m_filter_table){reference-type="ref"
+reference="fig:m_filter_table"}. As you can see, M-filtering results in
+equal or greater performance despite using less data than the naive
+baseline, demonstrating the effectiveness of compatibility-based
+filtering.
+
+::: {#fig:m_filter_table}
+  --------------- ---------------- ------------------------ --------------- ------------------------ ---------------------- ------------------------
+                   **Square Nut**                            **Round Nut**                            **Hammer Placement**  
+  **Operator**         Naive        $\mathcal{M}$-Filtered       Naive       $\mathcal{M}$-Filtered          Naive           $\mathcal{M}$-Filtered
+  Base Operator      38.7 (2.1)               \-              13.3 (2.3)               \-                  24.7 (6.1)                  \-
+  Operator 1         54.3 (1.5)           61.0 (4.4)          26.7 (11.7)         32.0 (12.2)              38.0 (2.0)              39.7 (4.6)
+  Operator 2         40.3 (5.1)           42.0 (2.0)          22.0 (7.2)           26.7 (5.0)              33.3 (3.1)              32.7 (6.4)
+  Operator 3         37.3 (2.1)           42.7 (0.6)          17.3 (4.6)          18.0 (13.9)              8.0 (0.0)               12.0 (0.0)
+  Operator 4         27.3 (3.5)           37.3 (2.1)           7.3 (4.6)           13.3 (1.2)              4.0 (0.0)               4.0 (0.0)
+  --------------- ---------------- ------------------------ --------------- ------------------------ ---------------------- ------------------------
+
+  : Success rates (mean/std across 3 training runs) for policies trained
+  on $\mathcal{D}_{new}$ by using all the data (Naive) or filtering by
+  compatibility ($\mathcal{M}$-Filtered) [@gandhi2022eliciting]
+:::
+
+![The phases of the active elicitation interface: (a) initial prompting,
+(b) demonstrations with live feedback, and (c) corrective feedback
+[@gandhi2022eliciting]](Figures/active_elicitation.png){#fig:active_elicitation
+width="80%"}
+
+### Actively Eliciting Compatible Demonstrations
+
+In the previous section, we assume access to a dataset that has already
+been collected, and we see how filtering out incompatible demonstrations
+helps improve performance. However, when collecting a new dataset, it
+would be better to ensure that operators collect compatible
+demonstrations from the start, allowing us to retain as much data as
+possible for training.
+
+To actively elicit compatible demonstrations, the researchers set up a
+pipeline for live feedback and examples. At the start, operators are
+given a task specification and some episodes to practice using the
+robot. Then, the active elicitation process begins, as shown in Figure
+[1.24](#fig:active_elicitation){reference-type="ref"
+reference="fig:active_elicitation"}. Each operator is shown some
+rollouts of the base policy to understand the style of the base
+operator. Next, the operator provides a demonstration similar to the
+ones they were shown. As they record their demonstrations, the interface
+provides online feedback, with green indicating compatible actions and
+red indicating incompatible actions. If the number of incompatible
+state-action pairs (ones where $\mathcal{M}$ is zero) exceeds 5% of the
+demonstration length, the demonstration is rejected. However, to provide
+corrective feedback, the interface shows the areas of the demonstration
+with the highest average incompatibility and also provides an expert
+demo that shows what should actually be done. Demonstrators can use this
+feedback to provide more compatible demonstrations moving forward.
+
+This process helps improve the demonstration quality in both simulation
+and real experiments, as show in Figure
+[1.4](#fig:active_elicitation_results){reference-type="ref"
+reference="fig:active_elicitation_results"}. Specifically, on the real
+results, active elicitation outperformed the base policy by 25% and
+naive data collection by 55%. Overall, active elicitation is a powerful
+tool to ensure that data collected for imitation learning improves the
+quality of the learned policy.
+
+::: {#fig:active_elicitation_results}
+  **Task**                                            **Base**     **Naive**    **Naive + Filtered**   **Informed**
+  ------------------------------------------------- ------------ ------------- ---------------------- --------------
+  **Round Nut**                                      13.3 (2.3)    9.6 (4.6)         9.7 (4.2)          15.7 (6.0)
+  **Hammer Placement**                               24.7 (6.1)   20.8 (15.7)       22.0 (15.5)        31.8 (16.3)
+  **$\left[ \textup{Real} \right]$ Food Plating**       60.0      30.0 (17.3)            \-             85.0 (9.6)
+
+  : Success rates (mean/std across users) for policies trained on
+  $\mathcal{D}_{new}$ by using all the data (Naive), filtering by
+  compatibility ($\mathcal{M}$-Filtered), or using informed
+  demonstration collection [@gandhi2022eliciting]
+:::
+
+### Limitations and Future Work for Active Elicitation
+
+A fundamental limitation of eliciting compatible demonstrations is the
+fact that the "base" demonstrator is considered the ground truth. When
+the base demonstrator specifies a preference, all other demonstrators
+must abide by it, even if they have strong preferences against it. For
+instance, when pouring milk and cereal into a bowl, different people
+have different preferences for what is the correct order, but active
+elicitation forces all demonstrators to follow the initial preference of
+the base operator. The researchers hope that future work can enable
+users to override the default demonstration set and follow a base
+behavior that better aligns with their preferences. This could enable
+multiple modes of behavior to be collected in data while only following
+a user's specified preference instead of attempting to collapse all
+modes into a single policy.
+
+Looking forward, active elicitation provides a foundation for allowing
+robots to query humans about the type of data needed, enabling more
+efficient data collection through transparency.
+
+## Conclusion
+
+In summary, this chapter has explored the complexities and innovations
+in interactive learning as applied to large models within robotics. It
+begins by investigating pairwise comparisons and their role in
+efficiently learning linear reward functions from large datasets,
+overcoming limitations in supervised learning. When combined with active
+learning techniques, these comparisons supply timely, targeted, and
+context-appropriate feedback, enhancing performance in time-critical
+applications like exoskeleton adjustments during rehabilitation.
+
+We then shift to imitation learning or inverse reward learning from
+demonstrations, emphasizing the difficulties introduced by multimodal
+demonstration sets. active elicitation approaches to compile compatible
+demonstrations, streamlining the learning process by guiding users to
+provide more valuable, steady examples are incredibly promising,
+however, to tackling this issue. This method shows promise in refining
+the interactive imitation learning data collection pipeline, enabling
+more capable and effective robotic training.
+
+Additionally, the chapter examines the integration of foundation models
+into robotics, highlighting the transformative innovations of R3M and
+Voltron. R3M's pre-training on diverse human activities dramatically
+improves robotic manipulation with minimal supervision. Meanwhile,
+Voltron builds on these capabilities by incorporating language-driven
+representation learning for remarkably adaptable and nuanced robotic
+task performance. These models represent significant leaps in robotics
+while opening new frontiers for future research and applications.
+
+## Truthful Preference Elicitation with Adversary
+
+In our study of social choice models in Chapter
+[\[2model\]](#2model){reference-type="ref" reference="2model"}, we study
+how axiomatic properties are implemented to prevent strategic
+manipulation of a population. This brings us onto the field of
+**mechanism design**. At its core, mechanism design is the science of
+making rules. The intent in this field is to design systems so that the
+strategic behaviour of individuals leads to desirable outcomes. Just
+thinking about services on the Internet -- file sharing, reputation
+systems, web search, web advertising, email, Internet auctions,
+congestion control -- all have to be set up so that an individual's
+selfish behavior leads to better outcomes for the entire community. A
+more specific example of this is the phenomenon of "bid-sniping" that
+was present on eBay in the early 2000s. When people could bid on E-bay,
+the rule was that the highest bidder by the end of some specified time
+period would get the item. As a result, people would just wait until the
+very last minute to bid in order to not raise the price of the item too
+early. On the other hand, when Amazon still allowed bidding, they had a
+rule that any time a bid was placed it would extend the time of the bid
+by ten minutes. This simple difference had drastic effects on bidding
+prices over time. Mechanism design develops the theoretical framework
+for learning social choices and eliciting truthful preference.
+
+We will cover frameworks that model several scenarios that mechanism
+design is usefully applied to: recommendation systems (where users will
+selfishly try to stick to their preferences while a planner encourages
+exploration); auctions (where bidders will try to maximise their reward
+compared to others); and peer grading (where truthful reporting is not
+necessarily an incentive for students).
+
+### Auction Theory
+
+#### Single-Item Auctions {#single-item-auctions .unnumbered}
+
+The first problem within auction theory we will consider is the
+*single-item auction*. The premise of this problem is that there is a
+single item to sell, $n$ bidders (with unknown private valuations of the
+item $v_1$, \..., $v_n$). The bidder's individual objective is to
+maximize utility: the value $v_i$ of the item subtracted by the price
+paid for the item. The auction procedure is standard in the sense that
+bids are solicited and the highest bid will win the auction. While the
+objective of the individual bidder is clear, there could be a plethora
+of different objectives for the auction as a whole. One option could be
+to maximize social surplus, meaning the goal is to maximize the value of
+the winner. Another objective could be to maximize seller profit which
+is the payment of the winner. For simplicity, we can focus on the first
+objective where the goal is to maximize social surplus. If we want to
+maximize social surplus it turns out that a great way to do this is the
+"second-price auction".
+
+##### Maximizing Social Surplus {#maximizing-social-surplus .unnumbered}
+
+In the second-price auction, we will operate under slightly different
+conditions. In the second-price auction we 1) solicit sealed bids, 2)
+have the winner be the highest bidder, and 3) charger winner the
+second-highest bid price. As an example, if the solicited bids are
+$b = (2, 6, 4, 1)$ the winner will be that who bid $6$, but will pay a
+price of $4$. From here, we can do some equilibrium analysis to try and
+learn what the optimal bidding strategy is for each bidder. Let the
+amount bidder $i$ bids to be $b_i$, so we have bids
+$b_1, b_2, ..., b_n$. How much should bidder $i$ bid? To analyze this,
+let us define $t_i = max_{j \neq i} b_j$ which represents the max of the
+bids that is not from bidder $i$. There are now two cases to consider:
+if $b_i$ \> $t_i$ and if $b_i$ \< $t_i$. In the first case the bidder
+$i$ wins, and if the bidder bid $b_i = v_i$, they are guaranteed to have
+a positive return on bid. In the other case, they lose the bid and the
+net loss is 0 because they don't have to pay. From this we can conclude
+that bidder $i$'s dominant strategy is to just bid $b_i = v_i$.
+Rigorously proving this is a little bit trickier, but it was shown from
+Vickrey in 1961 \[cite\] that truthful bidding is the dominant strategy
+in second-price auctions. A corollary of this is that we are maximizing
+social surplus since bids are values and the winner is the bidder with
+highest valuation.
+
+##### Maximize Seller Profit {#maximize-seller-profit .unnumbered}
+
+If we want to look at things from the perspective of a seller trying to
+maximize their profit we need to treat the bidder's bids as uniform
+random variables. Consider the example scenario where we have two
+bidders each bidding uniformly between 0 and 1. What is the seller's
+expected profit? (in this case profit and revenue for the seller are the
+same because we assume the seller throws away the item if it doesn't
+sell/has no valuation for it).
+
+From there the question now becomes, can we get more expected profit
+from the seller's perspective? It turns out there is a design where we
+can add a reserve price of $r$ to the second-price auction. The way this
+works is we can 1) Insert seller-bid at $r$, 2) solicit bids, 3) pick
+the highest bidder, and 3) charge the 2nd-highest bid. In effect, this
+is just the second-price auction but with a bid from the seller as well,
+at a price of $r$. A lemma, that we won't prove here, is that the
+second-price auction with reserve price $r$ still has a dominant
+strategy of just being truthful.
+
+Let's now consider what the profit of a second-price auction would be
+with two bidders that uniformly bid between 0 and 1 -- but this time we
+have a reserve price of $1/2$. To calculate the expected profit we break
+down the situation into 3 cases:
+
+-   Case 1:
+    $1/2 > v_1 > v_2 \rightarrow 1/4 \text{ probability} \rightarrow  E[\text{profit}] = 0$
+
+-   Case 2:
+    $v_1 > v_2 > 1/2 \rightarrow 1/4 \text{probability} \rightarrow E[v2 | case 2] = 2/3$
+
+-   Case 3:
+    $v_1 > 1/2 > v_2 \rightarrow 1/2 \text{ probability} \rightarrow 1/2$
+
+Why is $E[v2 | case 2] = 2/3$? If $v_1$ and $v_2$ are greater than
+$1/2$, they are evenly spread across the interval, meaning the
+expectation will be 1/2 + 1/6 = 2/3. Adding up all these cases we get
+$E[profit] = 5/12$. It turns out that second-price auctions with reserve
+actually maximize profit in general (for symmetric bidders)!
+
+In the previous section we conclude that second-price auctions with
+reserve maximize profit for the seller. In order to prove this, we now
+move to the more general topic of asking how should a monopolist divide
+good across separate markets. We can make the assumption that the demand
+model is a concave revenue $R(q)$ in quantity $q$. Under this
+assumption, we can just divide supply into $q = q_a + q_b$ such that
+$R'_a(q_a) = R'_b(q_b)$. The idea from here is a theorem from Myerson in
+1981 that states an optimal action maximizes \"marginal revenue\".
+Consider an example where we have two bidders bidding a uniform value
+between 0 and 1. Our revenue curve can now be derived from the offering
+price $V(q) = 1 - q$ like so: $R(q) = qV(q) = q - q^2$. Taking the
+derivative gives us the marginal revenue $R'(q) = 1-2q$. This means two
+things: 1) we want to sell to bidder $i$ with the highest $R'(q_i)$ and
+2) we want to sell to bidder $i$ with value at least $1/2$ (if we want a
+positive $R'(q_i)$. But this is just a second-price auction with reserve
+$1/2$! This means that for symmetric bidders, a second price with
+reserve is the optimal auction.
+
+##### What good are auctions? {#what-good-are-auctions .unnumbered}
+
+An interesting topic to discuss is what benefits auctions bring to the
+table as opposed to just standard pricing. Online auctions used to be a
+lot more popular in the early 2000s and have been completely replaced by
+standard online pricing, even on sites like e-bay. While auctions are
+slower and have added inherent complexities, they are actually optimal
+on paper. Standard pricing on the other is non-optimal; although it is
+fast and simpler for buyers. There is actually a way to quantify this:
+for pricing $k$ units, the loss is at most $1 / \sqrt{2\pi k}$ of
+optimal profit.
+
+Let's consider applications in duopoly platform design. We know that the
+optimal auction is second-price with reserve, but what happens when we
+introduce competition between two auction platforms? Some important
+details related to the revenue of a second-price auction is that a
+second-price auction with no reserve and n bidders leads to larger
+revenue having an optimal reserve and n - 1 bidders
+ [@bulow-klemperer1996]. Additionally, with an entry cost, no reserve is
+the optimal strategy for maximizing revenue  [@mcafee-87]. Let's
+consider an example of a competing auction system which is Google ads vs
+Bing ads. How should an advertiser divide the budget between Google and
+Bing? They should give the same budget to both companies. What happens
+if Bing raises their prices? Then, the advertising company moves more of
+its budget to Google from Bing.
+
+#### Prior-Independent Auctions {#prior-independent-auctions .unnumbered}
+
+The Bulow-Klemperer theorem demonstrates that increased competition can
+be more valuable than perfect knowledge of bidders' valuation
+distributions. This result provides insight into the potential of
+simple, prior-independent auctions to approach the performance of
+optimal auctions. The theorem states that for a single-item auction with
+bidders' valuations drawn independently from a regular distribution $F$:
+
+::: theorem
+Let $F$ be a regular distribution and $n$ a positive integer. Then:
+$$E_{v_1,\ldots,v_{n+1} \sim F}[\text{Rev(VA)}(n+1 \text{ bidders})] \geq E_{v_1,\ldots,v_n \sim F}[\text{Rev(OPT}_F)(n \text{ bidders})]$$
+where VA denotes the Vickrey auction and $\text{OPT}_F$ denotes the
+optimal auction for $F$.
+:::
+
+This shows that running a simple Vickrey auction with one extra bidder
+outperforms the revenue-optimal auction that requires precise knowledge
+of the distribution. It suggests that in practice, effort spent on
+recruiting additional bidders may be more fruitful than fine-tuning
+auction parameters.
+
+#### The VCG Mechanism {#the-vcg-mechanism .unnumbered}
+
+The VCG mechanism is a cornerstone of mechanism design theory, providing
+a general solution for welfare maximization in multi-parameter
+environments. The key result is:
+
+::: theorem
+[]{#thm:VCG label="thm:VCG"} In every general mechanism design
+environment, there is a dominant-strategy incentive-compatible (DSIC)
+welfare-maximizing mechanism.
+:::
+
+The VCG mechanism operates as follows:
+
+1.  Given bids $b_1, \ldots, b_n$, where each $b_i$ is indexed by the
+    outcome set $\Omega$, the allocation rule is:
+
+    $$x(b) = \argmax_{\omega \in \Omega} \sum_{i=1}^n b_i(\omega)$$
+
+2.  The payment rule for each agent $i$ is:
+
+    $$p_i(b) = \max_{\omega \in \Omega} \sum_{j \neq i} b_j(\omega) - \sum_{j \neq i} b_j(\omega^*)$$
+
+    where $\omega^* = x(b)$ is the chosen outcome.
+
+The key insight is to charge each agent its "externality" - the welfare
+loss inflicted on other agents by its presence. This payment rule,
+coupled with the welfare-maximizing allocation rule, yields a DSIC
+mechanism.
+
+The VCG mechanism can be interpreted as having each agent pay its bid
+minus a \"rebate\" equal to the increase in welfare attributable to its
+presence:
+
+$$p_i(b) = b_i(\omega^*) - \left[ \sum_{j=1}^n b_j(\omega^*) - \max_{\omega \in \Omega} \sum_{j \neq i} b_j(\omega) \right]$$
+
+While the VCG mechanism provides a theoretical solution for DSIC
+welfare-maximization in general environments, it can be challenging to
+implement in practice due to computational and communication
+complexities.
+
+#### Combinatorial Auctions {#combinatorial-auctions .unnumbered}
+
+Combinatorial auctions are an important class of multi-parameter
+mechanism design problems, with applications ranging from spectrum
+auctions to airport slot allocation. In a combinatorial auction:
+
+-   There are $n$ bidders and a set $M$ of $m$ items.
+
+-   The outcome set $\Omega$ consists of allocations
+    $(S_1, \ldots, S_n)$, where $S_i$ is the bundle allocated to bidder
+    $i$.
+
+-   Each bidder $i$ has a private valuation $v_i(S)$ for each bundle
+    $S \subseteq M$.
+
+While the VCG mechanism theoretically solves the welfare-maximization
+problem, combinatorial auctions face several major challenges in
+practice:
+
+1.  Preference Elicitation: Each bidder has $2^m - 1$ private
+    parameters, making direct revelation infeasible for even moderate
+    numbers of items. This necessitates the use of indirect mechanisms
+    that elicit information on a \"need-to-know\" basis.
+
+2.  Computational Complexity: Even when preference elicitation is not an
+    issue, welfare-maximization can be an intractable problem. In
+    practice, approximations are often used, hoping to achieve
+    reasonably good welfare.
+
+3.  VCG Limitations: The VCG mechanism can exhibit bad revenue and
+    incentive properties in combinatorial settings. For example, adding
+    bidders can sometimes decrease revenue to zero, and the mechanism
+    can be vulnerable to collusion and false-name bids.
+
+4.  Strategic Behavior in Iterative Auctions: Most practical
+    combinatorial auctions are iterative, comprising multiple rounds.
+    This introduces new opportunities for strategic behavior, such as
+    using bids to signal intentions to other bidders.
+
+These challenges make combinatorial auctions a rich and complex area of
+study, requiring careful design to balance theoretical guarantees with
+practical considerations.
+
+#### Spectrum Auctions {#spectrum-auctions .unnumbered}
+
+Spectrum auctions represent a complex application of combinatorial
+auction theory. With n bidders and m non-identical items, each bidder
+has a private valuation for every possible bundle of items, making it
+impractical to directly elicit all preferences. This necessitates the
+use of indirect, iterative mechanisms that query bidders for valuation
+information on a "need-to-know" basis, sacrificing some of the desirable
+properties of direct mechanisms like dominant strategy incentive
+compatibility (DSIC) and full welfare maximization.
+
+The fundamental challenge in spectrum auctions lies in the nature of the
+items being sold. There is a dichotomy between items that are
+substitutes (where $v(AB) \leq v(A) + v(B))$ and those that are
+complements (where $v(AB) > v(A) + v(B))$. Substitute items, such as
+licenses for the same area with equal-sized frequency ranges, are
+generally easier to handle. When items are substitutes, welfare
+maximization is computationally tractable, and the VCG mechanism avoids
+many undesirable properties. However, complementary items, which arise
+naturally in spectrum auctions when bidders want adjacent licenses,
+present significant challenges.
+
+Early attempts at spectrum auctions revealed the pitfalls of naive
+approaches. Sequential auctions, where items are sold one after another,
+proved problematic as demonstrated by a Swiss auction in 2000. Bidders
+struggled to bid intelligently without knowing future prices, leading to
+unpredictable outcomes and potential revenue loss. Similarly,
+simultaneous sealed-bid auctions, as used in New Zealand in 1990,
+created difficulties for bidders in coordinating their bids across
+multiple items, resulting in severely suboptimal outcomes.
+
+The Simultaneous Ascending Auction (SAA) emerged as a solution to these
+issues and has formed the basis of most spectrum auctions over the past
+two decades. In an SAA, multiple items are auctioned simultaneously in
+rounds, with bidders placing bids on any subset of items subject to an
+activity rule. This format facilitates price discovery, allowing bidders
+to adjust their strategies as they learn about others' valuations. It
+also allows bidders to determine valuations on a need-to-know basis,
+reducing the cognitive burden compared to direct-revelation auctions.
+
+Despite its advantages, the SAA is not without vulnerabilities. Demand
+reduction, where bidders strategically reduce their demand to lower
+prices, can lead to inefficient outcomes even when items are
+substitutes. The exposure problem arises with complementary items, where
+bidders risk winning only a subset of desired items at unfavorable
+prices. These issues highlight the ongoing challenges in designing
+effective spectrum auctions, balancing theoretical guarantees with
+practical considerations.
+
+#### Case study: Classroom Peer Grading {#case-study-classroom-peer-grading .unnumbered}
+
+This chapter discusses work by Jason Hartline, Yingkai Li, Liren Shan,
+and Yifan Wu at Northwestern University, where researchers examined
+mechanism design for the classroom, specifically in terms of the
+optimization of scoring rules. They explored peer grading in the
+classroom and how to construct a peer grading system that optimizes the
+objectives for each stakeholder in the system, including those being
+graded, the peer graders, the TAs of the class, and the professor.
+
+Firstly, let's think of the classroom like a computer. We can think of
+students as local optimizers; their incentive is to minimize the amount
+of work they need to do and maximize the grades that they receive. The
+graders are imprecise operators, which means that there is some
+uncertainty in their ability to grade the work completed by the
+students. The syllabus can be thought of as the rules that map the
+actions of the students to the grade they end up receiving in the class.
+Our overall goals for this classroom based on these definitions is to
+minimize work, maximize learning, and fairly assess the students for the
+work that they do  [@jasonH2020].
+
+One basic question that we can examine, is what is the best syllabus
+that maximizes our objectives for our classroom design. Some components
+of this could include grading randomized exams, grading with partial
+credit, group projects, and finally, peer grading, which is the
+component that we will be taking a deeper dive into.
+
+The general situation of the peer grading problem is that proper scoring
+rules make peer grades horrible  [@jasonH2020]. So we want to be able to
+optimize scoring rules and make sure that we are optimizing each
+component of the peer grading pipeline.
+
+The main algorithms focused on in this peer grading design paper were
+matching peers and TAs to submissions and the grading of those
+submissions from the TAs and the peer reviews  [@jasonH2020]. There are
+quite a number of advantages to peer grading including that peers are
+able to learn from reviewing other people's work, it reduces the work
+for the teacher, and improves the turnaround time for assignment
+feedback (which are all part of our overarching goals for our mechanism
+design for the classroom). But, it is also important to acknowledge the
+potential disadvantages of the peer grading system: it is possible that
+the peer graders present inaccurate grades and there is student unrest.
+This presents us with a challenge: being able to incentivize accurate
+peer reviews.
+
+One problem that we run into, when we use the proper scoring rule to
+score peer reviews, if the peer graders use the lazy peer strategy,
+which means that they always report 80$\%$ for their peer reviews, they
+get graded very well using the proper scoring rule algorithm. In fact,
+the proper scoring rule says that their peer review is 96$\%$ accurate
+ [@jasonH2023]. So how do we incentivize effort in reviews from peer
+graders? We use a scoring rule that maximizes the difference in score
+between effort or no effort reviews as indicated by the peer reviewers
+ [@jasonH2023]. So overall, the analysis of datasets leads to decision
+optimizations and, eventually, payoff from those decisions.
+
+To conclude our mechanism design in the classroom discussion, we have
+two key takeaways: scoring rules are essential in being able to
+understand and analyze data thoroughly, and optimal scoring rules for
+binary effort allow us to understand the setting independent of the
+dataset  [@jasonH2023].
+
+### Mutual Information Paradigm {#mutual-information-paradigm .unnumbered}
+
+In this section we discuss an influential new framework for designing
+peer prediction mechanisms, the Mutual Information Paradigm (MIP)
+introduced by Kong and Schoenebeck [@kongschoenebeck2019]. Traditional
+peer prediction approaches typically rely on scoring rules and
+correlation between agents' signals. However, these methods often
+struggle with issues like uninformed equilibria, where agents can
+coordinate on uninformative strategies that yield higher payoffs than
+truth-telling. The core idea is to reward agents based on the mutual
+information between their report and the reports of other agents.
+
+We consider a setting with $n$ agents, each possessing a private signal
+$\Psi_i$ drawn from some set $\Sigma$. The mechanism asks each agent to
+report their signal, which we denote as $\hat{\Psi}_i$. For each agent
+$i$, the mechanism randomly selects a reference agent $j \neq i$. Agent
+$i$'s payment is then calculated as: $$MI(\hat{\Psi}_i; \hat{\Psi}_j)$$
+where $MI$ is an information-monotone mutual information measure. An
+information-monotone $MI$ measure must satisfy the following properties:
+
+-   **Symmetry**: $MI(X; Y) = MI(Y; X)$.
+
+-   **Non-negativity**: $MI(X; Y) \geq 0$, with equality if and only if
+    $X$ and $Y$ are independent.
+
+-   **Data processing inequality**: For any transition probability $M$,
+    if $Y$ is independent of $M(X)$ conditioned on $X$, then
+    $MI(M(X); Y) \leq MI(X; Y)$.
+
+Two important families of mutual information measures that satisfy these
+properties are $f$-mutual information and Bregman mutual information.
+The $f$-mutual information is defined as:
+$$MI_f(X; Y) = D_f(U_{X,Y}, V_{X,Y})$$ where $D_f$ is an $f$-divergence,
+$U_{X,Y}$ is the joint distribution of $X$ and $Y$, and $V_{X,Y}$ is the
+product of their marginal distributions. The Bregman mutual information
+is defined as: $$BMI_{PS}(X; Y) = \mathbb{E}X [D{PS}(U_{Y|X}, U_Y)]$$
+where $D_{PS}$ is a Bregman divergence based on a proper scoring rule
+$PS$, $U_{Y|X}$ is the conditional distribution of $Y$ given $X$, and
+$U_Y$ is the marginal distribution of $Y$.
+
+The MIP framework can be applied in both single-question and
+multi-question settings. In the multi-question setting, the mechanism
+can estimate the mutual information empirically from multiple questions.
+In the single-question setting, additional techniques like asking for
+predictions about other agents' reports are used to estimate the mutual
+information.
+
+A key theoretical result of the MIP framework is that when the chosen
+mutual information measure is strictly information-monotone with respect
+to agents' priors, the resulting mechanism is both dominantly truthful
+and strongly truthful. This means that truth-telling is a dominant
+strategy for each agent and that the truth-telling equilibrium yields
+strictly higher payoffs than any other non-permutation strategy profile.
+
+As research continues to address practical implementation challenges of
+designing truthful mechanisms, MIP-based approaches have significant
+potential to improve preference elicitation and aggregation in
+real-world applications lacking verifiable ground truth.
+
+### Auction Theory 2
+
+#### Single-Item Auctions {#single-item-auctions-1 .unnumbered}
+
+The first problem within auction we will consider is the *single-item
+auction*. In this problem setup, there is a single item to sell and $n$
+bidders each with unknown private valuations of the item
+$v_1, \ldots, v_n$,
+
+[^1]: Here, the "$\sup$\" operation refers to the *supremum*, which is
+    the largest value that a certain set can take on, whereas "$\inf$\"
+    would refer to the *infimum*, or the smallest value a certain set
+    can take on.
