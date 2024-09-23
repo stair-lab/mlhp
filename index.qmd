@@ -1,6 +1,6 @@
 ::: {.content-visible when-format="html"}
 ::: {.quarto-title-citeas .csl-entry}
-Truong, S. and Kojeyo, S. 2024. _Machine Learning from Human Preferences_. Stanford University.
+Truong, S. and Koyejo, S. 2024. _Machine Learning from Human Preferences_. Stanford University.
 :::
 :::
 
@@ -31,7 +31,7 @@ Thanks for reading our book! We hope you find this book useful in your research 
 ::: {#quarto-appendix .default}
 BibTeX citation:
 <pre class="sourceCode code-with-copy quarto-appendix-bibtex"><code class="sourceCode bibtex">@book{mlhp,
-  author    = {Truong, Sang and Kojeyo, Sanmi},
+  author    = {Truong, Sang and Koyejo, Sanmi},
   title     = {{Machine Learning from Human Preferences}},
   year      = {2024},
   publisher = {Stanford University},
@@ -41,7 +41,7 @@ BibTeX citation:
 
 For attribution, please cite this work as:
 <div id="ref-mlhp" class="csl-entry quarto-appendix-citeas">
-  S. Truong and S. Kojeyo. 2024. Machine Learning from Human Preferences. Stanford University.
+  S. Truong and S. Koyejo. 2024. Machine Learning from Human Preferences. Stanford University.
 </div>
 :::
 

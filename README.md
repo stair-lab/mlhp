@@ -1,5 +1,5 @@
 # Machine Learning from Human Preferences
-### Sang Truong and Sanmi Kojeyo
+### Sang Truong and Sanmi Koyejo
 
 This book is available online at: ai.stanford.edu/~sttruong/mlhp
 

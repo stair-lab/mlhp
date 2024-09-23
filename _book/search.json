@@ -64,7 +64,7 @@
     "href": "index.html#citing-this-book",
     "title": "Machine Learning from Human Preferences",
     "section": "Citing this book",
-    "text": "Citing this book\n\nBibTeX citation:\n@book{mlhp,\n  author    = {Truong, Sang and Kojeyo, Sanmi},\n  title     = {{Machine Learning from Human Preferences}},\n  year      = {2024},\n  publisher = {Stanford University},\n  doi       = {},\n  note      = {}\n}\nFor attribution, please cite this work as:\n\nS. Truong and S. Kojeyo. 2024. Machine Learning from Human Preferences. Stanford University.",
+    "text": "Citing this book\n\nBibTeX citation:\n@book{mlhp,\n  author    = {Truong, Sang and Koyejo, Sanmi},\n  title     = {{Machine Learning from Human Preferences}},\n  year      = {2024},\n  publisher = {Stanford University},\n  doi       = {},\n  note      = {}\n}\nFor attribution, please cite this work as:\n\nS. Truong and S. Koyejo. 2024. Machine Learning from Human Preferences. Stanford University.",
     "crumbs": [
       "Preface"
     ]
