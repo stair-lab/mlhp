@@ -7,6 +7,7 @@ This book is available online at: ai.stanford.edu/~sttruong/mlhp
 1. Install Quarto:
   -  MacOS and Windows: https://quarto.org/docs/get-started/
   -  If you are using MacOS and having HomeBrew: `brew install quarto`
+After this step, you can use the terminal to run the following commands.
 2. Clone the repo:
   ```bash
   git clone https://github.com/sangttruong/mlhp
@@ -31,10 +32,15 @@ This book is available online at: ai.stanford.edu/~sttruong/mlhp
   ```
   - Using your browser to go to http://localhost:4200/ to see the book preview
 6. Publish the book:
- - After you complete all edits and want to publish the book:
- ```bash
- quarto render --to html
- ```
- - The build website will be stored in folder `_book`.
-
+   - After you complete all edits and want to publish the book:
+   ```bash
+   quarto render --to html
+   ```
+   - The build website will be stored in folder `_book`.
+   - Commit changes to Github:
+   ```bash
+   git add .
+   git commit -m "commit message"
+   git push origin main
+   ```
 Note that this book is licensed [CC-BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/).
