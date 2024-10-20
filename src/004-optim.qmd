@@ -1,5 +1,19 @@
-{{< include _setup.qmd >}}
 # Model-Free Preference Optimization {#4optim}
+
+::: {.content-visible when-format="html"}
+
+<iframe
+  src="https://web.stanford.edu/class/cs329h/slides/4.1.dueling_bandit/#/"
+  style="width:45%; height:225px;"
+></iframe>
+<iframe
+  src="https://web.stanford.edu/class/cs329h/slides/4.2.preferential_baysian_optimization/#/"
+  style="width:45%; height:225px;"
+></iframe>
+[Fullscreen Part 1](https://web.stanford.edu/class/cs329h/slides/4.1.dueling_bandit/#/){.btn .btn-outline-primary .btn role="button"}
+[Fullscreen Part 2](https://web.stanford.edu/class/cs329h/slides/4.2.preferential_baysian_optimization/#/){.btn .btn-outline-primary .btn role="button"}
+
+:::
 
 ## Individual Preference Optimization via Dueling Bandit
 
@@ -443,8 +457,8 @@ provision as it allows us to estimate the overall cost in the worst case
 outcome. Based on these two provisions, we can compute the expected
 cumulative regret from running the Interleaved Filter algorithm, which
 is:
-$$\mathbf{E}\left[R_T\right] \le \left(1 - \frac{1}{T}\right) \mathbf{E}\left[ R_T^{IF} \right] + \frac{1}{T}\mathcal{O}(T) \\
-= \mathcal{O}\left(\mathbf{E}\left[ R_T^{IF} \right] + 1\right)$$
+$$\mathbb{E}\left[R_T\right] \le \left(1 - \frac{1}{T}\right) \mathbb{E}\left[ R_T^{IF} \right] + \frac{1}{T}\mathcal{O}(T) \\
+= \mathcal{O}\left(\mathbb{E}\left[ R_T^{IF} \right] + 1\right)$$
 
 Interestingly, the original work shows that these bounds hold for both
 strong and weak regret. As demonstrated, the Interleaved Filter
@@ -1239,7 +1253,7 @@ Eq 24, 25. The outer optimisation can be solved using grid search or Eq
 Given the initial point $\mathbf{x_0} \in \mathcal{X}$ and set
 $\mathcal{B}_g^1 = \mathcal{B}_g$ Set the reference point
 $\mathbf{x_t^{\prime}} = \mathbf{x_{t-1}}$ Compute
-$\mathbf{x_t} \in \argmax_{\mathbf{x} \in \mathcal{X}} \max_{\tilde{g} \in \mathcal{B}_g^t} (\tilde{g}(\mathbf{x}) - \tilde{g}(\mathbf{x_t^{\prime}}))$,
+$\mathbf{x_t} \in \arg\max_{\mathbf{x} \in \mathcal{X}} \max_{\tilde{g} \in \mathcal{B}_g^t} (\tilde{g}(\mathbf{x}) - \tilde{g}(\mathbf{x_t^{\prime}}))$,
 with the inner optimal function denoted as $\tilde{g}_t$ Obtain the
 output of the duel $y_t$ and append the new data point to
 $\mathcal{D}_t$ Update the maximum likelihood estimator
@@ -1258,17 +1272,17 @@ denote a query containing two points or more, and let
 $g: \mathcal{X} \rightarrow \Re$ be the latent preference function. Then
 after $n$ user queries, we define the *expected utility of the best
 option* (qEUBO) as
-$$\mathrm{qEUBO}_n(X)=\mathbf{E}_n\left[\max \left\{g\left(x_1\right), \ldots, g\left(x_q\right)\right\}\right].$$
+$$\mathrm{qEUBO}_n(X)=\mathbb{E}_n\left[\max \left\{g\left(x_1\right), \ldots, g\left(x_q\right)\right\}\right].$$
 
 We now show that qEUBO is one-step Bayes optimal, meaning that each step
 chooses the query that maximises the expected utility received by the
 human. For a query $X \in \mathcal{X}^q$, let
-$$V_n(X)=\mathbf{E}_n\left[\max _{x \in \mathbb{X}} \mathbf{E}_{n+1}[g(x)] \mid X_{n+1}=X\right] .$$
+$$V_n(X)=\mathbb{E}_n\left[\max _{x \in \mathbb{X}} \mathbb{E}_{n+1}[g(x)] \mid X_{n+1}=X\right] .$$
 Then $V_n$ defines the expected utility received if an additional query
 $X_{n+1}=X$ is performed, and maximizing $V_n$ is one-step Bayes
-optimal. Since $\max _{x \in \mathbb{X}} \mathbf{E}_n[f(x)]$ does not
+optimal. Since $\max _{x \in \mathbb{X}} \mathbb{E}_n[f(x)]$ does not
 depend on $X_{n+1}$, we can also equivalently maximize
-$$\mathbf{E}_n\left[\max _{x \in \mathbb{X}} \mathbf{E}_{n+1}[g(x)]-\max _{x \in \mathbb{X}} \mathbf{E}_n[g(x)] \mid X_{n+1}=X\right],$$
+$$\mathbb{E}_n\left[\max _{x \in \mathbb{X}} \mathbb{E}_{n+1}[g(x)]-\max _{x \in \mathbb{X}} \mathbb{E}_n[g(x)] \mid X_{n+1}=X\right],$$
 which takes the same form as the knowledge gradient acquisition function
 [@wu2018parallelknowledgegradientmethod] in standard Bayesian
 optimization.
@@ -1283,20 +1297,20 @@ $$\underset{X \in \mathbb{X}^q}{\operatorname{argmax}} \mathrm{qEUBO}_n(X) \subs
 
 ::: proof
 *Proof.* For a query $X \in \mathcal{X}^q$, let
-$x^{+}(X, i) \in \operatorname{argmax}_{x \in \mathbb{X}} \mathbf{E}_n[g(x) \mid(X, i)]$
+$x^{+}(X, i) \in \operatorname{argmax}_{x \in \mathbb{X}} \mathbb{E}_n[g(x) \mid(X, i)]$
 and define $X^{+}(X)=$ $\left(x^{+}(X, 1), \ldots, x^{+}(X, q)\right)$.
 
 **Claim 1** $V_n(X) \leq \mathrm{qEUBO}_n\left(X^{+}(X)\right) .$ We see
 that $$\begin{aligned}
-V_n(X) & =\sum_{i=1}^q \mathbf{P}_n(r(X)=i) \mathbf{E}_n[g\left(x^{+}(X, i)\right) ] \\
-& \leq \sum_{i=1}^q \mathbf{P}_n(r(X)=i) \mathbf{E}_n[\max _{i=1, \ldots, q} g(x^{+}(X, i))] \\
-& =\mathbf{E}_n\left[\max _{i=1, \ldots, q} g\left(x^{+}(X, i)\right)\right] \\
+V_n(X) & =\sum_{i=1}^q \mathbf{P}_n(r(X)=i) \mathbb{E}_n[g\left(x^{+}(X, i)\right) ] \\
+& \leq \sum_{i=1}^q \mathbf{P}_n(r(X)=i) \mathbb{E}_n[\max _{i=1, \ldots, q} g(x^{+}(X, i))] \\
+& =\mathbb{E}_n\left[\max _{i=1, \ldots, q} g\left(x^{+}(X, i)\right)\right] \\
 & =\mathrm{qEUBO}_n\left(X^{+}(X)\right),
 \end{aligned}$$ as claimed.
 
 **Claim 2** $\mathrm{qEUBO}_n(X) \leq V_n(X) .$ For any given
 $X \in \mathbb{X}^q$ we have
-$$\mathbf{E}_n\left[f\left(x_{r(X)}\right) \mid(X, r(X))\right] \leq \max _{x \in \mathbb{X}} \mathbf{E}_n[f(x) \mid(X, r(X))] .$$
+$$\mathbb{E}_n\left[f\left(x_{r(X)}\right) \mid(X, r(X))\right] \leq \max _{x \in \mathbb{X}} \mathbb{E}_n[f(x) \mid(X, r(X))] .$$
 Since $f\left(x_{r(X)}\right)=\max _{i=1, \ldots, q} f\left(x_i\right)$,
 taking expectations over $r(X)$ on both sides obtains the required
 result.
@@ -1348,7 +1362,7 @@ Compute current posterior
 $p(\boldsymbol{\theta} \mid \mathcal{D}_{\mathcal{I}(t)})$ Sample
 $\boldsymbol{\theta}$ from
 $p(\boldsymbol{\theta} \mid \mathcal{D}_{\mathcal{I}(t)})$ Select
-$k \leftarrow \argmax_{j \notin \mathcal{I}(t)} \mathbf{E}[y_j \mid \mathbf{x}_j, \boldsymbol{\theta}]$
+$k \leftarrow \arg \max_{j \notin \mathcal{I}(t)} \mathbb{E}[y_j \mid \mathbf{x}_j, \boldsymbol{\theta}]$
 Collect $y_k$ by evaluating $f$ at $\mathbf{x}_k$
 $\mathcal{D}_{\mathcal{I}(t+1)} \leftarrow \mathcal{D}_{\mathcal{I}(t)} \cup \{(\mathbf{x}_k, y_k)\}$
 :::
@@ -1362,7 +1376,7 @@ batch size $S$ Compute current posterior
 $p(\boldsymbol{\theta} \mid \mathcal{D}_{\mathcal{I}(t)})$ Sample
 $\boldsymbol{\theta}$ from
 $p(\boldsymbol{\theta} \mid \mathcal{D}_{\mathcal{I}(t)})$ Select
-$k(s) \leftarrow \argmax_{j \notin \mathcal{I}(t)} \mathbf{E}[y_j \mid \mathbf{x}_j, \boldsymbol{\theta}]$
+$k(s) \leftarrow \arg \max_{j \notin \mathcal{I}(t)} \mathbb{E}[y_j \mid \mathbf{x}_j, \boldsymbol{\theta}]$
 $\mathcal{D}_{\mathcal{I}(t+1)} = \mathcal{D}_{\mathcal{I}(t)} \cup \{\mathbf{x}_{k(s)}, y_{k(s)}\}_{s=1}^S$
 :::
 ::::
@@ -1376,11 +1390,11 @@ converges to zero at a rate of $o(1/n)$, i.e.
 
 ::: theorem
 $$\label{th:quebo_regret}
-\mathbf{E}\left[f\left(x^*\right)-f\left(\widehat{x}_n^*\right)\right]=o(1 / n)$$
+\mathbb{E}\left[f\left(x^*\right)-f\left(\widehat{x}_n^*\right)\right]=o(1 / n)$$
 :::
 
 where $x^*=\operatorname{argmax}_{x \in \mathrm{X}} f(x)$ and
-$\widehat{x}_n^* \in \operatorname{argmax}_{x \in \mathrm{X}} \mathbf{E}_n[f(x)]$.
+$\widehat{x}_n^* \in \operatorname{argmax}_{x \in \mathrm{X}} \mathbb{E}_n[f(x)]$.
 
 This theorem holds under the following assumptions:
 
@@ -1396,7 +1410,7 @@ This theorem holds under the following assumptions:
     greater utility** $\exists \Delta \geq \delta>0$ s.t.
     $\forall \mathcal{D}^{(n)} \text{and} \forall x, y \in \mathbb{X}$
     (potentially depending on $\mathcal{D}^{(n)}$),
-    $$\delta \mathbf{P}^{(n)}(f(x)>f(y)) \leq \mathbf{E}^{(n)}\left[\{f(x)-f(y)\}^{+}\right] \leq \Delta \mathbf{P}^{(n)}(f(x)>f(y))$$
+    $$\delta \mathbf{P}^{(n)}(f(x)>f(y)) \leq \mathbb{E}^{(n)}\left[\{f(x)-f(y)\}^{+}\right] \leq \Delta \mathbf{P}^{(n)}(f(x)>f(y))$$
     almost surely under the prior on $f$.
 
 Further lemmas leading to a proof of Theorem
@@ -1415,7 +1429,7 @@ distribution over f) satisfying the assumptions described in Theorem
 [\[th:quebo_regret\]](#th:quebo_regret){reference-type="ref"
 reference="th:quebo_regret"} such that if the sequence of queries is
 chosen by maximizing qEI, then
-$\mathbf{E}\left[f\left(x^*\right)-\right.$
+$\mathbb{E}\left[f\left(x^*\right)-\right.$
 $\left.f\left(\widehat{x}_n^*\right)\right] \geq R$ for all $n$, for a
 constant $R>0$.
 :::
@@ -1448,17 +1462,18 @@ f_4(x) = \begin{cases}
 Let $p$ be a number with $0 < p < 1/3$ and set $q=1-p$. We consider a
 prior distribution on $f$ with support $\{f_i\}_{i=1}^4$ such that
 $$\begin{aligned}
- p_i = \prob(f=f_i) =   \begin{cases}
-                        p/2, \  i =1,2,\\
-                        q/2, \ i=3,4.
-                        \end{cases}
+p_i = Pr(f=f_i) = 
+    \begin{cases}
+        p/2, i =1,2,\\
+        q/2, i=3,4.
+    \end{cases}
 \end{aligned}$$ We also assume the user's response likelihood is given
-by $\prob(r(X)=1\mid f(x_1) > f(x_2)) = a$ for some $a$ such that
+by $Pr(r(X)=1\mid f(x_1) > f(x_2)) = a$ for some $a$ such that
 $1/2 < a < 1$,
 
 Let $D^{(n)}$ denote the set of observations up to time $n$ and let
-$p_i^{(n)} = \prob(f=f_i \mid \D^{(n)})$ for $i=1,2,3,4$. We let the
-initial data set be $\D^{(0)} = \{(X^{(0)}, r^{(0)})\}$, where
+$p_i^{(n)} = Pr(f=f_i \mid \mathbb{E}^{(n)})$ for $i=1,2,3,4$. We let the
+initial data set be $\mathcal{D}^{(0)} = \{(X^{(0)}, r^{(0)})\}$, where
 $X^{(0)}= (1,2)$. We will prove that the following statements are true
 for all $n\geq 0$.
 
@@ -1467,20 +1482,20 @@ for all $n\geq 0$.
 2.  $p_1^{(n)} < \frac{1}{2}p_3^{(n)}$ and
     $p_2^{(n)} < \frac{1}{2}p_4^{(n)}$.
 
-3.  $\argmax_{x\in\X}\E^{(n)}[f(x)]=\{2\}$.
+3.  $\arg \max_{x\in\mathcal{X}}\mathbb{E}^{(n)}[f(x)]=\{2\}$.
 
-4.  $\argmax_{X\in\X^2}\qei^{(n)}(X) = \{(3, 4)\}$.
+4.  $\arg \max_{X\in\mathcal{X}^2}\text{qEI}^{(n)}(X) = \{(3, 4)\}$.
 
 We prove this by induction over $n$. We begin by proving this for $n=0$.
 Since $f_i(1) < f_i(2)$ for all $i$, the posterior distribution on $f$
-given $\D^{(0)}$ remains the same as the prior; i.e., $p_i^{(0)} = p_i$
+given $\mathcal{D}^{(0)}$ remains the same as the prior; i.e., $p_i^{(0)} = p_i$
 for $i=1,2,3,4$. Using this, statements 1 and 2 can be easily verified.
-Now note that $\E^{(0)}[f(1)]=-1$, $\E^{(0)}[f(2)]=0$, and
-$\E^{(0)}[f(3)] = \E^{(0)}[f(4)] = \frac{3}{2}(p - q)$. Since $p < q$,
-it follows that $\argmax_{x\in\X}\E^{(n)}[f(x)]=\{2\}$; i.e., statement
-3 holds. Finally, since $\max_{x\in\{1,2\}}\E^{(0)}[f(x)] = 0$, the qEI
+Now note that $\mathbb{E}^{(0)}[f(1)]=-1$, $\mathbb{E}^{(0)}[f(2)]=0$, and
+$\mathbb{E}^{(0)}[f(3)] = \mathbb{E}^{(0)}[f(4)] = \frac{3}{2}(p - q)$. Since $p < q$,
+it follows that $\arg \max_{x\in\mathcal{X}}\mathbb{E}^{(n)}[f(x)]=\{2\}$; i.e., statement
+3 holds. Finally, since $\max_{x\in\{1,2\}}\mathbb{E}^{(0)}[f(x)] = 0$, the qEI
 acquisition function at time $n=0$ is given by
-$\qei^{(0)}(X) = \E^{(0)}[\{\max\{f(x_1), f(x_2)\}\}^+]$. A direct
+$\text{qEI}^{(0)}(X) = \mathbb{E}^{(0)}[\{\max\{f(x_1), f(x_2)\}\}^+]$. A direct
 calculation can now be performed to verify that statement 4 holds. This
 completes the base case.
 
@@ -1503,35 +1518,35 @@ $p_2^{(n+1)} < \frac{1}{2}p_4^{(n+1)}$. Thus, statements 1 and 2 hold at
 time $n+1$.
 
 Now observe that $$\begin{aligned}
-    \E^{(n+1)}[f(3)] &= p_1^{(n+1)} + \frac{1}{2}p_2^{(n+1)} - \frac{1}{2}p_3^{(n+1)} - p_4^{(n+1)}\\
+    \mathbb{E}^{(n+1)}[f(3)] &= p_1^{(n+1)} + \frac{1}{2}p_2^{(n+1)} - \frac{1}{2}p_3^{(n+1)} - p_4^{(n+1)}\\
     &= \left(p_1^{(n+1)} - \frac{1}{2}p_3^{(n+1)}\right) + \left(\frac{1}{2}p_2^{(n+1)} - p_4^{(n+1)}\right)\\
     &\leq \left(p_1^{(n+1)} - \frac{1}{2}p_3^{(n+1)}\right) + \left(p_2^{(n+1)} - \frac{1}{2}p_4^{(n+1)}\right)\\
     &\leq 0,
 \end{aligned}$$ where the last inequality holds since
 $p_1^{(n+1)} < \frac{1}{2}p_3^{(n+1)}$ and
 $p_2^{(n+1)} < \frac{1}{2}p_4^{(n+1)}$. Similarly, we see that
-$\E^{(n+1)}[f(4)] \leq 0$. Since $\E^{(n+1)}[f(1)]=-1$ and
-$\E^{(n+1)}[f(2)]=0$, it follows that
-$\argmax_{x\in\X}\E^{(n+1)}[f(x)]=\{2\}$; i.e., statement 3 holds at
+$\mathbb{E}^{(n+1)}[f(4)] \leq 0$. Since $\mathbb{E}^{(n+1)}[f(1)]=-1$ and
+$\mathbb{E}^{(n+1)}[f(2)]=0$, it follows that
+$\arg \max_{x\in\mathcal{X}}\mathbb{E}^{(n+1)}[f(x)]=\{2\}$; i.e., statement 3 holds at
 time $n+1$.
 
-Since $\max_{x\in\X}\E^{(0)}[f(x)] = 0$, the qEI acquisition function at
+Since $\max_{x\in\mathcal{X}}\mathbb{E}^{(0)}[f(x)] = 0$, the qEI acquisition function at
 time $n+1$ is given by
-$\qei^{(n+1)}(X) = \E^{(n+1)}[\{\max\{f(x_1), f(x_2)\}\}^+]$. Since
-$f(1) \leq f(x)$ almost surely under the prior for all $x\in\X$, there
+$\text{qEI}^{(n+1)}(X) = \mathbb{E}^{(n+1)}[\{\max\{f(x_1), f(x_2)\}\}^+]$. Since
+$f(1) \leq f(x)$ almost surely under the prior for all $x\in\mathcal{X}$, there
 is always a maximizer of qEI that does not contain $1$. Thus, to find
 the maximizer of qEI, it suffices to analyse its value at the pairs
 $(2, 3)$, $(3,4)$ and $(4,2)$. We have
-$$\qei^{(n+1)}(2, 3) = p_1^{(n+1)} + 1/2 p_2^{(n+1)},$$
+$$\text{qEI}^{(n+1)}(2, 3) = p_1^{(n+1)} + 1/2 p_2^{(n+1)},$$
 $$\operatorname{qEI}^{(n+1)}(3, 4) = p_1^{(n+1)} + p_2^{(n+1)}$$ and
 $$\operatorname{qEI}^{(n+1)}(4, 2) = 1/2p_1^{(n+1)} + p_2^{(n+1)}.$$
 Since $p_1^{(n+1)} > 0$ and $p_2^{(n+1)} > 0$, it follows that
-$\argmax_{X \in X^2}\text{qEI}^{(n+1)}(X) = \{(3, 4)\}$, which concludes
+$\arg \max_{X \in X^2}\text{qEI}^{(n+1)}(X) = \{(3, 4)\}$, which concludes
 the proof by induction.
 
-Finally, since $\argmax_{x\in X}\E^{(n)}[f(x)]=\{2\}$ for all $n$, the
+Finally, since $\arg \max_{x\in X}\mathbb{E}^{(n)}[f(x)]=\{2\}$ for all $n$, the
 Bayesian simple regret of qEI is given by $$\begin{aligned}
-    \E\left[f(x^*) - f(2)\right] &= \sum_{i=1}p_i\left(\max_{x\in X}f_i(x) - f_i(2)\right)\\
+    \mathbb{E}\left[f(x^*) - f(2)\right] &= \sum_{i=1}p_i\left(\max_{x\in X}f_i(x) - f_i(2)\right)\\
     &= p
 \end{aligned}$$ for all $n$. ◻
 :::

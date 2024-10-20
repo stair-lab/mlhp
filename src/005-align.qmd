@@ -1,4 +1,3 @@
-{{< include _setup.qmd >}}
 # Human Values and AI Alignment
 
 In recent years, the rapidly advancing capabilities of large models have

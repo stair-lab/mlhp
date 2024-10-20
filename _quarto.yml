@@ -31,6 +31,13 @@ format:
       light: [flatly, resources/scss/global.scss]
       dark: [darkly, resources/scss/global.scss]
     published-title: "Updated"
+    code-fold: true
+    execute:
+      eval: false
+      echo: true
+    mathjax: 
+      macros:
+        mathbbm: ["\\mathbbm{#1}", 1]
 
   pdf:
     documentclass: scrreprt
@@ -40,12 +47,15 @@ format:
     csl: chicago-author-date-no-em-dash.csl
     filters:
       - section-bibliographies
-    toc-depth: 1 # level 1 headings (i.e. parts and chapters)
+    toc-depth: 2 # level 1 headings (i.e. parts and chapters)
     toc-title: Contents # title of table of contents
     links-as-notes: true # turn URLs into sidenotes
     citecolor: DarkGreen # tufte color
     linkcolor: DarkBlue # tufte color
     urlcolor: DarkGreen # tufte color
+    execute:
+      eval: false
+      echo: true
 
 knitr:
   opts_chunk:
@@ -84,8 +94,8 @@ book:
   # cookie-consent: true
   chapters:
     - index.qmd
-    - 001-introduction.qmd
-    - 002-reward_model.qmd
-    - 003-measure.qmd
-    - 004-optim.qmd
-    - 005-align.qmd
+    - src/002-reward_model.qmd
+    - src/003-measure.qmd
+    - src/004-optim.qmd
+    - src/005-align.qmd
+    - src/006-conclusion.qmd

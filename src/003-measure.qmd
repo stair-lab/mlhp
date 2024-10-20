@@ -1,5 +1,14 @@
-{{< include _setup.qmd >}}
 # Model-Based Preference Optimization
+
+::: {.content-visible when-format="html"}
+
+<iframe
+  src="https://web.stanford.edu/class/cs329h/slides/3.1.active_learning/#/"
+  style="width:45%; height:225px;"
+></iframe>
+[Fullscreen Slide](https://web.stanford.edu/class/cs329h/slides/3.1.active_learning/#/){.btn .btn-outline-primary .btn role="button"}
+
+:::
 
 Active learning implements the idea of improving one's current model by
 strategically querying new data and training on it. The new data starts

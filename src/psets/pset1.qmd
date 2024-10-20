@@ -1,0 +1,1117 @@
+# Exercises
+## Question 1: Choice Modeling (15 points) {#question-1-choice-modeling-15-points .unnumbered}
+
+In Chapter 2, we discussed discrete choice modeling in the context of
+utility being a linear function. Suppose we are deciding between $N$
+choices and that the utility of each choice is given by
+$U_i=\beta_i\mathbf{x}+\epsilon_i$ for $i=1, 2, \cdots, N$. We view
+$\mathbf{x}$ as the data point that is being conditioned on for deciding
+which choice to select, and $\beta_i$ as the weights driving the linear
+utility model. The noise $\epsilon_i$ is i.i.d. sampled from a type of
+extreme value distribution called the *Gumbel* distribution. The
+standard Gumbel distribution is given by the density function
+$f(x)=e^{-(x+e^{-x})}$ and cumulative distribution function
+$F(x)=e^{-e^{-x}}.$ Fix $i$. Our objective is to calculate
+$\Pr(U_i\,\, \text{has max utility})$.
+
+(a) **(Written, 2 points)**. To start, set $U_i=t$ and compute
+    $\Pr(U_j<t)$ for $j\neq i$ in terms of $F$. Use this probability to
+    derive an integral for $\Pr(U_i\,\,  \text{has max utility})$ over
+    $t$ in terms of $f$ and $F$.
+
+    Example of solution environment.
+
+(b) **(Written, 4 points)**. Compute the integral derived in part (a)
+    with the appropriate $u$-substitution. Show your work. You should
+    arrive at multi-class logistic regression in the end!
+
+Next, you will implement logistic regression to predict preferred prompt
+completions. We will use the preference dataset from RewardBench
+(<https://huggingface.co/datasets/allenai/reward-bench>). Notice the
+provided `data/chosen_embeddings.pt` and `data/rejected_embeddings.pt`
+files. These files were constructed by feeding the prompt alongside the
+chosen/rejected responses through Llama3-8B-Instruct and selecting the
+last token's final hidden embedding. Let $e_1$ and $e_2$ be two hidden
+embeddings with $e_1\succ e_2$. We assume weights $w$ exist for which
+the Bradley-Terry reward of an embedding $e$ can be modeled as
+$r=w\cdot e$. In this setting, the probability of $e_1\succ e_2$ is
+$$\frac{e^{w\cdot e_1}}{e^{w\cdot e_1}+e^{w\cdot e_2}}=\frac{1}{1+e^{w\cdot(e_2-e_1)}}=\sigma(w\cdot(e_1-e_2)).$$
+Hence, we can view maximum likelihood across the preference dataset with
+this model as logistic regression on $e_1-e_2$ without a bias term and
+all labels being $1$.
+
+In biasless logistic regression, we are given a dataset $X$ with $N$
+rows of datapoints and $D$ features per datapoint. The weights of the
+model are parametrized by $\theta$, a $D$-dimensional column vector.
+Given binary labels $y$ of shape $N$ by $1$, the binary cross-entropy
+loss is
+$$J(\theta)=-\frac{1}{N}(y^T\log(\sigma(X\theta)) + (1-y)^T\log(1-\sigma(X\theta)))$$
+where $\sigma$ is the sigmoid function and is applied element-wise along
+with $\log$. The gradient of loss is
+$$\nabla_\theta J(\theta)=\frac{1}{N}X^T(\sigma(X\theta)-y).$$
+
+1.  **(Coding, 3 points)**. Open the file
+    `logistic_regression/logistic_regression.py`. Implement the function
+    `train` in the biasless case.
+
+2.  **(Coding, 2 points)**. Implement the function `predict_probs`.
+
+3.  **(Written, 4 points)**. Open the notebook
+    `rewardbench_preferences.ipynb` and run all the cells. Make sure to
+    tune the `learning_rate` and `num_iterations`. Report your final
+    expected accuracy on the training and validation sets. How close are
+    the two expected accuracies? You should be able to achieve
+    $\approx 90\%$ expected accuracy on validation. You may add loss
+    reporting to the `train` function to verify your model is improving
+    over time.
+
+```{python ex1-q1}
+from sklearn.model_selection import train_test_split
+import torch
+
+class LogisticRegression:
+    def __init__(self):
+        self.weights = None  # Initialized during training
+
+    def train(self, X, y, learning_rate, num_iterations):
+        """
+        Train the logistic regression model using gradient descent (no bias).
+        Each gradient update should be with respect to the entire dataset X.
+
+        Parameters:
+        - X (torch.Tensor): Training data of shape (n_samples, n_features).
+        - y (torch.Tensor): Target labels of shape (n_samples,).
+        """
+        n_samples, n_features = X.shape
+
+        # Initialize weights without the bias term
+        self.weights = torch.zeros(n_features)
+
+        for i in range(num_iterations):
+            # YOUR CODE HERE (~4-5 lines)
+                pass
+            # END OF YOUR CODE
+
+    def predict_probs(self, X):
+        """
+        Predict probabilities for samples in X (no bias).
+
+        Parameters:
+        - X (torch.Tensor): Input data of shape (n_samples, n_features).
+
+        Returns:
+        - y_probs (torch.Tensor): Predicted probabilities.
+        """
+        y_probs = None
+
+        # YOUR CODE HERE (~2-3 lines)
+        pass
+        # END OF YOUR CODE
+
+        return y_probs
+
+
+if __name__ == "__main__":
+    # %%
+    # Load in Llama3 embeddings of prompt + completions on RewardBench
+    chosen_embeddings = torch.load('data/chosen_embeddings.pt')
+    rejected_embeddings = torch.load('data/rejected_embeddings.pt')
+
+    # Subtract the embeddings according to the Bradley-Terry reward model setup presented in the problem 
+    X = (chosen_embeddings - rejected_embeddings).to(torch.float)
+    y = torch.ones(X.shape[0])
+
+    # Split dataset 80/20 into training and validation sets
+    X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.2, random_state=42)  
+
+    print("Training set size:", X_train.shape)
+    print("Validation set size:", X_val.shape)
+
+    model = LogisticRegression()
+
+    # Tune the learning_rate and num_iterations until you achieve expected validation accuracy of at least 90%
+    learning_rate = None
+    num_iterations = None
+
+    model.train(X_train, y_train, learning_rate=learning_rate, num_iterations=num_iterations)
+
+    y_train_probs = model.predict_probs(X_train)
+    print(f"Expected Train Accuracy: {y_train_probs.mean()}")
+
+    y_val_probs = model.predict_probs(X_val)
+    print(f"Expected Validation Accuracy: {y_val_probs.mean()}") # Should reach at least 90%
+
+```
+
+## Question 2: Revealed and Stated Preferences (20 points) {#question-2-revealed-and-stated-preferences-20-points .unnumbered}
+
+Alice and Bob are running for president. For $R$ voters, we have access
+to their revealed candidate preferences through some means (e.g., social
+media, blogs, event history). Assume there is an underlying probability
+$z$ of voting for Alice among the population that is unknown. The aim of
+this question is to estimate $z$ through *maximum likelihood estimation*
+by also incorporating stated preferences. In this scenario, we collect
+stated preferences through surveys. When surveyed, voters tend to be
+more likely to vote for Alice with probability $\frac{z+1}{2}$ for
+reasons of "political correctness."
+
+(a) **(Written, 5 points)**. Suppose there are $R_A$ revealed
+    preferences for Alice, $R_B$ revealed preferences for Bob, $S_A$
+    stated preferences for Alice, and $S_B$ stated preferences for Bob.
+    Note $R=R_A+R_B$. Compute the log-likelihood of observing such
+    preferences in terms of $z, R_A, R_B, S_A, S_B$.
+
+(b) **(Coding, 1 point)**. Implement the short function `stated_prob` in
+    the file `voting/simulation.py`.
+
+(c) **(Coding, 5 points)**. Implement the class `VotingSimulation`.
+
+(d) **(Coding, 7 points)**. Implement your derived expression from
+    part (a) in the `log_likelihoods` function.
+
+(e) **(Written, 2 points)**. Finally, implement the `average_mae_mle`
+    method that will allow us to visualize the mean absolute error (MAE)
+    of our maximum likelihood estimate $\hat{z}$ (i.e., $|\hat{z}-z|$)
+    as the number of voters surveyed increases. Open
+    `voting/visualize_sim.ipynb` and run the cells to get a plot of MAE
+    vs. voters surveyed averaged across $100$ simulations. Attach the
+    plot to this question and briefly explain what you notice.
+
+```{python ex1-q2}
+import torch
+import random
+import matplotlib.pyplot as plt
+from tqdm import tqdm
+random.seed(42)
+torch.manual_seed(42)
+
+def stated_prob(z_values):
+    """
+    Computes the probability of stated preferences based on z values.
+    
+    Args:
+        z_values (torch.Tensor): The z value(s), where z represents the true probability of voting for Alice.
+
+    Returns:
+        torch.Tensor: Probability for stated preferences, derived from z values.
+    """
+    # YOUR CODE HERE (~1 line)
+    # END OF YOUR CODE
+
+class VotingSimulation:
+    """
+    A class to simulate the voting process where revealed and stated preferences are generated.
+    
+    Attributes:
+        R (int): Number of revealed preferences.
+        z (float): The true probability of voting for Alice.
+        revealed_preferences (torch.Tensor): Simulated revealed preferences of R voters using Bernoulli distribution.
+                                             Takes on 1 for Alice, and 0 for Bob.
+        stated_preferences (torch.Tensor): Simulated stated preferences, initialized as an empty tensor.
+                                           Takes on 1 for Alice, and 0 for Bob.
+    """
+    def __init__(self, R, z):
+        self.R = R
+        self.z = z
+        self.revealed_preferences = None # YOUR CODE HERE (~1 line)
+        self.stated_preferences = torch.tensor([])
+
+    def add_survey(self):
+        """
+        Simulates an additional stated preference based on stated_prob and adds it to the list.
+        This updates the self.stated_preferences tensor by concatenating on a new simulated survey result.
+        """
+        # YOUR CODE HERE (~3 lines)
+        # END OF YOUR CODE
+
+def log_likelihoods(revealed_preferences, stated_preferences, z_values):
+    """
+    Computes the log likelihoods across both revealed and stated preferences.
+    Use your answer in part (a) to help.
+    
+    Args:
+        revealed_preferences (torch.Tensor): Tensor containing revealed preferences (0 or 1).
+        stated_preferences (torch.Tensor): Tensor containing stated preferences (0 or 1).
+        z_values (torch.Tensor): Tensor of underlying z values to calculate likelihood for.
+
+    Returns:
+        torch.Tensor: Log likelihood for each z value.
+    """
+    # YOUR CODE HERE (~10-16 lines)
+    pass
+    # END OF YOUR CODE 
+
+def average_mae_mle(R, z, survey_count, num_sims, z_sweep):
+    """
+    Runs multiple simulations to compute the average mean absolute error (MAE) of Maximum Likelihood Estimation (MLE) 
+    for z after increasing number of surveys.
+    
+    Args:
+        R (int): Number of revealed preferences.
+        z (float): The true probability of voting for Alice.
+        survey_count (int): Number of additional surveys to perform.
+        num_sims (int): Number of simulation runs to average over.
+        z_sweep (torch.Tensor): Range of z values to consider for maximum likelihood estimation.
+
+    Returns:
+        torch.Tensor: Tensor of mean absolute errors averaged over simulations.
+                      Should have shape (survey_count, )
+    """
+    all_errors = []
+    for _ in tqdm(range(num_sims)):
+        errors = []
+        vote_simulator = VotingSimulation(R=R, z=z)
+
+        for _ in range(survey_count):
+            revealed_preferences = vote_simulator.revealed_preferences
+            stated_preferences = vote_simulator.stated_preferences
+
+            # YOUR CODE HERE (~6-8 lines)
+            pass # Compute log_likelihoods across z_sweep. Argmax to find MLE for z. 
+                 # Append the absolute error to errors and add a survey to the simulator.
+            # END OF YOUR CODE
+
+        errors_tensor = torch.stack(errors) 
+        all_errors.append(errors_tensor)
+
+    # Calculate the average error across simulations 
+    mean_errors = torch.stack(all_errors).mean(dim=0)
+    return mean_errors
+
+if __name__ == "__main__":
+    # DO NOT CHANGE!
+    max_surveys = 2000
+    z = 0.5
+    R = 10
+    num_sims = 100
+    z_sweep = torch.linspace(0.01, 0.99, 981)
+
+    # Compute and plot the errors. Attach this plot to part (d).
+    mean_errors = average_mae_mle(R, z, max_surveys, num_sims, z_sweep)
+    plt.plot(mean_errors)
+
+    plt.xlabel('Surveys Conducted')
+    plt.ylabel('Average Error')
+    plt.title(f'MLE MAE Error (z={z}, {num_sims} simulations)')
+    plt.show()
+```
+
+## Question 3: Probabilistic Multi-modal Preferences (25 points) {#question-3-probabilistic-multi-modal-preferences-25-points .unnumbered}
+
+Suppose you are part of the ML team on the movie streaming site
+CardinalStreams. After taking CS329H, you collect a movie preferences
+dataset with $30000$ examples of the form $(m_1, m_2, \text{user id})$
+where $m_1$ and $m_2$ are movies with $m_1\succ m_2$. The preferences
+come from $600$ distinct users with $50$ examples per user. Each movie
+has a $10$-dimensional feature vector $m$, and each user has a
+$10$-dimensional weight vector $u$. Given movie features $m_1, m_2$ and
+user weights $u$, the user's preference between the movies is given by a
+Bradley-Terry reward model, i.e.,
+$$P(m_1\succ m_2)=\frac{e^{u\cdot m_1}}{e^{u\cdot m_1} + e^{u\cdot m_2}}=\frac{1}{1+e^{u\cdot (m_2-m_1)}}=\sigma(u\cdot (m_1-m_2)).$$
+
+You realize that trying to estimate the weights for each user with only
+$50$ examples will not work due to the lack of data. Instead, you choose
+to drop the user IDs column and shuffle the dataset in order to take a
+*multi-modal preferences* approach. For simplicity, you assume a model
+where a proportion $p$ of the users have weights $w_1$ and the other
+$1-p$ have weights $w_2$. In this setting, each user belongs to one of
+two groups: users with weights $w_1$ are part of Group 1, and users with
+weights $w_2$ are part of Group 2.
+
+(a) **(Written, 3 points)**. For a datapoint $(m_1, m_2)$ with label
+    $m_1\succ m_2$, compute the data likelihood
+    $P(m_1\succ m_2 | p, w_1, w_2)$ assuming $p, w_1, w_2$ are given.
+
+(b) **(Written, 3 points)**. As a follow up, use the likelihood to
+    simplify the posterior distribution of $p, w_1, w_2$ after updating
+    on $(m_1, m_2)$ leaving terms for the priors unchanged.
+
+(c) **(Written, 4 points)**. Assume priors $p\sim B(1, 1)$,
+    $w_1\sim\mathcal{N}(0, \mathbf{I})$, and
+    $w_2\sim\mathcal{N}(0, \mathbf{I})$ where $B$ represents the Beta
+    distribution and $\mathcal{N}$ represents the normal distribution.
+    You will notice that the posterior from part (b) has no simple
+    closed-form. As a result, we must resort to *Markov Chain Monte
+    Carlo (MCMC)* approaches to sample from the posterior. These
+    approaches allow sampling from highly complex distributions by
+    constructing a Markov chain $\{x_t\}_{t=1}^\infty$ so that
+    $\lim_{t\to\infty}x_t$ act as desired samples from the target
+    distribution. You can think of a Markov chain as a sequence with the
+    special property that $x_{t+1}$ only depends on $x_t$ for all
+    $t\ge 1$.
+
+    The most basic version of MCMC is known as Metropolis-Hastings.
+    Assume $\pi$ is the target distribution we wish to sample from where
+    $\pi(z)$ represents the probability density at point $z$.
+    Metropolis-Hastings constructs the approximating Markov chain $x_t$
+    as follows: a proposal $P$ for $x_{t+1}$ is made via sampling from a
+    chosen distribution $Q(\,\cdot\,| x_t)$ (e.g., adding Gaussian
+    noise). The acceptance probability of the proposal is given by
+    $$A= \min \left( 1, \frac{\pi(P)Q(x_t | P)}{\pi(x_t)Q(P | x_t)} \right).$$
+    That is, $$x_{t+1}=\begin{cases} 
+    P & \text{with probability } A, \\
+    x_t & \text{with probability } 1 - A.
+    \end{cases}$$ To extract our samples from $\pi$, we run the Markov
+    chain for $N$ timesteps and disregard the first $T<N$ timesteps in
+    what is called the *burn-in or mixing time* (i.e., our final samples
+    are $x_{T+1}, x_{T+2},\cdots, x_{N}$). The mixing time is needed to
+    ensure that the Markov chain elements are representative of the
+    distribution $\pi$ -- initial elements of the chain will not be a
+    good approximation of $\pi$ and depend more on the choice of
+    initialization $x_1$.
+
+    To build some intuition, suppose we have a biased coin that turns
+    heads with probability $p_{\text{heads}}$. We observe $12$ coin
+    flips to have $9$ heads and $3$ tails. If our prior for
+    $p_{\text{heads}}$ was $B(1, 1)$, then our posterior will be
+    $B(1+9, 1+3)=B(10, 4)$. The Bayesian update is given by
+
+    \begin{aligned}
+        P(p_{\text{heads}}|9\text{ heads}, 3\text{ tails})&=\frac{P(9\text{ heads}, 3\text{ tails} | p_{\text{heads}})B(1, 1)(p_{\text{heads}})}{\int_0^1 P(9\text{ heads}, 3\text{ tails} | p_{\text{heads}})B(1, 1)(p_{\text{heads}}) dp_{\text{heads}}}\\
+        &=\frac{P(9\text{ heads}, 3\text{ tails} | p_{\text{heads}})}{\int_0^1 P(9\text{ heads}, 3\text{ tails} | p_{\text{heads}})  dp_{\text{heads}}}.
+        
+    \end{aligned}
+
+    **Find the acceptance probablity** $A$ in the
+    setting of the biased coin assuming the proposal distribution
+    $Q(\cdot|x_t)=x_t+N(0,\sigma)$ for given $\sigma$. Notice that this
+    choice of $Q$ is symmetric, i.e., $Q(x_t|P)=Q(P|x_t)$. In addition,
+    you will realize that is unnecessary to compute the normalizing
+    constant of the Bayesian update (i.e., the integral in the
+    denominator) which is why MCMC is commonly used to sample from
+    posteriors!
+
+(d) **(Written + Coding, 6 points)**. Implement Metropolis-Hastings to
+    sample from the posterior distribution of the biased coin in
+    `multimodal_preferences/biased_coin.py`. Attach a histogram of your
+    MCMC samples overlayed on top of the true posterior $B(10, 4)$ by
+    running `python biased_coin.py`.
+
+```{python ex1-q3.1}
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.stats import beta
+
+def likelihood(p: float) -> float:
+    """
+    Computes the likelihood of 9 heads and 3 tails assuming p_heads is p.
+
+    Args:
+    p (float): A value between 0 and 1 representing the probability of heads.
+
+    Returns:
+    float: The likelihood value at p_heads=p. Return 0 if p is outside the range [0, 1].
+    """
+    # YOUR CODE HERE (~1-3 lines)
+    pass
+    # END OF YOUR CODE
+
+
+def propose(x_current: float, sigma: float) -> float:
+    """
+    Proposes a new sample from the proposal distribution Q.
+    Here, Q is a normal distribution centered at x_current with standard deviation sigma.
+
+    Args:
+    x_current (float): The current value in the Markov chain.
+    sigma (float): Standard deviation of the normal proposal distribution.
+
+    Returns:
+    float: The proposed new sample.
+    """
+    # YOUR CODE HERE (~1-3 lines)
+    pass
+    # END OF YOUR CODE
+
+
+def acceptance_probability(x_current: float, x_proposed: float) -> float:
+    """
+    Computes the acceptance probability A for the proposed sample.
+    Since the proposal distribution is symmetric, Q cancels out.
+
+    Args:
+    x_current (float): The current value in the Markov chain.
+    x_proposed (float): The proposed new value.
+
+    Returns:
+    float: The acceptance probability
+    """
+    # YOUR CODE HERE (~4-6 lines)
+    pass
+    # END OF YOUR CODE
+
+
+def metropolis_hastings(N: int, T: int, x_init: float, sigma: float) -> np.ndarray:
+    """
+    Runs the Metropolis-Hastings algorithm to sample from a posterior distribution.
+
+    Args:
+    N (int): Total number of iterations.
+    T (int): Burn-in period (number of initial samples to discard).
+    x_init (float): Initial value of the chain.
+    sigma (float): Standard deviation of the proposal distribution.
+
+    Returns:
+    list: Samples collected after the burn-in period.
+    """
+    samples = []
+    x_current = x_init
+
+    for t in range(N):
+        # YOUR CODE HERE (~7-10 lines)
+        # Use the propose and acceptance_probability functions to get x_{t+1} and store it in samples after the burn-in period T
+        pass
+        # END OF YOUR CODE
+
+    return samples
+
+
+def plot_results(samples: np.ndarray) -> None:
+    """
+    Plots the histogram of MCMC samples along with the true Beta(10, 4) PDF.
+
+    Args:
+    samples (np.ndarray): Array of samples collected from the Metropolis-Hastings algorithm.
+
+    Returns:
+    None
+    """
+    # Histogram of the samples from the Metropolis-Hastings algorithm
+    plt.hist(samples, bins=50, density=True, alpha=0.5, label="MCMC Samples")
+
+    # True Beta(10, 4) distribution for comparison
+    p = np.linspace(0, 1, 1000)
+    beta_pdf = beta.pdf(p, 10, 4)
+    plt.plot(p, beta_pdf, "r-", label="Beta(10, 4) PDF")
+
+    plt.xlabel("p_heads")
+    plt.ylabel("Density")
+    plt.title("Metropolis-Hastings Sampling of Biased Coin Posterior")
+    plt.legend()
+    plt.show()
+
+
+if __name__ == "__main__":
+    # MCMC Parameters (DO NOT CHANGE!)
+    N = 50000  # Total number of iterations
+    T = 10000  # Burn-in period to discard
+    x_init = 0.5  # Initial guess for p_heads
+    sigma = 0.1  # Standard deviation of the proposal distribution
+
+    # Run Metropolis-Hastings and plot the results
+    samples = metropolis_hastings(N, T, x_init, sigma)
+    plot_results(samples)
+```
+
+(e) **(Coding, 9 points)**. Implement Metropolis-Hastings in the movie
+    setting inside\
+    `multimodal_preferences/movie_metropolis.py`. The movie dataset we
+    use for grading will not be provided. However, randomly constructed
+    datasets can be used to test your implementation by running
+    `python movie_metropolis.py`. You should be able to achieve a $90\%$
+    success rate with most `fraction_accepted` values above $0.1$.
+    Success is measured by thresholded closeness of predicted parameters
+    to true parameters. You may notice occasional failures that occur
+    due to lack of convergence which we will account for in grading.
+
+```{python ex1-q3.2}
+import torch
+import torch.distributions as dist
+import math
+from tqdm import tqdm
+from typing import Tuple
+
+def make_data(
+    true_p: torch.Tensor, true_weights_1: torch.Tensor, true_weights_2: torch.Tensor, num_movies: int, feature_dim: int
+) -> Tuple[torch.Tensor, torch.Tensor]:
+    """
+    Generates a synthetic movie dataset according to the CardinalStreams model.
+
+    Args:
+        true_p (torch.Tensor): Probability of coming from Group 1.
+        true_weights_1 (torch.Tensor): Weights for Group 1.
+        true_weights_2 (torch.Tensor): Weights for Group 2.
+
+    Returns:
+        Tuple[torch.Tensor, torch.Tensor]: A tuple containing the dataset and labels.
+    """
+    # Create movie features
+    first_movie_features = torch.randn((num_movies, feature_dim))
+    second_movie_features = torch.randn((num_movies, feature_dim))
+
+    # Only care about difference of features for Bradley-Terry
+    dataset = first_movie_features - second_movie_features
+
+    # Get probabilities that first movie is preferred assuming Group 1 or Group 2
+    weight_1_probs = torch.sigmoid(dataset @ true_weights_1)
+    weight_2_probs = torch.sigmoid(dataset @ true_weights_2)
+
+    # Probability that first movie is preferred overall can be viewed as sum of conditioning on Group 1 and Group 2
+    first_movie_preferred_probs = (
+        true_p * weight_1_probs + (1 - true_p) * weight_2_probs
+    )
+    labels = dist.Bernoulli(first_movie_preferred_probs).sample()
+    return dataset, labels
+
+
+def compute_likelihoods(
+    dataset: torch.Tensor,
+    labels: torch.Tensor,
+    p: torch.Tensor,
+    w_1: torch.Tensor,
+    w_2: torch.Tensor,
+) -> torch.Tensor:
+    """
+    Computes the likelihood of each datapoint. Use your calculation from part (a) to help.
+
+    Args:
+        dataset (torch.Tensor): The dataset of differences between movie features.
+        labels (torch.Tensor): The labels where 1 indicates the first movie is preferred, and 0 indicates preference of the second movie.
+        p (torch.Tensor): The probability of coming from Group 1.
+        w_1 (torch.Tensor): Weights for Group 1.
+        w_2 (torch.Tensor): Weights for Group 2.
+
+    Returns:
+        torch.Tensor: The likelihoods for each datapoint. Should have shape (dataset.shape[0], )
+    """
+    # YOUR CODE HERE (~6-8 lines)
+    pass
+    # END OF YOUR CODE
+
+def compute_prior_density(
+    p: torch.Tensor, w_1: torch.Tensor, w_2: torch.Tensor
+) -> torch.Tensor:
+    """
+    Computes the prior density of the parameters.
+
+    Args:
+        p (torch.Tensor): The probability of preferring model 1.
+        w_1 (torch.Tensor): Weights for model 1.
+        w_2 (torch.Tensor): Weights for model 2.
+
+    Returns:
+        torch.Tensor: The prior densities of p, w_1, and w_2.
+    """
+    # Adjusts p to stay in the range [0.3, 0.7] to prevent multiple equilibria issues at p=0 and p=1
+    p_prob = torch.tensor([2.5]) if 0.3 <= p <= 0.7 else torch.tensor([0.0])
+
+    def normal_pdf(x: torch.Tensor) -> torch.Tensor:
+        """Computes the PDF of the standard normal distribution at x."""
+        return (1.0 / torch.sqrt(torch.tensor(2 * math.pi))) * torch.exp(-0.5 * x**2)
+
+    weights_1_prob = normal_pdf(w_1)
+    weights_2_prob = normal_pdf(w_2)
+
+    # Concatenate the densities
+    concatenated_prob = torch.cat([p_prob, weights_1_prob, weights_2_prob])
+    return concatenated_prob
+
+
+def metropolis_hastings(
+    dataset: torch.Tensor,
+    labels: torch.Tensor,
+    sigma: float = 0.01,
+    num_iters: int = 30000,
+    burn_in: int = 20000,
+) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, float]:
+    """
+    Performs the Metropolis-Hastings algorithm to sample from the posterior distribution.
+    DO NOT CHANGE THE DEFAULT VALUES!
+
+    Args:
+        dataset (torch.Tensor): The dataset of differences between movie features.
+        labels (torch.Tensor): The labels indicating which movie is preferred.
+        sigma (float, optional): Standard deviation for proposal distribution.
+            Defaults to 0.01.
+        num_iters (int, optional): Total number of iterations. Defaults to 30000.
+        burn_in (int, optional): Number of iterations to discard as burn-in.
+            Defaults to 20000.
+
+    Returns:
+        Tuple[torch.Tensor, torch.Tensor, torch.Tensor, float]: Samples of p,
+        w_1, w_2, and the fraction of accepted proposals.
+    """
+    feature_dim = dataset.shape[1]
+
+    # Initialize random starting parameters by sampling priors
+    curr_p = 0.3 + 0.4 * torch.rand(1)
+    curr_w_1 = torch.randn(feature_dim)
+    curr_w_2 = torch.randn(feature_dim)
+
+    # Keep track of samples and total number of accepted proposals
+    p_samples = []
+    w_1_samples = []
+    w_2_samples = []
+    accept_count = 0 
+
+    for T in tqdm(range(num_iters)):
+        # YOUR CODE HERE (~3 lines)
+        pass # Sample proposals for p, w_1, w_2
+        # END OF YOUR CODE
+
+        # YOUR CODE HERE (~4-6 lines)
+        pass # Compute likehoods and prior densities on both the proposed and current samples
+        # END OF YOUR CODE
+
+        # YOUR CODE HERE (~2-4 lines)
+        pass # Obtain the ratios of the likelihoods and prior densities between the proposed and current samples 
+        # END OF YOUR CODE 
+
+        # YOUR CODE HERE (~1-2 lines)
+        pass # Multiply all ratios (both likelihoods and prior densities) and use this to calculate the acceptance probability of the proposal
+        # END OF YOUR CODE
+
+        # YOUR CODE HERE (~4-6 lines)
+        pass # Sample randomness to determine whether the proposal should be accepted to update curr_p, curr_w_1, curr_w_2, and accept_count
+        # END OF YOUR CODE 
+
+        # YOUR CODE HERE (~4-6 lines)
+        pass # Update p_samples, w_1_samples, w_2_samples if we have passed the burn in period T
+        # END OF YOUR CODE 
+
+    fraction_accepted = accept_count / num_iters
+    print(f"Fraction of accepted proposals: {fraction_accepted}")
+    return (
+        torch.stack(p_samples),
+        torch.stack(w_1_samples),
+        torch.stack(w_2_samples),
+        fraction_accepted,
+    )
+
+
+def evaluate_metropolis(num_sims: int, num_movies: int, feature_dim: int) -> None:
+    """
+    Runs the Metropolis-Hastings algorithm N times and compare estimated parameters
+    with true parameters to obtain success rate. You should attain a success rate of around 90%. 
+
+    Note that there are two successful equilibria to converge to. They are true_weights_1 and true_weights_2 with probabilities
+    p and 1-p in addition to true_weights_2 and true_weights_1 with probabilities 1-p and p. This is why even though it may appear your
+    predicted parameters don't match the true parameters, they are in fact equivalent. 
+
+    Args:
+        num_sims (int): Number of simulations to run.
+
+    Returns:
+        None
+    """
+    
+    success_count = 0
+    for _ in range(num_sims):
+        # Sample random ground truth parameters
+        true_p = 0.3 + 0.4 * torch.rand(1)
+        true_weights_1 = torch.randn(feature_dim)
+        true_weights_2 = torch.randn(feature_dim)
+
+        print("\n---- MCMC Simulation ----")
+        print("True parameters:", true_p, true_weights_1, true_weights_2)
+
+        dataset, labels = make_data(true_p, true_weights_1, true_weights_2, num_movies, feature_dim)
+        p_samples, w_1_samples, w_2_samples, _ = metropolis_hastings(dataset, labels)
+
+        p_pred = p_samples.mean(dim=0)
+        w_1_pred = w_1_samples.mean(dim=0)
+        w_2_pred = w_2_samples.mean(dim=0)
+
+        print("Predicted parameters:", p_pred, w_1_pred, w_2_pred)
+
+        # Do casework on two equilibria cases to check for success
+        p_diff_case_1 = torch.abs(p_pred - true_p)
+        p_diff_case_2 = torch.abs(p_pred - (1 - true_p))
+
+        w_1_diff_case_1 = torch.max(torch.abs(w_1_pred - true_weights_1))
+        w_1_diff_case_2 = torch.max(torch.abs(w_1_pred - true_weights_2))
+
+        w_2_diff_case_1 = torch.max(torch.abs(w_2_pred - true_weights_2))
+        w_2_diff_case_2 = torch.max(torch.abs(w_2_pred - true_weights_1))
+
+        pass_case_1 = (
+            p_diff_case_1 < 0.1 and w_1_diff_case_1 < 0.5 and w_2_diff_case_1 < 0.5
+        )
+        pass_case_2 = (
+            p_diff_case_2 < 0.1 and w_1_diff_case_2 < 0.5 and w_2_diff_case_2 < 0.5
+        )
+        passes = pass_case_1 or pass_case_2
+
+        print(f'Result: {"Success" if passes else "FAILED"}')
+        if passes:
+            success_count += 1
+    print(f'Success rate: {success_count / num_sims}')
+
+
+if __name__ == "__main__":
+    evaluate_metropolis(num_sims=10, num_movies=30000, feature_dim=10)
+```
+
+
+## Question 4: Direct Preference Optimization (40 points) {#question-4-direct-preference-optimization-40-points .unnumbered}
+
+Note this question requires a GPU which is provided for free on Google
+Colab (T4 instance) or through the course cloud credits provided on Ed.\
+Direct Preference Optimization (DPO) allows for policy alignment on a
+preference dataset without the need to train a separate reward model.
+The preference dataset is constructed by sampling generations
+$(y_1, y_2)\sim \pi_{\text{ref}}(\cdot\mid x)$ where $\pi_\text{ref}$ is
+the base policy to be aligned, and $x$ comes from a set of previously
+collected prompts. The pairs of generations are then labeled by an
+annotator for which of the generations is preferred. Denote the
+preference dataset by
+$\mathcal{D}=\left\{\left(x^{(i)}, y_+^{(i)}, y_-^{(i)}\right)\right\}_{i=1}^N$,
+where $y_+$ and $y_-$ are the preferred and non-preferred generations,
+respectively. DPO aims to solve the following:
+$$\hat{\pi}=\arg \min_{\pi\in\Pi}\mathbb{E}_{(x, y_+, y_-)\sim\mathcal{D}}\left[-\log\sigma\left(
+\beta\log\left(\frac{\pi(y_+ | x)}{\pi_{\text{ref}}(y_+ | x)}\right)-\beta\log\left(\frac{\pi(y_- | x)}{\pi_{\text{ref}}(y_- | x)}\right)\right)\right]$$
+where $\Pi$ is the space of possible polices $\pi$ can take on. $\pi$ is
+typically parametrized.
+
+(a) **(Written, 6 points)**. Consider the setting where
+    $\pi_{\text{ref}}$ has no conditioning features and randomly outputs
+    one of two possible values, $\mathbf{A}$ or $\mathbf{B}$ (also known
+    as the "Bandit" setting). Suppose that
+    $\pi_{\text{ref}}(\mathbf{A})=p_0$ and
+    $\pi_{\text{ref}}(\mathbf{B})=1-p_0$. Furthermore, assume that the
+    preference dataset $\mathcal{D}$ is infinitely large, sampled from
+    $\pi_{\text{ref}}$, and that the preferred response is selected
+    through a Bradley-Terry reward model where $\mathbf{A}$ has reward
+    score $r_A$ and $\mathbf{B}$ has reward score $r_B$. Set
+    $\Pi=\{\pi_p\mid 0<p<1\}$ where $\pi_p$ is the policy defined by
+    $\pi_p(\mathbf{A})=p$ and $\pi_p(\mathbf{B})=1-p$. The DPO objective
+    is to compute:
+    $$\pi_{\hat{p}}=\arg \min_{\pi_p\in \Pi} f(p, p_0, \beta, r_A, r_B),$$
+    for a function $f$. Find $f$ by explicitly computing the relevant
+    expectation.
+
+(b) **(Written, 8 points)**. Assume that a solution to the optimization
+    problem in part (a) exists. Find an expression for $\hat{p}$. (Hint:
+    Make sure to know your sigmoid derivative properties! Everything
+    should simplify nicely. You may use the *logit function*
+    <https://en.wikipedia.org/wiki/Logit> denoted by $\sigma^{-1}$ in
+    your final expression.)
+
+(c) **(Written, 3 points)**. Show that
+    $\lim_{\beta\to\infty}\hat{p}=p_0.$ (Very) briefly explain why this
+    makes sense intuitively based on the role of $\beta$ in
+    KL-constrained reward optimization (we suggest two sentences).
+
+(d) **(Written, 3 points)**. Assume $r_A=r_B$ and $\beta>0$. Notice that
+    $\hat{p}=p_0$. Briefly explain why this makes sense intuitively (we
+    suggest two sentences).
+
+Next, you will fine-tune the lightweight 2 billion parameter Gemma 2
+model on the DPO objective. We will use the instruction fine-tuned
+variant of the model (i.e., designed for chat-based interactions).
+
+1.  **(Coding, 4 points)**. Open the `dpo/dpo.ipynb` file of the PSET's
+    codebase. Execute the first few cells of the notebook until you see
+    the `sample_chat_tokens` and their IDs printed out. The next cell
+    requires you to implement the `get_response_idxs` function in
+    `dpo/dpo.py`.
+
+    To implement it, you must find the indices of the first and last
+    token of the model's response in `sample_chat_tokens`. In the
+    notebook's example, this corresponds to the tokens "As" and "."
+
+2.  **(Coding, 4 points)**. The following cell asks you to implement the
+    `get_response_next_token_probs` function. The next token logits for
+    each token of the chat prompt are provided. Pass them through the
+    softmax function and appropriately index the next token IDs.
+
+        <bos><start_of_turn>user
+        Where are you?<end_of_turn>
+        <start_of_turn>model
+        I am here.<end_of_turn>
+
+    In the example above, we look for the next-token probabilities of
+    "I", "am", "here", and "." To do so, you must extract the logits for
+    "\\n", "I", "am", and "here" because the probability of generating a
+    given token comes from the prediction of the token before. Use the
+    return value of `get_response_idxs` as anchor points for indexing.
+    Be careful of off-by-one indexing mistakes!
+
+3.  **(Coding, 6 points)**. The training and reference LLM policies are
+    loaded for you. We load the training policy in with LoRA for
+    computational efficiency during fine-tuning in the next part.
+    Implement `compute_dpo_objective` with the objective provided in the
+    theory portion for your favorite positive value of $\beta$. Does
+    $\beta$ affect the loss printed out? Why or why not? You do not need
+    to write why in your submission, but this line of thinking will help
+    debug any issues with your DPO loss function.
+
+4.  **(Written + Coding, 6 points)**. Finally, you will fine-tune the
+    Gemma model on the DPO loss function with batch size (and dataset
+    size) of $1$ by implementing `finetune`. The prompt and completions
+    are provided in the notebook. The optimizer, $\beta$, and the number
+    of fine-tuning steps have also been provided. Make sure to use
+    `torch.no_grad()` on the reference model to prevent unnecessary
+    gradients!
+
+    Report the proportion of "because of" occurences before and after
+    fine-tuning. Additionally, include a plot of the DPO loss curve.
+
+```{python ex1-q4}
+import torch
+from transformers import AutoTokenizer, AutoModelForCausalLM, set_seed
+from peft import LoraConfig, get_peft_model
+
+set_seed(42) # DO NOT CHANGE THE SEED
+
+def get_response_idxs(tokenizer, chat_token_ids):
+    """
+    Finds the start and end indices of the response in the tokenized chat.
+
+    Args:
+    tokenizer: The tokenizer object used to encode/decode text.
+    chat_token_ids (list[int]): The token IDs representing the chat conversation.
+
+    Returns:
+    tuple: A tuple (response_start_idx, response_end_idx), both of which are nonnegative integers.
+    """
+
+    start_of_turn_id = tokenizer.convert_tokens_to_ids("<start_of_turn>")
+    end_of_turn_id = tokenizer.convert_tokens_to_ids("<end_of_turn>")
+
+    response_start_idx = None # Nonnegative integer
+    response_end_idx = None # Nonnegative integer
+
+    # YOUR CODE HERE (~3-5 lines)
+    pass
+    # END OF YOUR CODE
+
+    return response_start_idx, response_end_idx
+
+def get_response_next_token_probs(tokenizer, model, chat_token_ids):
+    """
+    Computes the next token probabilities for the response in a chat.
+
+    Args:
+    tokenizer: The tokenizer object used to encode/decode text.
+    model: The language model used to generate the logits.
+    chat_token_ids (list[int]): The token IDs representing the chat conversation.
+
+    Returns:
+    torch.Tensor: A 1D tensor containing the probabilities of the tokens in the response found by appropriately indexing
+                  the next token probabilities of the preceding token.
+    """
+
+    response_start_idx, response_end_idx = get_response_idxs(tokenizer, chat_token_ids)
+    chat_token_ids_tensor = torch.tensor([chat_token_ids]).to(model.device)
+    logits = model(chat_token_ids_tensor).logits[0, :, :] # shape (len(chat_token_ids), vocabulary_size)
+
+    next_token_probs = None # Should be a 1D-tensor
+
+    # YOUR CODE HERE (~3-5 lines)
+    pass
+    # END OF YOUR CODE
+
+    return next_token_probs
+
+def compute_dpo_objective(preferred_train_probs, nonpreferred_train_probs, preferred_ref_probs, nonpreferred_ref_probs, beta):
+    """
+    Computes the Direct Preference Optimization (DPO) objective for training.
+
+    Args:
+    preferred_train_probs (torch.Tensor): Token probabilities for the preferred chat sequence from the training model.
+    nonpreferred_train_probs (torch.Tensor): Token probabilities for the non-preferred chat sequence from the training model.
+    preferred_ref_probs (torch.Tensor): Token probabilities for the preferred chat sequence from the reference model.
+    nonpreferred_ref_probs (torch.Tensor): Token probabilities for the non-preferred chat sequence from the reference model.
+    beta (float): Controls the KL strength of staying close to the reference model.
+
+    Returns:
+    torch.Tensor: The computed DPO objective, which is a float.
+    """
+
+    dpo_obj = None # Float value
+    
+    # YOUR CODE HERE (~4-6 lines)
+    pass
+    # END OF YOUR CODE
+
+    return dpo_obj
+
+def finetune(tokenizer, optimizer, train_model, ref_model, preferred_chat_ids, nonpreferred_chat_ids, num_gradient_steps, beta):
+    """
+    Fine-tunes the training model using DPO. Make sure to disable gradients on the reference model!
+
+    Args:
+    tokenizer: The tokenizer object used to encode/decode text.
+    optimizer: The optimizer for updating the training model's parameters.
+    train_model: The model being fine-tuned.
+    ref_model: The reference model.
+    preferred_chat_ids (list[int]): The token IDs representing the preferred chat sequence.
+    nonpreferred_chat_ids (list[int]): The token IDs representing the non-preferred chat sequence.
+    num_gradient_steps (int): The number of gradient updates to perform.
+    beta (float): A parameter used in computing the DPO objective.
+
+    Returns:
+    None
+    """
+
+    print('Fine-tuning...')
+    for i in range(num_gradient_steps):
+        # YOUR CODE HERE (~9-12 lines)
+        pass
+        # END OF YOUR CODE
+    print("Fine-tuning complete!")
+
+# DO NOT CHANGE!
+def sample_model(tokenizer, model, prompt, N=100):
+    """
+    Samples N different completions from the model based on the given prompt.
+
+    Args:
+    tokenizer: The tokenizer object used to encode/decode text.
+    model: The language model used for generation.
+    prompt (str): The input prompt for which completions will be generated.
+    N (int): The number of completions to generate.
+
+    Returns:
+    list[str]: A list of N generated completions.
+    """
+
+    chat = [{"role": "user", "content": prompt}]
+    chat_tokens = tokenizer.apply_chat_template(chat, tokenize=True, add_generation_prompt=True)
+
+    # Generate N different responses
+    outputs = model.generate(
+        torch.tensor([chat_tokens], device=model.device),
+        num_return_sequences=N,
+        max_new_tokens=32,
+        temperature=0.15,
+        top_k=50,
+        top_p=0.95,
+        do_sample=True
+    )
+
+    def extract_response(decoded_text):
+        return decoded_text.rsplit('model\n', 1)[-1][:-2]
+
+    responses = [extract_response(tokenizer.decode(output, skip_special_tokens=True)) for output in outputs]
+    return responses
+
+# DO NOT CHANGE!
+def fraction_responses_with_because_of(responses):
+    """
+    Calculates the fraction of responses that start with a specific match string.
+
+    Args:
+    responses (list[str]): A list of model-generated responses.
+
+    Returns:
+    float: The fraction of responses that start with the phrase "The sky appears blue because of".
+    """
+
+    match_str = "The sky appears blue because of"
+    match_count = 0
+
+    for response in responses:
+        if response.startswith(match_str):
+            match_count += 1
+
+    return match_count / len(responses)
+
+
+if __name__ == '__main__':
+    model = AutoModelForCausalLM.from_pretrained(
+        "google/gemma-2-2b-it",
+        torch_dtype=torch.bfloat16,
+        device_map='auto'
+    )
+    tokenizer = AutoTokenizer.from_pretrained("google/gemma-2-2b-it")
+
+    sample_prompt = "How is it going?"
+    sample_completion = "As an AI, I don't have feelings or experiences like humans do, so I don't have a \"going\" in the same way."
+
+    sample_chat = [
+        {"role": "user", "content": sample_prompt},
+        {"role": "assistant", "content": sample_completion}
+    ]
+
+    sample_chat_tokens = tokenizer.apply_chat_template(sample_chat, tokenize=False, add_generation_prompt=False)
+    sample_chat_token_ids = tokenizer.apply_chat_template(sample_chat, tokenize=True, add_generation_prompt=False)
+
+    print("Chat tokens:")
+    print(sample_chat_tokens)
+
+    print("Chat token IDs:")
+    print(sample_chat_token_ids)
+
+    response_start_idx, response_end_idx = get_response_idxs(tokenizer, sample_chat_token_ids)
+    print(f"Response tokens index in sample_chat_tokens range from {response_start_idx} to {response_end_idx}.")
+
+    first_response_token_id = sample_chat_token_ids[response_start_idx]
+    last_response_token_id = sample_chat_token_ids[response_end_idx]
+    print(f'First response token is "{tokenizer.decode(first_response_token_id)}" with ID {first_response_token_id}')
+    print(f'Last response token is "{tokenizer.decode(last_response_token_id)}" with ID {last_response_token_id}')
+
+    # Make sure your code passes this test!
+    assert tokenizer.decode(first_response_token_id) == "As" and tokenizer.decode(last_response_token_id) == "."
+
+    with torch.no_grad():
+        next_token_probs = get_response_next_token_probs(tokenizer, model, sample_chat_token_ids)
+    print(f'Next token probabilities: {next_token_probs}')
+
+    # Make sure your code passes this test!
+    assert next_token_probs.mean() > 0.7
+
+    train_model = AutoModelForCausalLM.from_pretrained(
+        "google/gemma-2-2b-it",
+        torch_dtype=torch.bfloat16,
+        device_map='auto'
+    )
+    lora_config = LoraConfig()
+    train_model = get_peft_model(train_model, lora_config)
+    train_model.train()
+
+    ref_model = model
+    ref_model.train()
+    print('Loaded models!')
+
+    # The model's response to the prompt usually includes the words "due to" - we want to change that to "because of" using DPO!
+    prompt = "Explain why the sky is blue in one sentence."
+    preferred_completion = "The sky appears blue because of"
+    nonpreferred_completion = "The sky appears blue due to"
+
+    preferred_chat = [
+        {"role": "user", "content": prompt},
+        {"role": "assistant", "content": preferred_completion}
+    ]
+
+    nonpreferred_chat = [
+        {"role": "user", "content": prompt},
+        {"role": "assistant", "content": nonpreferred_completion}
+    ]
+
+    preferred_chat_ids = tokenizer.apply_chat_template(preferred_chat, tokenize=True, add_generation_prompt=False)
+    nonpreferred_chat_ids = tokenizer.apply_chat_template(nonpreferred_chat, tokenize=True, add_generation_prompt=False)
+
+    preferred_train_probs = get_response_next_token_probs(tokenizer, train_model, preferred_chat_ids)
+    nonpreferred_train_probs = get_response_next_token_probs(tokenizer, train_model, nonpreferred_chat_ids)
+
+    # Gradients are not needed for the reference model since we will not be optimizing with respect to it
+    with torch.no_grad():
+        preferred_ref_probs = get_response_next_token_probs(tokenizer, ref_model, preferred_chat_ids)
+        nonpreferred_ref_probs = get_response_next_token_probs(tokenizer, ref_model, nonpreferred_chat_ids)
+
+    your_favorite_beta = 1.0 # Feel free to play with beta here. Does anything change?
+    dpo_obj = compute_dpo_objective(preferred_train_probs, nonpreferred_train_probs, preferred_ref_probs, nonpreferred_ref_probs, beta=your_favorite_beta)
+    print(dpo_obj)
+
+    prior_responses = sample_model(tokenizer, train_model, prompt)
+    print('Sampled responses before fine-tuning:\n' + '\n'.join(prior_responses[:10]))
+    print(f'Fraction responses with because of: {fraction_responses_with_because_of(prior_responses)}') # should start close to 0
+
+    # DO NOT CHANGE THESE VALUES
+    num_gradient_steps = 150 
+    learning_rate = 2e-6
+    beta = 1
+    optimizer = torch.optim.Adam(train_model.parameters(), lr=learning_rate)
+
+    finetune(tokenizer, optimizer, train_model, ref_model, preferred_chat_ids, nonpreferred_chat_ids, num_gradient_steps, beta)
+
+    # Save GPU memory
+    del ref_model
+    del model
+
+    post_tuning_responses = sample_model(tokenizer, train_model, prompt)
+    print('Sampled responses after fine-tuning:\n' + '\n'.join(post_tuning_responses[:10]))
+    print(f'Fraction responses with because of: {fraction_responses_with_because_of(post_tuning_responses)}') # should be more than half
+```

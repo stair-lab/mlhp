@@ -1,6 +1,19 @@
-{{< include _setup.qmd >}}
-
 # Human Decision Making and Choice Models {#2model}
+
+::: {.content-visible when-format="html"}
+
+<iframe
+  src="https://web.stanford.edu/class/cs329h/slides/2.1.choice_models/#/"
+  style="width:45%; height:225px;"
+></iframe>
+<iframe
+  src="https://web.stanford.edu/class/cs329h/slides/2.2.choice_models/#/"
+  style="width:45%; height:225px;"
+></iframe>
+[Fullscreen Part 1](https://web.stanford.edu/class/cs329h/slides/2.1.choice_models/#/){.btn .btn-outline-primary .btn role="button"}
+[Fullscreen Part 2](https://web.stanford.edu/class/cs329h/slides/2.2.choice_models/#/){.btn .btn-outline-primary .btn role="button"}
+
+:::
 
 ## Introduction
 
@@ -23,13 +36,6 @@ include:
     individuals prefer to eat to provide personalized recommendations to
     help them attain their goals. This chapter will use this use case to
     ground human preference modeling in a real-life application.
-
-    ![Health coaching is a running example we use to instantiate
-    modeling concepts discussed in this chapter. In this example,
-    several users with various health profiles have to choose from
-    various food options, each with varying carbohydrate, protein, and
-    lipid contents. We employ a mini version of this problem throughout
-    the text.](Figures/health_coaching.png){width="\\textwidth"}
 
 2.  **Social media:** Platforms have a far greater amount of content
     than one can consume in a lifetime, yet such products must aim to
@@ -160,13 +166,6 @@ into two categories:
     accurately reflect a piece of the overall context of a decision.
     However, they enable greater control of the decision-making process.
 
-\[Talk about social choice models - the above paragraph applies but
-there is extra nuance e.g. preferences compounding or
-confounding/cancelling out\]
-
-\[Talk about mechanism design to incentivise decision making matching
-human preferences\]
-
 #### Human Rationality {#human-rationality .unnumbered}
 
 Modeling decision-making must also take into account the rational and
@@ -221,9 +220,9 @@ Luce's axiom of choice [@Luce1977] and Boltzmann's Rationality provide a
 probabilistic framework for modeling noisily-rational human behavior.
 Luce's axiom of choice addresses the likelihood of a human selecting an
 option $o$ from a set $O$. Desirability is represented by a value
-function $v : O \rightarrow \Rbb^+$, with the selection probability
+function $v : O \rightarrow \mathbb{R}^+$, with the selection probability
 calculated as $P(o) = \frac{v(o)}{\sum_{o' \in O} v(o')}$. Assuming
-there is an underlying reward for each option $R(o) \in \Rbb$ such that
+there is an underlying reward for each option $R(o) \in \mathbb{R}$ such that
 $v(o) = e^{R(o)}$, we get
 $P(o) = \frac{e^{R(o)}}{\sum_{\bar{o} \in \mathcal{O}} e^{R(\bar{o})}}$.
 Essentially, "A human will act out a trajectory with a probability
@@ -233,7 +232,7 @@ assumption of perfect economic rationality, where individuals always
 make decisions that maximize their utility. When choices involve
 trajectories $\xi \in \Xi$ (sequences of actions), the Boltzmann model
 [@VonNeumannMorgenstern1945] is used. Here, the reward $R$ is typically
-a function of a feature vector $\phi : \Xi \rightarrow \Rbb^k$, and the
+a function of a feature vector $\phi : \Xi \rightarrow \mathbb{R}^k$, and the
 probability density is given by
 $p(\xi) = \frac{e^{R(\phi(\xi))}}{\int_{\Xi} e^{R(\phi(\bar{\xi}))} d\bar{\xi}}$.
 Boltzmann Rationality serves a critical role in human preferences and
@@ -249,8 +248,6 @@ transportation, with no particular preference). The probability of
 making the decision is 50% for either option. However, if we now have
 100 cars, under Luce/Boltzmann, we would have a 99% probability of
 choosing a car, which is unrealistic.
-
-![Illustration of the duplicates problem](Figures/car.png)
 
 To address this issue, various extensions have been proposed. One such
 extension is the attribute rule, which interprets options as bundles of
@@ -318,7 +315,7 @@ bundled options under different attributes.
 However, setting the similarity metric as an indicator function isn't
 sufficiently flexible. We want a proper metric that acts more as a
 continuous distance over the feature space. We instead define $s$ to be
-a *soft similarity metric* $s : \Phi \times \Xi \rightarrow \Rbb^+$. It
+a *soft similarity metric* $s : \Phi \times \Xi \rightarrow \mathbb{R}^+$. It
 has the following properties:
 
 1.  $s(\phi(\xi), \xi) = \max_{x \in \phi, \bar{\xi} \in \Xi} s(x, \hat{\xi})) \forall (\xi \in \Xi)$
@@ -439,7 +436,7 @@ If we design $z_i$ to be 1D, for example:
 
 After observing the choices of a user who likes to eat healthily, we
 might learn that $\beta = 1$ is the best parameter for this model, and
-maybe we assume that $\epsilon \sim \Nc(0, 1)$. Then, this model implies
+maybe we assume that $\epsilon \sim \mathcal{N}(0, 1)$. Then, this model implies
 that $U_1 = 1 \cdot 1 + 0.03 = 1.03$,
 $U_2 = 1 \cdot -1 + (-0.07) = -1.07$, $U_3 = 1 \cdot 1 + (0.02) = 1.02$,
 which means that the user, for whom $\beta = 1$ is the learned
@@ -457,7 +454,7 @@ fat content of each meal, then for example:
 
 After observing the choices of a user who likes to eat healthy, we might
 learn that $\beta = (1, 1, -1)$ is the best parameter for this model,
-and maybe we assume that $\epsilon \sim \Nc(0, 1)$. Then, this model
+and maybe we assume that $\epsilon \sim \mathcal{N}(0, 1)$. Then, this model
 implies that $U_1 = (1, 1, 0.1) \cdot (1, 1, -1) + 0.01 = 1.91$,
 $U_2 = (1, 0, 1) \cdot (1, 1, -1) + 0.03 = 0.03$,
 $U_3 = (1, 1, 0.2) \cdot (1, 1, -1) - 0.07 = 1.73$, which means that the
@@ -473,7 +470,7 @@ on the common probabilistic methods used to model human preference
 tasks. We will instantiate these models for our real-world health
 coaching application throughout as a pedagogical example. Specifically,
 we can define the following domain for meal choices:
-$z_i, \beta \in \Zbb^3$, where $z_i$ defines the representation of a
+$z_i, \beta \in \mathbb{Z}^3$, where $z_i$ defines the representation of a
 meal option with the three dimensions representing the carbohydrate,
 protein, and lipid macronutrient content of the meal, respectively, all
 measured in grams. $\beta$ is a parameter of the model. This simple
@@ -645,21 +642,21 @@ that option, after observing user choices in the past, whether that
 option will be chosen or not. Specifically, if we are looking at a
 certain choice, we use binary variable $y \in \{0, 1\}$ to represent
 whether that choice will be picked or not by the user in the next phase
-of selection. Since $\Pbb(y = 0) = 1 - \Pbb(y = 1)$, we only need to
-model $\Pbb(y = 1)$ which we will denote as $P$.
+of selection. Since $\mathbb{P}(y = 0) = 1 - \mathbb{P}(y = 1)$, we only need to
+model $\mathbb{P}(y = 1)$ which we will denote as $P$.
 
 We can use a linear model represented by the parameter $\beta$ we have
 already defined. Since utility is a stochastic function of the choice
 attributes, we will represent our utility as
 $U = \beta^\top z + \epsilon$. We can formally model $y$ as a function
-of the utility of the positive choice: $y = \mathds{1}[U>0]$.
+of the utility of the positive choice: $y = \mathbb{I}[U>0]$.
 
 We explore two cases based on the choice of distribution for the
 unobserved random variable $\epsilon$. If
 $\epsilon \sim \text{Logistic}$, then
-$\Pbb(\epsilon < a) = \frac{1}{1 + \exp^{-a}}$. The probability $P$ can
+$\mathbb{P}(\epsilon < a) = \frac{1}{1 + \exp^{-a}}$. The probability $P$ can
 be modeled as: $$\begin{aligned}
-    P & = \Pbb(U > 0) = \Pbb(\beta^\top z + \epsilon > 0) = \Pbb( \epsilon > -\beta^\top z) = 1 - \Pbb( \epsilon < -\beta^\top z) = 1 - \frac{1}{1 + \exp^{\beta^\top z}} \\
+    P & = \mathbb{P}(U > 0) = \mathbb{P}(\beta^\top z + \epsilon > 0) = \mathbb{P}( \epsilon > -\beta^\top z) = 1 - \mathbb{P}( \epsilon < -\beta^\top z) = 1 - \frac{1}{1 + \exp^{\beta^\top z}} \\
     & = \frac{1 + \exp^{\beta^\top z}}{1 + \exp^{\beta^\top z}} - \frac{1}{1 + \exp^{\beta^\top z}} = \frac{\exp^{\beta^\top z}}{1 + \exp^{\beta^\top z}} = \frac{1}{1 + \exp^{-\beta^\top z}}
 \end{aligned}$$
 
@@ -669,12 +666,12 @@ no meal: $P = \frac{1}{1 + \exp^{-(4 + 15 - 9)}} = 0.99995$. Therefore,
 the model predicts a high probability that the user would choose the
 meal over the no-meal option.
 
-On the other hand, if $\epsilon \sim \Nc(0, 1)$, then
-$\Pbb(\epsilon < a) = \Phi(a)$, where $\Phi(a)$ is the cumulative
+On the other hand, if $\epsilon \sim \mathcal{N}(0, 1)$, then
+$\mathbb{P}(\epsilon < a) = \Phi(a)$, where $\Phi(a)$ is the cumulative
 distribution function of the standard normal distribution. The
 probability $P$ is modeled as:
 
-$$P = \Pbb(U > 0) = \Pbb(\beta^\top z + \epsilon > 0) = \Pbb( \epsilon > -\beta^\top z) = \Pbb( \epsilon < \beta^\top z) = \Phi(\beta^\top z)$$
+$$P = \mathbb{P}(U > 0) = \mathbb{P}(\beta^\top z + \epsilon > 0) = \mathbb{P}( \epsilon > -\beta^\top z) = \mathbb{P}( \epsilon < \beta^\top z) = \Phi(\beta^\top z)$$
 
 In the same health coaching example, we can compute the probability that
 an individual would choose this meal over no meal:
@@ -692,7 +689,7 @@ human preferences. The core idea in this model is to compare utilities
 of all items at once to model the probability of a user's actions and,
 therefore, their preferences. In the BT model, we have a discrete set of
 $J$ choices $i \in \{1, 2, \dots, J\}$, each with an attribute
-representation $z_i \in \Zbb^n$ (where $n$ is the dimensionality of the
+representation $z_i \in \mathbb{Z}^n$ (where $n$ is the dimensionality of the
 representation). Each choice can also have its unique random noise
 variable representing the unobserved factor, although we can also choose
 to have all choices' unobserved factors follow the same distribution
@@ -703,7 +700,7 @@ choice $i$ is also a linear stochastic function where the noise is
 sampled from the specified distribution:
 $U_i = \beta^\top z_i + \epsilon_i$. The noise is represented as an
 extreme value distribution, although we can choose alternatives such as
-a multivariate Gaussian distribution: $\epsilon \sim \Nc(0, \Sigma)$. If
+a multivariate Gaussian distribution: $\epsilon \sim \mathcal{N}(0, \Sigma)$. If
 $\Sigma$ is not a diagonal matrix, we effectively model correlations in
 the noise across choices, enabling us to avoid the iid assumption if
 necessary. In the case of the extreme value distribution, we model the
@@ -744,7 +741,7 @@ options an individual will choose from. We can define $J - 1$
 parameters, which act as thresholds on the utility computed by
 $U_i = H(z_i)$ to classify the predicted choice between these options.
 For example, if there are 3 predefined options, we can define parameters
-$a, b \in \Rbb$ such that $$y_i = \begin{cases} 
+$a, b \in \mathbb{R}$ such that $$y_i = \begin{cases} 
       1 & U < a \\
       2 & a \le U < b \\
       3 & \text{else}
@@ -758,27 +755,27 @@ choose a given option. Continuing with our linear utility function
 $U_i = \beta^\top z_i + \epsilon_i$, we can start with the setting that
 we assume unobserved factors follow a logistic distribution and focus on
 the first case:
-$$\Pbb(y_i = 1) = \Pbb(U < a) = \Pbb(\beta^\top z + \epsilon < a )  = \Pbb( \epsilon < a - \beta^\top z)  = \frac{1}{1 + \exp(\beta^\top z - a)}$$
+$$\mathbb{P}(y_i = 1) = \mathbb{P}(U < a) = \mathbb{P}(\beta^\top z + \epsilon < a )  = \mathbb{P}( \epsilon < a - \beta^\top z)  = \frac{1}{1 + \exp(\beta^\top z - a)}$$
 
 Extending this method to the second case, where we estimate the
 probability of the utility falling within a specific interval:
 $$\begin{aligned}
-    \Pbb(y_i = 2) & = \Pbb(a \le U < b) = \Pbb(a - \beta^\top z \le \epsilon < b - \beta^\top z) = \frac{1}{1 + \exp(\beta^\top z - b)}  - (1 - \Pbb( \epsilon < a - \beta^\top z) ) \\
+    \mathbb{P}(y_i = 2) & = \mathbb{P}(a \le U < b) = \mathbb{P}(a - \beta^\top z \le \epsilon < b - \beta^\top z) = \frac{1}{1 + \exp(\beta^\top z - b)}  - (1 - \mathbb{P}( \epsilon < a - \beta^\top z) ) \\
     & = \frac{1}{1 + \exp(\beta^\top z - b)}  - (1 - \frac{1}{1 + \exp(\beta^\top z - a)}  ) = \frac{1}{1 + \exp(\beta^\top z - b)}  - \frac{1}{1 + \exp(a - \beta^\top z)}  ) \\
 \end{aligned}$$
 
 The final case follows the form of the inverse of the first case:
 
-$$\Pbb(y_i = 3) = \Pbb(U > b) = \Pbb(\beta^\top z + \epsilon > b ) = \Pbb( \epsilon > b - \beta^\top z) = 1 - \Pbb( \epsilon < b - \beta^\top z) = \frac{1}{1 + \exp(\beta^\top z - b)}$$
+$$\mathbb{P}(y_i = 3) = \mathbb{P}(U > b) = \mathbb{P}(\beta^\top z + \epsilon > b ) = \mathbb{P}( \epsilon > b - \beta^\top z) = 1 - \mathbb{P}( \epsilon < b - \beta^\top z) = \frac{1}{1 + \exp(\beta^\top z - b)}$$
 
 **2. Normal Distribution**
 
 In the case of modeling unobserved factors with a standard normal
 distribution, we have: $$\begin{split}
-    \Pbb(y_i = 1) & = \Pbb(U < a) = \Pbb(\beta^\top z + \epsilon < a ) = \Pbb( \epsilon < a - \beta^\top z) = \Phi(a - \beta^\top z) \\
-    \Pbb(y_i = 2) & = \Pbb(a \le U < b) 
-    = \Pbb(a - \beta^\top z \le \epsilon < b - \beta^\top z) = \Phi(b - \beta^\top z) - \Phi(a - \beta^\top z) \\
-    \Pbb(y_i = 3) & = \Pbb(U > b) 
+    \mathbb{P}(y_i = 1) & = \mathbb{P}(U < a) = \mathbb{P}(\beta^\top z + \epsilon < a ) = \mathbb{P}( \epsilon < a - \beta^\top z) = \Phi(a - \beta^\top z) \\
+    \mathbb{P}(y_i = 2) & = \mathbb{P}(a \le U < b) 
+    = \mathbb{P}(a - \beta^\top z \le \epsilon < b - \beta^\top z) = \Phi(b - \beta^\top z) - \Phi(a - \beta^\top z) \\
+    \mathbb{P}(y_i = 3) & = \mathbb{P}(U > b) 
     = 1 - \Phi(b - \beta^\top z) 
 \end{split}$$
 
@@ -806,7 +803,7 @@ the second, and so on, we decompose the joint probability into its
 respective conditionals. To compute the conditional probabilities, we
 can use the same method as the BT model, using a softmax to produce
 valid conditional distributions for each element of the sequence:
-$$\Pbb(Y_1, Y_2, \dots, Y_J) = \Pbb(Y_1) \cdot \Pbb(Y_2 | Y_1) \cdot \dots \cdot \Pbb(Y_J | Y_1, Y_2, \dots Y_{J - 1}) = \prod_{i = 1}^J \frac{\exp(\beta^\top z_i)}{\sum_{j \ge i} \exp(\beta^\top z_j)}$$
+$$\mathbb{P}(Y_1, Y_2, \dots, Y_J) = \mathbb{P}(Y_1) \cdot \mathbb{P}(Y_2 | Y_1) \cdot \dots \cdot \mathbb{P}(Y_J | Y_1, Y_2, \dots Y_{J - 1}) = \prod_{i = 1}^J \frac{\exp(\beta^\top z_i)}{\sum_{j \ge i} \exp(\beta^\top z_j)}$$
 
 An interesting property of the PL Model is that in the naive case of
 only ordering a single choice, it is equivalent to the pairwise
@@ -823,7 +820,7 @@ manner to establish a ranking.
 2.  What would one expect the sign to be, out of $\{\leq, \geq, =\}$ in
     the following expression? (Hint: healthier meals should be placed
     earlier in the ranking.)
-    $$\Pbb(Y_1=F, Y_2=R, Y_3=B) \ \ \_\_\ \ \Pbb(Y_1=R, Y_2=B, Y_3=F)$$
+    $$\mathbb{P}(Y_1=F, Y_2=R, Y_3=B) \ \ \_\_\ \ \mathbb{P}(Y_1=R, Y_2=B, Y_3=F)$$
 
 ##### Ideal Point Model {#ideal-point-model .unnumbered}
 
@@ -840,7 +837,7 @@ following a specified distribution:
 $U_{n, i} = \texttt{dist}(z_i, \textbf{v}_n) + \epsilon_{n, i}$. We
 continue with our framework of a human's preference following the choice
 corresponding to the maximum utility:
-$y_{n, i} = \mathds{1}[U_{n, i} > U_{n, j}\ \forall i \ne j]$. The
+$y_{n, i} = \mathbb{I}[U_{n, i} > U_{n, j}\ \forall i \ne j]$. The
 intuition supporting this type of model is that vectors exist in a
 shared $n$-dimensional space, and as such we can use geometry to match
 choices whose representations are closest to that of a given individual.
@@ -905,19 +902,19 @@ parameters; intuitively we wish to maximize this likelihood, as that
 would mean that our model associates observed human preferences in the
 data with high probability. We can formally define the likelihood for a
 model with parameters $\beta$ and a given data point $(z_i, y_i)$ as:
-$$\Lc(z_i, y_i; \beta) = \Pbb(y = y_i | z_i; \beta)$$
+$$\mathcal{L}(z_i, y_i; \beta) = \mathbb{P}(y = y_i | z_i; \beta)$$
 
 Assuming our data is independent and identically distributed (iid), the
 likelihood over the entire dataset is the joint probability of all
 observed data as defined by the model:
-$$\Lc(z, Y; \beta) = \prod_{i = 1}^J \Pbb(y = y_i | z_i; \beta)$$
+$$\mathcal{L}(z, Y; \beta) = \prod_{i = 1}^J \mathbb{P}(y = y_i | z_i; \beta)$$
 
 In our very first example of binary choice with logistic noise, this was
 simply the model's probability of the observed preference value:
-$$\Lc(z_i, y_i; \beta) = \frac{1}{1 + \exp^{-\beta^\top z}}$$
+$$\mathcal{L}(z_i, y_i; \beta) = \frac{1}{1 + \exp^{-\beta^\top z}}$$
 
 In the same case with noise following a standard normal distribution,
-this took the form: $$\Lc(z_i, y_i; \beta) = \Phi(\beta^\top z)$$
+this took the form: $$\mathcal{L}(z_i, y_i; \beta) = \Phi(\beta^\top z)$$
 
 Fortunately, in these cases, there are straightforward methods for
 parameter estimation: logistic regression and probit regression (binary
@@ -998,10 +995,10 @@ with human expectations while continuously improving performance.
 
 The Llama2 reward model [@2307.09288] is initialized from the pretrained
 Llama2 LLM. In the LLM, the last layer is a mapping
-$L: \Rbb^D \rightarrow \Rbb^V$, where $D$ is the embedding dimension
+$L: \mathbb{R}^D \rightarrow \mathbb{R}^V$, where $D$ is the embedding dimension
 from the transformer decoder stack and $V$ is the vocabulary size. To
 get the RM, we replace that last layer with a randomly initialized
-scalar head that maps $L: \Rbb^D \rightarrow \Rbb^1$. It's important to
+scalar head that maps $L: \mathbb{R}^D \rightarrow \mathbb{R}^1$. It's important to
 initialize the RM from the LLM it's meant to evaluate. This is because:
 
 1.  The RM will have the same "knowledge" as the LLM. This is
@@ -1022,7 +1019,7 @@ generation by an annotator, and response_rejected is the unpreferred
 response. The RM is trained with a binary ranking loss with an optional
 margin term m(r), shown in equation (7). There is also often a small
 regularization term added to center the score distribution on 0.
-$$\Lc_{\text{ranking}} = -\log(\sigma(r_\theta(x,y_c) - r_\theta(x,y_r) - m(r)))$$
+$$\mathcal{L}_{\text{ranking}} = -\log(\sigma(r_\theta(x,y_c) - r_\theta(x,y_r) - m(r)))$$
 The margin term increases the distance in scores specifically for
 preference pairs annotators rate as easier to separate.
 
@@ -1276,7 +1273,7 @@ to new tasks with fewer queries.
 
 We consider Reinforcement Learning (RL) settings where a state is
 denoted as $s\in S$, and action is denoted as $a\in A$, for state space
-$S$ and action space $A$. The reward function $r:S\times A \to \Rbb$ is
+$S$ and action space $A$. The reward function $r:S\times A \to \mathbb{R}$ is
 unknown and need to be learned from eliciting human preferences. There
 are multiple tasks, where each task has its own reward function and
 transition probabilities. The reward model is parameterized by $\psi$.
@@ -1487,7 +1484,7 @@ task $T_i$ is described with the tuple $\{S, A, r_i, P_i\}$.
     rotations, and opening.
 
 3.  $r_i$ is the reward function for the task, with function signature
-    $r_i : S \times A \to \Rbb$. This work assumes all reward functions
+    $r_i : S \times A \to \mathbb{R}$. This work assumes all reward functions
     are binary.
 
 4.  $P_i$ is the transition dynamics function. It's a function that maps
@@ -1560,7 +1557,7 @@ policy to imitate actions taken on $\textbf{d}_i^{\text{test}}$.
 Concretely, we train policy parameters $\theta$ to minimize the
 following loss:
 
-$\Lc^\text{watch}(\theta, \mathcal{D}_i^*) = \mathbb{E}_{\{d_{i,k}\} \sim \mathcal{D}_i^*} \mathbb{E}_{\{d_{i,k}^{\text{test}}\} \sim \mathcal{D}_i^* \text{\textbackslash} \{d_{i,k}\}} \mathbb{E}_{(s_t, a_t) \sim d_i^{\text{test}}} \big[ 
+$\mathcal{L}^\text{watch}(\theta, \mathcal{D}_i^*) = \mathbb{E}_{\{d_{i,k}\} \sim \mathcal{D}_i^*} \mathbb{E}_{\{d_{i,k}^{\text{test}}\} \sim \mathcal{D}_i^*  \{d_{i,k}\}} \mathbb{E}_{(s_t, a_t) \sim d_i^{\text{test}}} \big[ 
 - \log \pi_\theta^{\text{watch}} (a_t | s_t, \{d_{i,k}\}) \big]$
 
 This corresponds to doing imitation learning by minimizing the negative
@@ -1597,7 +1594,7 @@ additionally sample yet another trajectory from the same task.
 Concretely, we train policy parameters $\phi$ to minimize the following
 loss:
 
-$\Lc^{\text{learn}}(\phi, \mathcal{D}_i, \mathcal{D}_i^*) = \mathbb{E}_{(\{d_{i,k}\}, \{\mathbf{\tau}_{i,l}\}) \sim \mathcal{D}_i} \mathbb{E}_{\{d_{i,k}^{\text{test}}\} \sim \mathcal{D}_i^* \text{\textbackslash} \{d_{i,k}\}} \mathbb{E}_{(s_t, a_t) \sim d_i^{\text{test}}} \big[ 
+$\mathcal{L}^{\text{learn}}(\phi, \mathcal{D}_i, \mathcal{D}_i^*) = \mathbb{E}_{(\{d_{i,k}\}, \{\mathbf{\tau}_{i,l}\}) \sim \mathcal{D}_i} \mathbb{E}_{\{d_{i,k}^{\text{test}}\} \sim \mathcal{D}_i^* \{d_{i,k}\}} \mathbb{E}_{(s_t, a_t) \sim d_i^{\text{test}}} \big[ 
 - \log \pi_\theta^{\text{learn}} (a_t | s_t, \{d_{i,k}\}, \{\tau_{i,l}\}) \big]$
 
 The conditioning on both the demo episodes and the trial episodes is
@@ -1841,7 +1838,7 @@ follows what is known as the Plackett-Luce Ranking Model.
 Given knowledge of the true reward function weights $\omega_m$ and
 mixing coefficients $\alpha_m$, we have the following joint mass over
 observations x from a query Q:
-$$Pr(x\ |\ Q) = \sum_{m = 1}^M \alpha_m\prod_{i = 1}^K\frac{e^{\omega_m^T \Phi(\xi_{a_i})}}{\sum_{j = i}^K e^{\omega_m^T \Phi(\xi_{a_j})}} \ \ \ \ \ \ \ \ \ \cite{myers2022learning}$$.
+$Pr(x\ |\ Q) = \sum_{m = 1}^M \alpha_m\prod_{i = 1}^K\frac{e^{\omega_m^T \Phi(\xi_{a_i})}}{\sum_{j = i}^K e^{\omega_m^T \Phi(\xi_{a_j})}}$.
 
 With the above formulation of the joint mass distribution over
 observation and queries, we can now formulate an objective.
@@ -1932,133 +1929,5 @@ where $\rho(u, v) = \|u - v\|$. This measures the distance to the target
 set, ensuring that the selected distribution is as close as possible to
 the ideal preference vector [@bhatia2020preference].
 
-## Excercises
 
-##### Question 1: Synthetic experiment: modeling reward based on binary choice {#question-1-synthetic-experiment-modeling-reward-based-on-binary-choice .unnumbered}
-
-In this exercise, we want to find model parameters $w$ of a reward model
-of polynomial degree 5. We assume, that we can't directly access its
-true parameters $w*$. We also can't access the reward value $f_{w*}(x)$
-for a given input $x$. We can only access a comparison of two inputs
-$x_1$ and $x_2$, leading to a binary output:
-$o(x_1,x_2)=\mathbb{I}(f(x_1)>f(x_2))$, where $\mathbb{I}$ is the
-indicator function, returning 1 if $f(x_1)$ is greater than $f(x_2)$ and
-zero otherwise.
-
-1.  How can you achieve a polynomial reward function (degree = 5) using
-    a single linear neural network layer with 6 nodes? Implement your
-    reward function in the code.
-
-2.  Define the likelihood of $x_1$ being chosen over $x_2$ based on that
-    reward function. Pay attention to the case, where $x_1 = x_2$ and
-    adapt your approach accordingly.
-
-3.  Given $N$ binary choices over $2N$ inputs, how can we find the model
-    parameters, that maximize the likelihood of this data?
-
-4.  How is this approach realted to standard logistic regression? Can we
-    use the Logistic regression scikit-learn toolkit for that?
-
-5.  How would a maximum a posteriori approach look like and what
-    distribution are likelihood and prior? Is there a closed form
-    solution for the posterior distribution?
-
-answer:
-
-::: python
-import numpy as np import matplotlib.pyplot as plt from sklearn import
-linear_model from sklearn.metrics import accuracy_score, f1_score,
-roc_auc_score
-
-np.random.seed(42) \# keep same seed for reproducability DEGREE = 5
-N_TRAIN_SAMPLES = 10000 N_TEST_SAMPLES = 1000
-
-\# Create hidden polynomial x = np.linspace(0, 10, 30) y = np.sin(x) +
-0.5 \* np.sin(2 \* x) + np.random.normal(0, 0.2, x.shape) coefficients =
-np.polyfit(x, y, DEGREE) \# DEGREE: 5 polynomial =
-np.poly1d(coefficients)
-
-\# Create training data x1_train = np.random.rand(N_TRAIN_SAMPLES)\*10
-x2_train = np.random.rand(N_TRAIN_SAMPLES)\*10 y1_train =
-polynomial(x1_train) y2_train = polynomial(x2_train) y_train = (y1_train
-\> y2_train).astype(int)
-
-\# fit a polynomial function using logistic regression reg, \_ =
-log_reg(x1_train, x2_train, y_train, fit = True) fit_pol =
-np.poly1d(reg.coef\_.squeeze()\[::-1\])
-
-\# Create testing data x1_test = np.random.rand(N_TEST_SAMPLES)\*10
-x2_test = np.random.rand(N_TEST_SAMPLES)\*10 y1_test =
-polynomial(x1_test) y2_test = polynomial(x2_test) y_test = (y1_test \>
-y2_test).astype(int)
-
-\# predict labels \_, y_test_pred = reg.predict(x1_test, x2_test, fit =
-True)
-
-\# Evaluate model acc = accuracy_score(y_test, y_test_pred) f1 =
-f1_score(y_test, y_test_pred) auc = roc_auc_score(y_test, y_test_pred)
-print(\"Accuracy:\", acc, \"-Score:\", f1, \"-AUC:\", auc)
-
-\# Plot the original polynomial and the recovered function x_plot =
-np.random.rand(1000)\*10 plt.scatter(x, y, color='black', label='Data')
-plt.scatter(x_plot, polynomial(x_plot), label='Original Polynomial',
-color='blue') plt.scatter(x_plot, fit_pol(x_plot), label='Recovered
-Function', color='green') plt.figtext(0.5, -0.1, f\"Original
-poly-params: polynomial.coef.round(2)\", wrap=True,
-horizontalalignment='center') plt.figtext(0.5, -0.15, f\"Poly-params
-green: fit_pol.coef.round(2)\", wrap=True, horizontalalignment='center')
-plt.xlabel('x') plt.ylabel('y') plt.title('Original Polynomial vs.
-Recovered Function') plt.legend() plt.show()
-
-def power_features(x,deg):
-
-\"\"\" This function creates power-features of an input x. Input: x: a
-vector x containing scalar values of length N deg: the DEGREE of the
-polynomail features being returned Output: X_poly: A numpy-matrix of
-shape N x (deg+1) containing features of x, s.t. multiplyiing w x X
-yields the output of a polynomial function f_w(x) with parameters w.
-\"\"\"
-\###########################################################################
-\# ToDo: Create power features X_poly
-\###########################################################################
-
-\# SOLUTION: X_poly = np.ones(len(x)) for i in range(1,deg): X_poly =
-np.vstack((X_poly, np.power(x, i))).T
-
-\###########################################################################
-
-return X_poly
-
-def log_reg(x1, x2, y=None, fit=False): \"\"\" fits a linear model using
-scikit-learn LogisticRegression model on the data, s.t. the model
-parameters recover the original polynomial parameters. Input: x1, x2:
-Two different input vectors, shape: N y: a one-hot vector indicating
-when x1 yields higher reward, shape: N None, if log_reg used for
-prediction fit: Bool variable indicating whether, or not to fit the
-model to the data Output: reg: A fitted logistic regression object of
-Class linear_model pred: predictions of the input data \"\"\"
-
-reg = linear_model.LogisticRegression()
-\###########################################################################
-\# ToDo: Fit Logistic Regression model on data using power feature
-function:
-\###########################################################################
-
-\# SOLUTION: X_poly1 = power_features(x1,DEGREE) X_poly2 =
-power_features(x2,DEGREE) x_diff = (X_poly1 - X_poly2) if fit == True:
-assert y is not None reg.fit(x_diff, y) pred = reg.predict(x_diff)
-
-\###########################################################################
-return reg, pred
-:::
-
-[^1]: Note that an assumption we make in the notion of utility is that
-    utility is a function of the frequency of choosing certain options
-    over alternatives.
-
-[^2]: Note that utility is often not an observable quantity, but
-    something our models can infer given a set of observed preferences
-    or decisions over choices. In our running example of health
-    coaching, the utility might be 'satiety', for instance, which we do
-    not measure directly, but which we infer through the choices humans
-    make over concrete meal options.
+{{< include psets/pset1.qmd >}}

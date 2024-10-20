@@ -68,6 +68,46 @@
 \fi
 \makeatother
 
+\usepackage{color}
+\usepackage{fancyvrb}
+\newcommand{\VerbBar}{|}
+\newcommand{\VERB}{\Verb[commandchars=\\\{\}]}
+\DefineVerbatimEnvironment{Highlighting}{Verbatim}{commandchars=\\\{\}}
+% Add ',fontsize=\small' for more characters per line
+\usepackage{framed}
+\definecolor{shadecolor}{RGB}{241,243,245}
+\newenvironment{Shaded}{\begin{snugshade}}{\end{snugshade}}
+\newcommand{\AlertTok}[1]{\textcolor[rgb]{0.68,0.00,0.00}{#1}}
+\newcommand{\AnnotationTok}[1]{\textcolor[rgb]{0.37,0.37,0.37}{#1}}
+\newcommand{\AttributeTok}[1]{\textcolor[rgb]{0.40,0.45,0.13}{#1}}
+\newcommand{\BaseNTok}[1]{\textcolor[rgb]{0.68,0.00,0.00}{#1}}
+\newcommand{\BuiltInTok}[1]{\textcolor[rgb]{0.00,0.23,0.31}{#1}}
+\newcommand{\CharTok}[1]{\textcolor[rgb]{0.13,0.47,0.30}{#1}}
+\newcommand{\CommentTok}[1]{\textcolor[rgb]{0.37,0.37,0.37}{#1}}
+\newcommand{\CommentVarTok}[1]{\textcolor[rgb]{0.37,0.37,0.37}{\textit{#1}}}
+\newcommand{\ConstantTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{#1}}
+\newcommand{\ControlFlowTok}[1]{\textcolor[rgb]{0.00,0.23,0.31}{\textbf{#1}}}
+\newcommand{\DataTypeTok}[1]{\textcolor[rgb]{0.68,0.00,0.00}{#1}}
+\newcommand{\DecValTok}[1]{\textcolor[rgb]{0.68,0.00,0.00}{#1}}
+\newcommand{\DocumentationTok}[1]{\textcolor[rgb]{0.37,0.37,0.37}{\textit{#1}}}
+\newcommand{\ErrorTok}[1]{\textcolor[rgb]{0.68,0.00,0.00}{#1}}
+\newcommand{\ExtensionTok}[1]{\textcolor[rgb]{0.00,0.23,0.31}{#1}}
+\newcommand{\FloatTok}[1]{\textcolor[rgb]{0.68,0.00,0.00}{#1}}
+\newcommand{\FunctionTok}[1]{\textcolor[rgb]{0.28,0.35,0.67}{#1}}
+\newcommand{\ImportTok}[1]{\textcolor[rgb]{0.00,0.46,0.62}{#1}}
+\newcommand{\InformationTok}[1]{\textcolor[rgb]{0.37,0.37,0.37}{#1}}
+\newcommand{\KeywordTok}[1]{\textcolor[rgb]{0.00,0.23,0.31}{\textbf{#1}}}
+\newcommand{\NormalTok}[1]{\textcolor[rgb]{0.00,0.23,0.31}{#1}}
+\newcommand{\OperatorTok}[1]{\textcolor[rgb]{0.37,0.37,0.37}{#1}}
+\newcommand{\OtherTok}[1]{\textcolor[rgb]{0.00,0.23,0.31}{#1}}
+\newcommand{\PreprocessorTok}[1]{\textcolor[rgb]{0.68,0.00,0.00}{#1}}
+\newcommand{\RegionMarkerTok}[1]{\textcolor[rgb]{0.00,0.23,0.31}{#1}}
+\newcommand{\SpecialCharTok}[1]{\textcolor[rgb]{0.37,0.37,0.37}{#1}}
+\newcommand{\SpecialStringTok}[1]{\textcolor[rgb]{0.13,0.47,0.30}{#1}}
+\newcommand{\StringTok}[1]{\textcolor[rgb]{0.13,0.47,0.30}{#1}}
+\newcommand{\VariableTok}[1]{\textcolor[rgb]{0.07,0.07,0.07}{#1}}
+\newcommand{\VerbatimStringTok}[1]{\textcolor[rgb]{0.13,0.47,0.30}{#1}}
+\newcommand{\WarningTok}[1]{\textcolor[rgb]{0.37,0.37,0.37}{\textit{#1}}}
 
 \providecommand{\tightlist}{%
   \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}\usepackage{longtable,booktabs,array}
@@ -263,6 +303,8 @@
 \usepackage{lineno}
 \linenumbers
 
+
+\usepackage{bbm}
 %%%%%%%%%%%%%%%%%%
 % end preamble.tex
 %%%%%%%%%%%%%%%%%%
@@ -334,7 +376,7 @@
 \DeclareRobustCommand{\href}[2]{#2\sidenote{\footnotesize \url{#1}}}
 \hypersetup{
   pdftitle={Machine Learning from Human Preferences},
-  pdfauthor={Sang Truong; Sanmi Koyejo},
+  pdfauthor={Sang T. Truong; Sanmi Koyejo},
   colorlinks=true,
   linkcolor={DarkBlue},
   filecolor={Maroon},
@@ -344,8 +386,8 @@
 
 
 \title{Machine Learning from Human Preferences}
-\author{Sang Truong \and Sanmi Koyejo}
-\date{2024-09-22}
+\author{Sang T. Truong \and Sanmi Koyejo}
+\date{2024-10-20}
 
 \begin{document}
 \maketitle
@@ -353,69 +395,16 @@
 \renewcommand*\contentsname{Contents}
 {
 \hypersetup{linkcolor=}
-\setcounter{tocdepth}{0}
+\setcounter{tocdepth}{1}
 \tableofcontents
 }
-
-\phantomsection\label{sec-preface}
-\bookmarksetup{startatroot}
-
-\chapter*{Preface}
-\addcontentsline{toc}{chapter}{Preface}
-
-\markboth{Preface}{Preface}
-
-\section*{The story of this book}\label{the-story-of-this-book}
-\addcontentsline{toc}{section}{The story of this book}
-
-\markright{The story of this book}
-
-\section*{What this book is and isn't
-about}\label{what-this-book-is-and-isnt-about}
-\addcontentsline{toc}{section}{What this book is and isn't about}
-
-\markright{What this book is and isn't about}
-
-\section*{How to use this book}\label{how-to-use-this-book}
-\addcontentsline{toc}{section}{How to use this book}
-
-\markright{How to use this book}
-
-\section*{Themes}\label{themes}
-\addcontentsline{toc}{section}{Themes}
-
-\markright{Themes}
-
-\section*{Onward!}\label{onward}
-\addcontentsline{toc}{section}{Onward!}
-
-\markright{Onward!}
-
-Thanks for participate in CS329H! We hope you find this book useful in
-your research and teaching.
-
-\section*{Acknowledgments}\label{acknowledgments}
-\addcontentsline{toc}{section}{Acknowledgments}
-
-\markright{Acknowledgments}
-
-This book was compiled during CS329H: Machine Learning from Human
-Preferences at Stanford University in Fall 2023 and Fall 2024. We thank
-Rehaan Ahmad, Ahmed Ahmed, Jirayu Burapacheep, Michael Byun, Akash
-Chaurasia, Andrew Conkey, Tanvi Deshpande, Eric Han, Laya Iyer, Adarsh
-Jeewajee, Shreyas Kar, Arjun Karanam, Jared Moore, Aashiq Muhamed,
-Bidipta Sarkar, William Shabecoff, Stephan Sharkov, Max Sobol Mark,
-Kushal Thaman, Joe Vincent, Yibo Zhang, Duc Nguyen (VNU-HCM University
-of Technology), Grace Sodunke (University of Oxford), and Ky Nguyen
-(DePauw University) for their help in compiling this book. We appreciate
-the time of our guest speakers, including Pat Langley (Institute for the
-Study of Learning and Expertise), Meredith Ringel Morris (Google
-DeepMind), Vasilis Syrgkanis (Stanford), Jason Hartline (Northwestern),
-Dorsa Sadigh (Stanford), Diyi Yang (Stanford), and Nathan Lambert (AI2).
 
 \bookmarksetup{startatroot}
 
 \chapter{Introduction}\label{sec-introduction}
+
+\href{https://web.stanford.edu/class/cs329h/slides/1.introduction/\#/}{Fullscreen
+Slide}
 
 Machine learning is increasingly integrated into many aspects of our
 lives through various applications, such as healthcare, education, and
@@ -807,20 +796,6 @@ include:
   provide personalized recommendations to help them attain their goals.
   This chapter will use this use case to ground human preference
   modeling in a real-life application.
-
-  \begin{figure}[H]
-
-  {\centering \includegraphics{Figures/health_coaching.png}
-
-  }
-
-  \caption{Health coaching is a running example we use to instantiate
-  modeling concepts discussed in this chapter. In this example, several
-  users with various health profiles have to choose from various food
-  options, each with varying carbohydrate, protein, and lipid contents.
-  We employ a mini version of this problem throughout the text.}
-
-  \end{figure}%
 \item
   \textbf{Social media:} Platforms have a far greater amount of content
   than one can consume in a lifetime, yet such products must aim to
@@ -971,13 +946,6 @@ into two categories:
   control of the decision-making process.
 \end{enumerate}
 
-{[}Talk about social choice models - the above paragraph applies but
-there is extra nuance e.g.~preferences compounding or
-confounding/cancelling out{]}
-
-{[}Talk about mechanism design to incentivise decision making matching
-human preferences{]}
-
 \subsubsection*{Human Rationality}\label{human-rationality}
 \addcontentsline{toc}{subsubsection}{Human Rationality}
 
@@ -1039,10 +1007,10 @@ Boltzmann's Rationality provide a probabilistic framework for modeling
 noisily-rational human behavior. Luce's axiom of choice addresses the
 likelihood of a human selecting an option \(o\) from a set \(O\).
 Desirability is represented by a value function
-\(v : O \rightarrow \Rbb^+\), with the selection probability calculated
-as \(P(o) = \frac{v(o)}{\sum_{o' \in O} v(o')}\). Assuming there is an
-underlying reward for each option \(R(o) \in \Rbb\) such that
-\(v(o) = e^{R(o)}\), we get
+\(v : O \rightarrow \mathbb{R}^+\), with the selection probability
+calculated as \(P(o) = \frac{v(o)}{\sum_{o' \in O} v(o')}\). Assuming
+there is an underlying reward for each option \(R(o) \in \mathbb{R}\)
+such that \(v(o) = e^{R(o)}\), we get
 \(P(o) = \frac{e^{R(o)}}{\sum_{\bar{o} \in \mathcal{O}} e^{R(\bar{o})}}\).
 Essentially, ``A human will act out a trajectory with a probability
 proportional to the exponentiated return they receive for the
@@ -1052,8 +1020,8 @@ make decisions that maximize their utility. When choices involve
 trajectories \(\xi \in \Xi\) (sequences of actions), the Boltzmann model
 (\citeproc{ref-VonNeumannMorgenstern1945}{Neumann and Morgenstern 1945})
 is used. Here, the reward \(R\) is typically a function of a feature
-vector \(\phi : \Xi \rightarrow \Rbb^k\), and the probability density is
-given by
+vector \(\phi : \Xi \rightarrow \mathbb{R}^k\), and the probability
+density is given by
 \(p(\xi) = \frac{e^{R(\phi(\xi))}}{\int_{\Xi} e^{R(\phi(\bar{\xi}))} d\bar{\xi}}\).
 Boltzmann Rationality serves a critical role in human preferences and
 decision-making. It captures the probabilistic nature of human choices,
@@ -1068,16 +1036,6 @@ transportation, with no particular preference). The probability of
 making the decision is 50\% for either option. However, if we now have
 100 cars, under Luce/Boltzmann, we would have a 99\% probability of
 choosing a car, which is unrealistic.
-
-\begin{figure}[H]
-
-{\centering \includegraphics{Figures/car.png}
-
-}
-
-\caption{Illustration of the duplicates problem}
-
-\end{figure}%
 
 To address this issue, various extensions have been proposed. One such
 extension is the attribute rule, which interprets options as bundles of
@@ -1147,7 +1105,7 @@ However, setting the similarity metric as an indicator function isn't
 sufficiently flexible. We want a proper metric that acts more as a
 continuous distance over the feature space. We instead define \(s\) to
 be a \emph{soft similarity metric}
-\(s : \Phi \times \Xi \rightarrow \Rbb^+\). It has the following
+\(s : \Phi \times \Xi \rightarrow \mathbb{R}^+\). It has the following
 properties:
 
 \begin{enumerate}
@@ -1195,13 +1153,8 @@ or value an individual attains from selecting a given choice. Each
 choice has an associated utility. Human preference models capture both
 the utility of a choice (e.g.~we model the utility value as a function
 of attributes of a given choice) and how the utilities interact to make
-a decision.\sidenote{\footnotesize Note that utility is often not an observable
-  quantity, but something our models can infer given a set of observed
-  preferences or decisions over choices. In our running example of
-  health coaching, the utility might be `satiety', for instance, which
-  we do not measure directly, but which we infer through the choices
-  humans make over concrete meal options.} We use the notation \(U_i\)
-as the utility corresponding to choice \(i\).
+a decision.{[}\^{}2{]} We use the notation \(U_i\) as the utility
+corresponding to choice \(i\).
 
 \begin{enumerate}
 \def\labelenumi{\arabic{enumi}.}
@@ -1293,8 +1246,8 @@ If we design \(z_i\) to be 1D, for example:
 
 After observing the choices of a user who likes to eat healthily, we
 might learn that \(\beta = 1\) is the best parameter for this model, and
-maybe we assume that \(\epsilon \sim \Nc(0, 1)\). Then, this model
-implies that \(U_1 = 1 \cdot 1 + 0.03 = 1.03\),
+maybe we assume that \(\epsilon \sim \mathcal{N}(0, 1)\). Then, this
+model implies that \(U_1 = 1 \cdot 1 + 0.03 = 1.03\),
 \(U_2 = 1 \cdot -1 + (-0.07) = -1.07\),
 \(U_3 = 1 \cdot 1 + (0.02) = 1.02\), which means that the user, for whom
 \(\beta = 1\) is the learned parameter, they would prefer the first
@@ -1315,8 +1268,8 @@ and fat content of each meal, then for example:
 
 After observing the choices of a user who likes to eat healthy, we might
 learn that \(\beta = (1, 1, -1)\) is the best parameter for this model,
-and maybe we assume that \(\epsilon \sim \Nc(0, 1)\). Then, this model
-implies that \(U_1 = (1, 1, 0.1) \cdot (1, 1, -1) + 0.01 = 1.91\),
+and maybe we assume that \(\epsilon \sim \mathcal{N}(0, 1)\). Then, this
+model implies that \(U_1 = (1, 1, 0.1) \cdot (1, 1, -1) + 0.01 = 1.91\),
 \(U_2 = (1, 0, 1) \cdot (1, 1, -1) + 0.03 = 0.03\),
 \(U_3 = (1, 1, 0.2) \cdot (1, 1, -1) - 0.07 = 1.73\), which means that
 the user prefers meals 1 and 3, which again have the best utility, but
@@ -1332,21 +1285,22 @@ on the common probabilistic methods used to model human preference
 tasks. We will instantiate these models for our real-world health
 coaching application throughout as a pedagogical example. Specifically,
 we can define the following domain for meal choices:
-\(z_i, \beta \in \Zbb^3\), where \(z_i\) defines the representation of a
-meal option with the three dimensions representing the carbohydrate,
-protein, and lipid macronutrient content of the meal, respectively, all
-measured in grams. \(\beta\) is a parameter of the model. This simple
-representation will allow us to consider how different probabilistic
-frameworks for human preferences can model a user's meal preferences.
-The information representation we instantiate here can accommodate
-scalar and high-dimensional vectors. While we use a mixture of integer
-and real-valued vectors in this simple example, we refer the reader to
-code in the practicum section for an example where vectors are all
-real-valued. If we let \(z = [20, 15, 3]\) and \(\beta = [0.2, 1, -3]\).
-This corresponds to a meal with 20g carbohydrates, 15g protein, and 3g
-lipids. In the following sections, we discover how to learn the
-parameter \(\beta\) and how to predict \(y\) for this meal, which
-indicates whether the user chooses it or refuses it.
+\(z_i, \beta \in \mathbb{Z}^3\), where \(z_i\) defines the
+representation of a meal option with the three dimensions representing
+the carbohydrate, protein, and lipid macronutrient content of the meal,
+respectively, all measured in grams. \(\beta\) is a parameter of the
+model. This simple representation will allow us to consider how
+different probabilistic frameworks for human preferences can model a
+user's meal preferences. The information representation we instantiate
+here can accommodate scalar and high-dimensional vectors. While we use a
+mixture of integer and real-valued vectors in this simple example, we
+refer the reader to code in the practicum section for an example where
+vectors are all real-valued. If we let \(z = [20, 15, 3]\) and
+\(\beta = [0.2, 1, -3]\). This corresponds to a meal with 20g
+carbohydrates, 15g protein, and 3g lipids. In the following sections, we
+discover how to learn the parameter \(\beta\) and how to predict \(y\)
+for this meal, which indicates whether the user chooses it or refuses
+it.
 
 \subsection{Data Collection}\label{data-collection}
 
@@ -1517,21 +1471,21 @@ that option, after observing user choices in the past, whether that
 option will be chosen or not. Specifically, if we are looking at a
 certain choice, we use binary variable \(y \in \{0, 1\}\) to represent
 whether that choice will be picked or not by the user in the next phase
-of selection. Since \(\Pbb(y = 0) = 1 - \Pbb(y = 1)\), we only need to
-model \(\Pbb(y = 1)\) which we will denote as \(P\).
+of selection. Since \(\mathbb{P}(y = 0) = 1 - \mathbb{P}(y = 1)\), we
+only need to model \(\mathbb{P}(y = 1)\) which we will denote as \(P\).
 
 We can use a linear model represented by the parameter \(\beta\) we have
 already defined. Since utility is a stochastic function of the choice
 attributes, we will represent our utility as
 \(U = \beta^\top z + \epsilon\). We can formally model \(y\) as a
-function of the utility of the positive choice: \(y = \mathds{1}[U>0]\).
+function of the utility of the positive choice: \(y = \mathbb{I}[U>0]\).
 
 We explore two cases based on the choice of distribution for the
 unobserved random variable \(\epsilon\). If
 \(\epsilon \sim \text{Logistic}\), then
-\(\Pbb(\epsilon < a) = \frac{1}{1 + \exp^{-a}}\). The probability \(P\)
-can be modeled as: \[\begin{aligned}
-    P & = \Pbb(U > 0) = \Pbb(\beta^\top z + \epsilon > 0) = \Pbb( \epsilon > -\beta^\top z) = 1 - \Pbb( \epsilon < -\beta^\top z) = 1 - \frac{1}{1 + \exp^{\beta^\top z}} \\
+\(\mathbb{P}(\epsilon < a) = \frac{1}{1 + \exp^{-a}}\). The probability
+\(P\) can be modeled as: \[\begin{aligned}
+    P & = \mathbb{P}(U > 0) = \mathbb{P}(\beta^\top z + \epsilon > 0) = \mathbb{P}( \epsilon > -\beta^\top z) = 1 - \mathbb{P}( \epsilon < -\beta^\top z) = 1 - \frac{1}{1 + \exp^{\beta^\top z}} \\
     & = \frac{1 + \exp^{\beta^\top z}}{1 + \exp^{\beta^\top z}} - \frac{1}{1 + \exp^{\beta^\top z}} = \frac{\exp^{\beta^\top z}}{1 + \exp^{\beta^\top z}} = \frac{1}{1 + \exp^{-\beta^\top z}}
 \end{aligned}\]
 
@@ -1541,12 +1495,12 @@ no meal: \(P = \frac{1}{1 + \exp^{-(4 + 15 - 9)}} = 0.99995\).
 Therefore, the model predicts a high probability that the user would
 choose the meal over the no-meal option.
 
-On the other hand, if \(\epsilon \sim \Nc(0, 1)\), then
-\(\Pbb(\epsilon < a) = \Phi(a)\), where \(\Phi(a)\) is the cumulative
-distribution function of the standard normal distribution. The
-probability \(P\) is modeled as:
+On the other hand, if \(\epsilon \sim \mathcal{N}(0, 1)\), then
+\(\mathbb{P}(\epsilon < a) = \Phi(a)\), where \(\Phi(a)\) is the
+cumulative distribution function of the standard normal distribution.
+The probability \(P\) is modeled as:
 
-\[P = \Pbb(U > 0) = \Pbb(\beta^\top z + \epsilon > 0) = \Pbb( \epsilon > -\beta^\top z) = \Pbb( \epsilon < \beta^\top z) = \Phi(\beta^\top z)\]
+\[P = \mathbb{P}(U > 0) = \mathbb{P}(\beta^\top z + \epsilon > 0) = \mathbb{P}( \epsilon > -\beta^\top z) = \mathbb{P}( \epsilon < \beta^\top z) = \Phi(\beta^\top z)\]
 
 In the same health coaching example, we can compute the probability that
 an individual would choose this meal over no meal:
@@ -1566,7 +1520,7 @@ idea in this model is to compare utilities of all items at once to model
 the probability of a user's actions and, therefore, their preferences.
 In the BT model, we have a discrete set of \(J\) choices
 \(i \in \{1, 2, \dots, J\}\), each with an attribute representation
-\(z_i \in \Zbb^n\) (where \(n\) is the dimensionality of the
+\(z_i \in \mathbb{Z}^n\) (where \(n\) is the dimensionality of the
 representation). Each choice can also have its unique random noise
 variable representing the unobserved factor, although we can also choose
 to have all choices' unobserved factors follow the same distribution
@@ -1577,12 +1531,13 @@ of choice \(i\) is also a linear stochastic function where the noise is
 sampled from the specified distribution:
 \(U_i = \beta^\top z_i + \epsilon_i\). The noise is represented as an
 extreme value distribution, although we can choose alternatives such as
-a multivariate Gaussian distribution: \(\epsilon \sim \Nc(0, \Sigma)\).
-If \(\Sigma\) is not a diagonal matrix, we effectively model
-correlations in the noise across choices, enabling us to avoid the iid
-assumption if necessary. In the case of the extreme value distribution,
-we model the probability of a user preferring choice \(i\), which we
-denote as \(P_i\) as \(P_i = \exp(\beta^\top z_i)/Z\) where
+a multivariate Gaussian distribution:
+\(\epsilon \sim \mathcal{N}(0, \Sigma)\). If \(\Sigma\) is not a
+diagonal matrix, we effectively model correlations in the noise across
+choices, enabling us to avoid the iid assumption if necessary. In the
+case of the extreme value distribution, we model the probability of a
+user preferring choice \(i\), which we denote as \(P_i\) as
+\(P_i = \exp(\beta^\top z_i)/Z\) where
 \(Z = \sum_{j = 1}^{J} \exp(\beta^\top z_j)\).
 
 We revisit the health coaching example. Denote two choices, where
@@ -1619,7 +1574,7 @@ predefined options an individual will choose from. We can define
 \(J - 1\) parameters, which act as thresholds on the utility computed by
 \(U_i = H(z_i)\) to classify the predicted choice between these options.
 For example, if there are 3 predefined options, we can define parameters
-\(a, b \in \Rbb\) such that \[y_i = \begin{cases} 
+\(a, b \in \mathbb{R}\) such that \[y_i = \begin{cases} 
       1 & U < a \\
       2 & a \le U < b \\
       3 & \text{else}
@@ -1633,27 +1588,27 @@ choose a given option. Continuing with our linear utility function
 \(U_i = \beta^\top z_i + \epsilon_i\), we can start with the setting
 that we assume unobserved factors follow a logistic distribution and
 focus on the first case:
-\[\Pbb(y_i = 1) = \Pbb(U < a) = \Pbb(\beta^\top z + \epsilon < a )  = \Pbb( \epsilon < a - \beta^\top z)  = \frac{1}{1 + \exp(\beta^\top z - a)}\]
+\[\mathbb{P}(y_i = 1) = \mathbb{P}(U < a) = \mathbb{P}(\beta^\top z + \epsilon < a )  = \mathbb{P}( \epsilon < a - \beta^\top z)  = \frac{1}{1 + \exp(\beta^\top z - a)}\]
 
 Extending this method to the second case, where we estimate the
 probability of the utility falling within a specific interval:
 \[\begin{aligned}
-    \Pbb(y_i = 2) & = \Pbb(a \le U < b) = \Pbb(a - \beta^\top z \le \epsilon < b - \beta^\top z) = \frac{1}{1 + \exp(\beta^\top z - b)}  - (1 - \Pbb( \epsilon < a - \beta^\top z) ) \\
+    \mathbb{P}(y_i = 2) & = \mathbb{P}(a \le U < b) = \mathbb{P}(a - \beta^\top z \le \epsilon < b - \beta^\top z) = \frac{1}{1 + \exp(\beta^\top z - b)}  - (1 - \mathbb{P}( \epsilon < a - \beta^\top z) ) \\
     & = \frac{1}{1 + \exp(\beta^\top z - b)}  - (1 - \frac{1}{1 + \exp(\beta^\top z - a)}  ) = \frac{1}{1 + \exp(\beta^\top z - b)}  - \frac{1}{1 + \exp(a - \beta^\top z)}  ) \\
 \end{aligned}\]
 
 The final case follows the form of the inverse of the first case:
 
-\[\Pbb(y_i = 3) = \Pbb(U > b) = \Pbb(\beta^\top z + \epsilon > b ) = \Pbb( \epsilon > b - \beta^\top z) = 1 - \Pbb( \epsilon < b - \beta^\top z) = \frac{1}{1 + \exp(\beta^\top z - b)}\]
+\[\mathbb{P}(y_i = 3) = \mathbb{P}(U > b) = \mathbb{P}(\beta^\top z + \epsilon > b ) = \mathbb{P}( \epsilon > b - \beta^\top z) = 1 - \mathbb{P}( \epsilon < b - \beta^\top z) = \frac{1}{1 + \exp(\beta^\top z - b)}\]
 
 \textbf{2. Normal Distribution}
 
 In the case of modeling unobserved factors with a standard normal
 distribution, we have: \[\begin{split}
-    \Pbb(y_i = 1) & = \Pbb(U < a) = \Pbb(\beta^\top z + \epsilon < a ) = \Pbb( \epsilon < a - \beta^\top z) = \Phi(a - \beta^\top z) \\
-    \Pbb(y_i = 2) & = \Pbb(a \le U < b) 
-    = \Pbb(a - \beta^\top z \le \epsilon < b - \beta^\top z) = \Phi(b - \beta^\top z) - \Phi(a - \beta^\top z) \\
-    \Pbb(y_i = 3) & = \Pbb(U > b) 
+    \mathbb{P}(y_i = 1) & = \mathbb{P}(U < a) = \mathbb{P}(\beta^\top z + \epsilon < a ) = \mathbb{P}( \epsilon < a - \beta^\top z) = \Phi(a - \beta^\top z) \\
+    \mathbb{P}(y_i = 2) & = \mathbb{P}(a \le U < b) 
+    = \mathbb{P}(a - \beta^\top z \le \epsilon < b - \beta^\top z) = \Phi(b - \beta^\top z) - \Phi(a - \beta^\top z) \\
+    \mathbb{P}(y_i = 3) & = \mathbb{P}(U > b) 
     = 1 - \Phi(b - \beta^\top z) 
 \end{split}\]
 
@@ -1683,7 +1638,7 @@ into its respective conditionals. To compute the conditional
 probabilities, we can use the same method as the BT model, using a
 softmax to produce valid conditional distributions for each element of
 the sequence:
-\[\Pbb(Y_1, Y_2, \dots, Y_J) = \Pbb(Y_1) \cdot \Pbb(Y_2 | Y_1) \cdot \dots \cdot \Pbb(Y_J | Y_1, Y_2, \dots Y_{J - 1}) = \prod_{i = 1}^J \frac{\exp(\beta^\top z_i)}{\sum_{j \ge i} \exp(\beta^\top z_j)}\]
+\[\mathbb{P}(Y_1, Y_2, \dots, Y_J) = \mathbb{P}(Y_1) \cdot \mathbb{P}(Y_2 | Y_1) \cdot \dots \cdot \mathbb{P}(Y_J | Y_1, Y_2, \dots Y_{J - 1}) = \prod_{i = 1}^J \frac{\exp(\beta^\top z_i)}{\sum_{j \ge i} \exp(\beta^\top z_j)}\]
 
 An interesting property of the PL Model is that in the naive case of
 only ordering a single choice, it is equivalent to the pairwise
@@ -1703,7 +1658,7 @@ manner to establish a ranking.
   What would one expect the sign to be, out of \(\{\leq, \geq, =\}\) in
   the following expression? (Hint: healthier meals should be placed
   earlier in the ranking.)
-  \[\Pbb(Y_1=F, Y_2=R, Y_3=B) \ \ \_\_\ \ \Pbb(Y_1=R, Y_2=B, Y_3=F)\]
+  \[\mathbb{P}(Y_1=F, Y_2=R, Y_3=B) \ \ \_\_\ \ \mathbb{P}(Y_1=R, Y_2=B, Y_3=F)\]
 \end{enumerate}
 
 \paragraph*{Ideal Point Model}\label{ideal-point-model}
@@ -1722,7 +1677,7 @@ notion of unobserved factors following a specified distribution:
 \(U_{n, i} = \texttt{dist}(z_i, \textbf{v}_n) + \epsilon_{n, i}\). We
 continue with our framework of a human's preference following the choice
 corresponding to the maximum utility:
-\(y_{n, i} = \mathds{1}[U_{n, i} > U_{n, j}\ \forall i \ne j]\). The
+\(y_{n, i} = \mathbb{I}[U_{n, i} > U_{n, j}\ \forall i \ne j]\). The
 intuition supporting this type of model is that vectors exist in a
 shared \(n\)-dimensional space, and as such we can use geometry to match
 choices whose representations are closest to that of a given individual.
@@ -1792,19 +1747,20 @@ parameters; intuitively we wish to maximize this likelihood, as that
 would mean that our model associates observed human preferences in the
 data with high probability. We can formally define the likelihood for a
 model with parameters \(\beta\) and a given data point \((z_i, y_i)\)
-as: \[\Lc(z_i, y_i; \beta) = \Pbb(y = y_i | z_i; \beta)\]
+as: \[\mathcal{L}(z_i, y_i; \beta) = \mathbb{P}(y = y_i | z_i; \beta)\]
 
 Assuming our data is independent and identically distributed (iid), the
 likelihood over the entire dataset is the joint probability of all
 observed data as defined by the model:
-\[\Lc(z, Y; \beta) = \prod_{i = 1}^J \Pbb(y = y_i | z_i; \beta)\]
+\[\mathcal{L}(z, Y; \beta) = \prod_{i = 1}^J \mathbb{P}(y = y_i | z_i; \beta)\]
 
 In our very first example of binary choice with logistic noise, this was
 simply the model's probability of the observed preference value:
-\[\Lc(z_i, y_i; \beta) = \frac{1}{1 + \exp^{-\beta^\top z}}\]
+\[\mathcal{L}(z_i, y_i; \beta) = \frac{1}{1 + \exp^{-\beta^\top z}}\]
 
 In the same case with noise following a standard normal distribution,
-this took the form: \[\Lc(z_i, y_i; \beta) = \Phi(\beta^\top z)\]
+this took the form:
+\[\mathcal{L}(z_i, y_i; \beta) = \Phi(\beta^\top z)\]
 
 Fortunately, in these cases, there are straightforward methods for
 parameter estimation: logistic regression and probit regression (binary
@@ -1884,16 +1840,16 @@ known as Reinforcement Learning from Human Feedback (RLHF), leverages
 human feedback to guide model training, allowing LLMs to better align
 with human expectations while continuously improving performance.
 
-\includegraphics{Figures/arch.png}
+\includegraphics{src/Figures/arch.png}
 
 The Llama2 reward model (\citeproc{ref-2307.09288}{al. 2023}) is
 initialized from the pretrained Llama2 LLM. In the LLM, the last layer
-is a mapping \(L: \Rbb^D \rightarrow \Rbb^V\), where \(D\) is the
-embedding dimension from the transformer decoder stack and \(V\) is the
-vocabulary size. To get the RM, we replace that last layer with a
+is a mapping \(L: \mathbb{R}^D \rightarrow \mathbb{R}^V\), where \(D\)
+is the embedding dimension from the transformer decoder stack and \(V\)
+is the vocabulary size. To get the RM, we replace that last layer with a
 randomly initialized scalar head that maps
-\(L: \Rbb^D \rightarrow \Rbb^1\). It's important to initialize the RM
-from the LLM it's meant to evaluate. This is because:
+\(L: \mathbb{R}^D \rightarrow \mathbb{R}^1\). It's important to
+initialize the RM from the LLM it's meant to evaluate. This is because:
 
 \begin{enumerate}
 \def\labelenumi{\arabic{enumi}.}
@@ -1917,7 +1873,7 @@ generation by an annotator, and response\_rejected is the unpreferred
 response. The RM is trained with a binary ranking loss with an optional
 margin term m(r), shown in equation (7). There is also often a small
 regularization term added to center the score distribution on 0.
-\[\Lc_{\text{ranking}} = -\log(\sigma(r_\theta(x,y_c) - r_\theta(x,y_r) - m(r)))\]
+\[\mathcal{L}_{\text{ranking}} = -\log(\sigma(r_\theta(x,y_c) - r_\theta(x,y_r) - m(r)))\]
 The margin term increases the distance in scores specifically for
 preference pairs annotators rate as easier to separate.
 
@@ -1938,7 +1894,7 @@ Margin Large & 3 & 2 & 1 & 0 \\
 
 \begin{figure}
 
-{\centering \includegraphics{Figures/margin-2.png}
+{\centering \includegraphics{src/Figures/margin-2.png}
 
 }
 
@@ -2039,7 +1995,7 @@ one, but now, the robot shows the human two possible trajectories
 
 \begin{figure}
 
-{\centering \includegraphics[width=0.7\textwidth,height=\textheight]{Figures/robots.png}
+{\centering \includegraphics[width=0.7\textwidth,height=\textheight]{src/Figures/robots.png}
 
 }
 
@@ -2209,7 +2165,7 @@ the meta-trained model can adapt to new tasks with fewer queries.
 We consider Reinforcement Learning (RL) settings where a state is
 denoted as \(s\in S\), and action is denoted as \(a\in A\), for state
 space \(S\) and action space \(A\). The reward function
-\(r:S\times A \to \Rbb\) is unknown and need to be learned from
+\(r:S\times A \to \mathbb{R}\) is unknown and need to be learned from
 eliciting human preferences. There are multiple tasks, where each task
 has its own reward function and transition probabilities. The reward
 model is parameterized by \(\psi\). We denote \(\hat{r}_\psi(s,a)\) to
@@ -2303,7 +2259,7 @@ The whole pipeline of the method is outlined in Figure
 
 \begin{figure}
 
-{\centering \includegraphics{Figures/overview-few.png}
+{\centering \includegraphics{src/Figures/overview-few.png}
 
 }
 
@@ -2344,7 +2300,7 @@ can see that the proposed methord outperforms all of the baselines.
 
 \begin{figure}
 
-{\centering \includegraphics{Figures/few-exp.png}
+{\centering \includegraphics{src/Figures/few-exp.png}
 
 }
 
@@ -2409,7 +2365,7 @@ generally-capable robotic policies from imitation learning alone.
 
 \begin{figure}
 
-{\centering \includegraphics{Figures/open_x_embodiment.png}
+{\centering \includegraphics{src/Figures/open_x_embodiment.png}
 
 }
 
@@ -2474,8 +2430,8 @@ formalism. A task \(T_i\) is described with the tuple
   rotations, and opening.
 \item
   \(r_i\) is the reward function for the task, with function signature
-  \(r_i : S \times A \to \Rbb\). This work assumes all reward functions
-  are binary.
+  \(r_i : S \times A \to \mathbb{R}\). This work assumes all reward
+  functions are binary.
 \item
   \(P_i\) is the transition dynamics function. It's a function that maps
   state-action pairs to probability distributions over next states.
@@ -2549,7 +2505,7 @@ policy to imitate actions taken on \(\textbf{d}_i^{\text{test}}\).
 Concretely, we train policy parameters \(\theta\) to minimize the
 following loss:
 
-\(\Lc^\text{watch}(\theta, \mathcal{D}_i^*) = \mathbb{E}_{\{d_{i,k}\} \sim \mathcal{D}_i^*} \mathbb{E}_{\{d_{i,k}^{\text{test}}\} \sim \mathcal{D}_i^* \text{\textbackslash} \{d_{i,k}\}} \mathbb{E}_{(s_t, a_t) \sim d_i^{\text{test}}} \big[
+\(\mathcal{L}^\text{watch}(\theta, \mathcal{D}_i^*) = \mathbb{E}_{\{d_{i,k}\} \sim \mathcal{D}_i^*} \mathbb{E}_{\{d_{i,k}^{\text{test}}\} \sim \mathcal{D}_i^*  \{d_{i,k}\}} \mathbb{E}_{(s_t, a_t) \sim d_i^{\text{test}}} \big[
 - \log \pi_\theta^{\text{watch}} (a_t | s_t, \{d_{i,k}\}) \big]\)
 
 This corresponds to doing imitation learning by minimizing the negative
@@ -2559,7 +2515,7 @@ achieved?
 
 \begin{figure}
 
-{\centering \includegraphics{Figures/watch-try-learn-architecture.png}
+{\centering \includegraphics{src/Figures/watch-try-learn-architecture.png}
 
 }
 
@@ -2593,7 +2549,7 @@ additionally sample yet another trajectory from the same task.
 Concretely, we train policy parameters \(\phi\) to minimize the
 following loss:
 
-\(\Lc^{\text{learn}}(\phi, \mathcal{D}_i, \mathcal{D}_i^*) = \mathbb{E}_{(\{d_{i,k}\}, \{\mathbf{\tau}_{i,l}\}) \sim \mathcal{D}_i} \mathbb{E}_{\{d_{i,k}^{\text{test}}\} \sim \mathcal{D}_i^* \text{\textbackslash} \{d_{i,k}\}} \mathbb{E}_{(s_t, a_t) \sim d_i^{\text{test}}} \big[
+\(\mathcal{L}^{\text{learn}}(\phi, \mathcal{D}_i, \mathcal{D}_i^*) = \mathbb{E}_{(\{d_{i,k}\}, \{\mathbf{\tau}_{i,l}\}) \sim \mathcal{D}_i} \mathbb{E}_{\{d_{i,k}^{\text{test}}\} \sim \mathcal{D}_i^* \{d_{i,k}\}} \mathbb{E}_{(s_t, a_t) \sim d_i^{\text{test}}} \big[
 - \log \pi_\theta^{\text{learn}} (a_t | s_t, \{d_{i,k}\}, \{\tau_{i,l}\}) \big]\)
 
 The conditioning on both the demo episodes and the trial episodes is
@@ -2610,7 +2566,7 @@ the results.
 
 \begin{figure}
 
-{\centering \includegraphics{Figures/watch-try-learn-envs.png}
+{\centering \includegraphics{src/Figures/watch-try-learn-envs.png}
 
 }
 
@@ -2651,7 +2607,7 @@ in actions as end-effector (gripper) positions, angles, and opening.
 
 \begin{figure}
 
-{\centering \includegraphics[width=0.5\textwidth,height=\textheight]{Figures/watch-try-learn-results.png}
+{\centering \includegraphics[width=0.5\textwidth,height=\textheight]{src/Figures/watch-try-learn-results.png}
 
 }
 
@@ -2808,7 +2764,7 @@ enough to both driving patterns.
 
 \begin{figure}
 
-{\centering \includegraphics{Figures/driving-patt.png}
+{\centering \includegraphics{src/Figures/driving-patt.png}
 
 }
 
@@ -2820,7 +2776,7 @@ head-on.}
 \end{figure}%%
 \begin{figure}
 
-{\centering \includegraphics{Figures/driving-coll.png}
+{\centering \includegraphics{src/Figures/driving-coll.png}
 
 }
 
@@ -2864,7 +2820,7 @@ trajectories and asks a user to rank all the trajectories.
 
 \begin{figure}
 
-{\centering \includegraphics{Figures/robot-traj.png}
+{\centering \includegraphics{src/Figures/robot-traj.png}
 
 }
 
@@ -2894,7 +2850,7 @@ Model.
 Given knowledge of the true reward function weights \(\omega_m\) and
 mixing coefficients \(\alpha_m\), we have the following joint mass over
 observations x from a query Q:
-\[Pr(x\ |\ Q) = \sum_{m = 1}^M \alpha_m\prod_{i = 1}^K\frac{e^{\omega_m^T \Phi(\xi_{a_i})}}{\sum_{j = i}^K e^{\omega_m^T \Phi(\xi_{a_j})}} \ \ \ \ \ \ \ \ \ \cite{myers2022learning}\].
+\(Pr(x\ |\ Q) = \sum_{m = 1}^M \alpha_m\prod_{i = 1}^K\frac{e^{\omega_m^T \Phi(\xi_{a_i})}}{\sum_{j = i}^K e^{\omega_m^T \Phi(\xi_{a_j})}}\).
 
 With the above formulation of the joint mass distribution over
 observation and queries, we can now formulate an objective.
@@ -2990,133 +2946,6 @@ where \(\rho(u, v) = \|u - v\|\). This measures the distance to the
 target set, ensuring that the selected distribution is as close as
 possible to the ideal preference vector
 (\citeproc{ref-bhatia2020preference}{Bhatia et al. 2020}).
-
-\section{Excercises}\label{excercises}
-
-\paragraph*{Question 1: Synthetic experiment: modeling reward based on
-binary
-choice}\label{question-1-synthetic-experiment-modeling-reward-based-on-binary-choice}
-\addcontentsline{toc}{paragraph}{Question 1: Synthetic experiment:
-modeling reward based on binary choice}
-
-In this exercise, we want to find model parameters \(w\) of a reward
-model of polynomial degree 5. We assume, that we can't directly access
-its true parameters \(w*\). We also can't access the reward value
-\(f_{w*}(x)\) for a given input \(x\). We can only access a comparison
-of two inputs \(x_1\) and \(x_2\), leading to a binary output:
-\(o(x_1,x_2)=\mathbb{I}(f(x_1)>f(x_2))\), where \(\mathbb{I}\) is the
-indicator function, returning 1 if \(f(x_1)\) is greater than \(f(x_2)\)
-and zero otherwise.
-
-\begin{enumerate}
-\def\labelenumi{\arabic{enumi}.}
-\item
-  How can you achieve a polynomial reward function (degree = 5) using a
-  single linear neural network layer with 6 nodes? Implement your reward
-  function in the code.
-\item
-  Define the likelihood of \(x_1\) being chosen over \(x_2\) based on
-  that reward function. Pay attention to the case, where \(x_1 = x_2\)
-  and adapt your approach accordingly.
-\item
-  Given \(N\) binary choices over \(2N\) inputs, how can we find the
-  model parameters, that maximize the likelihood of this data?
-\item
-  How is this approach realted to standard logistic regression? Can we
-  use the Logistic regression scikit-learn toolkit for that?
-\item
-  How would a maximum a posteriori approach look like and what
-  distribution are likelihood and prior? Is there a closed form solution
-  for the posterior distribution?
-\end{enumerate}
-
-answer:
-
-import numpy as np import matplotlib.pyplot as plt from sklearn import
-linear\_model from sklearn.metrics import accuracy\_score, f1\_score,
-roc\_auc\_score
-
-np.random.seed(42) \# keep same seed for reproducability DEGREE = 5
-N\_TRAIN\_SAMPLES = 10000 N\_TEST\_SAMPLES = 1000
-
-\# Create hidden polynomial x = np.linspace(0, 10, 30) y = np.sin(x) +
-0.5 * np.sin(2 * x) + np.random.normal(0, 0.2, x.shape) coefficients =
-np.polyfit(x, y, DEGREE) \# DEGREE: 5 polynomial =
-np.poly1d(coefficients)
-
-\# Create training data x1\_train = np.random.rand(N\_TRAIN\_SAMPLES)*10
-x2\_train = np.random.rand(N\_TRAIN\_SAMPLES)*10 y1\_train =
-polynomial(x1\_train) y2\_train = polynomial(x2\_train) y\_train =
-(y1\_train \textgreater{} y2\_train).astype(int)
-
-\# fit a polynomial function using logistic regression reg, \_ =
-log\_reg(x1\_train, x2\_train, y\_train, fit = True) fit\_pol =
-np.poly1d(reg.coef\_.squeeze(){[}::-1{]})
-
-\# Create testing data x1\_test = np.random.rand(N\_TEST\_SAMPLES)*10
-x2\_test = np.random.rand(N\_TEST\_SAMPLES)*10 y1\_test =
-polynomial(x1\_test) y2\_test = polynomial(x2\_test) y\_test = (y1\_test
-\textgreater{} y2\_test).astype(int)
-
-\# predict labels \_, y\_test\_pred = reg.predict(x1\_test, x2\_test,
-fit = True)
-
-\# Evaluate model acc = accuracy\_score(y\_test, y\_test\_pred) f1 =
-f1\_score(y\_test, y\_test\_pred) auc = roc\_auc\_score(y\_test,
-y\_test\_pred) print("Accuracy:", acc, "-Score:", f1, "-AUC:", auc)
-
-\# Plot the original polynomial and the recovered function x\_plot =
-np.random.rand(1000)*10 plt.scatter(x, y, color=`black', label=`Data')
-plt.scatter(x\_plot, polynomial(x\_plot), label=`Original Polynomial',
-color=`blue') plt.scatter(x\_plot, fit\_pol(x\_plot), label=`Recovered
-Function', color=`green') plt.figtext(0.5, -0.1, f"Original poly-params:
-polynomial.coef.round(2)", wrap=True, horizontalalignment=`center')
-plt.figtext(0.5, -0.15, f"Poly-params green: fit\_pol.coef.round(2)",
-wrap=True, horizontalalignment=`center') plt.xlabel(`x') plt.ylabel(`y')
-plt.title(`Original Polynomial vs. Recovered Function') plt.legend()
-plt.show()
-
-def power\_features(x,deg):
-
-""" This function creates power-features of an input x. Input: x: a
-vector x containing scalar values of length N deg: the DEGREE of the
-polynomail features being returned Output: X\_poly: A numpy-matrix of
-shape N x (deg+1) containing features of x, s.t. multiplyiing w x X
-yields the output of a polynomial function f\_w(x) with parameters w.
-"""
-\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#
-\# ToDo: Create power features X\_poly
-\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#
-
-\# SOLUTION: X\_poly = np.ones(len(x)) for i in range(1,deg): X\_poly =
-np.vstack((X\_poly, np.power(x, i))).T
-
-\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#
-
-return X\_poly
-
-def log\_reg(x1, x2, y=None, fit=False): """ fits a linear model using
-scikit-learn LogisticRegression model on the data, s.t. the model
-parameters recover the original polynomial parameters. Input: x1, x2:
-Two different input vectors, shape: N y: a one-hot vector indicating
-when x1 yields higher reward, shape: N None, if log\_reg used for
-prediction fit: Bool variable indicating whether, or not to fit the
-model to the data Output: reg: A fitted logistic regression object of
-Class linear\_model pred: predictions of the input data """
-
-reg = linear\_model.LogisticRegression()
-\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#
-\# ToDo: Fit Logistic Regression model on data using power feature
-function:
-\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#
-
-\# SOLUTION: X\_poly1 = power\_features(x1,DEGREE) X\_poly2 =
-power\_features(x2,DEGREE) x\_diff = (X\_poly1 - X\_poly2) if fit ==
-True: assert y is not None reg.fit(x\_diff, y) pred =
-reg.predict(x\_diff)
-
-\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#
-return reg, pred
 
 \section*{References}\label{bibliography-2}
 \addcontentsline{toc}{section}{References}
@@ -3329,6 +3158,1197 @@ Representations}.
 
 \bookmarksetup{startatroot}
 
+\chapter{Exercises}\label{exercises}
+
+\section*{Question 1: Choice Modeling (15
+points)}\label{question-1-choice-modeling-15-points}
+\addcontentsline{toc}{section}{Question 1: Choice Modeling (15 points)}
+
+\markright{Question 1: Choice Modeling (15 points)}
+
+In Chapter 2, we discussed discrete choice modeling in the context of
+utility being a linear function. Suppose we are deciding between \(N\)
+choices and that the utility of each choice is given by
+\(U_i=\beta_i\mathbf{x}+\epsilon_i\) for \(i=1, 2, \cdots, N\). We view
+\(\mathbf{x}\) as the data point that is being conditioned on for
+deciding which choice to select, and \(\beta_i\) as the weights driving
+the linear utility model. The noise \(\epsilon_i\) is i.i.d. sampled
+from a type of extreme value distribution called the \emph{Gumbel}
+distribution. The standard Gumbel distribution is given by the density
+function \(f(x)=e^{-(x+e^{-x})}\) and cumulative distribution function
+\(F(x)=e^{-e^{-x}}.\) Fix \(i\). Our objective is to calculate
+\(\Pr(U_i\,\, \text{has max utility})\).
+
+\begin{enumerate}
+\def\labelenumi{(\alph{enumi})}
+\item
+  \textbf{(Written, 2 points)}. To start, set \(U_i=t\) and compute
+  \(\Pr(U_j<t)\) for \(j\neq i\) in terms of \(F\). Use this probability
+  to derive an integral for \(\Pr(U_i\,\,  \text{has max utility})\)
+  over \(t\) in terms of \(f\) and \(F\).
+
+  Example of solution environment.
+\item
+  \textbf{(Written, 4 points)}. Compute the integral derived in part (a)
+  with the appropriate \(u\)-substitution. Show your work. You should
+  arrive at multi-class logistic regression in the end!
+\end{enumerate}
+
+Next, you will implement logistic regression to predict preferred prompt
+completions. We will use the preference dataset from RewardBench
+(\url{https://huggingface.co/datasets/allenai/reward-bench}). Notice the
+provided \texttt{data/chosen\_embeddings.pt} and
+\texttt{data/rejected\_embeddings.pt} files. These files were
+constructed by feeding the prompt alongside the chosen/rejected
+responses through Llama3-8B-Instruct and selecting the last token's
+final hidden embedding. Let \(e_1\) and \(e_2\) be two hidden embeddings
+with \(e_1\succ e_2\). We assume weights \(w\) exist for which the
+Bradley-Terry reward of an embedding \(e\) can be modeled as
+\(r=w\cdot e\). In this setting, the probability of \(e_1\succ e_2\) is
+\[\frac{e^{w\cdot e_1}}{e^{w\cdot e_1}+e^{w\cdot e_2}}=\frac{1}{1+e^{w\cdot(e_2-e_1)}}=\sigma(w\cdot(e_1-e_2)).\]
+Hence, we can view maximum likelihood across the preference dataset with
+this model as logistic regression on \(e_1-e_2\) without a bias term and
+all labels being \(1\).
+
+In biasless logistic regression, we are given a dataset \(X\) with \(N\)
+rows of datapoints and \(D\) features per datapoint. The weights of the
+model are parametrized by \(\theta\), a \(D\)-dimensional column vector.
+Given binary labels \(y\) of shape \(N\) by \(1\), the binary
+cross-entropy loss is
+\[J(\theta)=-\frac{1}{N}(y^T\log(\sigma(X\theta)) + (1-y)^T\log(1-\sigma(X\theta)))\]
+where \(\sigma\) is the sigmoid function and is applied element-wise
+along with \(\log\). The gradient of loss is
+\[\nabla_\theta J(\theta)=\frac{1}{N}X^T(\sigma(X\theta)-y).\]
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\item
+  \textbf{(Coding, 3 points)}. Open the file
+  \texttt{logistic\_regression/logistic\_regression.py}. Implement the
+  function \texttt{train} in the biasless case.
+\item
+  \textbf{(Coding, 2 points)}. Implement the function
+  \texttt{predict\_probs}.
+\item
+  \textbf{(Written, 4 points)}. Open the notebook
+  \texttt{rewardbench\_preferences.ipynb} and run all the cells. Make
+  sure to tune the \texttt{learning\_rate} and \texttt{num\_iterations}.
+  Report your final expected accuracy on the training and validation
+  sets. How close are the two expected accuracies? You should be able to
+  achieve \(\approx 90\%\) expected accuracy on validation. You may add
+  loss reporting to the \texttt{train} function to verify your model is
+  improving over time.
+\end{enumerate}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ImportTok{from}\NormalTok{ sklearn.model\_selection }\ImportTok{import}\NormalTok{ train\_test\_split}
+\ImportTok{import}\NormalTok{ torch}
+
+\KeywordTok{class}\NormalTok{ LogisticRegression:}
+    \KeywordTok{def} \FunctionTok{\_\_init\_\_}\NormalTok{(}\VariableTok{self}\NormalTok{):}
+        \VariableTok{self}\NormalTok{.weights }\OperatorTok{=} \VariableTok{None}  \CommentTok{\# Initialized during training}
+
+    \KeywordTok{def}\NormalTok{ train(}\VariableTok{self}\NormalTok{, X, y, learning\_rate, num\_iterations):}
+        \CommentTok{"""}
+\CommentTok{        Train the logistic regression model using gradient descent (no bias).}
+\CommentTok{        Each gradient update should be with respect to the entire dataset X.}
+
+\CommentTok{        Parameters:}
+\CommentTok{        {-} X (torch.Tensor): Training data of shape (n\_samples, n\_features).}
+\CommentTok{        {-} y (torch.Tensor): Target labels of shape (n\_samples,).}
+\CommentTok{        """}
+\NormalTok{        n\_samples, n\_features }\OperatorTok{=}\NormalTok{ X.shape}
+
+        \CommentTok{\# Initialize weights without the bias term}
+        \VariableTok{self}\NormalTok{.weights }\OperatorTok{=}\NormalTok{ torch.zeros(n\_features)}
+
+        \ControlFlowTok{for}\NormalTok{ i }\KeywordTok{in} \BuiltInTok{range}\NormalTok{(num\_iterations):}
+            \CommentTok{\# YOUR CODE HERE (\textasciitilde{}4{-}5 lines)}
+                \ControlFlowTok{pass}
+            \CommentTok{\# }\RegionMarkerTok{END}\CommentTok{ OF YOUR CODE}
+
+    \KeywordTok{def}\NormalTok{ predict\_probs(}\VariableTok{self}\NormalTok{, X):}
+        \CommentTok{"""}
+\CommentTok{        Predict probabilities for samples in X (no bias).}
+
+\CommentTok{        Parameters:}
+\CommentTok{        {-} X (torch.Tensor): Input data of shape (n\_samples, n\_features).}
+
+\CommentTok{        Returns:}
+\CommentTok{        {-} y\_probs (torch.Tensor): Predicted probabilities.}
+\CommentTok{        """}
+\NormalTok{        y\_probs }\OperatorTok{=} \VariableTok{None}
+
+        \CommentTok{\# YOUR CODE HERE (\textasciitilde{}2{-}3 lines)}
+        \ControlFlowTok{pass}
+        \CommentTok{\# }\RegionMarkerTok{END}\CommentTok{ OF YOUR CODE}
+
+        \ControlFlowTok{return}\NormalTok{ y\_probs}
+
+
+\ControlFlowTok{if} \VariableTok{\_\_name\_\_} \OperatorTok{==} \StringTok{"\_\_main\_\_"}\NormalTok{:}
+    \CommentTok{\# \%\%}
+    \CommentTok{\# Load in Llama3 embeddings of prompt + completions on RewardBench}
+\NormalTok{    chosen\_embeddings }\OperatorTok{=}\NormalTok{ torch.load(}\StringTok{\textquotesingle{}data/chosen\_embeddings.pt\textquotesingle{}}\NormalTok{)}
+\NormalTok{    rejected\_embeddings }\OperatorTok{=}\NormalTok{ torch.load(}\StringTok{\textquotesingle{}data/rejected\_embeddings.pt\textquotesingle{}}\NormalTok{)}
+
+    \CommentTok{\# Subtract the embeddings according to the Bradley{-}Terry reward model setup presented in the problem }
+\NormalTok{    X }\OperatorTok{=}\NormalTok{ (chosen\_embeddings }\OperatorTok{{-}}\NormalTok{ rejected\_embeddings).to(torch.}\BuiltInTok{float}\NormalTok{)}
+\NormalTok{    y }\OperatorTok{=}\NormalTok{ torch.ones(X.shape[}\DecValTok{0}\NormalTok{])}
+
+    \CommentTok{\# Split dataset 80/20 into training and validation sets}
+\NormalTok{    X\_train, X\_val, y\_train, y\_val }\OperatorTok{=}\NormalTok{ train\_test\_split(X, y, test\_size}\OperatorTok{=}\FloatTok{0.2}\NormalTok{, random\_state}\OperatorTok{=}\DecValTok{42}\NormalTok{)  }
+
+    \BuiltInTok{print}\NormalTok{(}\StringTok{"Training set size:"}\NormalTok{, X\_train.shape)}
+    \BuiltInTok{print}\NormalTok{(}\StringTok{"Validation set size:"}\NormalTok{, X\_val.shape)}
+
+\NormalTok{    model }\OperatorTok{=}\NormalTok{ LogisticRegression()}
+
+    \CommentTok{\# Tune the learning\_rate and num\_iterations until you achieve expected validation accuracy of at least 90\%}
+\NormalTok{    learning\_rate }\OperatorTok{=} \VariableTok{None}
+\NormalTok{    num\_iterations }\OperatorTok{=} \VariableTok{None}
+
+\NormalTok{    model.train(X\_train, y\_train, learning\_rate}\OperatorTok{=}\NormalTok{learning\_rate, num\_iterations}\OperatorTok{=}\NormalTok{num\_iterations)}
+
+\NormalTok{    y\_train\_probs }\OperatorTok{=}\NormalTok{ model.predict\_probs(X\_train)}
+    \BuiltInTok{print}\NormalTok{(}\SpecialStringTok{f"Expected Train Accuracy: }\SpecialCharTok{\{}\NormalTok{y\_train\_probs}\SpecialCharTok{.}\NormalTok{mean()}\SpecialCharTok{\}}\SpecialStringTok{"}\NormalTok{)}
+
+\NormalTok{    y\_val\_probs }\OperatorTok{=}\NormalTok{ model.predict\_probs(X\_val)}
+    \BuiltInTok{print}\NormalTok{(}\SpecialStringTok{f"Expected Validation Accuracy: }\SpecialCharTok{\{}\NormalTok{y\_val\_probs}\SpecialCharTok{.}\NormalTok{mean()}\SpecialCharTok{\}}\SpecialStringTok{"}\NormalTok{) }\CommentTok{\# Should reach at least 90\%}
+\end{Highlighting}
+\end{Shaded}
+
+\section*{Question 2: Revealed and Stated Preferences (20
+points)}\label{question-2-revealed-and-stated-preferences-20-points}
+\addcontentsline{toc}{section}{Question 2: Revealed and Stated
+Preferences (20 points)}
+
+\markright{Question 2: Revealed and Stated Preferences (20 points)}
+
+Alice and Bob are running for president. For \(R\) voters, we have
+access to their revealed candidate preferences through some means (e.g.,
+social media, blogs, event history). Assume there is an underlying
+probability \(z\) of voting for Alice among the population that is
+unknown. The aim of this question is to estimate \(z\) through
+\emph{maximum likelihood estimation} by also incorporating stated
+preferences. In this scenario, we collect stated preferences through
+surveys. When surveyed, voters tend to be more likely to vote for Alice
+with probability \(\frac{z+1}{2}\) for reasons of ``political
+correctness.''
+
+\begin{enumerate}
+\def\labelenumi{(\alph{enumi})}
+\item
+  \textbf{(Written, 5 points)}. Suppose there are \(R_A\) revealed
+  preferences for Alice, \(R_B\) revealed preferences for Bob, \(S_A\)
+  stated preferences for Alice, and \(S_B\) stated preferences for Bob.
+  Note \(R=R_A+R_B\). Compute the log-likelihood of observing such
+  preferences in terms of \(z, R_A, R_B, S_A, S_B\).
+\item
+  \textbf{(Coding, 1 point)}. Implement the short function
+  \texttt{stated\_prob} in the file \texttt{voting/simulation.py}.
+\item
+  \textbf{(Coding, 5 points)}. Implement the class
+  \texttt{VotingSimulation}.
+\item
+  \textbf{(Coding, 7 points)}. Implement your derived expression from
+  part (a) in the \texttt{log\_likelihoods} function.
+\item
+  \textbf{(Written, 2 points)}. Finally, implement the
+  \texttt{average\_mae\_mle} method that will allow us to visualize the
+  mean absolute error (MAE) of our maximum likelihood estimate
+  \(\hat{z}\) (i.e., \(|\hat{z}-z|\)) as the number of voters surveyed
+  increases. Open \texttt{voting/visualize\_sim.ipynb} and run the cells
+  to get a plot of MAE vs.~voters surveyed averaged across \(100\)
+  simulations. Attach the plot to this question and briefly explain what
+  you notice.
+\end{enumerate}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ImportTok{import}\NormalTok{ torch}
+\ImportTok{import}\NormalTok{ random}
+\ImportTok{import}\NormalTok{ matplotlib.pyplot }\ImportTok{as}\NormalTok{ plt}
+\ImportTok{from}\NormalTok{ tqdm }\ImportTok{import}\NormalTok{ tqdm}
+\NormalTok{random.seed(}\DecValTok{42}\NormalTok{)}
+\NormalTok{torch.manual\_seed(}\DecValTok{42}\NormalTok{)}
+
+\KeywordTok{def}\NormalTok{ stated\_prob(z\_values):}
+    \CommentTok{"""}
+\CommentTok{    Computes the probability of stated preferences based on z values.}
+\CommentTok{    }
+\CommentTok{    Args:}
+\CommentTok{        z\_values (torch.Tensor): The z value(s), where z represents the true probability of voting for Alice.}
+
+\CommentTok{    Returns:}
+\CommentTok{        torch.Tensor: Probability for stated preferences, derived from z values.}
+\CommentTok{    """}
+    \CommentTok{\# YOUR CODE HERE (\textasciitilde{}1 line)}
+    \CommentTok{\# }\RegionMarkerTok{END}\CommentTok{ OF YOUR CODE}
+
+\KeywordTok{class}\NormalTok{ VotingSimulation:}
+    \CommentTok{"""}
+\CommentTok{    A class to simulate the voting process where revealed and stated preferences are generated.}
+\CommentTok{    }
+\CommentTok{    Attributes:}
+\CommentTok{        R (int): Number of revealed preferences.}
+\CommentTok{        z (float): The true probability of voting for Alice.}
+\CommentTok{        revealed\_preferences (torch.Tensor): Simulated revealed preferences of R voters using Bernoulli distribution.}
+\CommentTok{                                             Takes on 1 for Alice, and 0 for Bob.}
+\CommentTok{        stated\_preferences (torch.Tensor): Simulated stated preferences, initialized as an empty tensor.}
+\CommentTok{                                           Takes on 1 for Alice, and 0 for Bob.}
+\CommentTok{    """}
+    \KeywordTok{def} \FunctionTok{\_\_init\_\_}\NormalTok{(}\VariableTok{self}\NormalTok{, R, z):}
+        \VariableTok{self}\NormalTok{.R }\OperatorTok{=}\NormalTok{ R}
+        \VariableTok{self}\NormalTok{.z }\OperatorTok{=}\NormalTok{ z}
+        \VariableTok{self}\NormalTok{.revealed\_preferences }\OperatorTok{=} \VariableTok{None} \CommentTok{\# YOUR CODE HERE (\textasciitilde{}1 line)}
+        \VariableTok{self}\NormalTok{.stated\_preferences }\OperatorTok{=}\NormalTok{ torch.tensor([])}
+
+    \KeywordTok{def}\NormalTok{ add\_survey(}\VariableTok{self}\NormalTok{):}
+        \CommentTok{"""}
+\CommentTok{        Simulates an additional stated preference based on stated\_prob and adds it to the list.}
+\CommentTok{        This updates the self.stated\_preferences tensor by concatenating on a new simulated survey result.}
+\CommentTok{        """}
+        \CommentTok{\# YOUR CODE HERE (\textasciitilde{}3 lines)}
+        \CommentTok{\# }\RegionMarkerTok{END}\CommentTok{ OF YOUR CODE}
+
+\KeywordTok{def}\NormalTok{ log\_likelihoods(revealed\_preferences, stated\_preferences, z\_values):}
+    \CommentTok{"""}
+\CommentTok{    Computes the log likelihoods across both revealed and stated preferences.}
+\CommentTok{    Use your answer in part (a) to help.}
+\CommentTok{    }
+\CommentTok{    Args:}
+\CommentTok{        revealed\_preferences (torch.Tensor): Tensor containing revealed preferences (0 or 1).}
+\CommentTok{        stated\_preferences (torch.Tensor): Tensor containing stated preferences (0 or 1).}
+\CommentTok{        z\_values (torch.Tensor): Tensor of underlying z values to calculate likelihood for.}
+
+\CommentTok{    Returns:}
+\CommentTok{        torch.Tensor: Log likelihood for each z value.}
+\CommentTok{    """}
+    \CommentTok{\# YOUR CODE HERE (\textasciitilde{}10{-}16 lines)}
+    \ControlFlowTok{pass}
+    \CommentTok{\# }\RegionMarkerTok{END}\CommentTok{ OF YOUR CODE }
+
+\KeywordTok{def}\NormalTok{ average\_mae\_mle(R, z, survey\_count, num\_sims, z\_sweep):}
+    \CommentTok{"""}
+\CommentTok{    Runs multiple simulations to compute the average mean absolute error (MAE) of Maximum Likelihood Estimation (MLE) }
+\CommentTok{    for z after increasing number of surveys.}
+\CommentTok{    }
+\CommentTok{    Args:}
+\CommentTok{        R (int): Number of revealed preferences.}
+\CommentTok{        z (float): The true probability of voting for Alice.}
+\CommentTok{        survey\_count (int): Number of additional surveys to perform.}
+\CommentTok{        num\_sims (int): Number of simulation runs to average over.}
+\CommentTok{        z\_sweep (torch.Tensor): Range of z values to consider for maximum likelihood estimation.}
+
+\CommentTok{    Returns:}
+\CommentTok{        torch.Tensor: Tensor of mean absolute errors averaged over simulations.}
+\CommentTok{                      Should have shape (survey\_count, )}
+\CommentTok{    """}
+\NormalTok{    all\_errors }\OperatorTok{=}\NormalTok{ []}
+    \ControlFlowTok{for}\NormalTok{ \_ }\KeywordTok{in}\NormalTok{ tqdm(}\BuiltInTok{range}\NormalTok{(num\_sims)):}
+\NormalTok{        errors }\OperatorTok{=}\NormalTok{ []}
+\NormalTok{        vote\_simulator }\OperatorTok{=}\NormalTok{ VotingSimulation(R}\OperatorTok{=}\NormalTok{R, z}\OperatorTok{=}\NormalTok{z)}
+
+        \ControlFlowTok{for}\NormalTok{ \_ }\KeywordTok{in} \BuiltInTok{range}\NormalTok{(survey\_count):}
+\NormalTok{            revealed\_preferences }\OperatorTok{=}\NormalTok{ vote\_simulator.revealed\_preferences}
+\NormalTok{            stated\_preferences }\OperatorTok{=}\NormalTok{ vote\_simulator.stated\_preferences}
+
+            \CommentTok{\# YOUR CODE HERE (\textasciitilde{}6{-}8 lines)}
+            \ControlFlowTok{pass} \CommentTok{\# Compute log\_likelihoods across z\_sweep. Argmax to find MLE for z. }
+                 \CommentTok{\# Append the absolute error to errors and add a survey to the simulator.}
+            \CommentTok{\# }\RegionMarkerTok{END}\CommentTok{ OF YOUR CODE}
+
+\NormalTok{        errors\_tensor }\OperatorTok{=}\NormalTok{ torch.stack(errors) }
+\NormalTok{        all\_errors.append(errors\_tensor)}
+
+    \CommentTok{\# Calculate the average error across simulations }
+\NormalTok{    mean\_errors }\OperatorTok{=}\NormalTok{ torch.stack(all\_errors).mean(dim}\OperatorTok{=}\DecValTok{0}\NormalTok{)}
+    \ControlFlowTok{return}\NormalTok{ mean\_errors}
+
+\ControlFlowTok{if} \VariableTok{\_\_name\_\_} \OperatorTok{==} \StringTok{"\_\_main\_\_"}\NormalTok{:}
+    \CommentTok{\# DO NOT CHANGE!}
+\NormalTok{    max\_surveys }\OperatorTok{=} \DecValTok{2000}
+\NormalTok{    z }\OperatorTok{=} \FloatTok{0.5}
+\NormalTok{    R }\OperatorTok{=} \DecValTok{10}
+\NormalTok{    num\_sims }\OperatorTok{=} \DecValTok{100}
+\NormalTok{    z\_sweep }\OperatorTok{=}\NormalTok{ torch.linspace(}\FloatTok{0.01}\NormalTok{, }\FloatTok{0.99}\NormalTok{, }\DecValTok{981}\NormalTok{)}
+
+    \CommentTok{\# Compute and plot the errors. Attach this plot to part (d).}
+\NormalTok{    mean\_errors }\OperatorTok{=}\NormalTok{ average\_mae\_mle(R, z, max\_surveys, num\_sims, z\_sweep)}
+\NormalTok{    plt.plot(mean\_errors)}
+
+\NormalTok{    plt.xlabel(}\StringTok{\textquotesingle{}Surveys Conducted\textquotesingle{}}\NormalTok{)}
+\NormalTok{    plt.ylabel(}\StringTok{\textquotesingle{}Average Error\textquotesingle{}}\NormalTok{)}
+\NormalTok{    plt.title(}\SpecialStringTok{f\textquotesingle{}MLE MAE Error (z=}\SpecialCharTok{\{}\NormalTok{z}\SpecialCharTok{\}}\SpecialStringTok{, }\SpecialCharTok{\{}\NormalTok{num\_sims}\SpecialCharTok{\}}\SpecialStringTok{ simulations)\textquotesingle{}}\NormalTok{)}
+\NormalTok{    plt.show()}
+\end{Highlighting}
+\end{Shaded}
+
+\section*{Question 3: Probabilistic Multi-modal Preferences (25
+points)}\label{question-3-probabilistic-multi-modal-preferences-25-points}
+\addcontentsline{toc}{section}{Question 3: Probabilistic Multi-modal
+Preferences (25 points)}
+
+\markright{Question 3: Probabilistic Multi-modal Preferences (25
+points)}
+
+Suppose you are part of the ML team on the movie streaming site
+CardinalStreams. After taking CS329H, you collect a movie preferences
+dataset with \(30000\) examples of the form
+\((m_1, m_2, \text{user id})\) where \(m_1\) and \(m_2\) are movies with
+\(m_1\succ m_2\). The preferences come from \(600\) distinct users with
+\(50\) examples per user. Each movie has a \(10\)-dimensional feature
+vector \(m\), and each user has a \(10\)-dimensional weight vector
+\(u\). Given movie features \(m_1, m_2\) and user weights \(u\), the
+user's preference between the movies is given by a Bradley-Terry reward
+model, i.e.,
+\[P(m_1\succ m_2)=\frac{e^{u\cdot m_1}}{e^{u\cdot m_1} + e^{u\cdot m_2}}=\frac{1}{1+e^{u\cdot (m_2-m_1)}}=\sigma(u\cdot (m_1-m_2)).\]
+
+You realize that trying to estimate the weights for each user with only
+\(50\) examples will not work due to the lack of data. Instead, you
+choose to drop the user IDs column and shuffle the dataset in order to
+take a \emph{multi-modal preferences} approach. For simplicity, you
+assume a model where a proportion \(p\) of the users have weights
+\(w_1\) and the other \(1-p\) have weights \(w_2\). In this setting,
+each user belongs to one of two groups: users with weights \(w_1\) are
+part of Group 1, and users with weights \(w_2\) are part of Group 2.
+
+\begin{enumerate}
+\def\labelenumi{(\alph{enumi})}
+\item
+  \textbf{(Written, 3 points)}. For a datapoint \((m_1, m_2)\) with
+  label \(m_1\succ m_2\), compute the data likelihood
+  \(P(m_1\succ m_2 | p, w_1, w_2)\) assuming \(p, w_1, w_2\) are given.
+\item
+  \textbf{(Written, 3 points)}. As a follow up, use the likelihood to
+  simplify the posterior distribution of \(p, w_1, w_2\) after updating
+  on \((m_1, m_2)\) leaving terms for the priors unchanged.
+\item
+  \textbf{(Written, 4 points)}. Assume priors \(p\sim B(1, 1)\),
+  \(w_1\sim\mathcal{N}(0, \mathbf{I})\), and
+  \(w_2\sim\mathcal{N}(0, \mathbf{I})\) where \(B\) represents the Beta
+  distribution and \(\mathcal{N}\) represents the normal distribution.
+  You will notice that the posterior from part (b) has no simple
+  closed-form. As a result, we must resort to \emph{Markov Chain Monte
+  Carlo (MCMC)} approaches to sample from the posterior. These
+  approaches allow sampling from highly complex distributions by
+  constructing a Markov chain \(\{x_t\}_{t=1}^\infty\) so that
+  \(\lim_{t\to\infty}x_t\) act as desired samples from the target
+  distribution. You can think of a Markov chain as a sequence with the
+  special property that \(x_{t+1}\) only depends on \(x_t\) for all
+  \(t\ge 1\).
+
+  The most basic version of MCMC is known as Metropolis-Hastings. Assume
+  \(\pi\) is the target distribution we wish to sample from where
+  \(\pi(z)\) represents the probability density at point \(z\).
+  Metropolis-Hastings constructs the approximating Markov chain \(x_t\)
+  as follows: a proposal \(P\) for \(x_{t+1}\) is made via sampling from
+  a chosen distribution \(Q(\,\cdot\,| x_t)\) (e.g., adding Gaussian
+  noise). The acceptance probability of the proposal is given by
+  \[A= \min \left( 1, \frac{\pi(P)Q(x_t | P)}{\pi(x_t)Q(P | x_t)} \right).\]
+  That is, \[x_{t+1}=\begin{cases} 
+  P & \text{with probability } A, \\
+  x_t & \text{with probability } 1 - A.
+  \end{cases}\] To extract our samples from \(\pi\), we run the Markov
+  chain for \(N\) timesteps and disregard the first \(T<N\) timesteps in
+  what is called the \emph{burn-in or mixing time} (i.e., our final
+  samples are \(x_{T+1}, x_{T+2},\cdots, x_{N}\)). The mixing time is
+  needed to ensure that the Markov chain elements are representative of
+  the distribution \(\pi\) -- initial elements of the chain will not be
+  a good approximation of \(\pi\) and depend more on the choice of
+  initialization \(x_1\).
+
+  To build some intuition, suppose we have a biased coin that turns
+  heads with probability \(p_{\text{heads}}\). We observe \(12\) coin
+  flips to have \(9\) heads and \(3\) tails. If our prior for
+  \(p_{\text{heads}}\) was \(B(1, 1)\), then our posterior will be
+  \(B(1+9, 1+3)=B(10, 4)\). The Bayesian update is given by
+
+  \begin{aligned}
+      P(p_{\text{heads}}|9\text{ heads}, 3\text{ tails})&=\frac{P(9\text{ heads}, 3\text{ tails} | p_{\text{heads}})B(1, 1)(p_{\text{heads}})}{\int_0^1 P(9\text{ heads}, 3\text{ tails} | p_{\text{heads}})B(1, 1)(p_{\text{heads}}) dp_{\text{heads}}}\\
+      &=\frac{P(9\text{ heads}, 3\text{ tails} | p_{\text{heads}})}{\int_0^1 P(9\text{ heads}, 3\text{ tails} | p_{\text{heads}})  dp_{\text{heads}}}.
+
+  \end{aligned}
+
+  \textbf{Find the acceptance probablity} \(A\) in the setting of the
+  biased coin assuming the proposal distribution
+  \(Q(\cdot|x_t)=x_t+N(0,\sigma)\) for given \(\sigma\). Notice that
+  this choice of \(Q\) is symmetric, i.e., \(Q(x_t|P)=Q(P|x_t)\). In
+  addition, you will realize that is unnecessary to compute the
+  normalizing constant of the Bayesian update (i.e., the integral in the
+  denominator) which is why MCMC is commonly used to sample from
+  posteriors!
+\item
+  \textbf{(Written + Coding, 6 points)}. Implement Metropolis-Hastings
+  to sample from the posterior distribution of the biased coin in
+  \texttt{multimodal\_preferences/biased\_coin.py}. Attach a histogram
+  of your MCMC samples overlayed on top of the true posterior
+  \(B(10, 4)\) by running \texttt{python\ biased\_coin.py}.
+\end{enumerate}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ImportTok{import}\NormalTok{ numpy }\ImportTok{as}\NormalTok{ np}
+\ImportTok{import}\NormalTok{ matplotlib.pyplot }\ImportTok{as}\NormalTok{ plt}
+\ImportTok{from}\NormalTok{ scipy.stats }\ImportTok{import}\NormalTok{ beta}
+
+\KeywordTok{def}\NormalTok{ likelihood(p: }\BuiltInTok{float}\NormalTok{) }\OperatorTok{{-}\textgreater{}} \BuiltInTok{float}\NormalTok{:}
+    \CommentTok{"""}
+\CommentTok{    Computes the likelihood of 9 heads and 3 tails assuming p\_heads is p.}
+
+\CommentTok{    Args:}
+\CommentTok{    p (float): A value between 0 and 1 representing the probability of heads.}
+
+\CommentTok{    Returns:}
+\CommentTok{    float: The likelihood value at p\_heads=p. Return 0 if p is outside the range [0, 1].}
+\CommentTok{    """}
+    \CommentTok{\# YOUR CODE HERE (\textasciitilde{}1{-}3 lines)}
+    \ControlFlowTok{pass}
+    \CommentTok{\# }\RegionMarkerTok{END}\CommentTok{ OF YOUR CODE}
+
+
+\KeywordTok{def}\NormalTok{ propose(x\_current: }\BuiltInTok{float}\NormalTok{, sigma: }\BuiltInTok{float}\NormalTok{) }\OperatorTok{{-}\textgreater{}} \BuiltInTok{float}\NormalTok{:}
+    \CommentTok{"""}
+\CommentTok{    Proposes a new sample from the proposal distribution Q.}
+\CommentTok{    Here, Q is a normal distribution centered at x\_current with standard deviation sigma.}
+
+\CommentTok{    Args:}
+\CommentTok{    x\_current (float): The current value in the Markov chain.}
+\CommentTok{    sigma (float): Standard deviation of the normal proposal distribution.}
+
+\CommentTok{    Returns:}
+\CommentTok{    float: The proposed new sample.}
+\CommentTok{    """}
+    \CommentTok{\# YOUR CODE HERE (\textasciitilde{}1{-}3 lines)}
+    \ControlFlowTok{pass}
+    \CommentTok{\# }\RegionMarkerTok{END}\CommentTok{ OF YOUR CODE}
+
+
+\KeywordTok{def}\NormalTok{ acceptance\_probability(x\_current: }\BuiltInTok{float}\NormalTok{, x\_proposed: }\BuiltInTok{float}\NormalTok{) }\OperatorTok{{-}\textgreater{}} \BuiltInTok{float}\NormalTok{:}
+    \CommentTok{"""}
+\CommentTok{    Computes the acceptance probability A for the proposed sample.}
+\CommentTok{    Since the proposal distribution is symmetric, Q cancels out.}
+
+\CommentTok{    Args:}
+\CommentTok{    x\_current (float): The current value in the Markov chain.}
+\CommentTok{    x\_proposed (float): The proposed new value.}
+
+\CommentTok{    Returns:}
+\CommentTok{    float: The acceptance probability}
+\CommentTok{    """}
+    \CommentTok{\# YOUR CODE HERE (\textasciitilde{}4{-}6 lines)}
+    \ControlFlowTok{pass}
+    \CommentTok{\# }\RegionMarkerTok{END}\CommentTok{ OF YOUR CODE}
+
+
+\KeywordTok{def}\NormalTok{ metropolis\_hastings(N: }\BuiltInTok{int}\NormalTok{, T: }\BuiltInTok{int}\NormalTok{, x\_init: }\BuiltInTok{float}\NormalTok{, sigma: }\BuiltInTok{float}\NormalTok{) }\OperatorTok{{-}\textgreater{}}\NormalTok{ np.ndarray:}
+    \CommentTok{"""}
+\CommentTok{    Runs the Metropolis{-}Hastings algorithm to sample from a posterior distribution.}
+
+\CommentTok{    Args:}
+\CommentTok{    N (int): Total number of iterations.}
+\CommentTok{    T (int): Burn{-}in period (number of initial samples to discard).}
+\CommentTok{    x\_init (float): Initial value of the chain.}
+\CommentTok{    sigma (float): Standard deviation of the proposal distribution.}
+
+\CommentTok{    Returns:}
+\CommentTok{    list: Samples collected after the burn{-}in period.}
+\CommentTok{    """}
+\NormalTok{    samples }\OperatorTok{=}\NormalTok{ []}
+\NormalTok{    x\_current }\OperatorTok{=}\NormalTok{ x\_init}
+
+    \ControlFlowTok{for}\NormalTok{ t }\KeywordTok{in} \BuiltInTok{range}\NormalTok{(N):}
+        \CommentTok{\# YOUR CODE HERE (\textasciitilde{}7{-}10 lines)}
+        \CommentTok{\# Use the propose and acceptance\_probability functions to get x\_\{t+1\} and store it in samples after the burn{-}in period T}
+        \ControlFlowTok{pass}
+        \CommentTok{\# }\RegionMarkerTok{END}\CommentTok{ OF YOUR CODE}
+
+    \ControlFlowTok{return}\NormalTok{ samples}
+
+
+\KeywordTok{def}\NormalTok{ plot\_results(samples: np.ndarray) }\OperatorTok{{-}\textgreater{}} \VariableTok{None}\NormalTok{:}
+    \CommentTok{"""}
+\CommentTok{    Plots the histogram of MCMC samples along with the true Beta(10, 4) PDF.}
+
+\CommentTok{    Args:}
+\CommentTok{    samples (np.ndarray): Array of samples collected from the Metropolis{-}Hastings algorithm.}
+
+\CommentTok{    Returns:}
+\CommentTok{    None}
+\CommentTok{    """}
+    \CommentTok{\# Histogram of the samples from the Metropolis{-}Hastings algorithm}
+\NormalTok{    plt.hist(samples, bins}\OperatorTok{=}\DecValTok{50}\NormalTok{, density}\OperatorTok{=}\VariableTok{True}\NormalTok{, alpha}\OperatorTok{=}\FloatTok{0.5}\NormalTok{, label}\OperatorTok{=}\StringTok{"MCMC Samples"}\NormalTok{)}
+
+    \CommentTok{\# True Beta(10, 4) distribution for comparison}
+\NormalTok{    p }\OperatorTok{=}\NormalTok{ np.linspace(}\DecValTok{0}\NormalTok{, }\DecValTok{1}\NormalTok{, }\DecValTok{1000}\NormalTok{)}
+\NormalTok{    beta\_pdf }\OperatorTok{=}\NormalTok{ beta.pdf(p, }\DecValTok{10}\NormalTok{, }\DecValTok{4}\NormalTok{)}
+\NormalTok{    plt.plot(p, beta\_pdf, }\StringTok{"r{-}"}\NormalTok{, label}\OperatorTok{=}\StringTok{"Beta(10, 4) PDF"}\NormalTok{)}
+
+\NormalTok{    plt.xlabel(}\StringTok{"p\_heads"}\NormalTok{)}
+\NormalTok{    plt.ylabel(}\StringTok{"Density"}\NormalTok{)}
+\NormalTok{    plt.title(}\StringTok{"Metropolis{-}Hastings Sampling of Biased Coin Posterior"}\NormalTok{)}
+\NormalTok{    plt.legend()}
+\NormalTok{    plt.show()}
+
+
+\ControlFlowTok{if} \VariableTok{\_\_name\_\_} \OperatorTok{==} \StringTok{"\_\_main\_\_"}\NormalTok{:}
+    \CommentTok{\# MCMC Parameters (DO NOT CHANGE!)}
+\NormalTok{    N }\OperatorTok{=} \DecValTok{50000}  \CommentTok{\# Total number of iterations}
+\NormalTok{    T }\OperatorTok{=} \DecValTok{10000}  \CommentTok{\# Burn{-}in period to discard}
+\NormalTok{    x\_init }\OperatorTok{=} \FloatTok{0.5}  \CommentTok{\# Initial guess for p\_heads}
+\NormalTok{    sigma }\OperatorTok{=} \FloatTok{0.1}  \CommentTok{\# Standard deviation of the proposal distribution}
+
+    \CommentTok{\# Run Metropolis{-}Hastings and plot the results}
+\NormalTok{    samples }\OperatorTok{=}\NormalTok{ metropolis\_hastings(N, T, x\_init, sigma)}
+\NormalTok{    plot\_results(samples)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{enumerate}
+\def\labelenumi{(\alph{enumi})}
+\setcounter{enumi}{4}
+\tightlist
+\item
+  \textbf{(Coding, 9 points)}. Implement Metropolis-Hastings in the
+  movie setting inside\\
+  \texttt{multimodal\_preferences/movie\_metropolis.py}. The movie
+  dataset we use for grading will not be provided. However, randomly
+  constructed datasets can be used to test your implementation by
+  running \texttt{python\ movie\_metropolis.py}. You should be able to
+  achieve a \(90\%\) success rate with most \texttt{fraction\_accepted}
+  values above \(0.1\). Success is measured by thresholded closeness of
+  predicted parameters to true parameters. You may notice occasional
+  failures that occur due to lack of convergence which we will account
+  for in grading.
+\end{enumerate}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ImportTok{import}\NormalTok{ torch}
+\ImportTok{import}\NormalTok{ torch.distributions }\ImportTok{as}\NormalTok{ dist}
+\ImportTok{import}\NormalTok{ math}
+\ImportTok{from}\NormalTok{ tqdm }\ImportTok{import}\NormalTok{ tqdm}
+\ImportTok{from}\NormalTok{ typing }\ImportTok{import}\NormalTok{ Tuple}
+
+\KeywordTok{def}\NormalTok{ make\_data(}
+\NormalTok{    true\_p: torch.Tensor, true\_weights\_1: torch.Tensor, true\_weights\_2: torch.Tensor, num\_movies: }\BuiltInTok{int}\NormalTok{, feature\_dim: }\BuiltInTok{int}
+\NormalTok{) }\OperatorTok{{-}\textgreater{}}\NormalTok{ Tuple[torch.Tensor, torch.Tensor]:}
+    \CommentTok{"""}
+\CommentTok{    Generates a synthetic movie dataset according to the CardinalStreams model.}
+
+\CommentTok{    Args:}
+\CommentTok{        true\_p (torch.Tensor): Probability of coming from Group 1.}
+\CommentTok{        true\_weights\_1 (torch.Tensor): Weights for Group 1.}
+\CommentTok{        true\_weights\_2 (torch.Tensor): Weights for Group 2.}
+
+\CommentTok{    Returns:}
+\CommentTok{        Tuple[torch.Tensor, torch.Tensor]: A tuple containing the dataset and labels.}
+\CommentTok{    """}
+    \CommentTok{\# Create movie features}
+\NormalTok{    first\_movie\_features }\OperatorTok{=}\NormalTok{ torch.randn((num\_movies, feature\_dim))}
+\NormalTok{    second\_movie\_features }\OperatorTok{=}\NormalTok{ torch.randn((num\_movies, feature\_dim))}
+
+    \CommentTok{\# Only care about difference of features for Bradley{-}Terry}
+\NormalTok{    dataset }\OperatorTok{=}\NormalTok{ first\_movie\_features }\OperatorTok{{-}}\NormalTok{ second\_movie\_features}
+
+    \CommentTok{\# Get probabilities that first movie is preferred assuming Group 1 or Group 2}
+\NormalTok{    weight\_1\_probs }\OperatorTok{=}\NormalTok{ torch.sigmoid(dataset }\OperatorTok{@}\NormalTok{ true\_weights\_1)}
+\NormalTok{    weight\_2\_probs }\OperatorTok{=}\NormalTok{ torch.sigmoid(dataset }\OperatorTok{@}\NormalTok{ true\_weights\_2)}
+
+    \CommentTok{\# Probability that first movie is preferred overall can be viewed as sum of conditioning on Group 1 and Group 2}
+\NormalTok{    first\_movie\_preferred\_probs }\OperatorTok{=}\NormalTok{ (}
+\NormalTok{        true\_p }\OperatorTok{*}\NormalTok{ weight\_1\_probs }\OperatorTok{+}\NormalTok{ (}\DecValTok{1} \OperatorTok{{-}}\NormalTok{ true\_p) }\OperatorTok{*}\NormalTok{ weight\_2\_probs}
+\NormalTok{    )}
+\NormalTok{    labels }\OperatorTok{=}\NormalTok{ dist.Bernoulli(first\_movie\_preferred\_probs).sample()}
+    \ControlFlowTok{return}\NormalTok{ dataset, labels}
+
+
+\KeywordTok{def}\NormalTok{ compute\_likelihoods(}
+\NormalTok{    dataset: torch.Tensor,}
+\NormalTok{    labels: torch.Tensor,}
+\NormalTok{    p: torch.Tensor,}
+\NormalTok{    w\_1: torch.Tensor,}
+\NormalTok{    w\_2: torch.Tensor,}
+\NormalTok{) }\OperatorTok{{-}\textgreater{}}\NormalTok{ torch.Tensor:}
+    \CommentTok{"""}
+\CommentTok{    Computes the likelihood of each datapoint. Use your calculation from part (a) to help.}
+
+\CommentTok{    Args:}
+\CommentTok{        dataset (torch.Tensor): The dataset of differences between movie features.}
+\CommentTok{        labels (torch.Tensor): The labels where 1 indicates the first movie is preferred, and 0 indicates preference of the second movie.}
+\CommentTok{        p (torch.Tensor): The probability of coming from Group 1.}
+\CommentTok{        w\_1 (torch.Tensor): Weights for Group 1.}
+\CommentTok{        w\_2 (torch.Tensor): Weights for Group 2.}
+
+\CommentTok{    Returns:}
+\CommentTok{        torch.Tensor: The likelihoods for each datapoint. Should have shape (dataset.shape[0], )}
+\CommentTok{    """}
+    \CommentTok{\# YOUR CODE HERE (\textasciitilde{}6{-}8 lines)}
+    \ControlFlowTok{pass}
+    \CommentTok{\# }\RegionMarkerTok{END}\CommentTok{ OF YOUR CODE}
+
+\KeywordTok{def}\NormalTok{ compute\_prior\_density(}
+\NormalTok{    p: torch.Tensor, w\_1: torch.Tensor, w\_2: torch.Tensor}
+\NormalTok{) }\OperatorTok{{-}\textgreater{}}\NormalTok{ torch.Tensor:}
+    \CommentTok{"""}
+\CommentTok{    Computes the prior density of the parameters.}
+
+\CommentTok{    Args:}
+\CommentTok{        p (torch.Tensor): The probability of preferring model 1.}
+\CommentTok{        w\_1 (torch.Tensor): Weights for model 1.}
+\CommentTok{        w\_2 (torch.Tensor): Weights for model 2.}
+
+\CommentTok{    Returns:}
+\CommentTok{        torch.Tensor: The prior densities of p, w\_1, and w\_2.}
+\CommentTok{    """}
+    \CommentTok{\# Adjusts p to stay in the range [0.3, 0.7] to prevent multiple equilibria issues at p=0 and p=1}
+\NormalTok{    p\_prob }\OperatorTok{=}\NormalTok{ torch.tensor([}\FloatTok{2.5}\NormalTok{]) }\ControlFlowTok{if} \FloatTok{0.3} \OperatorTok{\textless{}=}\NormalTok{ p }\OperatorTok{\textless{}=} \FloatTok{0.7} \ControlFlowTok{else}\NormalTok{ torch.tensor([}\FloatTok{0.0}\NormalTok{])}
+
+    \KeywordTok{def}\NormalTok{ normal\_pdf(x: torch.Tensor) }\OperatorTok{{-}\textgreater{}}\NormalTok{ torch.Tensor:}
+        \CommentTok{"""Computes the PDF of the standard normal distribution at x."""}
+        \ControlFlowTok{return}\NormalTok{ (}\FloatTok{1.0} \OperatorTok{/}\NormalTok{ torch.sqrt(torch.tensor(}\DecValTok{2} \OperatorTok{*}\NormalTok{ math.pi))) }\OperatorTok{*}\NormalTok{ torch.exp(}\OperatorTok{{-}}\FloatTok{0.5} \OperatorTok{*}\NormalTok{ x}\OperatorTok{**}\DecValTok{2}\NormalTok{)}
+
+\NormalTok{    weights\_1\_prob }\OperatorTok{=}\NormalTok{ normal\_pdf(w\_1)}
+\NormalTok{    weights\_2\_prob }\OperatorTok{=}\NormalTok{ normal\_pdf(w\_2)}
+
+    \CommentTok{\# Concatenate the densities}
+\NormalTok{    concatenated\_prob }\OperatorTok{=}\NormalTok{ torch.cat([p\_prob, weights\_1\_prob, weights\_2\_prob])}
+    \ControlFlowTok{return}\NormalTok{ concatenated\_prob}
+
+
+\KeywordTok{def}\NormalTok{ metropolis\_hastings(}
+\NormalTok{    dataset: torch.Tensor,}
+\NormalTok{    labels: torch.Tensor,}
+\NormalTok{    sigma: }\BuiltInTok{float} \OperatorTok{=} \FloatTok{0.01}\NormalTok{,}
+\NormalTok{    num\_iters: }\BuiltInTok{int} \OperatorTok{=} \DecValTok{30000}\NormalTok{,}
+\NormalTok{    burn\_in: }\BuiltInTok{int} \OperatorTok{=} \DecValTok{20000}\NormalTok{,}
+\NormalTok{) }\OperatorTok{{-}\textgreater{}}\NormalTok{ Tuple[torch.Tensor, torch.Tensor, torch.Tensor, }\BuiltInTok{float}\NormalTok{]:}
+    \CommentTok{"""}
+\CommentTok{    Performs the Metropolis{-}Hastings algorithm to sample from the posterior distribution.}
+\CommentTok{    DO NOT CHANGE THE DEFAULT VALUES!}
+
+\CommentTok{    Args:}
+\CommentTok{        dataset (torch.Tensor): The dataset of differences between movie features.}
+\CommentTok{        labels (torch.Tensor): The labels indicating which movie is preferred.}
+\CommentTok{        sigma (float, optional): Standard deviation for proposal distribution.}
+\CommentTok{            Defaults to 0.01.}
+\CommentTok{        num\_iters (int, optional): Total number of iterations. Defaults to 30000.}
+\CommentTok{        burn\_in (int, optional): Number of iterations to discard as burn{-}in.}
+\CommentTok{            Defaults to 20000.}
+
+\CommentTok{    Returns:}
+\CommentTok{        Tuple[torch.Tensor, torch.Tensor, torch.Tensor, float]: Samples of p,}
+\CommentTok{        w\_1, w\_2, and the fraction of accepted proposals.}
+\CommentTok{    """}
+\NormalTok{    feature\_dim }\OperatorTok{=}\NormalTok{ dataset.shape[}\DecValTok{1}\NormalTok{]}
+
+    \CommentTok{\# Initialize random starting parameters by sampling priors}
+\NormalTok{    curr\_p }\OperatorTok{=} \FloatTok{0.3} \OperatorTok{+} \FloatTok{0.4} \OperatorTok{*}\NormalTok{ torch.rand(}\DecValTok{1}\NormalTok{)}
+\NormalTok{    curr\_w\_1 }\OperatorTok{=}\NormalTok{ torch.randn(feature\_dim)}
+\NormalTok{    curr\_w\_2 }\OperatorTok{=}\NormalTok{ torch.randn(feature\_dim)}
+
+    \CommentTok{\# Keep track of samples and total number of accepted proposals}
+\NormalTok{    p\_samples }\OperatorTok{=}\NormalTok{ []}
+\NormalTok{    w\_1\_samples }\OperatorTok{=}\NormalTok{ []}
+\NormalTok{    w\_2\_samples }\OperatorTok{=}\NormalTok{ []}
+\NormalTok{    accept\_count }\OperatorTok{=} \DecValTok{0} 
+
+    \ControlFlowTok{for}\NormalTok{ T }\KeywordTok{in}\NormalTok{ tqdm(}\BuiltInTok{range}\NormalTok{(num\_iters)):}
+        \CommentTok{\# YOUR CODE HERE (\textasciitilde{}3 lines)}
+        \ControlFlowTok{pass} \CommentTok{\# Sample proposals for p, w\_1, w\_2}
+        \CommentTok{\# }\RegionMarkerTok{END}\CommentTok{ OF YOUR CODE}
+
+        \CommentTok{\# YOUR CODE HERE (\textasciitilde{}4{-}6 lines)}
+        \ControlFlowTok{pass} \CommentTok{\# Compute likehoods and prior densities on both the proposed and current samples}
+        \CommentTok{\# }\RegionMarkerTok{END}\CommentTok{ OF YOUR CODE}
+
+        \CommentTok{\# YOUR CODE HERE (\textasciitilde{}2{-}4 lines)}
+        \ControlFlowTok{pass} \CommentTok{\# Obtain the ratios of the likelihoods and prior densities between the proposed and current samples }
+        \CommentTok{\# }\RegionMarkerTok{END}\CommentTok{ OF YOUR CODE }
+
+        \CommentTok{\# YOUR CODE HERE (\textasciitilde{}1{-}2 lines)}
+        \ControlFlowTok{pass} \CommentTok{\# Multiply all ratios (both likelihoods and prior densities) and use this to calculate the acceptance probability of the proposal}
+        \CommentTok{\# }\RegionMarkerTok{END}\CommentTok{ OF YOUR CODE}
+
+        \CommentTok{\# YOUR CODE HERE (\textasciitilde{}4{-}6 lines)}
+        \ControlFlowTok{pass} \CommentTok{\# Sample randomness to determine whether the proposal should be accepted to update curr\_p, curr\_w\_1, curr\_w\_2, and accept\_count}
+        \CommentTok{\# }\RegionMarkerTok{END}\CommentTok{ OF YOUR CODE }
+
+        \CommentTok{\# YOUR CODE HERE (\textasciitilde{}4{-}6 lines)}
+        \ControlFlowTok{pass} \CommentTok{\# Update p\_samples, w\_1\_samples, w\_2\_samples if we have passed the burn in period T}
+        \CommentTok{\# }\RegionMarkerTok{END}\CommentTok{ OF YOUR CODE }
+
+\NormalTok{    fraction\_accepted }\OperatorTok{=}\NormalTok{ accept\_count }\OperatorTok{/}\NormalTok{ num\_iters}
+    \BuiltInTok{print}\NormalTok{(}\SpecialStringTok{f"Fraction of accepted proposals: }\SpecialCharTok{\{}\NormalTok{fraction\_accepted}\SpecialCharTok{\}}\SpecialStringTok{"}\NormalTok{)}
+    \ControlFlowTok{return}\NormalTok{ (}
+\NormalTok{        torch.stack(p\_samples),}
+\NormalTok{        torch.stack(w\_1\_samples),}
+\NormalTok{        torch.stack(w\_2\_samples),}
+\NormalTok{        fraction\_accepted,}
+\NormalTok{    )}
+
+
+\KeywordTok{def}\NormalTok{ evaluate\_metropolis(num\_sims: }\BuiltInTok{int}\NormalTok{, num\_movies: }\BuiltInTok{int}\NormalTok{, feature\_dim: }\BuiltInTok{int}\NormalTok{) }\OperatorTok{{-}\textgreater{}} \VariableTok{None}\NormalTok{:}
+    \CommentTok{"""}
+\CommentTok{    Runs the Metropolis{-}Hastings algorithm N times and compare estimated parameters}
+\CommentTok{    with true parameters to obtain success rate. You should attain a success rate of around 90\%. }
+
+\CommentTok{    Note that there are two successful equilibria to converge to. They are true\_weights\_1 and true\_weights\_2 with probabilities}
+\CommentTok{    p and 1{-}p in addition to true\_weights\_2 and true\_weights\_1 with probabilities 1{-}p and p. This is why even though it may appear your}
+\CommentTok{    predicted parameters don\textquotesingle{}t match the true parameters, they are in fact equivalent. }
+
+\CommentTok{    Args:}
+\CommentTok{        num\_sims (int): Number of simulations to run.}
+
+\CommentTok{    Returns:}
+\CommentTok{        None}
+\CommentTok{    """}
+    
+\NormalTok{    success\_count }\OperatorTok{=} \DecValTok{0}
+    \ControlFlowTok{for}\NormalTok{ \_ }\KeywordTok{in} \BuiltInTok{range}\NormalTok{(num\_sims):}
+        \CommentTok{\# Sample random ground truth parameters}
+\NormalTok{        true\_p }\OperatorTok{=} \FloatTok{0.3} \OperatorTok{+} \FloatTok{0.4} \OperatorTok{*}\NormalTok{ torch.rand(}\DecValTok{1}\NormalTok{)}
+\NormalTok{        true\_weights\_1 }\OperatorTok{=}\NormalTok{ torch.randn(feature\_dim)}
+\NormalTok{        true\_weights\_2 }\OperatorTok{=}\NormalTok{ torch.randn(feature\_dim)}
+
+        \BuiltInTok{print}\NormalTok{(}\StringTok{"}\CharTok{\textbackslash{}n}\StringTok{{-}{-}{-}{-} MCMC Simulation {-}{-}{-}{-}"}\NormalTok{)}
+        \BuiltInTok{print}\NormalTok{(}\StringTok{"True parameters:"}\NormalTok{, true\_p, true\_weights\_1, true\_weights\_2)}
+
+\NormalTok{        dataset, labels }\OperatorTok{=}\NormalTok{ make\_data(true\_p, true\_weights\_1, true\_weights\_2, num\_movies, feature\_dim)}
+\NormalTok{        p\_samples, w\_1\_samples, w\_2\_samples, \_ }\OperatorTok{=}\NormalTok{ metropolis\_hastings(dataset, labels)}
+
+\NormalTok{        p\_pred }\OperatorTok{=}\NormalTok{ p\_samples.mean(dim}\OperatorTok{=}\DecValTok{0}\NormalTok{)}
+\NormalTok{        w\_1\_pred }\OperatorTok{=}\NormalTok{ w\_1\_samples.mean(dim}\OperatorTok{=}\DecValTok{0}\NormalTok{)}
+\NormalTok{        w\_2\_pred }\OperatorTok{=}\NormalTok{ w\_2\_samples.mean(dim}\OperatorTok{=}\DecValTok{0}\NormalTok{)}
+
+        \BuiltInTok{print}\NormalTok{(}\StringTok{"Predicted parameters:"}\NormalTok{, p\_pred, w\_1\_pred, w\_2\_pred)}
+
+        \CommentTok{\# Do casework on two equilibria cases to check for success}
+\NormalTok{        p\_diff\_case\_1 }\OperatorTok{=}\NormalTok{ torch.}\BuiltInTok{abs}\NormalTok{(p\_pred }\OperatorTok{{-}}\NormalTok{ true\_p)}
+\NormalTok{        p\_diff\_case\_2 }\OperatorTok{=}\NormalTok{ torch.}\BuiltInTok{abs}\NormalTok{(p\_pred }\OperatorTok{{-}}\NormalTok{ (}\DecValTok{1} \OperatorTok{{-}}\NormalTok{ true\_p))}
+
+\NormalTok{        w\_1\_diff\_case\_1 }\OperatorTok{=}\NormalTok{ torch.}\BuiltInTok{max}\NormalTok{(torch.}\BuiltInTok{abs}\NormalTok{(w\_1\_pred }\OperatorTok{{-}}\NormalTok{ true\_weights\_1))}
+\NormalTok{        w\_1\_diff\_case\_2 }\OperatorTok{=}\NormalTok{ torch.}\BuiltInTok{max}\NormalTok{(torch.}\BuiltInTok{abs}\NormalTok{(w\_1\_pred }\OperatorTok{{-}}\NormalTok{ true\_weights\_2))}
+
+\NormalTok{        w\_2\_diff\_case\_1 }\OperatorTok{=}\NormalTok{ torch.}\BuiltInTok{max}\NormalTok{(torch.}\BuiltInTok{abs}\NormalTok{(w\_2\_pred }\OperatorTok{{-}}\NormalTok{ true\_weights\_2))}
+\NormalTok{        w\_2\_diff\_case\_2 }\OperatorTok{=}\NormalTok{ torch.}\BuiltInTok{max}\NormalTok{(torch.}\BuiltInTok{abs}\NormalTok{(w\_2\_pred }\OperatorTok{{-}}\NormalTok{ true\_weights\_1))}
+
+\NormalTok{        pass\_case\_1 }\OperatorTok{=}\NormalTok{ (}
+\NormalTok{            p\_diff\_case\_1 }\OperatorTok{\textless{}} \FloatTok{0.1} \KeywordTok{and}\NormalTok{ w\_1\_diff\_case\_1 }\OperatorTok{\textless{}} \FloatTok{0.5} \KeywordTok{and}\NormalTok{ w\_2\_diff\_case\_1 }\OperatorTok{\textless{}} \FloatTok{0.5}
+\NormalTok{        )}
+\NormalTok{        pass\_case\_2 }\OperatorTok{=}\NormalTok{ (}
+\NormalTok{            p\_diff\_case\_2 }\OperatorTok{\textless{}} \FloatTok{0.1} \KeywordTok{and}\NormalTok{ w\_1\_diff\_case\_2 }\OperatorTok{\textless{}} \FloatTok{0.5} \KeywordTok{and}\NormalTok{ w\_2\_diff\_case\_2 }\OperatorTok{\textless{}} \FloatTok{0.5}
+\NormalTok{        )}
+\NormalTok{        passes }\OperatorTok{=}\NormalTok{ pass\_case\_1 }\KeywordTok{or}\NormalTok{ pass\_case\_2}
+
+        \BuiltInTok{print}\NormalTok{(}\SpecialStringTok{f\textquotesingle{}Result: }\SpecialCharTok{\{}\StringTok{"Success"} \ControlFlowTok{if}\NormalTok{ passes }\ControlFlowTok{else} \StringTok{"FAILED"}\SpecialCharTok{\}}\SpecialStringTok{\textquotesingle{}}\NormalTok{)}
+        \ControlFlowTok{if}\NormalTok{ passes:}
+\NormalTok{            success\_count }\OperatorTok{+=} \DecValTok{1}
+    \BuiltInTok{print}\NormalTok{(}\SpecialStringTok{f\textquotesingle{}Success rate: }\SpecialCharTok{\{}\NormalTok{success\_count }\OperatorTok{/}\NormalTok{ num\_sims}\SpecialCharTok{\}}\SpecialStringTok{\textquotesingle{}}\NormalTok{)}
+
+
+\ControlFlowTok{if} \VariableTok{\_\_name\_\_} \OperatorTok{==} \StringTok{"\_\_main\_\_"}\NormalTok{:}
+\NormalTok{    evaluate\_metropolis(num\_sims}\OperatorTok{=}\DecValTok{10}\NormalTok{, num\_movies}\OperatorTok{=}\DecValTok{30000}\NormalTok{, feature\_dim}\OperatorTok{=}\DecValTok{10}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\section*{Question 4: Direct Preference Optimization (40
+points)}\label{question-4-direct-preference-optimization-40-points}
+\addcontentsline{toc}{section}{Question 4: Direct Preference
+Optimization (40 points)}
+
+\markright{Question 4: Direct Preference Optimization (40 points)}
+
+Note this question requires a GPU which is provided for free on Google
+Colab (T4 instance) or through the course cloud credits provided on
+Ed.\\
+Direct Preference Optimization (DPO) allows for policy alignment on a
+preference dataset without the need to train a separate reward model.
+The preference dataset is constructed by sampling generations
+\((y_1, y_2)\sim \pi_{\text{ref}}(\cdot\mid x)\) where
+\(\pi_\text{ref}\) is the base policy to be aligned, and \(x\) comes
+from a set of previously collected prompts. The pairs of generations are
+then labeled by an annotator for which of the generations is preferred.
+Denote the preference dataset by
+\(\mathcal{D}=\left\{\left(x^{(i)}, y_+^{(i)}, y_-^{(i)}\right)\right\}_{i=1}^N\),
+where \(y_+\) and \(y_-\) are the preferred and non-preferred
+generations, respectively. DPO aims to solve the following:
+\[\hat{\pi}=\arg \min_{\pi\in\Pi}\mathbb{E}_{(x, y_+, y_-)\sim\mathcal{D}}\left[-\log\sigma\left(
+\beta\log\left(\frac{\pi(y_+ | x)}{\pi_{\text{ref}}(y_+ | x)}\right)-\beta\log\left(\frac{\pi(y_- | x)}{\pi_{\text{ref}}(y_- | x)}\right)\right)\right]\]
+where \(\Pi\) is the space of possible polices \(\pi\) can take on.
+\(\pi\) is typically parametrized.
+
+\begin{enumerate}
+\def\labelenumi{(\alph{enumi})}
+\item
+  \textbf{(Written, 6 points)}. Consider the setting where
+  \(\pi_{\text{ref}}\) has no conditioning features and randomly outputs
+  one of two possible values, \(\mathbf{A}\) or \(\mathbf{B}\) (also
+  known as the ``Bandit'' setting). Suppose that
+  \(\pi_{\text{ref}}(\mathbf{A})=p_0\) and
+  \(\pi_{\text{ref}}(\mathbf{B})=1-p_0\). Furthermore, assume that the
+  preference dataset \(\mathcal{D}\) is infinitely large, sampled from
+  \(\pi_{\text{ref}}\), and that the preferred response is selected
+  through a Bradley-Terry reward model where \(\mathbf{A}\) has reward
+  score \(r_A\) and \(\mathbf{B}\) has reward score \(r_B\). Set
+  \(\Pi=\{\pi_p\mid 0<p<1\}\) where \(\pi_p\) is the policy defined by
+  \(\pi_p(\mathbf{A})=p\) and \(\pi_p(\mathbf{B})=1-p\). The DPO
+  objective is to compute:
+  \[\pi_{\hat{p}}=\arg \min_{\pi_p\in \Pi} f(p, p_0, \beta, r_A, r_B),\]
+  for a function \(f\). Find \(f\) by explicitly computing the relevant
+  expectation.
+\item
+  \textbf{(Written, 8 points)}. Assume that a solution to the
+  optimization problem in part (a) exists. Find an expression for
+  \(\hat{p}\). (Hint: Make sure to know your sigmoid derivative
+  properties! Everything should simplify nicely. You may use the
+  \emph{logit function} \url{https://en.wikipedia.org/wiki/Logit}
+  denoted by \(\sigma^{-1}\) in your final expression.)
+\item
+  \textbf{(Written, 3 points)}. Show that
+  \(\lim_{\beta\to\infty}\hat{p}=p_0.\) (Very) briefly explain why this
+  makes sense intuitively based on the role of \(\beta\) in
+  KL-constrained reward optimization (we suggest two sentences).
+\item
+  \textbf{(Written, 3 points)}. Assume \(r_A=r_B\) and \(\beta>0\).
+  Notice that \(\hat{p}=p_0\). Briefly explain why this makes sense
+  intuitively (we suggest two sentences).
+\end{enumerate}
+
+Next, you will fine-tune the lightweight 2 billion parameter Gemma 2
+model on the DPO objective. We will use the instruction fine-tuned
+variant of the model (i.e., designed for chat-based interactions).
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\item
+  \textbf{(Coding, 4 points)}. Open the \texttt{dpo/dpo.ipynb} file of
+  the PSET's codebase. Execute the first few cells of the notebook until
+  you see the \texttt{sample\_chat\_tokens} and their IDs printed out.
+  The next cell requires you to implement the
+  \texttt{get\_response\_idxs} function in \texttt{dpo/dpo.py}.
+
+  To implement it, you must find the indices of the first and last token
+  of the model's response in \texttt{sample\_chat\_tokens}. In the
+  notebook's example, this corresponds to the tokens ``As'' and ``.''
+\item
+  \textbf{(Coding, 4 points)}. The following cell asks you to implement
+  the \texttt{get\_response\_next\_token\_probs} function. The next
+  token logits for each token of the chat prompt are provided. Pass them
+  through the softmax function and appropriately index the next token
+  IDs.
+
+\begin{verbatim}
+<bos><start_of_turn>user
+Where are you?<end_of_turn>
+<start_of_turn>model
+I am here.<end_of_turn>
+\end{verbatim}
+
+  In the example above, we look for the next-token probabilities of
+  ``I'', ``am'', ``here'', and ``.'' To do so, you must extract the
+  logits for ``\textbackslash n'', ``I'', ``am'', and ``here'' because
+  the probability of generating a given token comes from the prediction
+  of the token before. Use the return value of
+  \texttt{get\_response\_idxs} as anchor points for indexing. Be careful
+  of off-by-one indexing mistakes!
+\item
+  \textbf{(Coding, 6 points)}. The training and reference LLM policies
+  are loaded for you. We load the training policy in with LoRA for
+  computational efficiency during fine-tuning in the next part.
+  Implement \texttt{compute\_dpo\_objective} with the objective provided
+  in the theory portion for your favorite positive value of \(\beta\).
+  Does \(\beta\) affect the loss printed out? Why or why not? You do not
+  need to write why in your submission, but this line of thinking will
+  help debug any issues with your DPO loss function.
+\item
+  \textbf{(Written + Coding, 6 points)}. Finally, you will fine-tune the
+  Gemma model on the DPO loss function with batch size (and dataset
+  size) of \(1\) by implementing \texttt{finetune}. The prompt and
+  completions are provided in the notebook. The optimizer, \(\beta\),
+  and the number of fine-tuning steps have also been provided. Make sure
+  to use \texttt{torch.no\_grad()} on the reference model to prevent
+  unnecessary gradients!
+
+  Report the proportion of ``because of'' occurences before and after
+  fine-tuning. Additionally, include a plot of the DPO loss curve.
+\end{enumerate}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ImportTok{import}\NormalTok{ torch}
+\ImportTok{from}\NormalTok{ transformers }\ImportTok{import}\NormalTok{ AutoTokenizer, AutoModelForCausalLM, set\_seed}
+\ImportTok{from}\NormalTok{ peft }\ImportTok{import}\NormalTok{ LoraConfig, get\_peft\_model}
+
+\NormalTok{set\_seed(}\DecValTok{42}\NormalTok{) }\CommentTok{\# DO NOT CHANGE THE SEED}
+
+\KeywordTok{def}\NormalTok{ get\_response\_idxs(tokenizer, chat\_token\_ids):}
+    \CommentTok{"""}
+\CommentTok{    Finds the start and end indices of the response in the tokenized chat.}
+
+\CommentTok{    Args:}
+\CommentTok{    tokenizer: The tokenizer object used to encode/decode text.}
+\CommentTok{    chat\_token\_ids (list[int]): The token IDs representing the chat conversation.}
+
+\CommentTok{    Returns:}
+\CommentTok{    tuple: A tuple (response\_start\_idx, response\_end\_idx), both of which are nonnegative integers.}
+\CommentTok{    """}
+
+\NormalTok{    start\_of\_turn\_id }\OperatorTok{=}\NormalTok{ tokenizer.convert\_tokens\_to\_ids(}\StringTok{"\textless{}start\_of\_turn\textgreater{}"}\NormalTok{)}
+\NormalTok{    end\_of\_turn\_id }\OperatorTok{=}\NormalTok{ tokenizer.convert\_tokens\_to\_ids(}\StringTok{"\textless{}end\_of\_turn\textgreater{}"}\NormalTok{)}
+
+\NormalTok{    response\_start\_idx }\OperatorTok{=} \VariableTok{None} \CommentTok{\# Nonnegative integer}
+\NormalTok{    response\_end\_idx }\OperatorTok{=} \VariableTok{None} \CommentTok{\# Nonnegative integer}
+
+    \CommentTok{\# YOUR CODE HERE (\textasciitilde{}3{-}5 lines)}
+    \ControlFlowTok{pass}
+    \CommentTok{\# }\RegionMarkerTok{END}\CommentTok{ OF YOUR CODE}
+
+    \ControlFlowTok{return}\NormalTok{ response\_start\_idx, response\_end\_idx}
+
+\KeywordTok{def}\NormalTok{ get\_response\_next\_token\_probs(tokenizer, model, chat\_token\_ids):}
+    \CommentTok{"""}
+\CommentTok{    Computes the next token probabilities for the response in a chat.}
+
+\CommentTok{    Args:}
+\CommentTok{    tokenizer: The tokenizer object used to encode/decode text.}
+\CommentTok{    model: The language model used to generate the logits.}
+\CommentTok{    chat\_token\_ids (list[int]): The token IDs representing the chat conversation.}
+
+\CommentTok{    Returns:}
+\CommentTok{    torch.Tensor: A 1D tensor containing the probabilities of the tokens in the response found by appropriately indexing}
+\CommentTok{                  the next token probabilities of the preceding token.}
+\CommentTok{    """}
+
+\NormalTok{    response\_start\_idx, response\_end\_idx }\OperatorTok{=}\NormalTok{ get\_response\_idxs(tokenizer, chat\_token\_ids)}
+\NormalTok{    chat\_token\_ids\_tensor }\OperatorTok{=}\NormalTok{ torch.tensor([chat\_token\_ids]).to(model.device)}
+\NormalTok{    logits }\OperatorTok{=}\NormalTok{ model(chat\_token\_ids\_tensor).logits[}\DecValTok{0}\NormalTok{, :, :] }\CommentTok{\# shape (len(chat\_token\_ids), vocabulary\_size)}
+
+\NormalTok{    next\_token\_probs }\OperatorTok{=} \VariableTok{None} \CommentTok{\# Should be a 1D{-}tensor}
+
+    \CommentTok{\# YOUR CODE HERE (\textasciitilde{}3{-}5 lines)}
+    \ControlFlowTok{pass}
+    \CommentTok{\# }\RegionMarkerTok{END}\CommentTok{ OF YOUR CODE}
+
+    \ControlFlowTok{return}\NormalTok{ next\_token\_probs}
+
+\KeywordTok{def}\NormalTok{ compute\_dpo\_objective(preferred\_train\_probs, nonpreferred\_train\_probs, preferred\_ref\_probs, nonpreferred\_ref\_probs, beta):}
+    \CommentTok{"""}
+\CommentTok{    Computes the Direct Preference Optimization (DPO) objective for training.}
+
+\CommentTok{    Args:}
+\CommentTok{    preferred\_train\_probs (torch.Tensor): Token probabilities for the preferred chat sequence from the training model.}
+\CommentTok{    nonpreferred\_train\_probs (torch.Tensor): Token probabilities for the non{-}preferred chat sequence from the training model.}
+\CommentTok{    preferred\_ref\_probs (torch.Tensor): Token probabilities for the preferred chat sequence from the reference model.}
+\CommentTok{    nonpreferred\_ref\_probs (torch.Tensor): Token probabilities for the non{-}preferred chat sequence from the reference model.}
+\CommentTok{    beta (float): Controls the KL strength of staying close to the reference model.}
+
+\CommentTok{    Returns:}
+\CommentTok{    torch.Tensor: The computed DPO objective, which is a float.}
+\CommentTok{    """}
+
+\NormalTok{    dpo\_obj }\OperatorTok{=} \VariableTok{None} \CommentTok{\# Float value}
+    
+    \CommentTok{\# YOUR CODE HERE (\textasciitilde{}4{-}6 lines)}
+    \ControlFlowTok{pass}
+    \CommentTok{\# }\RegionMarkerTok{END}\CommentTok{ OF YOUR CODE}
+
+    \ControlFlowTok{return}\NormalTok{ dpo\_obj}
+
+\KeywordTok{def}\NormalTok{ finetune(tokenizer, optimizer, train\_model, ref\_model, preferred\_chat\_ids, nonpreferred\_chat\_ids, num\_gradient\_steps, beta):}
+    \CommentTok{"""}
+\CommentTok{    Fine{-}tunes the training model using DPO. Make sure to disable gradients on the reference model!}
+
+\CommentTok{    Args:}
+\CommentTok{    tokenizer: The tokenizer object used to encode/decode text.}
+\CommentTok{    optimizer: The optimizer for updating the training model\textquotesingle{}s parameters.}
+\CommentTok{    train\_model: The model being fine{-}tuned.}
+\CommentTok{    ref\_model: The reference model.}
+\CommentTok{    preferred\_chat\_ids (list[int]): The token IDs representing the preferred chat sequence.}
+\CommentTok{    nonpreferred\_chat\_ids (list[int]): The token IDs representing the non{-}preferred chat sequence.}
+\CommentTok{    num\_gradient\_steps (int): The number of gradient updates to perform.}
+\CommentTok{    beta (float): A parameter used in computing the DPO objective.}
+
+\CommentTok{    Returns:}
+\CommentTok{    None}
+\CommentTok{    """}
+
+    \BuiltInTok{print}\NormalTok{(}\StringTok{\textquotesingle{}Fine{-}tuning...\textquotesingle{}}\NormalTok{)}
+    \ControlFlowTok{for}\NormalTok{ i }\KeywordTok{in} \BuiltInTok{range}\NormalTok{(num\_gradient\_steps):}
+        \CommentTok{\# YOUR CODE HERE (\textasciitilde{}9{-}12 lines)}
+        \ControlFlowTok{pass}
+        \CommentTok{\# }\RegionMarkerTok{END}\CommentTok{ OF YOUR CODE}
+    \BuiltInTok{print}\NormalTok{(}\StringTok{"Fine{-}tuning complete!"}\NormalTok{)}
+
+\CommentTok{\# DO NOT CHANGE!}
+\KeywordTok{def}\NormalTok{ sample\_model(tokenizer, model, prompt, N}\OperatorTok{=}\DecValTok{100}\NormalTok{):}
+    \CommentTok{"""}
+\CommentTok{    Samples N different completions from the model based on the given prompt.}
+
+\CommentTok{    Args:}
+\CommentTok{    tokenizer: The tokenizer object used to encode/decode text.}
+\CommentTok{    model: The language model used for generation.}
+\CommentTok{    prompt (str): The input prompt for which completions will be generated.}
+\CommentTok{    N (int): The number of completions to generate.}
+
+\CommentTok{    Returns:}
+\CommentTok{    list[str]: A list of N generated completions.}
+\CommentTok{    """}
+
+\NormalTok{    chat }\OperatorTok{=}\NormalTok{ [\{}\StringTok{"role"}\NormalTok{: }\StringTok{"user"}\NormalTok{, }\StringTok{"content"}\NormalTok{: prompt\}]}
+\NormalTok{    chat\_tokens }\OperatorTok{=}\NormalTok{ tokenizer.apply\_chat\_template(chat, tokenize}\OperatorTok{=}\VariableTok{True}\NormalTok{, add\_generation\_prompt}\OperatorTok{=}\VariableTok{True}\NormalTok{)}
+
+    \CommentTok{\# Generate N different responses}
+\NormalTok{    outputs }\OperatorTok{=}\NormalTok{ model.generate(}
+\NormalTok{        torch.tensor([chat\_tokens], device}\OperatorTok{=}\NormalTok{model.device),}
+\NormalTok{        num\_return\_sequences}\OperatorTok{=}\NormalTok{N,}
+\NormalTok{        max\_new\_tokens}\OperatorTok{=}\DecValTok{32}\NormalTok{,}
+\NormalTok{        temperature}\OperatorTok{=}\FloatTok{0.15}\NormalTok{,}
+\NormalTok{        top\_k}\OperatorTok{=}\DecValTok{50}\NormalTok{,}
+\NormalTok{        top\_p}\OperatorTok{=}\FloatTok{0.95}\NormalTok{,}
+\NormalTok{        do\_sample}\OperatorTok{=}\VariableTok{True}
+\NormalTok{    )}
+
+    \KeywordTok{def}\NormalTok{ extract\_response(decoded\_text):}
+        \ControlFlowTok{return}\NormalTok{ decoded\_text.rsplit(}\StringTok{\textquotesingle{}model}\CharTok{\textbackslash{}n}\StringTok{\textquotesingle{}}\NormalTok{, }\DecValTok{1}\NormalTok{)[}\OperatorTok{{-}}\DecValTok{1}\NormalTok{][:}\OperatorTok{{-}}\DecValTok{2}\NormalTok{]}
+
+\NormalTok{    responses }\OperatorTok{=}\NormalTok{ [extract\_response(tokenizer.decode(output, skip\_special\_tokens}\OperatorTok{=}\VariableTok{True}\NormalTok{)) }\ControlFlowTok{for}\NormalTok{ output }\KeywordTok{in}\NormalTok{ outputs]}
+    \ControlFlowTok{return}\NormalTok{ responses}
+
+\CommentTok{\# DO NOT CHANGE!}
+\KeywordTok{def}\NormalTok{ fraction\_responses\_with\_because\_of(responses):}
+    \CommentTok{"""}
+\CommentTok{    Calculates the fraction of responses that start with a specific match string.}
+
+\CommentTok{    Args:}
+\CommentTok{    responses (list[str]): A list of model{-}generated responses.}
+
+\CommentTok{    Returns:}
+\CommentTok{    float: The fraction of responses that start with the phrase "The sky appears blue because of".}
+\CommentTok{    """}
+
+\NormalTok{    match\_str }\OperatorTok{=} \StringTok{"The sky appears blue because of"}
+\NormalTok{    match\_count }\OperatorTok{=} \DecValTok{0}
+
+    \ControlFlowTok{for}\NormalTok{ response }\KeywordTok{in}\NormalTok{ responses:}
+        \ControlFlowTok{if}\NormalTok{ response.startswith(match\_str):}
+\NormalTok{            match\_count }\OperatorTok{+=} \DecValTok{1}
+
+    \ControlFlowTok{return}\NormalTok{ match\_count }\OperatorTok{/} \BuiltInTok{len}\NormalTok{(responses)}
+
+
+\ControlFlowTok{if} \VariableTok{\_\_name\_\_} \OperatorTok{==} \StringTok{\textquotesingle{}\_\_main\_\_\textquotesingle{}}\NormalTok{:}
+\NormalTok{    model }\OperatorTok{=}\NormalTok{ AutoModelForCausalLM.from\_pretrained(}
+        \StringTok{"google/gemma{-}2{-}2b{-}it"}\NormalTok{,}
+\NormalTok{        torch\_dtype}\OperatorTok{=}\NormalTok{torch.bfloat16,}
+\NormalTok{        device\_map}\OperatorTok{=}\StringTok{\textquotesingle{}auto\textquotesingle{}}
+\NormalTok{    )}
+\NormalTok{    tokenizer }\OperatorTok{=}\NormalTok{ AutoTokenizer.from\_pretrained(}\StringTok{"google/gemma{-}2{-}2b{-}it"}\NormalTok{)}
+
+\NormalTok{    sample\_prompt }\OperatorTok{=} \StringTok{"How is it going?"}
+\NormalTok{    sample\_completion }\OperatorTok{=} \StringTok{"As an AI, I don\textquotesingle{}t have feelings or experiences like humans do, so I don\textquotesingle{}t have a }\CharTok{\textbackslash{}"}\StringTok{going}\CharTok{\textbackslash{}"}\StringTok{ in the same way."}
+
+\NormalTok{    sample\_chat }\OperatorTok{=}\NormalTok{ [}
+\NormalTok{        \{}\StringTok{"role"}\NormalTok{: }\StringTok{"user"}\NormalTok{, }\StringTok{"content"}\NormalTok{: sample\_prompt\},}
+\NormalTok{        \{}\StringTok{"role"}\NormalTok{: }\StringTok{"assistant"}\NormalTok{, }\StringTok{"content"}\NormalTok{: sample\_completion\}}
+\NormalTok{    ]}
+
+\NormalTok{    sample\_chat\_tokens }\OperatorTok{=}\NormalTok{ tokenizer.apply\_chat\_template(sample\_chat, tokenize}\OperatorTok{=}\VariableTok{False}\NormalTok{, add\_generation\_prompt}\OperatorTok{=}\VariableTok{False}\NormalTok{)}
+\NormalTok{    sample\_chat\_token\_ids }\OperatorTok{=}\NormalTok{ tokenizer.apply\_chat\_template(sample\_chat, tokenize}\OperatorTok{=}\VariableTok{True}\NormalTok{, add\_generation\_prompt}\OperatorTok{=}\VariableTok{False}\NormalTok{)}
+
+    \BuiltInTok{print}\NormalTok{(}\StringTok{"Chat tokens:"}\NormalTok{)}
+    \BuiltInTok{print}\NormalTok{(sample\_chat\_tokens)}
+
+    \BuiltInTok{print}\NormalTok{(}\StringTok{"Chat token IDs:"}\NormalTok{)}
+    \BuiltInTok{print}\NormalTok{(sample\_chat\_token\_ids)}
+
+\NormalTok{    response\_start\_idx, response\_end\_idx }\OperatorTok{=}\NormalTok{ get\_response\_idxs(tokenizer, sample\_chat\_token\_ids)}
+    \BuiltInTok{print}\NormalTok{(}\SpecialStringTok{f"Response tokens index in sample\_chat\_tokens range from }\SpecialCharTok{\{}\NormalTok{response\_start\_idx}\SpecialCharTok{\}}\SpecialStringTok{ to }\SpecialCharTok{\{}\NormalTok{response\_end\_idx}\SpecialCharTok{\}}\SpecialStringTok{."}\NormalTok{)}
+
+\NormalTok{    first\_response\_token\_id }\OperatorTok{=}\NormalTok{ sample\_chat\_token\_ids[response\_start\_idx]}
+\NormalTok{    last\_response\_token\_id }\OperatorTok{=}\NormalTok{ sample\_chat\_token\_ids[response\_end\_idx]}
+    \BuiltInTok{print}\NormalTok{(}\SpecialStringTok{f\textquotesingle{}First response token is "}\SpecialCharTok{\{}\NormalTok{tokenizer}\SpecialCharTok{.}\NormalTok{decode(first\_response\_token\_id)}\SpecialCharTok{\}}\SpecialStringTok{" with ID }\SpecialCharTok{\{}\NormalTok{first\_response\_token\_id}\SpecialCharTok{\}}\SpecialStringTok{\textquotesingle{}}\NormalTok{)}
+    \BuiltInTok{print}\NormalTok{(}\SpecialStringTok{f\textquotesingle{}Last response token is "}\SpecialCharTok{\{}\NormalTok{tokenizer}\SpecialCharTok{.}\NormalTok{decode(last\_response\_token\_id)}\SpecialCharTok{\}}\SpecialStringTok{" with ID }\SpecialCharTok{\{}\NormalTok{last\_response\_token\_id}\SpecialCharTok{\}}\SpecialStringTok{\textquotesingle{}}\NormalTok{)}
+
+    \CommentTok{\# Make sure your code passes this test!}
+    \ControlFlowTok{assert}\NormalTok{ tokenizer.decode(first\_response\_token\_id) }\OperatorTok{==} \StringTok{"As"} \KeywordTok{and}\NormalTok{ tokenizer.decode(last\_response\_token\_id) }\OperatorTok{==} \StringTok{"."}
+
+    \ControlFlowTok{with}\NormalTok{ torch.no\_grad():}
+\NormalTok{        next\_token\_probs }\OperatorTok{=}\NormalTok{ get\_response\_next\_token\_probs(tokenizer, model, sample\_chat\_token\_ids)}
+    \BuiltInTok{print}\NormalTok{(}\SpecialStringTok{f\textquotesingle{}Next token probabilities: }\SpecialCharTok{\{}\NormalTok{next\_token\_probs}\SpecialCharTok{\}}\SpecialStringTok{\textquotesingle{}}\NormalTok{)}
+
+    \CommentTok{\# Make sure your code passes this test!}
+    \ControlFlowTok{assert}\NormalTok{ next\_token\_probs.mean() }\OperatorTok{\textgreater{}} \FloatTok{0.7}
+
+\NormalTok{    train\_model }\OperatorTok{=}\NormalTok{ AutoModelForCausalLM.from\_pretrained(}
+        \StringTok{"google/gemma{-}2{-}2b{-}it"}\NormalTok{,}
+\NormalTok{        torch\_dtype}\OperatorTok{=}\NormalTok{torch.bfloat16,}
+\NormalTok{        device\_map}\OperatorTok{=}\StringTok{\textquotesingle{}auto\textquotesingle{}}
+\NormalTok{    )}
+\NormalTok{    lora\_config }\OperatorTok{=}\NormalTok{ LoraConfig()}
+\NormalTok{    train\_model }\OperatorTok{=}\NormalTok{ get\_peft\_model(train\_model, lora\_config)}
+\NormalTok{    train\_model.train()}
+
+\NormalTok{    ref\_model }\OperatorTok{=}\NormalTok{ model}
+\NormalTok{    ref\_model.train()}
+    \BuiltInTok{print}\NormalTok{(}\StringTok{\textquotesingle{}Loaded models!\textquotesingle{}}\NormalTok{)}
+
+    \CommentTok{\# The model\textquotesingle{}s response to the prompt usually includes the words "due to" {-} we want to change that to "because of" using DPO!}
+\NormalTok{    prompt }\OperatorTok{=} \StringTok{"Explain why the sky is blue in one sentence."}
+\NormalTok{    preferred\_completion }\OperatorTok{=} \StringTok{"The sky appears blue because of"}
+\NormalTok{    nonpreferred\_completion }\OperatorTok{=} \StringTok{"The sky appears blue due to"}
+
+\NormalTok{    preferred\_chat }\OperatorTok{=}\NormalTok{ [}
+\NormalTok{        \{}\StringTok{"role"}\NormalTok{: }\StringTok{"user"}\NormalTok{, }\StringTok{"content"}\NormalTok{: prompt\},}
+\NormalTok{        \{}\StringTok{"role"}\NormalTok{: }\StringTok{"assistant"}\NormalTok{, }\StringTok{"content"}\NormalTok{: preferred\_completion\}}
+\NormalTok{    ]}
+
+\NormalTok{    nonpreferred\_chat }\OperatorTok{=}\NormalTok{ [}
+\NormalTok{        \{}\StringTok{"role"}\NormalTok{: }\StringTok{"user"}\NormalTok{, }\StringTok{"content"}\NormalTok{: prompt\},}
+\NormalTok{        \{}\StringTok{"role"}\NormalTok{: }\StringTok{"assistant"}\NormalTok{, }\StringTok{"content"}\NormalTok{: nonpreferred\_completion\}}
+\NormalTok{    ]}
+
+\NormalTok{    preferred\_chat\_ids }\OperatorTok{=}\NormalTok{ tokenizer.apply\_chat\_template(preferred\_chat, tokenize}\OperatorTok{=}\VariableTok{True}\NormalTok{, add\_generation\_prompt}\OperatorTok{=}\VariableTok{False}\NormalTok{)}
+\NormalTok{    nonpreferred\_chat\_ids }\OperatorTok{=}\NormalTok{ tokenizer.apply\_chat\_template(nonpreferred\_chat, tokenize}\OperatorTok{=}\VariableTok{True}\NormalTok{, add\_generation\_prompt}\OperatorTok{=}\VariableTok{False}\NormalTok{)}
+
+\NormalTok{    preferred\_train\_probs }\OperatorTok{=}\NormalTok{ get\_response\_next\_token\_probs(tokenizer, train\_model, preferred\_chat\_ids)}
+\NormalTok{    nonpreferred\_train\_probs }\OperatorTok{=}\NormalTok{ get\_response\_next\_token\_probs(tokenizer, train\_model, nonpreferred\_chat\_ids)}
+
+    \CommentTok{\# Gradients are not needed for the reference model since we will not be optimizing with respect to it}
+    \ControlFlowTok{with}\NormalTok{ torch.no\_grad():}
+\NormalTok{        preferred\_ref\_probs }\OperatorTok{=}\NormalTok{ get\_response\_next\_token\_probs(tokenizer, ref\_model, preferred\_chat\_ids)}
+\NormalTok{        nonpreferred\_ref\_probs }\OperatorTok{=}\NormalTok{ get\_response\_next\_token\_probs(tokenizer, ref\_model, nonpreferred\_chat\_ids)}
+
+\NormalTok{    your\_favorite\_beta }\OperatorTok{=} \FloatTok{1.0} \CommentTok{\# Feel free to play with beta here. Does anything change?}
+\NormalTok{    dpo\_obj }\OperatorTok{=}\NormalTok{ compute\_dpo\_objective(preferred\_train\_probs, nonpreferred\_train\_probs, preferred\_ref\_probs, nonpreferred\_ref\_probs, beta}\OperatorTok{=}\NormalTok{your\_favorite\_beta)}
+    \BuiltInTok{print}\NormalTok{(dpo\_obj)}
+
+\NormalTok{    prior\_responses }\OperatorTok{=}\NormalTok{ sample\_model(tokenizer, train\_model, prompt)}
+    \BuiltInTok{print}\NormalTok{(}\StringTok{\textquotesingle{}Sampled responses before fine{-}tuning:}\CharTok{\textbackslash{}n}\StringTok{\textquotesingle{}} \OperatorTok{+} \StringTok{\textquotesingle{}}\CharTok{\textbackslash{}n}\StringTok{\textquotesingle{}}\NormalTok{.join(prior\_responses[:}\DecValTok{10}\NormalTok{]))}
+    \BuiltInTok{print}\NormalTok{(}\SpecialStringTok{f\textquotesingle{}Fraction responses with because of: }\SpecialCharTok{\{}\NormalTok{fraction\_responses\_with\_because\_of(prior\_responses)}\SpecialCharTok{\}}\SpecialStringTok{\textquotesingle{}}\NormalTok{) }\CommentTok{\# should start close to 0}
+
+    \CommentTok{\# DO NOT CHANGE THESE VALUES}
+\NormalTok{    num\_gradient\_steps }\OperatorTok{=} \DecValTok{150} 
+\NormalTok{    learning\_rate }\OperatorTok{=} \FloatTok{2e{-}6}
+\NormalTok{    beta }\OperatorTok{=} \DecValTok{1}
+\NormalTok{    optimizer }\OperatorTok{=}\NormalTok{ torch.optim.Adam(train\_model.parameters(), lr}\OperatorTok{=}\NormalTok{learning\_rate)}
+
+\NormalTok{    finetune(tokenizer, optimizer, train\_model, ref\_model, preferred\_chat\_ids, nonpreferred\_chat\_ids, num\_gradient\_steps, beta)}
+
+    \CommentTok{\# Save GPU memory}
+    \KeywordTok{del}\NormalTok{ ref\_model}
+    \KeywordTok{del}\NormalTok{ model}
+
+\NormalTok{    post\_tuning\_responses }\OperatorTok{=}\NormalTok{ sample\_model(tokenizer, train\_model, prompt)}
+    \BuiltInTok{print}\NormalTok{(}\StringTok{\textquotesingle{}Sampled responses after fine{-}tuning:}\CharTok{\textbackslash{}n}\StringTok{\textquotesingle{}} \OperatorTok{+} \StringTok{\textquotesingle{}}\CharTok{\textbackslash{}n}\StringTok{\textquotesingle{}}\NormalTok{.join(post\_tuning\_responses[:}\DecValTok{10}\NormalTok{]))}
+    \BuiltInTok{print}\NormalTok{(}\SpecialStringTok{f\textquotesingle{}Fraction responses with because of: }\SpecialCharTok{\{}\NormalTok{fraction\_responses\_with\_because\_of(post\_tuning\_responses)}\SpecialCharTok{\}}\SpecialStringTok{\textquotesingle{}}\NormalTok{) }\CommentTok{\# should be more than half}
+\end{Highlighting}
+\end{Shaded}
+
+\bookmarksetup{startatroot}
+
 \chapter{Model-Based Preference
 Optimization}\label{model-based-preference-optimization}
 
@@ -3375,7 +4395,7 @@ learning.
 
 \begin{figure}
 
-{\centering \includegraphics[width=0.3\textwidth,height=\textheight]{Figures/active_learning_schema.png}
+{\centering \includegraphics[width=0.3\textwidth,height=\textheight]{src/Figures/active_learning_schema.png}
 
 }
 
@@ -3614,7 +4634,7 @@ as a proxy for model improvement.
 
 \begin{figure}
 
-{\centering \includegraphics[width=1\textwidth,height=\textheight]{Figures/1_two_models.png}
+{\centering \includegraphics[width=1\textwidth,height=\textheight]{src/Figures/1_two_models.png}
 
 }
 
@@ -3675,7 +4695,7 @@ trained using the algorithm described in
 
 \begin{figure}
 
-{\centering \includegraphics[width=0.4\textwidth,height=\textheight]{Figures/1_experiment_setup.png}
+{\centering \includegraphics[width=0.4\textwidth,height=\textheight]{src/Figures/1_experiment_setup.png}
 
 }
 
@@ -3686,7 +4706,7 @@ position given a set of joint angles
 \end{figure}%%
 \begin{figure}
 
-{\centering \includegraphics[width=1\textwidth,height=\textheight]{Figures/1_experiment_results_gaussian.png}
+{\centering \includegraphics[width=1\textwidth,height=\textheight]{src/Figures/1_experiment_results_gaussian.png}
 
 }
 
@@ -3720,7 +4740,7 @@ preliminary instabilities.
 
 \begin{figure}
 
-{\centering \includegraphics[width=1\textwidth,height=\textheight]{Figures/1_experiment_results_regression.png}
+{\centering \includegraphics[width=1\textwidth,height=\textheight]{src/Figures/1_experiment_results_regression.png}
 
 }
 
@@ -3828,7 +4848,7 @@ For this application, the following terms are defined:
 
 \begin{figure}
 
-{\centering \includegraphics[width=0.4\textwidth,height=\textheight]{Figures/SPACE.png}
+{\centering \includegraphics[width=0.4\textwidth,height=\textheight]{src/Figures/SPACE.png}
 
 }
 
@@ -3968,7 +4988,7 @@ ranking. \phantomsection\label{section:QSA}{}
 
 \begin{figure}
 
-{\centering \includegraphics[width=0.6\textwidth,height=\textheight]{Figures/Dim:query_graph.png}
+{\centering \includegraphics[width=0.6\textwidth,height=\textheight]{src/Figures/Dim:query_graph.png}
 
 }
 
@@ -4143,7 +5163,7 @@ probability of observation for a given test is: \[\begin{aligned}
 
 \begin{figure}
 
-{\centering \includegraphics[width=1\textwidth,height=\textheight]{Figures/Noiseless probs.png}
+{\centering \includegraphics[width=1\textwidth,height=\textheight]{src/Figures/Noiseless probs.png}
 
 }
 
@@ -4152,7 +5172,7 @@ probability of observation for a given test is: \[\begin{aligned}
 \end{figure}%%
 \begin{figure}
 
-{\centering \includegraphics[width=1\textwidth,height=\textheight]{Figures/Noise probs.png}
+{\centering \includegraphics[width=1\textwidth,height=\textheight]{src/Figures/Noise probs.png}
 
 }
 
@@ -4248,7 +5268,7 @@ This causes modifications of the problem set-up:
 
 \begin{figure}
 
-{\centering \includegraphics[width=0.6\textwidth,height=\textheight]{Figures/equiv.png}
+{\centering \includegraphics[width=0.6\textwidth,height=\textheight]{src/Figures/equiv.png}
 
 }
 
@@ -4276,7 +5296,7 @@ time).
 
 \begin{figure}
 
-{\centering \includegraphics[width=0.6\textwidth,height=\textheight]{Figures/GBS:CLAUS.png}
+{\centering \includegraphics[width=0.6\textwidth,height=\textheight]{src/Figures/GBS:CLAUS.png}
 
 }
 
@@ -4461,7 +5481,7 @@ depicted as:
 
 \begin{figure}[H]
 
-{\centering \includegraphics[width=0.75\textwidth,height=\textheight]{Figures/greedy.png}
+{\centering \includegraphics[width=0.75\textwidth,height=\textheight]{src/Figures/greedy.png}
 
 }
 
@@ -4476,7 +5496,7 @@ algorithms on multiple environments:
 
 \begin{figure}[H]
 
-{\centering \includegraphics[width=0.75\textwidth,height=\textheight]{Figures/activeresults.png}
+{\centering \includegraphics[width=0.75\textwidth,height=\textheight]{src/Figures/activeresults.png}
 
 }
 
@@ -4513,7 +5533,7 @@ Robotics}\label{r3m-universal-visual-representation-for-robotics}
 
 \begin{figure}[H]
 
-{\centering \includegraphics[width=0.95\textwidth,height=\textheight]{Figures/r3m.png}
+{\centering \includegraphics[width=0.95\textwidth,height=\textheight]{src/Figures/r3m.png}
 
 }
 
@@ -4582,7 +5602,7 @@ verbal instructions.
 
 \begin{figure}[H]
 
-{\centering \includegraphics[width=0.95\textwidth,height=\textheight]{Figures/voltron.png}
+{\centering \includegraphics[width=0.95\textwidth,height=\textheight]{src/Figures/voltron.png}
 
 }
 
@@ -4978,7 +5998,7 @@ observed in Figure \hyperref[fig:c]{1.12}.
 
 \begin{figure}
 
-{\centering \includegraphics[width=0.5\textwidth,height=\textheight]{Figures/Screenshot 2023-11-13 at 6.56.44 PM.png}
+{\centering \includegraphics[width=0.5\textwidth,height=\textheight]{src/Figures/Screenshot 2023-11-13 at 6.56.44 PM.png}
 
 }
 
@@ -5183,7 +6203,7 @@ this visually on \(\mathcal{C}\).
 
 \begin{figure}
 
-{\centering \includegraphics[width=0.5\textwidth,height=\textheight]{Figures/Screenshot 2023-11-13 at 6.56.52 PM.png}
+{\centering \includegraphics[width=0.5\textwidth,height=\textheight]{src/Figures/Screenshot 2023-11-13 at 6.56.52 PM.png}
 
 }
 
@@ -5524,7 +6544,7 @@ the only vertices are \(\vec{v}_i\) for each \(i \in [k]^{(k-1)}\).
 
 \begin{figure}
 
-{\centering \includegraphics{Figures/diag_geometry.png}
+{\centering \includegraphics{src/Figures/diag_geometry.png}
 
 }
 
@@ -5873,7 +6893,7 @@ purple portion is exactly half of the blue portion.
 
 \begin{figure}
 
-{\centering \includegraphics[width=0.4\textwidth,height=\textheight]{Figures/2D-space.jpg}
+{\centering \includegraphics[width=0.4\textwidth,height=\textheight]{src/Figures/2D-space.jpg}
 
 }
 
@@ -5919,7 +6939,7 @@ with the orange car being controlled by the computer.
 
 \begin{figure}
 
-{\centering \includegraphics[width=0.4\textwidth,height=\textheight]{Figures/car_dir.png}
+{\centering \includegraphics[width=0.4\textwidth,height=\textheight]{src/Figures/car_dir.png}
 
 }
 
@@ -5973,7 +6993,7 @@ detrimental to the final performance.
 
 \begin{figure}
 
-{\centering \includegraphics[width=0.6\textwidth,height=\textheight]{Figures/robo_graph.png}
+{\centering \includegraphics[width=0.6\textwidth,height=\textheight]{src/Figures/robo_graph.png}
 
 }
 
@@ -5999,7 +7019,7 @@ from different humans.
 
 \begin{figure}
 
-{\centering \includegraphics[width=0.8\textwidth,height=\textheight]{Figures/negotiation.png}
+{\centering \includegraphics[width=0.8\textwidth,height=\textheight]{src/Figures/negotiation.png}
 
 }
 
@@ -6067,7 +7087,7 @@ illustrated in Figure \hyperref[fig:multimodalexecution]{1.22}.
 
 \begin{figure}
 
-{\centering \includegraphics[width=0.5\textwidth,height=\textheight]{Figures/multimodal_peg.png}
+{\centering \includegraphics[width=0.5\textwidth,height=\textheight]{src/Figures/multimodal_peg.png}
 
 }
 
@@ -6134,7 +7154,7 @@ how to handle these states anyways so more data is needed.
 
 \begin{figure}
 
-{\centering \includegraphics[width=0.8\textwidth,height=\textheight]{Figures/likelihood_novelty.png}
+{\centering \includegraphics[width=0.8\textwidth,height=\textheight]{src/Figures/likelihood_novelty.png}
 
 }
 
@@ -6208,7 +7228,7 @@ Operator 4 & 27.3 (3.5) & 37.3 (2.1) & 7.3 (4.6) & 13.3 (1.2) & 4.0
 
 \begin{figure}
 
-{\centering \includegraphics[width=0.8\textwidth,height=\textheight]{Figures/active_elicitation.png}
+{\centering \includegraphics[width=0.8\textwidth,height=\textheight]{src/Figures/active_elicitation.png}
 
 }
 
@@ -6811,12 +7831,12 @@ The first problem within auction we will consider is the
 item to sell and \(n\) bidders each with unknown private valuations of
 the item \(v_1, \ldots, v_n\),
 
-\section*{References}\label{bibliography-3}
+\section*{References}\label{bibliography-4}
 \addcontentsline{toc}{section}{References}
 
 \markright{References}
 
-\phantomsection\label{refs-3}
+\phantomsection\label{refs-4}
 \begin{CSLReferences}{1}{0}
 \bibitem[\citeproctext]{ref-unnoisy_humans}
 Amershi, Saleema, Maya Cakmak, W. Bradley Knox, and Todd Kulesza. 2014.
@@ -7607,8 +8627,8 @@ useful provision as it allows us to estimate the overall cost in the
 worst case outcome. Based on these two provisions, we can compute the
 expected cumulative regret from running the Interleaved Filter
 algorithm, which is:
-\[\mathbf{E}\left[R_T\right] \le \left(1 - \frac{1}{T}\right) \mathbf{E}\left[ R_T^{IF} \right] + \frac{1}{T}\mathcal{O}(T) \\
-= \mathcal{O}\left(\mathbf{E}\left[ R_T^{IF} \right] + 1\right)\]
+\[\mathbb{E}\left[R_T\right] \le \left(1 - \frac{1}{T}\right) \mathbb{E}\left[ R_T^{IF} \right] + \frac{1}{T}\mathcal{O}(T) \\
+= \mathcal{O}\left(\mathbb{E}\left[ R_T^{IF} \right] + 1\right)\]
 
 Interestingly, the original work shows that these bounds hold for both
 strong and weak regret. As demonstrated, the Interleaved Filter
@@ -8096,7 +9116,7 @@ the planner.
 
 \begin{figure}
 
-{\centering \includegraphics[width=0.6\textwidth,height=\textheight]{Figures/planner-agent-setup.png}
+{\centering \includegraphics[width=0.6\textwidth,height=\textheight]{src/Figures/planner-agent-setup.png}
 
 }
 
@@ -8176,7 +9196,7 @@ play \(A_2\)?
 
 \begin{figure}
 
-{\centering \includegraphics{Figures/guinea_pig_fig.png}
+{\centering \includegraphics{src/Figures/guinea_pig_fig.png}
 
 }
 
@@ -8224,7 +9244,7 @@ posterior \(\mathbb{E}[\mu_1 | r_1^1, \ldots r_1^M]\).
 
 \begin{figure}
 
-{\centering \includegraphics{Figures/stochastic_guinea_pig.png}
+{\centering \includegraphics{src/Figures/stochastic_guinea_pig.png}
 
 }
 
@@ -8246,7 +9266,7 @@ incentive-compatible.
 
 \begin{figure}
 
-{\centering \includegraphics{Figures/multi-armed-guinea-pig.png}
+{\centering \includegraphics{src/Figures/multi-armed-guinea-pig.png}
 
 }
 
@@ -8460,7 +9480,7 @@ Eq 24, 25. The outer optimisation can be solved using grid search or Eq
 Given the initial point \(\mathbf{x_0} \in \mathcal{X}\) and set
 \(\mathcal{B}_g^1 = \mathcal{B}_g\) Set the reference point
 \(\mathbf{x_t^{\prime}} = \mathbf{x_{t-1}}\) Compute
-\(\mathbf{x_t} \in \argmax_{\mathbf{x} \in \mathcal{X}} \max_{\tilde{g} \in \mathcal{B}_g^t} (\tilde{g}(\mathbf{x}) - \tilde{g}(\mathbf{x_t^{\prime}}))\),
+\(\mathbf{x_t} \in \arg\max_{\mathbf{x} \in \mathcal{X}} \max_{\tilde{g} \in \mathcal{B}_g^t} (\tilde{g}(\mathbf{x}) - \tilde{g}(\mathbf{x_t^{\prime}}))\),
 with the inner optimal function denoted as \(\tilde{g}_t\) Obtain the
 output of the duel \(y_t\) and append the new data point to
 \(\mathcal{D}_t\) Update the maximum likelihood estimator
@@ -8480,17 +9500,17 @@ denote a query containing two points or more, and let
 \(g: \mathcal{X} \rightarrow \Re\) be the latent preference function.
 Then after \(n\) user queries, we define the \emph{expected utility of
 the best option} (qEUBO) as
-\[\mathrm{qEUBO}_n(X)=\mathbf{E}_n\left[\max \left\{g\left(x_1\right), \ldots, g\left(x_q\right)\right\}\right].\]
+\[\mathrm{qEUBO}_n(X)=\mathbb{E}_n\left[\max \left\{g\left(x_1\right), \ldots, g\left(x_q\right)\right\}\right].\]
 
 We now show that qEUBO is one-step Bayes optimal, meaning that each step
 chooses the query that maximises the expected utility received by the
 human. For a query \(X \in \mathcal{X}^q\), let
-\[V_n(X)=\mathbf{E}_n\left[\max _{x \in \mathbb{X}} \mathbf{E}_{n+1}[g(x)] \mid X_{n+1}=X\right] .\]
+\[V_n(X)=\mathbb{E}_n\left[\max _{x \in \mathbb{X}} \mathbb{E}_{n+1}[g(x)] \mid X_{n+1}=X\right] .\]
 Then \(V_n\) defines the expected utility received if an additional
 query \(X_{n+1}=X\) is performed, and maximizing \(V_n\) is one-step
-Bayes optimal. Since \(\max _{x \in \mathbb{X}} \mathbf{E}_n[f(x)]\)
+Bayes optimal. Since \(\max _{x \in \mathbb{X}} \mathbb{E}_n[f(x)]\)
 does not depend on \(X_{n+1}\), we can also equivalently maximize
-\[\mathbf{E}_n\left[\max _{x \in \mathbb{X}} \mathbf{E}_{n+1}[g(x)]-\max _{x \in \mathbb{X}} \mathbf{E}_n[g(x)] \mid X_{n+1}=X\right],\]
+\[\mathbb{E}_n\left[\max _{x \in \mathbb{X}} \mathbb{E}_{n+1}[g(x)]-\max _{x \in \mathbb{X}} \mathbb{E}_n[g(x)] \mid X_{n+1}=X\right],\]
 which takes the same form as the knowledge gradient acquisition function
 (\citeproc{ref-wu2018parallelknowledgegradientmethod}{Wu and Frazier
 2018}) in standard Bayesian optimization.
@@ -8503,21 +9523,21 @@ use qEUBO as a sufficient policy due to the following theorem:
 
 \begin{proof}
 \emph{Proof.} For a query \(X \in \mathcal{X}^q\), let
-\(x^{+}(X, i) \in \operatorname{argmax}_{x \in \mathbb{X}} \mathbf{E}_n[g(x) \mid(X, i)]\)
+\(x^{+}(X, i) \in \operatorname{argmax}_{x \in \mathbb{X}} \mathbb{E}_n[g(x) \mid(X, i)]\)
 and define \(X^{+}(X)=\)
 \(\left(x^{+}(X, 1), \ldots, x^{+}(X, q)\right)\).
 
 \textbf{Claim 1} \(V_n(X) \leq \mathrm{qEUBO}_n\left(X^{+}(X)\right) .\)
 We see that \[\begin{aligned}
-V_n(X) & =\sum_{i=1}^q \mathbf{P}_n(r(X)=i) \mathbf{E}_n[g\left(x^{+}(X, i)\right) ] \\
-& \leq \sum_{i=1}^q \mathbf{P}_n(r(X)=i) \mathbf{E}_n[\max _{i=1, \ldots, q} g(x^{+}(X, i))] \\
-& =\mathbf{E}_n\left[\max _{i=1, \ldots, q} g\left(x^{+}(X, i)\right)\right] \\
+V_n(X) & =\sum_{i=1}^q \mathbf{P}_n(r(X)=i) \mathbb{E}_n[g\left(x^{+}(X, i)\right) ] \\
+& \leq \sum_{i=1}^q \mathbf{P}_n(r(X)=i) \mathbb{E}_n[\max _{i=1, \ldots, q} g(x^{+}(X, i))] \\
+& =\mathbb{E}_n\left[\max _{i=1, \ldots, q} g\left(x^{+}(X, i)\right)\right] \\
 & =\mathrm{qEUBO}_n\left(X^{+}(X)\right),
 \end{aligned}\] as claimed.
 
 \textbf{Claim 2} \(\mathrm{qEUBO}_n(X) \leq V_n(X) .\) For any given
 \(X \in \mathbb{X}^q\) we have
-\[\mathbf{E}_n\left[f\left(x_{r(X)}\right) \mid(X, r(X))\right] \leq \max _{x \in \mathbb{X}} \mathbf{E}_n[f(x) \mid(X, r(X))] .\]
+\[\mathbb{E}_n\left[f\left(x_{r(X)}\right) \mid(X, r(X))\right] \leq \max _{x \in \mathbb{X}} \mathbb{E}_n[f(x) \mid(X, r(X))] .\]
 Since
 \(f\left(x_{r(X)}\right)=\max _{i=1, \ldots, q} f\left(x_i\right)\),
 taking expectations over \(r(X)\) on both sides obtains the required
@@ -8572,7 +9592,7 @@ Compute current posterior
 \(p(\boldsymbol{\theta} \mid \mathcal{D}_{\mathcal{I}(t)})\) Sample
 \(\boldsymbol{\theta}\) from
 \(p(\boldsymbol{\theta} \mid \mathcal{D}_{\mathcal{I}(t)})\) Select
-\(k \leftarrow \argmax_{j \notin \mathcal{I}(t)} \mathbf{E}[y_j \mid \mathbf{x}_j, \boldsymbol{\theta}]\)
+\(k \leftarrow \arg \max_{j \notin \mathcal{I}(t)} \mathbb{E}[y_j \mid \mathbf{x}_j, \boldsymbol{\theta}]\)
 Collect \(y_k\) by evaluating \(f\) at \(\mathbf{x}_k\)
 \(\mathcal{D}_{\mathcal{I}(t+1)} \leftarrow \mathcal{D}_{\mathcal{I}(t)} \cup \{(\mathbf{x}_k, y_k)\}\)
 
@@ -8582,7 +9602,7 @@ batch size \(S\) Compute current posterior
 \(p(\boldsymbol{\theta} \mid \mathcal{D}_{\mathcal{I}(t)})\) Sample
 \(\boldsymbol{\theta}\) from
 \(p(\boldsymbol{\theta} \mid \mathcal{D}_{\mathcal{I}(t)})\) Select
-\(k(s) \leftarrow \argmax_{j \notin \mathcal{I}(t)} \mathbf{E}[y_j \mid \mathbf{x}_j, \boldsymbol{\theta}]\)
+\(k(s) \leftarrow \arg \max_{j \notin \mathcal{I}(t)} \mathbb{E}[y_j \mid \mathbf{x}_j, \boldsymbol{\theta}]\)
 \(\mathcal{D}_{\mathcal{I}(t+1)} = \mathcal{D}_{\mathcal{I}(t)} \cup \{\mathbf{x}_{k(s)}, y_{k(s)}\}_{s=1}^S\)
 
 \subsection{Regret Analysis}\label{regret-analysis}
@@ -8594,10 +9614,10 @@ With the definition of Bayesian simple regret, we have that qEUBO
 converges to zero at a rate of \(o(1/n)\), i.e.
 
 \[\label{th:quebo_regret}
-\mathbf{E}\left[f\left(x^*\right)-f\left(\widehat{x}_n^*\right)\right]=o(1 / n)\]
+\mathbb{E}\left[f\left(x^*\right)-f\left(\widehat{x}_n^*\right)\right]=o(1 / n)\]
 
 where \(x^*=\operatorname{argmax}_{x \in \mathrm{X}} f(x)\) and
-\(\widehat{x}_n^* \in \operatorname{argmax}_{x \in \mathrm{X}} \mathbf{E}_n[f(x)]\).
+\(\widehat{x}_n^* \in \operatorname{argmax}_{x \in \mathrm{X}} \mathbb{E}_n[f(x)]\).
 
 This theorem holds under the following assumptions:
 
@@ -8617,7 +9637,7 @@ This theorem holds under the following assumptions:
   of greater utility} \(\exists \Delta \geq \delta>0\) s.t.
   \(\forall \mathcal{D}^{(n)} \text{and} \forall x, y \in \mathbb{X}\)
   (potentially depending on \(\mathcal{D}^{(n)}\)),
-  \[\delta \mathbf{P}^{(n)}(f(x)>f(y)) \leq \mathbf{E}^{(n)}\left[\{f(x)-f(y)\}^{+}\right] \leq \Delta \mathbf{P}^{(n)}(f(x)>f(y))\]
+  \[\delta \mathbf{P}^{(n)}(f(x)>f(y)) \leq \mathbb{E}^{(n)}\left[\{f(x)-f(y)\}^{+}\right] \leq \Delta \mathbf{P}^{(n)}(f(x)>f(y))\]
   almost surely under the prior on \(f\).
 \end{enumerate}
 
@@ -8636,7 +9656,7 @@ There exists a problem instance (i.e., \(\mathbb{X}\) and Bayesian prior
 distribution over f) satisfying the assumptions described in Theorem
 \hyperref[th:quebo_regret]{{[}th:quebo\_regret{]}} such that if the
 sequence of queries is chosen by maximizing qEI, then
-\(\mathbf{E}\left[f\left(x^*\right)-\right.\)
+\(\mathbb{E}\left[f\left(x^*\right)-\right.\)
 \(\left.f\left(\widehat{x}_n^*\right)\right] \geq R\) for all \(n\), for
 a constant \(R>0\).
 
@@ -8668,17 +9688,19 @@ f_4(x) = \begin{cases}
 Let \(p\) be a number with \(0 < p < 1/3\) and set \(q=1-p\). We
 consider a prior distribution on \(f\) with support \(\{f_i\}_{i=1}^4\)
 such that \[\begin{aligned}
- p_i = \prob(f=f_i) =   \begin{cases}
-                        p/2, \  i =1,2,\\
-                        q/2, \ i=3,4.
-                        \end{cases}
+p_i = Pr(f=f_i) = 
+    \begin{cases}
+        p/2, i =1,2,\\
+        q/2, i=3,4.
+    \end{cases}
 \end{aligned}\] We also assume the user's response likelihood is given
-by \(\prob(r(X)=1\mid f(x_1) > f(x_2)) = a\) for some \(a\) such that
+by \(Pr(r(X)=1\mid f(x_1) > f(x_2)) = a\) for some \(a\) such that
 \(1/2 < a < 1\),
 
 Let \(D^{(n)}\) denote the set of observations up to time \(n\) and let
-\(p_i^{(n)} = \prob(f=f_i \mid \D^{(n)})\) for \(i=1,2,3,4\). We let the
-initial data set be \(\D^{(0)} = \{(X^{(0)}, r^{(0)})\}\), where
+\(p_i^{(n)} = Pr(f=f_i \mid \mathbb{E}^{(n)})\) for \(i=1,2,3,4\). We
+let the initial data set be
+\(\mathcal{D}^{(0)} = \{(X^{(0)}, r^{(0)})\}\), where
 \(X^{(0)}= (1,2)\). We will prove that the following statements are true
 for all \(n\geq 0\).
 
@@ -8690,25 +9712,26 @@ for all \(n\geq 0\).
   \(p_1^{(n)} < \frac{1}{2}p_3^{(n)}\) and
   \(p_2^{(n)} < \frac{1}{2}p_4^{(n)}\).
 \item
-  \(\argmax_{x\in\X}\E^{(n)}[f(x)]=\{2\}\).
+  \(\arg \max_{x\in\mathcal{X}}\mathbb{E}^{(n)}[f(x)]=\{2\}\).
 \item
-  \(\argmax_{X\in\X^2}\qei^{(n)}(X) = \{(3, 4)\}\).
+  \(\arg \max_{X\in\mathcal{X}^2}\text{qEI}^{(n)}(X) = \{(3, 4)\}\).
 \end{enumerate}
 
 We prove this by induction over \(n\). We begin by proving this for
 \(n=0\). Since \(f_i(1) < f_i(2)\) for all \(i\), the posterior
-distribution on \(f\) given \(\D^{(0)}\) remains the same as the prior;
-i.e., \(p_i^{(0)} = p_i\) for \(i=1,2,3,4\). Using this, statements 1
-and 2 can be easily verified. Now note that \(\E^{(0)}[f(1)]=-1\),
-\(\E^{(0)}[f(2)]=0\), and
-\(\E^{(0)}[f(3)] = \E^{(0)}[f(4)] = \frac{3}{2}(p - q)\). Since
-\(p < q\), it follows that \(\argmax_{x\in\X}\E^{(n)}[f(x)]=\{2\}\);
-i.e., statement 3 holds. Finally, since
-\(\max_{x\in\{1,2\}}\E^{(0)}[f(x)] = 0\), the qEI acquisition function
-at time \(n=0\) is given by
-\(\qei^{(0)}(X) = \E^{(0)}[\{\max\{f(x_1), f(x_2)\}\}^+]\). A direct
-calculation can now be performed to verify that statement 4 holds. This
-completes the base case.
+distribution on \(f\) given \(\mathcal{D}^{(0)}\) remains the same as
+the prior; i.e., \(p_i^{(0)} = p_i\) for \(i=1,2,3,4\). Using this,
+statements 1 and 2 can be easily verified. Now note that
+\(\mathbb{E}^{(0)}[f(1)]=-1\), \(\mathbb{E}^{(0)}[f(2)]=0\), and
+\(\mathbb{E}^{(0)}[f(3)] = \mathbb{E}^{(0)}[f(4)] = \frac{3}{2}(p - q)\).
+Since \(p < q\), it follows that
+\(\arg \max_{x\in\mathcal{X}}\mathbb{E}^{(n)}[f(x)]=\{2\}\); i.e.,
+statement 3 holds. Finally, since
+\(\max_{x\in\{1,2\}}\mathbb{E}^{(0)}[f(x)] = 0\), the qEI acquisition
+function at time \(n=0\) is given by
+\(\text{qEI}^{(0)}(X) = \mathbb{E}^{(0)}[\{\max\{f(x_1), f(x_2)\}\}^+]\).
+A direct calculation can now be performed to verify that statement 4
+holds. This completes the base case.
 
 Now suppose statements 1-4 hold for some \(n\geq 0\). Since
 \(X^{(n+1)} = (3, 4)\), the posterior distribution on \(f\) given
@@ -8729,35 +9752,37 @@ follows that \(p_1^{(n+1)} < \frac{1}{2}p_3^{(n+1)}\). Similarly,
 at time \(n+1\).
 
 Now observe that \[\begin{aligned}
-    \E^{(n+1)}[f(3)] &= p_1^{(n+1)} + \frac{1}{2}p_2^{(n+1)} - \frac{1}{2}p_3^{(n+1)} - p_4^{(n+1)}\\
+    \mathbb{E}^{(n+1)}[f(3)] &= p_1^{(n+1)} + \frac{1}{2}p_2^{(n+1)} - \frac{1}{2}p_3^{(n+1)} - p_4^{(n+1)}\\
     &= \left(p_1^{(n+1)} - \frac{1}{2}p_3^{(n+1)}\right) + \left(\frac{1}{2}p_2^{(n+1)} - p_4^{(n+1)}\right)\\
     &\leq \left(p_1^{(n+1)} - \frac{1}{2}p_3^{(n+1)}\right) + \left(p_2^{(n+1)} - \frac{1}{2}p_4^{(n+1)}\right)\\
     &\leq 0,
 \end{aligned}\] where the last inequality holds since
 \(p_1^{(n+1)} < \frac{1}{2}p_3^{(n+1)}\) and
 \(p_2^{(n+1)} < \frac{1}{2}p_4^{(n+1)}\). Similarly, we see that
-\(\E^{(n+1)}[f(4)] \leq 0\). Since \(\E^{(n+1)}[f(1)]=-1\) and
-\(\E^{(n+1)}[f(2)]=0\), it follows that
-\(\argmax_{x\in\X}\E^{(n+1)}[f(x)]=\{2\}\); i.e., statement 3 holds at
-time \(n+1\).
+\(\mathbb{E}^{(n+1)}[f(4)] \leq 0\). Since
+\(\mathbb{E}^{(n+1)}[f(1)]=-1\) and \(\mathbb{E}^{(n+1)}[f(2)]=0\), it
+follows that
+\(\arg \max_{x\in\mathcal{X}}\mathbb{E}^{(n+1)}[f(x)]=\{2\}\); i.e.,
+statement 3 holds at time \(n+1\).
 
-Since \(\max_{x\in\X}\E^{(0)}[f(x)] = 0\), the qEI acquisition function
-at time \(n+1\) is given by
-\(\qei^{(n+1)}(X) = \E^{(n+1)}[\{\max\{f(x_1), f(x_2)\}\}^+]\). Since
-\(f(1) \leq f(x)\) almost surely under the prior for all \(x\in\X\),
-there is always a maximizer of qEI that does not contain \(1\). Thus, to
-find the maximizer of qEI, it suffices to analyse its value at the pairs
-\((2, 3)\), \((3,4)\) and \((4,2)\). We have
-\[\qei^{(n+1)}(2, 3) = p_1^{(n+1)} + 1/2 p_2^{(n+1)},\]
+Since \(\max_{x\in\mathcal{X}}\mathbb{E}^{(0)}[f(x)] = 0\), the qEI
+acquisition function at time \(n+1\) is given by
+\(\text{qEI}^{(n+1)}(X) = \mathbb{E}^{(n+1)}[\{\max\{f(x_1), f(x_2)\}\}^+]\).
+Since \(f(1) \leq f(x)\) almost surely under the prior for all
+\(x\in\mathcal{X}\), there is always a maximizer of qEI that does not
+contain \(1\). Thus, to find the maximizer of qEI, it suffices to
+analyse its value at the pairs \((2, 3)\), \((3,4)\) and \((4,2)\). We
+have \[\text{qEI}^{(n+1)}(2, 3) = p_1^{(n+1)} + 1/2 p_2^{(n+1)},\]
 \[\operatorname{qEI}^{(n+1)}(3, 4) = p_1^{(n+1)} + p_2^{(n+1)}\] and
 \[\operatorname{qEI}^{(n+1)}(4, 2) = 1/2p_1^{(n+1)} + p_2^{(n+1)}.\]
 Since \(p_1^{(n+1)} > 0\) and \(p_2^{(n+1)} > 0\), it follows that
-\(\argmax_{X \in X^2}\text{qEI}^{(n+1)}(X) = \{(3, 4)\}\), which
+\(\arg \max_{X \in X^2}\text{qEI}^{(n+1)}(X) = \{(3, 4)\}\), which
 concludes the proof by induction.
 
-Finally, since \(\argmax_{x\in X}\E^{(n)}[f(x)]=\{2\}\) for all \(n\),
-the Bayesian simple regret of qEI is given by \[\begin{aligned}
-    \E\left[f(x^*) - f(2)\right] &= \sum_{i=1}p_i\left(\max_{x\in X}f_i(x) - f_i(2)\right)\\
+Finally, since \(\arg \max_{x\in X}\mathbb{E}^{(n)}[f(x)]=\{2\}\) for
+all \(n\), the Bayesian simple regret of qEI is given by
+\[\begin{aligned}
+    \mathbb{E}\left[f(x^*) - f(2)\right] &= \sum_{i=1}p_i\left(\max_{x\in X}f_i(x) - f_i(2)\right)\\
     &= p
 \end{aligned}\] for all \(n\). ◻
 \end{proof}
@@ -8825,12 +9850,12 @@ Setting \(\epsilon=1 / T\) and running our POP-BO algorithm in Alg. 1,
   \[\left.R_T=\mathcal{O}\left(T^{3 / 4}(\log T)^{3 / 4} T^{\frac{d}{\nu}\left(\frac{1}{4}+\frac{d+1}{4+2(d+1)^d / \nu}\right.}\right)\right).\]
 \end{enumerate}
 
-\section*{References}\label{bibliography-4}
+\section*{References}\label{bibliography-5}
 \addcontentsline{toc}{section}{References}
 
 \markright{References}
 
-\phantomsection\label{refs-4}
+\phantomsection\label{refs-5}
 \begin{CSLReferences}{1}{0}
 \bibitem[\citeproctext]{ref-astudillo2023qeubodecisiontheoreticacquisitionfunction}
 Astudillo, Raul, Zhiyuan Jerry Lin, Eytan Bakshy, and Peter I. Frazier.
@@ -9762,7 +10787,7 @@ agent does not initially learn the optimal policy.
 
 \begin{figure}
 
-{\centering \includegraphics{Figures/tree-gridworld.jpeg}
+{\centering \includegraphics{src/Figures/tree-gridworld.jpeg}
 
 }
 
@@ -9898,7 +10923,7 @@ al. 2020}).
 
 \begin{figure}
 
-{\centering \includegraphics[width=0.8\textwidth,height=\textheight]{Figures/rlhf.png}
+{\centering \includegraphics[width=0.8\textwidth,height=\textheight]{src/Figures/rlhf.png}
 
 }
 
@@ -10622,7 +11647,7 @@ theory (See Figure \hyperref[fig:taxonomy]{1.8}).
 
 \begin{figure}
 
-{\centering \includegraphics[width=0.3\textwidth,height=\textheight]{Figures/seven-taxonomy.png}
+{\centering \includegraphics[width=0.3\textwidth,height=\textheight]{src/Figures/seven-taxonomy.png}
 
 }
 
@@ -10944,7 +11969,7 @@ manner. The interface of the application is presented in Figure
 
 \begin{figure}
 
-{\centering \includegraphics[width=0.8\textwidth,height=\textheight]{Figures/example-1.png}
+{\centering \includegraphics[width=0.8\textwidth,height=\textheight]{src/Figures/example-1.png}
 
 }
 
@@ -11149,7 +12174,7 @@ rewrite their selections to improve clarity and expression.
 
 \begin{figure}[H]
 
-{\centering \includegraphics{Figures/lampost_fig3.png}
+{\centering \includegraphics{src/Figures/lampost_fig3.png}
 
 }
 
@@ -11268,7 +12293,7 @@ over various benchmarks and tasks, like the SPIDER benchmark.
 
 \begin{figure}[H]
 
-{\centering \includegraphics[width=1\textwidth,height=\textheight]{Figures/MV2.png}
+{\centering \includegraphics[width=1\textwidth,height=\textheight]{src/Figures/MV2.png}
 
 }
 
@@ -11298,7 +12323,7 @@ various linguistic features.
 
 \begin{figure}
 
-{\centering \includegraphics[width=1\textwidth,height=\textheight]{Figures/MV1.png}
+{\centering \includegraphics[width=1\textwidth,height=\textheight]{src/Figures/MV1.png}
 
 }
 
@@ -11315,7 +12340,7 @@ a vernacular form.
 
 \begin{figure}
 
-{\centering \includegraphics[width=0.4\textwidth,height=\textheight]{Figures/MV3.png}
+{\centering \includegraphics[width=0.4\textwidth,height=\textheight]{src/Figures/MV3.png}
 
 }
 
@@ -11355,7 +12380,7 @@ most dialects, as shown in \hyperref[fig:dada_performance]{1.15}.
 
 \begin{figure}
 
-{\centering \includegraphics[width=0.4\textwidth,height=\textheight]{Figures/MV4.png}
+{\centering \includegraphics[width=0.4\textwidth,height=\textheight]{src/Figures/MV4.png}
 
 }
 
@@ -11436,7 +12461,7 @@ of the framework.
 
 \begin{figure}
 
-{\centering \includegraphics[width=0.45\textwidth,height=\textheight]{Figures/care.png}
+{\centering \includegraphics[width=0.45\textwidth,height=\textheight]{src/Figures/care.png}
 
 }
 
@@ -11469,14 +12494,12 @@ tool to enhance their counseling skills effectively.
 
 \section{Practice Exercises}\label{practice-exercises}
 
-\phantomsection\label{3ade8a4a-fb1d-4a6c-8409-ac45482d5fc9}
-
-\section*{References}\label{bibliography-5}
+\section*{References}\label{bibliography-6}
 \addcontentsline{toc}{section}{References}
 
 \markright{References}
 
-\phantomsection\label{refs-5}
+\phantomsection\label{refs-6}
 \begin{CSLReferences}{1}{0}
 \bibitem[\citeproctext]{ref-amodei2016concrete}
 Amodei, Dario, Chris Olah, Jacob Steinhardt, Paul Christiano, John
@@ -11876,6 +12899,35 @@ and Diyi Yang. 2023. {``Multi-VALUE: A Framework for Cross-Dialectal
 English NLP.''} \url{https://arxiv.org/abs/2212.08011}.
 
 \end{CSLReferences}
+
+\phantomsection\label{sec-ack}
+\bookmarksetup{startatroot}
+
+\chapter*{Acknowledgments}
+\addcontentsline{toc}{chapter}{Acknowledgments}
+
+\markboth{Acknowledgments}{Acknowledgments}
+
+\section*{Acknowledgments}\label{acknowledgments}
+\addcontentsline{toc}{section}{Acknowledgments}
+
+\markright{Acknowledgments}
+
+This book was compiled during CS329H: Machine Learning from Human
+Preferences at Stanford University in Fall 2023 and Fall 2024. We thank
+Rehaan Ahmad, Ahmed Ahmed, Jirayu Burapacheep, Michael Byun, Akash
+Chaurasia, Andrew Conkey, Tanvi Deshpande, Eric Han, Laya Iyer, Adarsh
+Jeewajee, Shreyas Kar, Arjun Karanam, Jared Moore, Aashiq Muhamed,
+Bidipta Sarkar, William Shabecoff, Stephan Sharkov, Max Sobol Mark,
+Kushal Thaman, Joe Vincent, Yibo Zhang, Duc Nguyen (VNU-HCM University
+of Technology), Grace Sodunke (University of Oxford), and Ky Nguyen
+(DePauw University) for their help in compiling this book. We appreciate
+the time of our guest speakers, including Pat Langley (Institute for the
+Study of Learning and Expertise), Meredith Ringel Morris (Google
+DeepMind), Vasilis Syrgkanis (Stanford), Jason Hartline (Northwestern),
+Dorsa Sadigh (Stanford), Diyi Yang (Stanford), and Nathan Lambert (AI2).
+
+\phantomsection\label{3ade8a4a-fb1d-4a6c-8409-ac45482d5fc9}
 
 
 
