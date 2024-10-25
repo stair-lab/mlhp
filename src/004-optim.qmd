@@ -1,4 +1,4 @@
-# Model-Free Preference Optimization {#4optim}
+# Model-Free Preference Optimization {#sec-model-free}
 
 ::: {.content-visible when-format="html"}
 
@@ -276,7 +276,7 @@ bandits, which will be introduced later. In these settings, the
 preference matrix depends on different context, which may have different
 Borda winners, just as different parties may vote for different pizzas.
 
-::: {#fig:condorcet_violation}
+::: {#fig-condorcet_violation}
          A        B           C         D       E      F
   --- ------- ---------- ----------- ------- ------- ------
    A     0     **0.03**   **-0.02**   0.06    0.10    0.11
@@ -316,7 +316,9 @@ Various strategies have been developed to balance the
 exploration-exploitation trade-off. These strategies differ in selecting
 arms based on past experiences and rewards.
 
-Uniform acquisition function is the most straightforward approach where
+#### Classical Acquisition Functions
+
+**Uniform** acquisition function is the most straightforward approach where
 each arm is selected uniformly randomly over time. This strategy does
 not consider the past rewards and treats each arm equally promising
 regardless of the observed outcomes. It is a purely explorative strategy
@@ -327,7 +329,7 @@ been selected up to time $t$, the Uniform Strategy would ensure that
 $N_t(a) \approx \frac{t}{K}$ for all arms $a$ as $t$ grows large:
 $P(a_t = a) = \frac{1}{K}$
 
-The Epsilon Greedy Strategy is a popular method that introduces a
+The **Epsilon Greedy** is a popular method that introduces a
 balance between exploration and exploitation. With a small probability
 $\epsilon$, it explores by choosing an arm at random, and with a
 probability $1 - \epsilon$, it exploits by selecting the arm with the
@@ -341,7 +343,7 @@ often set between 0.01 and 0.1. $$P(a_t = a) =
 \frac{\epsilon}{K} & \text{otherwise}
 \end{cases}$$
 
-Upper Confidence Bound (UCB) acquisition function takes a more
+**Upper Confidence Bound** (UCB) acquisition function takes a more
 sophisticated approach to the exploration-exploitation dilemma. It
 selects arms based on both the estimated rewards and the uncertainty or
 variance associated with those estimates. Specifically, it favors arms
@@ -376,8 +378,8 @@ leaving the final $\hat{b}$ as the predicted best bandit.
 
 :::: algorithm
 ::: algorithmic
-**input:** $T$, $B=\{b_1, \dots, b_k\}$ $\delta \gets 1/(TK^2)$ Choose
-$\hat{b} \in B$ randomly
+**input:** $T$, $B=\{b_1, \dots, b_k\}$ $\delta \gets 1/(TK^2)$ 
+Choose $\hat{b} \in B$ randomly
 $W \gets \{b_1, \dots, b_k\} \backslash \{\hat{b}\}$ $\forall b \in W$,
 maintain estimate $\hat{P}_{\hat{b},b}$ of $P(\hat{b} > b)$ according to
 (6) $\forall b \in W$, maintain $1 - \delta$ confidence interval
@@ -462,7 +464,7 @@ $$\mathbb{E}\left[R_T\right] \le \left(1 - \frac{1}{T}\right) \mathbb{E}\left[ R
 
 Interestingly, the original work shows that these bounds hold for both
 strong and weak regret. As demonstrated, the Interleaved Filter
-algorithm [\[fig:if\]](#fig:if){reference-type="ref" reference="fig:if"}
+algorithm [\[fig-if\]](#fig-if){reference-type="ref" reference="fig-if"}
 provides a robust method to ascertain the optimal bandit or strategy
 given a set of options and only noisy comparisons. In most real-world
 scenarios for modeling human preferences, it is not possible to observe
@@ -497,9 +499,17 @@ direction. We will now discuss the algorithm more detailed.
 
 :::: algorithm
 ::: algorithmic
-**input:** $\gamma$, $\delta$, $w_1$ sample unit vector $u_t$ uniformly
-$w_t' \gets P_W(w_t + \delta u_t)$ compare $w_t$ and $w_t'$
-$w_{t+1} \gets P_W(w_t + \gamma u_t)$ $w_{t+1} \gets w_t$
+**input:** $\gamma$, $\delta$, $w_1$ 
+
+Sample unit vector $u_t$ uniformly
+
+$w_t' \gets P_W(w_t + \delta u_t)$ 
+
+Compare $w_t$ and $w_t'$
+
+$w_{t+1} \gets P_W(w_t + \gamma u_t)$ 
+
+$w_{t+1} \gets w_t$
 :::
 ::::
 
@@ -912,8 +922,8 @@ and many independent "agents,\" which will act selfishly (in a way that
 they believe will maximize their individual reward).
 
 Under our model shown in Figure
-[1.1](#fig:planner-agent){reference-type="ref"
-reference="fig:planner-agent"}, there are $K$ possible actions that all
+[1.1](#fig-planner-agent){reference-type="ref"
+reference="fig-planner-agent"}, there are $K$ possible actions that all
 users can take, and each action has some mean reward $\mu_i \in [0, 1]$.
 In addition, there is a common prior belief on each $\mu_i$ across all
 users.. The $T$ agents, or users, will arrive sequentially. As the
@@ -924,7 +934,7 @@ $r_i \in [0, 1]$, which is stochastic i.i.d. with mean $\mu_i$, and
 reports this reward back to the planner.
 
 ![Planner-agent
-setup](Figures/planner-agent-setup.png){#fig:planner-agent width="60%"}
+setup](Figures/planner-agent-setup.png){#fig-planner-agent width="60%"}
 
 So far, the model we have defined is equivalent to a multi-armed bandit
 model, which we have seen earlier in this chapter
@@ -993,7 +1003,7 @@ $A_1$, so how can the planner *incentivize* users to play $A_2$?
 
 ![Illustration of black-box reduction algorithm when we have
 deterministic
-rewards.](Figures/guinea_pig_fig.png){#fig:deterministic-guinea-pig}
+rewards.](Figures/guinea_pig_fig.png){#fig-deterministic-guinea-pig}
 
 The key insight is going to be to *hide exploration in a pool of
 exploitation*. The users are only going to receive a recommendation from
@@ -1010,8 +1020,8 @@ The planner will pick the user who will be recommended the exploratory
 action uniformly at random from the $L$ users that come after the first
 one (which deterministically gets recommended the exploitation action).
 Under this setting (illustrated in Figure
-[1.2](#fig:deterministic-guinea-pig){reference-type="ref"
-reference="fig:deterministic-guinea-pig"}), it is optimal for users to
+[1.2](#fig-deterministic-guinea-pig){reference-type="ref"
+reference="fig-deterministic-guinea-pig"}), it is optimal for users to
 always follow the option that is recommended for them. More formally, if
 $I_t$ is the recommendation that a user receives at time $t$, then we
 have that: $$\begin{split}
@@ -1034,10 +1044,10 @@ observe the outcome of the first action $M$ times to form a strong
 posterior $\mathbb{E}[\mu_1 | r_1^1, \ldots r_1^M]$.
 
 ![Illustration of black-box reduction algorithm when we have stochastic
-rewards.](Figures/stochastic_guinea_pig.png){#fig:stochastic-guinea-pig}
+rewards.](Figures/stochastic_guinea_pig.png){#fig-stochastic-guinea-pig}
 
-Figure [1.3](#fig:stochastic-guinea-pig){reference-type="ref"
-reference="fig:stochastic-guinea-pig"} illustrates the algorithm that we
+Figure [1.3](#fig-stochastic-guinea-pig){reference-type="ref"
+reference="fig-stochastic-guinea-pig"} illustrates the algorithm that we
 can use with stochastic rewards when there are two actions. Similarly,
 as before, we pick one guinea pig uniformly at random from the next $L$
 users and use the reward we get as the exploratory signal.\
@@ -1049,10 +1059,10 @@ incentive-compatible.
 
 ![Illustration of black-box reduction algorithm for the general
 multi-armed bandit
-case.](Figures/multi-armed-guinea-pig.png){#fig:multi-armed-guinea-pig}
+case.](Figures/multi-armed-guinea-pig.png){#fig-multi-armed-guinea-pig}
 
-As Figure [1.4](#fig:multi-armed-guinea-pig){reference-type="ref"
-reference="fig:multi-armed-guinea-pig"} shows, we wrap every decision
+As Figure [1.4](#fig-multi-armed-guinea-pig){reference-type="ref"
+reference="fig-multi-armed-guinea-pig"} shows, we wrap every decision
 that $A$ would make by exactly $L-1$ recommendations of the action
 believed to be the best so far. This guarantees that the expected
 rewards for the users that are not chosen as guinea pigs are at least as

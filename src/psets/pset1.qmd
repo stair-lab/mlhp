@@ -1,5 +1,5 @@
-# Exercises
-## Question 1: Choice Modeling (15 points) {#question-1-choice-modeling-15-points .unnumbered}
+## Exercises
+### Question 1: Choice Modeling (15 points) {#question-1-choice-modeling-15-points .unnumbered}
 
 In Chapter 2, we discussed discrete choice modeling in the context of
 utility being a linear function. Suppose we are deciding between $N$
@@ -26,8 +26,7 @@ $\Pr(U_i\,\, \text{has max utility})$.
     arrive at multi-class logistic regression in the end!
 
 Next, you will implement logistic regression to predict preferred prompt
-completions. We will use the preference dataset from RewardBench
-(<https://huggingface.co/datasets/allenai/reward-bench>). Notice the
+completions. We will use the preference dataset from [RewardBench](<https://huggingface.co/datasets/allenai/reward-bench>). Notice the
 provided `data/chosen_embeddings.pt` and `data/rejected_embeddings.pt`
 files. These files were constructed by feeding the prompt alongside the
 chosen/rejected responses through Llama3-8B-Instruct and selecting the
@@ -143,7 +142,7 @@ if __name__ == "__main__":
 
 ```
 
-## Question 2: Revealed and Stated Preferences (20 points) {#question-2-revealed-and-stated-preferences-20-points .unnumbered}
+### Question 2: Revealed and Stated Preferences (20 points) {#question-2-revealed-and-stated-preferences-20-points .unnumbered}
 
 Alice and Bob are running for president. For $R$ voters, we have access
 to their revealed candidate preferences through some means (e.g., social
@@ -296,7 +295,7 @@ if __name__ == "__main__":
     plt.show()
 ```
 
-## Question 3: Probabilistic Multi-modal Preferences (25 points) {#question-3-probabilistic-multi-modal-preferences-25-points .unnumbered}
+### Question 3: Probabilistic Multi-modal Preferences (25 points) {#question-3-probabilistic-multi-modal-preferences-25-points .unnumbered}
 
 Suppose you are part of the ML team on the movie streaming site
 CardinalStreams. After taking CS329H, you collect a movie preferences
@@ -366,11 +365,10 @@ weights $w_2$ are part of Group 2.
     $p_{\text{heads}}$ was $B(1, 1)$, then our posterior will be
     $B(1+9, 1+3)=B(10, 4)$. The Bayesian update is given by
 
-    \begin{aligned}
+    $$\begin{aligned}
         P(p_{\text{heads}}|9\text{ heads}, 3\text{ tails})&=\frac{P(9\text{ heads}, 3\text{ tails} | p_{\text{heads}})B(1, 1)(p_{\text{heads}})}{\int_0^1 P(9\text{ heads}, 3\text{ tails} | p_{\text{heads}})B(1, 1)(p_{\text{heads}}) dp_{\text{heads}}}\\
         &=\frac{P(9\text{ heads}, 3\text{ tails} | p_{\text{heads}})}{\int_0^1 P(9\text{ heads}, 3\text{ tails} | p_{\text{heads}})  dp_{\text{heads}}}.
-        
-    \end{aligned}
+    \end{aligned}$$
 
     **Find the acceptance probablity** $A$ in the
     setting of the biased coin assuming the proposal distribution
@@ -743,7 +741,7 @@ if __name__ == "__main__":
 ```
 
 
-## Question 4: Direct Preference Optimization (40 points) {#question-4-direct-preference-optimization-40-points .unnumbered}
+### Question 4: Direct Preference Optimization (40 points) {#question-4-direct-preference-optimization-40-points .unnumbered}
 
 Note this question requires a GPU which is provided for free on Google
 Colab (T4 instance) or through the course cloud credits provided on Ed.\
@@ -783,8 +781,7 @@ typically parametrized.
 (b) **(Written, 8 points)**. Assume that a solution to the optimization
     problem in part (a) exists. Find an expression for $\hat{p}$. (Hint:
     Make sure to know your sigmoid derivative properties! Everything
-    should simplify nicely. You may use the *logit function*
-    <https://en.wikipedia.org/wiki/Logit> denoted by $\sigma^{-1}$ in
+    should simplify nicely. You may use the [*logit function*](https://en.wikipedia.org/wiki/Logit) denoted by $\sigma^{-1}$ in
     your final expression.)
 
 (c) **(Written, 3 points)**. Show that

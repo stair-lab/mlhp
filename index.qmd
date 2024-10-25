@@ -1,10 +1,13 @@
-# Introduction {#sec-introduction}
+# Introduction {#ch-introduction}
+::: {.content-visible when-format="html"}
 
 <iframe
   src="https://web.stanford.edu/class/cs329h/slides/1.introduction/#/"
-  style="width:100%; height:500px;"
+  style="width:90%; height:500px;"
 ></iframe>
 [Fullscreen Slide](https://web.stanford.edu/class/cs329h/slides/1.introduction/#/){.btn .btn-outline-primary .btn role="button"}
+
+:::
 
 Machine learning is increasingly integrated into many aspects of our
 lives through various applications, such as healthcare, education, and

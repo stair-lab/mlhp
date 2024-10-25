@@ -13,17 +13,18 @@ bibliography: references.bib
 reference-section-title: References
 
 crossref:
-  fig-prefix: figure
-  tbl-prefix: table
-  sec-prefix: section
+  fig-prefix: Figure
+  tbl-prefix: Table
+  sec-prefix: Section
 
 language:
-  crossref-ch-prefix: chapter
-  crossref-apx-prefix: appendix
+  crossref-ch-prefix: Chapter
+  crossref-apx-prefix: Appendix
 
 df-print: kable
 filters:
   - boxes
+  - pseudocode
 
 format:
   html:
@@ -32,30 +33,34 @@ format:
       dark: [darkly, resources/scss/global.scss]
     published-title: "Updated"
     code-fold: true
-    execute:
-      eval: false
-      echo: true
+    code-overflow: scroll
+    code-line-numbers: true
+    code-tools: true
+    code-copy: True
     mathjax: 
       macros:
         mathbbm: ["\\mathbbm{#1}", 1]
 
   pdf:
     documentclass: scrreprt
+    classoption: [numbers=noenddot,DIV=11]
     keep-tex: true
     include-in-header: resources/tex/preamble.tex
+    include-after-body: resources/tex/postamble.tex
+    template-partials:
+      - resources/tex/partials/before-body.tex
     citeproc: false # don't run pandoc default citation handling
     csl: chicago-author-date-no-em-dash.csl
     filters:
       - section-bibliographies
     toc-depth: 2 # level 1 headings (i.e. parts and chapters)
-    toc-title: Contents # title of table of contents
+    toc-title: Table of Contents # title of table of contents
     links-as-notes: true # turn URLs into sidenotes
     citecolor: DarkGreen # tufte color
     linkcolor: DarkBlue # tufte color
     urlcolor: DarkGreen # tufte color
-    execute:
-      eval: false
-      echo: true
+    code-overflow: wrap
+    code-line-numbers: true
 
 knitr:
   opts_chunk:
@@ -66,12 +71,12 @@ knitr:
     dpi: 300
 
 execute: 
-  echo: false
+  echo: true
   message: false
   warning: false
   error: false
   cache: true
-  code-overflow: wrap
+  highlight-style: github
   tidy: true
 
 book:
