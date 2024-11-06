@@ -1,0 +1,738 @@
+## Exercises
+### Question 1: Uncertainty Quantification in Preference Learning (40 points) {#sec-question-1-uncertainty-quantification-in-preference-learning-40-points .unnumbered}
+
+In this question, we will explore Bayesian approaches to logistic
+regression in the context of preference learning using the Bradley-Terry
+model. We will compare different models and inference methods, including
+parametric linear models estimated using Metropolis-Hastings, parametric
+neural network models estimated using Hamiltonian Monte Carlo, and
+non-parametric models with Gaussian Processes. Finally, we will assess
+the uncertainty quantification in these models using the Expected
+Calibration Error (ECE).
+
+Assume we have a dataset of pairwise preferences
+$\mathcal{D} = \{(x_i, y_i)\}_{i=1}^N$, where $x_i \in \mathbb{R}^d$
+represents the feature difference between two items (i.e.,
+$x_i = e^{(i)}_1 - e^{(i)}_2$ for embeddings $e^{(i)}_1$ and
+$e^{(i)}_2$), and $y_i \in \{0, 1\}$ indicates the preference ($y_i = 1$
+if item 1 is preferred over item 2 in the $i$-th pair).
+
+The likelihood of observing $y_i$ given $x_i$ and model parameters
+$\theta$ is given by the logistic function:
+
+$$P(y_i = 1 | x_i, \theta) = \sigma(x_i^\top \theta) = \frac{1}{1 + e^{-x_i^\top \theta}}.$$
+
+We will adopt a Bayesian approach by placing priors on the model
+parameters and using Markov Chain Monte Carlo (MCMC) methods to estimate
+the posterior distributions.
+
+(a) **Uncertainty Quantification and Expected Calibration Error (11
+    points)**
+
+    (i) **(Written, 2 point)**. Spend some time reading
+        <https://tinyurl.com/m77mk9c>. Explain what the Expected
+        Calibration Error (ECE) measures and why it is important for
+        assessing uncertainty quantification in probabilistic models.
+
+    (ii) **(Coding, 6 points)**. In `uncertainty_quantification/ece.py`,
+         implement the ECE using the formula
+         $$\text{ECE} = \sum_{k=1}^K \frac{n_k}{N} \left| \text{acc}(B_k) - \text{conf}(B_k) \right|,$$
+         where $n_k$ is the number of samples in bin $B_k$, $N$ is the
+         total number of samples, $\text{acc}(B_k)$ is the accuracy in
+         bin $B_k$, and $\text{conf}(B_k)$ is the average confidence in
+         bin $B_k$.
+
+    (iii) **(Written, 3 point)**. After doing parts (b), (c), and (d),
+          compare the ECE scores and reliability diagrams of the 3
+          models. Which model(s) provide the best uncertainty
+          quantification? Discuss possible reasons for the observed
+          differences.
+
+```{python ex2-q1-1}
+import numpy as np
+import matplotlib.pyplot as plt
+
+def expected_calibration_error(probs, labels, model_name, n_bins=20, n_ticks=10, plot=True):
+    """
+    Computes the Expected Calibration Error (ECE) for a model and plots a refined reliability diagram
+    with confidence histogram and additional calibration statistics.
+    
+    Args:
+    - probs (np.array): Array of predicted probabilities for the positive class (for binary classification).
+    - labels (np.array): Array of true labels (0 or 1).
+    - model_name (str): Name of the model for labeling the plot.
+    - n_bins (int): Number of bins to divide the probability interval [0,1] into.
+    - n_ticks (int): Number of ticks to show along the x-axis.
+    - plot (bool): If True, generates the reliability plot; otherwise, only computes ECE.
+
+    Returns:
+    - float: Computed ECE value.
+    """
+    
+    # Ensure probabilities are in the range [0, 1]
+    assert np.all((probs >= 0) & (probs <= 1)), "Probabilities must be in the range [0, 1]"
+    
+    # Initialize bin edges, centers, and storage for accuracy, confidence, and counts
+    bin_edges = np.linspace(0, 1, n_bins + 1)
+    bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
+    bar_width = 1.0 / n_bins
+
+    accs = np.zeros(n_bins)
+    confs = np.zeros(n_bins)
+    bin_counts = np.zeros(n_bins)
+
+    # Populate bin statistics: accuracy, confidence, and count
+    # YOUR CODE HERE (~7 lines)
+    # Loop over each bin and:
+    # - Find indices of probabilities that fall within the bin.
+    # - Count the number of items in the bin.
+    # - Calculate the accuracy (average of true labels) within the bin.
+    # - Calculate the confidence (average of predicted probabilities) within the bin.
+    pass 
+    # END OF YOUR CODE
+    
+    # Compute ECE: weighted average of |accuracy - confidence| across bins
+    # YOUR CODE HERE (1 line)
+    # - Use the bin counts to calculate a weighted average of the differences between accuracy and confidence.
+    ece_value = None
+    # END OF YOUR CODE
+    
+    # Return only ECE if plot is not required
+    if not plot:
+        return ece_value
+
+    # Compute average confidence and accuracy for reference lines
+    avg_confidence = np.mean(probs)
+    avg_accuracy = np.mean(labels)
+    
+    # Create reliability diagram and histogram
+    fig, (ax1, ax2) = plt.subplots(2, 1, gridspec_kw={'height_ratios': [3, 1]}, figsize=(8, 10))
+    
+    # Reliability diagram (top plot)
+    ax1.plot([0, 1], [0, 1], 'k--', label='Perfect Calibration')
+    for i in range(n_bins):
+        # Draw the gap bar starting from the diagonal line (perfect calibration)
+        ax1.bar(bin_centers[i], abs(accs[i] - confs[i]), width=bar_width, bottom=min(accs[i], confs[i]), 
+                color='red', alpha=0.3, label='Accuracy-Confidence Gap' if i == 0 else "")
+        # Draw the accuracy bar as a small black line on top of the gap bar
+        ax1.plot([bin_centers[i] - bar_width / 2, bin_centers[i] + bar_width / 2], 
+                 [accs[i], accs[i]], color='black', linewidth=2)
+
+    # Add a black line as a sample for accuracy in the legend
+    ax1.plot([], [], color='black', linewidth=2, label='Accuracy Marker')
+
+    ax1.set_xlim(0, 1)
+    ax1.set_ylim(0, 1)
+    ax1.set_ylabel('Accuracy')
+    ax1.set_title(f'{model_name}\nECE={ece_value:.2f}')
+    ax1.legend()
+
+    # Set tick marks based on `n_ticks` evenly spaced along the x-axis
+    tick_positions = np.linspace(0, 1, n_ticks + 1)
+    ax1.set_xticks(tick_positions)
+    ax2.set_xticks(tick_positions)
+    ax1.set_xticklabels([f'{x:.2f}' for x in tick_positions])
+    ax2.set_xticklabels([f'{x:.2f}' for x in tick_positions])
+
+    # Confidence histogram with average markers
+    ax2.bar(bin_centers, bin_counts, width=bar_width, color='blue', alpha=0.6)
+    ax2.axvline(x=avg_confidence, color='gray', linestyle='--', linewidth=2, label='Avg. confidence')
+    ax2.axvline(x=avg_accuracy, color='black', linestyle='-', linewidth=2, label='Avg. accuracy')
+    ax2.set_xlim(0, 1)
+    ax2.set_xlabel('Confidence')
+    ax2.set_ylabel('Count')
+    ax2.legend()
+
+    plt.tight_layout()
+    plt.show()
+    
+    return ece_value
+
+if __name__ == "__main__":
+    # Test with random probabilities and labels
+    probs = np.random.rand(10000)  # Random probabilities between 0 and 1
+    labels = np.random.binomial(1, (probs + 1) / 2)
+
+    # Run the function and display the result
+    ece_value = expected_calibration_error(probs, labels, "Test Model", plot=True)
+    print(f"ECE Value: {ece_value}")
+```
+
+(b) **Parametric Linear Model Estimated Using Metropolis-Hastings (11
+    points)**
+
+    (i) **(Written, 3 points)**. Assume a prior on $\theta$ such that
+        $\theta \sim \mathcal{N}(0, \sigma^2 I)$, where $\sigma^2$ is
+        the variance and $I$ is the identity matrix. Derive the
+        expression for the posterior distribution
+        $P(\theta | \mathcal{D})$ up to a normalization constant.
+
+    (ii) **(Coding, 6 points)**. Implement the Metropolis-Hastings
+         algorithm to sample from the posterior distribution of $\theta$
+         in `uncertainty_quantification/metropolis.py`.
+
+    (iii) **(Written, 2 points)**. Discuss how you chose the proposal
+          variance $\tau^2$ and the number of iterations $T$ and
+          $T_{\text{burn-in}}$. How did these choices affect the
+          convergence and mixing of your MCMC chain?
+
+```{python ex2-q1-2}
+import torch
+import matplotlib.pyplot as plt
+from tqdm import tqdm
+import numpy as np
+from ece import expected_calibration_error
+
+# Load training and testing data
+x_train = torch.tensor(np.load('../data/differences_train.npy'))
+x_test = torch.tensor(np.load('../data/differences_test.npy'))
+y_train = torch.tensor(np.load('../data/labels_train.npy'))
+y_test = torch.tensor(np.load('../data/labels_test.npy'))
+
+# Likelihood function for logistic regression (per data point)
+def likelihood(theta, x, y):
+    """
+    Computes the likelihood of the data given the logistic regression parameters.
+    
+    Args:
+    - theta (torch.Tensor): Model parameters.
+    - x (torch.Tensor): Input data.
+    - y (torch.Tensor): True labels.
+
+    Returns:
+    - torch.Tensor: Likelihood values for each data point.
+    """
+    # YOUR CODE HERE (~3 lines)
+    # Calculate logits as the linear combination of inputs and parameters.
+    # Use the sigmoid function to compute the probability of the positive class.
+    pass
+    # END OF YOUR CODE
+
+# Prior probability (theta ~ N(0, I)) - only depends on theta, not per sample
+def prior(theta, sigma):
+    """
+    Computes the prior probability of theta under a Gaussian distribution with variance sigma^2.
+
+    Args:
+    - theta (torch.Tensor): Model parameters.
+    - sigma (float): Standard deviation of the prior distribution.
+
+    Returns:
+    - torch.Tensor: Prior probability value.
+    """
+    # YOUR CODE HERE (~2 lines)
+    # Implement Gaussian prior with zero mean and identity covariance.
+    # Note that the normalization constant is not needed for Metropolis-Hastings.
+    pass
+    # END OF YOUR CODE
+
+# Metropolis-Hastings sampler
+def metropolis_hastings(x, y, num_samples, burn_in, tau, sigma):
+    """
+    Runs the Metropolis-Hastings algorithm to sample from the posterior distribution.
+
+    Args:
+    - x (torch.Tensor): Input data.
+    - y (torch.Tensor): True labels.
+    - num_samples (int): Total number of samples to draw.
+    - burn_in (int): Number of initial samples to discard.
+    - tau (float): Proposal standard deviation.
+    - sigma (float): Prior standard deviation.
+
+    Returns:
+    - torch.Tensor: Collected samples post burn-in.
+    - float: Acceptance ratio.
+    """
+    # Initialize theta (starting point of the chain) and containers for samples and acceptance count
+    theta = torch.zeros(x.shape[1])
+    samples = []
+    acceptances = 0
+    
+    # Run the Metropolis-Hastings algorithm
+    for t in tqdm(range(num_samples), desc="MCMC Iteration"):
+        # YOUR CODE HERE (~12-16 lines)
+        # 1. Propose new theta from the proposal distribution (e.g., Gaussian around current theta).
+        # 2. Compute prior and likelihood for current and proposed theta
+        # 3. Calculate the acceptance ratio as the product of likelihood and prior ratios.
+        # 4. Accept or reject the proposal based on the acceptance probability.
+        # 5. Store the sample after the burn-in period
+        pass
+        # END OF YOUR CODE
+    
+    return torch.stack(samples), acceptances / num_samples
+
+# Run Metropolis-Hastings on training data
+num_samples = 10000
+burn_in = 1000
+tau = 0.01  # Proposal variance (tune this for convergence)
+sigma = 2.0  # Prior variance
+
+# Collect samples and compute acceptance ratio
+samples, acceptance_ratio = metropolis_hastings(x_train, y_train, num_samples=num_samples, burn_in=burn_in, tau=tau, sigma=sigma)
+averaged_weights = samples.mean(axis=0)
+print(f'Predicted weights: {averaged_weights}')
+print(f'Acceptance Ratio: {acceptance_ratio}')
+
+# Evaluate accuracy on training set
+train_predictions = (x_train @ averaged_weights > 0).float()
+train_acc = (train_predictions == y_train).float().mean()
+print(f'Train Accuracy: {train_acc}')
+
+# Evaluate accuracy on testing set
+test_predictions = (x_test @ averaged_weights > 0).float()
+acc = (test_predictions == y_test).float().mean()
+print(f'Test Accuracy: {acc}')
+
+# Compute expected calibration error on testing set
+expected_calibration_error(torch.sigmoid(x_test @ averaged_weights).numpy(), y_test.numpy(), model_name="Metropolis-Hastings")
+
+```
+
+
+(c) **Parametric Neural Network Model Estimated Using Hamiltonian Monte
+    Carlo (11 points)**
+
+    (i) **(Written, 2 points)**. Explain why Hamiltonian Monte Carlo
+        (HMC) is suitable for sampling from the posterior distribution
+        of neural network parameters compared to Metropolis-Hastings.
+
+    (ii) **(Coding, 7 points)**. Implement HMC to sample from the
+         posterior distribution of the parameters $\theta$ of a neural
+         network $f(x; \theta)$ used for preference prediction in
+         `uncertainty_quantification/hmc_nn.py`. This will require a GPU
+         and take around 5 minutes on it!
+
+    (iii) **(Written, 2 points)**. Briefly describe the performance of
+          the HMC and Metropolis-Hastings models and provide the
+          accuracy numbers.
+
+```{python ex2-q1-3}
+# Use a GPU when running this file! JAX should automatically default to GPU.
+import jax.numpy as np
+import numpyro
+import numpyro.distributions as dist
+from numpyro.infer import MCMC, NUTS
+from jax import random
+from ece import expected_calibration_error
+
+# DO NOT CHANGE! This function can be ignored.
+def set_numpyro(new_sampler):
+    numpyro.sample = new_sampler
+
+# Define the neural network model with one hidden layer
+def nn_model(x_data, y_data, hidden_dim=10):
+    """
+    Defines a Bayesian neural network with one hidden layer.
+
+    Args:
+    - x_data (np.array): Input data.
+    - y_data (np.array): Target labels.
+    - hidden_dim (int): Number of units in the hidden layer.
+
+    Returns:
+    - hidden_activations: Activations from the hidden layer.
+    - logits: Logits for the output layer.
+    """
+    input_dim = x_data.shape[1]
+    
+    # Prior over the weights and biases for the hidden layer
+    w_hidden = numpyro.sample('w_hidden', dist.Normal(np.zeros((input_dim, hidden_dim)), np.ones((input_dim, hidden_dim))))
+    b_hidden = numpyro.sample('b_hidden', dist.Normal(np.zeros(hidden_dim), np.ones(hidden_dim)))
+    
+    # Compute the hidden layer activations using ReLU
+    # YOUR CODE HERE (~1 line)
+    # Implement the hidden layer computation, applying a ReLU activation.
+    pass
+    # END OF YOUR CODE 
+    
+    # Prior over the weights and biases for the output layer
+    w_output = numpyro.sample('w_output', dist.Normal(np.zeros(hidden_dim), np.ones(hidden_dim)))
+    b_output = numpyro.sample('b_output', dist.Normal(0, 1))
+    
+    # Compute the logits for the output layer
+    # YOUR CODE HERE (~1 line)
+    # Calculate the logits as the linear combination of hidden activations and output layer weights.
+    pass
+    # END OF YOUR CODE
+
+    # Likelihood (Bernoulli likelihood with logits)
+    numpyro.sample('obs', dist.Bernoulli(logits=logits), obs=y_data)
+    return hidden_activations, logits
+
+def sigmoid(x):
+    """Helper function to compute the sigmoid of x."""
+    return 1 / (1 + np.exp(-x))
+
+if __name__ == "__main__":
+    # Load training and testing data
+    x_train = np.load('../data/differences_train.npy')
+    x_test = np.load('../data/differences_test.npy')
+    y_train = np.load('../data/labels_train.npy')
+    y_test = np.load('../data/labels_test.npy')
+
+    # HMC Sampler Configuration
+    hmc_kernel = NUTS(nn_model)
+
+    # Running HMC with the MCMC interface in NumPyro
+    num_samples = 200  # Number of samples
+    warmup_steps = 100  # Number of burn-in steps
+    rng_key = random.PRNGKey(0)  # Random seed
+
+    # MCMC object with HMC kernel
+    mcmc = MCMC(hmc_kernel, num_samples=num_samples, num_warmup=warmup_steps)
+    mcmc.run(rng_key, x_train, y_train)
+
+    # Get the sampled weights (theta samples)
+    samples = mcmc.get_samples()
+
+    # Extract the weight samples
+    w_hidden_samples = samples['w_hidden']
+    b_hidden_samples = samples['b_hidden']
+    w_output_samples = samples['w_output']
+    b_output_samples = samples['b_output']
+
+    # Compute the averaged weights and biases
+    w_hidden_mean = np.mean(w_hidden_samples, axis=0)
+    b_hidden_mean = np.mean(b_hidden_samples, axis=0)
+    w_output_mean = np.mean(w_output_samples, axis=0)
+    b_output_mean = np.mean(b_output_samples, axis=0)
+
+    # Forward pass through the network for testing set
+    # YOUR CODE HERE (~2 lines)
+    # Compute hidden layer activations and logits for the test set using the mean weights and biases.
+    pass
+    # END OF YOUR CODE
+    test_predictions = test_logits > 0
+    test_accuracy = np.mean(test_predictions == y_test)
+    print(f'Test Accuracy: {test_accuracy}')
+
+    # Forward pass through the network for training set
+    # YOUR CODE HERE (~2 lines)
+    # Compute hidden layer activations and logits for the training set.
+    pass
+    # END OF YOUR CODE
+    train_predictions = train_logits > 0
+    train_accuracy = np.mean(train_predictions == y_train)
+    print(f'Train Accuracy: {train_accuracy}')
+
+    # Compute expected calibration error on testing set
+    expected_calibration_error(sigmoid(test_logits), y_test, model_name="HMC")
+```
+
+
+(d) **Non-Parametric Model with Gaussian Process (GP) (7 points)**
+
+    (i) **(Written, 2 point)**. Describe how a Gaussian Process can be
+        used for preference learning in this context (i.e., describe how
+        the latent function is used for classification).
+
+    (ii) **(Coding, 2 points)**. Run the GP classification for
+         preference learning code in\
+         `uncertainty_quantification/gaussian_process.py` and provide
+         the accuracy numbers. This can only be run on a CPU and may
+         take around 10 minutes to complete.
+
+    (iii) **(Written, 3 point)**. Discuss the computational complexity
+          of the GP model compared to the parametric models. What are
+          the advantages and disadvantages of using a GP in this
+          setting?
+
+```{python ex2-q1-4}
+import numpy as np
+from sklearn.gaussian_process import GaussianProcessClassifier
+from sklearn.gaussian_process.kernels import RBF
+from sklearn.metrics import accuracy_score
+from ece import expected_calibration_error
+
+x_train = np.load('../data/differences_train.npy')
+x_test = np.load('../data/differences_test.npy')
+y_train = np.load('../data/labels_train.npy')
+y_test = np.load('../data/labels_test.npy')
+
+kernel = 1.0 * RBF(length_scale=1.0)
+gp_classifier = GaussianProcessClassifier(kernel=kernel, random_state=42, n_jobs=-1)
+gp_classifier.fit(x_train, y_train)
+
+y_pred_probs = gp_classifier.predict_proba(x_test)[:, 1]
+y_pred_labels = (y_pred_probs > 0.5)
+
+train_accuracy = accuracy_score(y_train, gp_classifier.predict(x_train))
+print(f'Train Accuracy: {train_accuracy:.4f}')
+
+test_accuracy = accuracy_score(y_test, y_pred_labels)
+print(f'Test Accuracy: {test_accuracy:.4f}')
+
+expected_calibration_error(y_pred_probs, y_test, model_name="Gaussian Process Classifier")
+```
+
+
+### Question 2: Active Learning for Preference Learning (40 points) {#sec-question-2-active-learning-for-preference-learning-40-points .unnumbered}
+
+In this question, you will explore active learning strategies for
+preference learning using a linear model. We will use expected
+information gain as the acquisition function to select the most
+informative queries, where each query is a pair of items. Assume that we
+model the preferences using a simple linear model. Given feature vectors
+$x_1$ and $x_2$ corresponding to two items, the probability that $x_1$
+is preferred over $x_2$ is modeled using a logistic regression model,
+i.e.,
+
+$$P(x_1 \succ x_2 | \theta) = \sigma(\theta^\top (x_1 - x_2)),$$
+
+where $\theta \in \mathbb{R}^d$ is the model parameter vector, and
+$\sigma(z)$ is the sigmoid function $\sigma(z) = \frac{1}{1 + e^{-z}}$.
+The goal is to sequentially select pairs of items to maximize the
+information gained about $\theta$ through preference queries.
+
+(a) **Expected Information Gain (15 points)**
+
+    (i) **Derive the Expected Information Gain (Written, 3 points).**
+        Suppose that after observing a preference between two items
+        $x_1$ and $x_2$, the posterior distribution over $\theta$ is
+        updated. The information gain from this observation is the
+        reduction in uncertainty about $\theta$ measured using the
+        Kullback-Leibler (KL) divergence between the prior and posterior
+        distributions. Given the current posterior distribution
+        $P(\theta | \mathcal{D})$ and a possible observation
+        $y \in \{0, 1\}$ (where $y = 1$ if $x_1$ is preferred over
+        $x_2$, and $y = 0$ otherwise), the expected information gain is: $$\begin{aligned}
+    \mathbb{E}[\text{IG}(x_1, x_2)] = &P(y=1 | x_1, x_2, \theta) D_{\text{KL}}\left( P(\theta | y = 1, \mathcal{D}) \parallel P(\theta | \mathcal{D}) \right) \\+ 
+    &P(y=0 | x_1, x_2, \theta) D_{\text{KL}}\left( P(\theta | y = 0, \mathcal{D}) \parallel P(\theta | \mathcal{D}) \right)
+\end{aligned}$$
+
+        Derive this expression for the expected information gain of
+        selecting the pair $(x_1, x_2)$ for a preference query. Start by
+        explaining how the KL divergence measures the information gain,
+        and break down the expectation over the possible outcomes of the
+        query.
+
+    (ii) **Simplifying the KL Divergence (Written, 4 points).** Assuming
+         the prior and posterior distributions over $\theta$ are
+         Gaussian (i.e., $P(\theta) \sim \mathcal{N}(\mu, \Sigma)$ and
+         $P(\theta | \mathcal{D}) \sim \mathcal{N}(\mu', \Sigma')$),
+         show that the KL divergence between the Gaussian posterior and
+         prior simplifies to: $$\begin{aligned}
+        D_{\text{KL}}\left( \mathcal{N}(\mu', \Sigma') \parallel \mathcal{N}(\mu, \Sigma) \right) &= \frac{1}{2} \left( \text{tr}(\Sigma^{-1} \Sigma') + (\mu' - \mu)^\top \Sigma^{-1} (\mu' - \mu)\right.\\
+        &\left.- d + \log\left( \frac{\det(\Sigma)}{\det(\Sigma')} \right) \right).
+        \end{aligned}$$
+
+    (iii) **Approximate Information Gain for a Linear Model (Written, 4
+          points).** In the case of a linear model with Gaussian priors
+          on $\theta$, assume that the posterior distribution
+          $P(\theta | \mathcal{D}) \sim \mathcal{N}(\mu, \Sigma)$ is
+          updated using Bayes' rule after each observation. The
+          likelihood of observing a preference $y$ is logistic, which
+          does not conjugate with the Gaussian prior. However, for the
+          purposes of this question, assume that after each query, the
+          posterior mean $\mu'$ and covariance $\Sigma'$ can be updated
+          using an approximation method such as Laplace's approximation.
+
+          Using these assumptions, compute the expected information gain
+          for a specific query $(x_1, x_2)$ in closed form. You may
+          express the information gain in terms of the updated mean
+          $\mu'$ and covariance $\Sigma'$ after observing the preference
+          outcome.
+
+    (iv) **Laplace Approximation for Posterior (Written, 4 points).**
+         The Laplace approximation for the posterior is given by $$\begin{aligned}
+    \mu'=\arg \min_\theta -\log P(\theta | \mathcal{D})\\
+    \Sigma'^{-1}=\nabla_\theta\nabla_\theta -\log P(\theta|\mathcal{D})|_{\theta=\mu'}
+\end{aligned}$$ 
+         In our scenario with the Bradley-Terry model
+         for likelihood, simplify $-\log P(\theta | \mathcal{D})$ and
+         its Hessian ignoring the normalization constant.
+
+(b) **Active Learning Algorithm (25 points)** In this section, you will
+    implement an active learning algorithm for selecting the most
+    informative queries using the expected information gain criterion.
+
+    (i) **(Coding, 4 points).** Implement `kl_divergence_gaussians` in
+        `active_learning/main.py`.
+
+    (ii) **(Coding, 4 points).** Following your derived Laplace
+         approximation, implement `negative_log_posterior`.
+
+    (iii) **(Coding, 4 points).** Implement `compute_hessian` that is
+          used to obtain the inverse of the covariance matrix.
+
+    (iv) **(Coding, 3 points).** Implement `expected_information_gain`.
+
+    (v) **(Coding, 4 points).** Finally, implement `active_learning`.
+
+    (vi) **(Coding + Written, 6 points).** Plot the $L^2$ norm of the
+         covariance matrix for each loop of the active learning loop.
+         Additionally, on the same plot, implement a random baseline and
+         plot its $L^2$ covariance matrix norm. The random baseline
+         should randomly select a point in the dataset and not use any
+         acquisition function. Interpret your plot and use it to compare
+         the two methods.
+
+### Question 3: Linear Performance Metric Elicitation (30 points) {#sec-question-3-linear-performance-metric-elicitation-30-points .unnumbered}
+
+1.  **(Written, 10 points).** For background on the problem setting,
+    read <https://tinyurl.com/3b92sufm>. Suppose we have a linear
+    performance metric given by $$p(C) = 1-\alpha (FP)-\beta (FN)$$
+    where $C$ is a confusion matrix and $FP, FN$ denote false positive
+    and false negative rates. We wish to find the optimal classifier
+    w.r.t. $p$. That is, $$\phi^* = \arg \max_{\phi\in\Phi} p(C(\phi))$$
+    where $\Phi$ is the space of all probabilistic binary classifiers
+    from $X\to [0, 1]$. Note that these classifiers return probabilities
+    corresponding to the label $1$. Show that $\phi^*$ is in fact
+    deterministic and given by $$\phi(x)=\begin{cases}
+        1 & \text{if } p(y|x) > f(\alpha,\beta) \\
+        0 & \text{otherwise}.
+    \end{cases}$$ for a threshold function $f$ that you must find.
+    (Hint: For a classifier $\phi$, $FP=P(\phi=1, y=0)$ and
+    $FN=P(\phi=0, y=1)$. Marginalize these joint probabilities over $x$
+    and simplify.)
+
+2.  **(Written + Coding, 5 points).** Implement `classifier_metrics` in
+    `lpme/main.py`. After doing so, run `plot_confusion_region` and
+    attach the plot. What do you notice about the region of possible
+    confusion matrices?
+
+3.  **(Coding, 15 points).** Implement `search_theta` in order to elicit
+    the metric used by the oracle (which is parametrized by $\theta$).
+    Play around with the oracle's theta and run `start_search` to see
+    how close you can approximate it!
+
+### Question 4: D-optimal Design with Logistic Model (30 points) {#sec-question-4-d-optimal-design-with-logistic-model-30-points .unnumbered}
+
+In this question, we explore D-optimal designs in the context of the
+Bradley-Terry model. The Bradley-Terry model is a logistic regression
+model used for paired comparison data. Given two items $x_1$ and $x_2$,
+the probability that item $x_1$ is preferred over $x_2$ is modeled as:
+
+$$P(x_1 \succ x_2 | \theta) = \frac{e^{\theta^\top x_1}}{e^{\theta^\top x_1} + e^{\theta^\top x_2}} = \frac{1}{1 + e^{\theta^\top (x_2 - x_1)}}$$
+
+where $\theta \in \mathbb{R}^d$ represents the unknown model parameters,
+and $x_1, x_2 \in \mathbb{R}^d$ are the feature vectors associated with
+the two items. D-optimal design aims to maximize the determinant of the
+Fisher information matrix, thus minimizing the volume of the confidence
+ellipsoid for the estimated parameters. In this exercise, you will
+analyze D-optimal designs for this model.
+
+(a) **Fisher Information Matrix for the Bradley-Terry Model (12
+    points)**
+
+    (i) **(Written, 6 points).** Derive the Fisher information matrix
+        for the Bradley-Terry model at a design point $(x_1, x_2)$. Show
+        that the Fisher information matrix at a design point is:
+        $$I(x_1, x_2, \theta) = w(x_1, x_2, \theta) (x_1 - x_2)(x_1 - x_2)^\top,$$
+        where $w(x_1, x_2, \theta)$ is a weight function given by:
+        $$w(x_1, x_2, \theta) = \frac{e^{\theta^\top x_1} e^{\theta^\top x_2}}{\left(e^{\theta^\top x_1} + e^{\theta^\top x_2}\right)^2} =\sigma'(\theta^\top (x_1-x_2)).$$
+        $\sigma'$ is the derivative of the sigmoid function.
+
+    (ii) **(Coding, 6 points).** Implement `fisher_matrix` in
+         `d_optimal/main.py` based on the derived expression.
+
+(b) **D-optimal Design Criterion (18 points)**
+
+    (i) **(Coding, 11 points).** In the context of the Bradley-Terry
+        model, a D-optimal design maximizes the determinant of the
+        Fisher information matrix. Suppose we have a set of candidate
+        items $\{x_1, \dots, x_n\}$, and we can choose $N$ comparisons
+        to make. Formally, the D-optimal design maximizes:
+        $$\det\left( \sum_{i=1}^N w(x_{i1}, x_{i2}, \theta) (x_{i1} - x_{i2})(x_{i1} - x_{i2})^\top \right),$$
+        where $(x_{i1}, x_{i2})$ denotes a pair of compared items in the
+        design. Implement a greedy algorithm to approximate the
+        D-optimal design. Given a set of $n$ items and their feature
+        vectors $\{x_1, \dots, x_n\}$, your task is to iteratively
+        select the pair of items $(x_{i1}, x_{i2})$ that maximizes the
+        determinant of the Fisher information matrix. Please implement
+        `greedy_fisher`. Note that the setup in the code assumes we have
+        a dataset of all possible differences between pairs of items as
+        opposed to directly selecting the pairs.
+
+    (ii) **(Written + Coding, 7 points).** Notice that
+         `posterior_inv_cov` uses a Laplace approximation for the
+         posterior centered around the ground truth weights after
+         labeling the chosen points. However, it turns out this
+         approximation doesn't actually depend on the labels when taking
+         the Hessian. Please run the file `d_optimal/main.py` and attach
+         a plot of the norm of the covariance matrix of the posterior.
+         What difference do you observe between greedy and random
+         sampling? What is the win rate of greedy?
+
+### Question 5: Nonparametric Metric Elicitation (30 points) {#sec-question-5-nonparametric-metric-elicitation-30-points .unnumbered}
+
+In this question, we explore the problem of performance metric
+elicitation using a Gaussian Process (GP) to map the elements of the
+confusion matrix, specifically false positives (FP) and false negatives
+(FN), to an unknown performance metric. The goal is to learn a
+non-linear function that maps FP and FN to the metric, using relative
+preferences from pairwise classifier comparisons. We will use elliptical
+slice sampling for posterior inference.
+
+(a) **Gaussian Process for Metric Elicitation (10 points)**
+
+    (i) **(Written, 2 points).** Assume that the performance metric
+        $\phi(C)$ is a non-linear function of the confusion matrix $C$.
+        For simplicity, assume that $\phi$ depends only on FP and FN,
+        i.e., $$\phi(\text{FP}, \text{FN}) \sim \mathcal{GP}(0, k((\text{FP}, \text{FN}), (\text{FP}', \text{FN}'))),$$ 
+        where $k$ is the covariance kernel function of
+        the Gaussian Process. Explain why using a GP allows for flexible
+        modeling of the metric $\phi$ as a non-linear function of FP and
+        FN. What are the advantages of using a GP over a linear model in
+        this context?
+
+    (ii) **(Written, 2 points).** Suppose we observe pairwise
+         comparisons between classifiers, where a user provides feedback
+         on which classifier they prefer based on the unknown metric
+         $\phi$. Given two classifiers with confusion matrices
+         $C_1 = (\text{FP}_1, \text{FN}_1)$ and
+         $C_2 = (\text{FP}_2, \text{FN}_2)$, the user indicates their
+         relative preference. Let the observed preference be modeled by
+         Bradley-Terry as: $$\Pr(C_1 \succ C_2) = \sigma(\phi(\text{FP}_1, \text{FN}_1) - \phi(\text{FP}_2, \text{FN}_2)).$$ 
+         where we view $\phi$ as the reward function.
+         How does this likelihood affect the posterior inference in the
+         GP? Where does it introduce additional complexity?
+
+    (iii) **(Written + Coding, 6 points).** Given a set of observed
+          pairwise comparisons, derive the posterior distribution over
+          the latent function values $\phi$ given a set of confusion
+          matrices preferences using Bayes' rule. Express the posterior
+          distribution in terms of the GP prior and the pairwise
+          likelihood function. You do not need to include the
+          normalization constant. Implement the likelihood function in
+          `loglik_from_preferences`.
+
+(b) **Elliptical Slice Sampling for Posterior Inference (20 points)**
+
+    (i) **(Written, 3 points).** Read
+        <https://proceedings.mlr.press/v9/murray10a/murray10a.pdf>.
+        Elliptical slice sampling is a sampling method used to generate
+        samples from the posterior distribution of a Gaussian Process.
+        Explain the key idea behind elliptical slice sampling and why it
+        is well-suited for sampling from the GP posterior in this
+        context.
+
+    (ii) **(Coding, 10 points).** Implement elliptical slice sampling in
+         `npme/elliptical_sampler.py` by following Figure 2 in the
+         paper.
+
+    (iii) **(Written, 3 points).** Run the algorithm on a synthetic
+          preference dataset of confusion matrices with pairwise
+          preferences. The synthetic data will be constructed using the
+          metric
+          $$\phi_{\text{true}}(\text{FP}, \text{FN}) = \log(1 + \text{FP}) + \log(1 + \text{FN}),$$
+          which captures the idea that the human oracle perceives both
+          false positives and false negatives in a way that flattens out
+          as these values increase (i.e., marginal increases in FP and
+          FN have diminishing effects on the performance metric).
+          Explain the psychological motivation behind this non-linear
+          function. Why might a logarithmic form be appropriate for
+          modeling human perception of classification errors?
+
+          Run the file `npme/main.py` and attach the plot of
+          $\phi_{\text{true}}$ vs your elicited metric. What do you
+          notice in the plot?
+
+    (iv) **(Written + Coding, 4 points).** Once the GP has been trained
+         and posterior samples of the function
+         $\phi(\text{FP}, \text{FN})$ have been obtained, how can we
+         evaluate the quality of the elicited metric? Propose a method
+         to evaluate how well the elicited metric $\phi$ aligns with the
+         user's true preferences and implement it in
+         `evaluate_elicited_metric` taking into the plot you saw in part
+         (iii).

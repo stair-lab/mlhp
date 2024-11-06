@@ -40,6 +40,27 @@ format:
     mathjax: 
       macros:
         mathbbm: ["\\mathbbm{#1}", 1]
+    include-in-header:
+      text: |
+        <script>
+        MathJax = {
+          loader: {
+            load: ['[tex]/boldsymbol']
+          },
+          tex: {
+            tags: "all",
+            inlineMath: [['$','$'], ['\\(','\\)']],
+            displayMath: [['$$','$$'], ['\\[','\\]']],
+            processEscapes: true,
+            processEnvironments: true,
+            packages: {
+              '[+]': ['boldsymbol']
+            }
+          }
+        };
+        </script>
+        <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
 
   pdf:
     documentclass: scrreprt
@@ -61,6 +82,17 @@ format:
     urlcolor: DarkGreen # tufte color
     code-overflow: wrap
     code-line-numbers: true
+    include-before-body:
+      text: |
+        \RecustomVerbatimEnvironment{verbatim}{Verbatim}{
+          showspaces = false,
+          showtabs = false,
+          breaksymbolleft={},
+          breaklines
+        }
+        \numberwithin{algorithm}{chapter}
+        \algrenewcommand{\algorithmiccomment}[1]{\hskip3em$\rightarrow$ #1}
+
 
 knitr:
   opts_chunk:
@@ -71,6 +103,7 @@ knitr:
     dpi: 300
 
 execute: 
+  eval: false
   echo: true
   message: false
   warning: false
