@@ -567,6 +567,256 @@ information gained about $\theta$ through preference queries.
          acquisition function. Interpret your plot and use it to compare
          the two methods.
 
+
+```{python ex2-q2-1}
+import torch
+import torch.nn.functional as F
+from torch.optim import Adam
+from tqdm import tqdm
+from sklearn.model_selection import train_test_split
+from sklearn.datasets import make_classification
+
+class LogisticActiveLearning:
+    def __init__(self, test_size=0.2):
+        """
+        Initializes LogisticActiveLearning model, sets device, and prepares data.
+        
+        Args:
+        - test_size (float): Proportion of the dataset used for validation.
+        """
+        # Make device customizable
+        self.device = torch.device("cpu")
+        X, y = make_classification(n_samples=10000, random_state=42)
+
+        # Convert data and labels to tensors
+        x_data = torch.tensor(X, dtype=torch.float32).to(self.device)
+        y_data = torch.tensor(y, dtype=torch.float32).to(self.device)
+        self.N, self.D = x_data.shape
+
+        # Split into training and validation sets
+        train_indices, val_indices = train_test_split(range(self.N), test_size=test_size, random_state=42)
+        self.x_train = x_data[train_indices]
+        self.y_train = y_data[train_indices]
+        self.x_val = x_data[val_indices]
+        self.y_val = y_data[val_indices]
+
+        # Initialize mean and inverse covariance for the prior
+        self.weights_mean = torch.zeros(self.D, requires_grad=True, device=self.device)
+        self.weights_inv_cov = torch.eye(self.D).to(self.device)  # Start with identity inverse covariance
+
+    def negative_log_posterior(self, w, x, y):
+        """
+        Computes the negative log-posterior (negative log-prior + log-likelihood).
+        
+        Args:
+        - w (torch.Tensor): Model weights.
+        - x (torch.Tensor): Input data point.
+        - y (torch.Tensor): True label.
+        
+        Returns:
+        - torch.Tensor: Negative log-posterior value.
+        """
+        # YOUR CODE HERE (~4-6 lines)
+        # Compute log-prior term using inverse covariance
+        pass
+        # END OF YOUR CODE
+
+    def optimize_weights(self, w, x, y, num_steps=50, lr=1e-2):
+        """
+        Optimizes weights using Adam optimizer.
+        
+        Args:
+        - w (torch.Tensor): Initial weights.
+        - x (torch.Tensor): Input data point.
+        - y (torch.Tensor): True label.
+        - num_steps (int): Number of optimization steps.
+        - lr (float): Learning rate.
+        
+        Returns:
+        - torch.Tensor: Updated weights.
+        - torch.Tensor: Hessian inverse covariance.
+        """
+        optimizer = Adam([w], lr=lr)
+        
+        for step in range(num_steps):
+            optimizer.zero_grad()
+            loss = self.negative_log_posterior(w, x, y)
+            loss.backward()
+            optimizer.step()
+
+        # Compute the Hessian of log-posterior, serving as inverse covariance
+        inv_cov = self.compute_hessian(w.detach(), x, y)
+        return w.detach().clone(), inv_cov
+
+    def compute_hessian(self, w, x, y):
+        """
+        Computes the Hessian of the negative log-posterior, used as the inverse covariance.
+        
+        Args:
+        - w (torch.Tensor): Model weights.
+        - x (torch.Tensor): Input data point.
+        - y (torch.Tensor): True label.
+        
+        Returns:
+        - torch.Tensor: Hessian of the negative log-posterior.
+        """
+        # YOUR CODE HERE (~5-8 lines)
+        # Hessian of the prior term
+        pass
+        # END OF YOUR CODE
+
+    def acquisition_fn(self, x):
+        """
+        Computes posterior means and inverse covariances for y=1 and y=0 without modifying original parameters.
+        
+        Args:
+        - x (torch.Tensor): Input data point.
+        
+        Returns:
+        - dict: Posterior properties for y=1 and y=0 cases.
+        """
+        weights_y1 = self.weights_mean.clone().detach().requires_grad_(True)
+        weights_y0 = self.weights_mean.clone().detach().requires_grad_(True)
+
+        # Optimize weights and get Hessian for both y=1 and y=0 cases
+        posterior_mean_y1, inv_cov_y1 = self.optimize_weights(weights_y1, x, 1, num_steps=50)
+        posterior_mean_y0, inv_cov_y0 = self.optimize_weights(weights_y0, x, 0, num_steps=50)
+
+        # Calculate probabilities for the acquisition function
+        prob_y1 = torch.sigmoid(torch.dot(self.weights_mean.detach(), x))
+        prob_y0 = 1 - prob_y1
+
+        return {
+            'prob_y1': prob_y1,
+            'prob_y0': prob_y0,
+            'posterior_mean_y1': posterior_mean_y1,
+            'posterior_inv_cov_y1': inv_cov_y1,
+            'posterior_mean_y0': posterior_mean_y0,
+            'posterior_inv_cov_y0': inv_cov_y0
+        }
+
+    def expected_information_gain(self, x):
+        """
+        Computes expected information gain for a given point `x`.
+        
+        Args:
+        - x (torch.Tensor): Input data point.
+        
+        Returns:
+        - torch.Tensor: Expected Information Gain (EIG) value.
+        """
+        acquisition = self.acquisition_fn(x)
+
+        # Compute KL divergences for y=1 and y=0 using inverse covariances
+        kl_y1 = kl_divergence_gaussians(
+            acquisition['posterior_mean_y1'],
+            acquisition['posterior_inv_cov_y1'],
+            self.weights_mean.detach(),
+            self.weights_inv_cov
+        )
+
+        kl_y0 = kl_divergence_gaussians(
+            acquisition['posterior_mean_y0'],
+            acquisition['posterior_inv_cov_y0'],
+            self.weights_mean.detach(),
+            self.weights_inv_cov
+        )
+
+        # Expected Information Gain (EIG)
+        eig = None # YOUR CODE HERE (1 line)
+        return eig
+
+    def active_learning(self, selected_indices, subset_size=50):
+        """
+        Active learning loop that selects the most informative data point based on EIG.
+        
+        Args:
+        - selected_indices (list): Indices of previously selected samples.
+        - subset_size (int): Number of samples to consider in each subset.
+
+        Returns:
+        - best_x, best_x_idx, best_acquisition: Selected data point and acquisition details.
+        """
+        best_eig = -float('inf')
+        best_x = None
+        best_x_idx = -1
+        best_acquisition = None
+
+        subset_indices = [i for i in torch.randperm(len(self.x_train)).tolist() if i not in selected_indices][:subset_size]
+
+        # YOUR CODE HERE (~ 10 lines)
+        pass
+        # END OF YOUR CODE
+        return best_x, best_x_idx, best_acquisition
+
+    def validate(self):
+        """
+        Computes accuracy on the validation set by predicting labels and comparing to true labels.
+        
+        Returns:
+        - float: Validation accuracy.
+        """
+        with torch.no_grad():
+            logits = self.x_val @ self.weights_mean
+            predictions = torch.sigmoid(logits) >= 0.5  # Convert logits to binary predictions
+            accuracy = (predictions == self.y_val).float().mean().item()
+            print(f"Validation accuracy: {accuracy * 100:.2f}%")
+        return accuracy
+
+    def train(self, num_iterations=10, subset_size=50):
+        """
+        Train the model using active learning with subset sampling.
+        
+        Args:
+        - num_iterations (int): Number of active learning iterations.
+        - subset_size (int): Number of samples to consider in each subset.
+        """
+        selected_indices = []
+        for iteration in range(num_iterations):
+            print(f"Iteration {iteration + 1}/{num_iterations}")
+
+            # Select the most informative data point from a random subset
+            best_x, best_x_idx, acquisition = self.active_learning(selected_indices, subset_size=subset_size)
+            selected_indices.append(best_x_idx)
+            print(f"Selected data point with EIG.")
+
+            # Get the true label for the selected data point
+            y = self.y_train[best_x_idx].item()
+
+            # Update posterior mean and inverse covariance based on true label
+            if y == 1:
+                self.weights_mean = acquisition['posterior_mean_y1']
+                self.weights_inv_cov = acquisition['posterior_inv_cov_y1']
+            else:
+                self.weights_mean = acquisition['posterior_mean_y0']
+                self.weights_inv_cov = acquisition['posterior_inv_cov_y0']
+
+            print(f"Covariance L2: {torch.inverse(self.weights_inv_cov).norm()}")
+
+            # Validate model performance on the validation set
+            self.validate()
+
+# KL divergence between two multivariate normal distributions
+def kl_divergence_gaussians(mu1, sigma1_inv, mu2, sigma2_inv):
+    """
+    Computes the KL divergence between two multivariate Gaussian distributions.
+    
+    Args:
+    - mu1, mu2 (torch.Tensor): Mean vectors of the distributions.
+    - sigma1_inv, sigma2_inv (torch.Tensor): Inverse covariance matrices of the distributions. PLEASE NOTE THE INVERSE!
+    
+    Returns:
+    - torch.Tensor: KL divergence value.
+    """
+    # YOUR CODE HERE (~ 9-12 lines)
+    pass
+    # END OF YOUR CODE
+
+# Example usage
+model = LogisticActiveLearning()
+model.train(num_iterations=100, subset_size=50)
+```
+
 ### Question 3: Linear Performance Metric Elicitation (30 points) {#sec-question-3-linear-performance-metric-elicitation-30-points .unnumbered}
 
 1.  **(Written, 10 points).** For background on the problem setting,
@@ -595,6 +845,174 @@ information gained about $\theta$ through preference queries.
     the metric used by the oracle (which is parametrized by $\theta$).
     Play around with the oracle's theta and run `start_search` to see
     how close you can approximate it!
+
+```{python ex2-q3-1}
+import torch
+import matplotlib.pyplot as plt
+from tqdm import tqdm
+
+class DataDistribution:
+    def __init__(self, N: int):
+        """
+        Initializes the data distribution with a specified number of samples.
+        
+        Args:
+        - N (int): Number of data points.
+        """
+        self.weights = torch.tensor([-0.3356, -1.4104, 0.3144, -0.5591, 1.0426, 0.6036, -0.7549, -1.1909, 1.4779, -0.7513])
+        self.D = len(self.weights)
+
+        gen = torch.Generator().manual_seed(42)
+        self.data = torch.randn(N, self.D, generator=gen)
+        self.probs = torch.sigmoid(self.data @ self.weights)
+    
+def classifier_metrics(data_dist, threshold, upper=True):
+    """
+    Computes the True Positive and True Negative rates based on a classifier threshold.
+    
+    Args:
+    - data_dist (DataDistribution): The data distribution instance.
+    - threshold (float): Threshold value for classification.
+    - upper (bool): If True, classifies as positive if above threshold; else, if below.
+    
+    Returns:
+    - tuple (float, float): True Positive Rate (TP) and True Negative Rate (TN) in that order.
+    """
+    # YOUR CODE HERE (~3-5 lines)
+    pass
+    # END OF YOUR CODE
+
+def sweep_classifiers(data_dist: DataDistribution):
+    """
+    Sweeps through classifier thresholds and calculates True Positive and True Negative rates.
+    
+    Args:
+    - data_dist (DataDistribution): The data distribution instance.
+    
+    Returns:
+    - tuple: Upper and lower boundary data for True Positive and True Negative rates.
+    """
+    thresholds = torch.linspace(0, 1, 100)
+    upper_boundary = []
+    lower_boundary = []
+    
+    for threshold in tqdm(thresholds, desc="Thresholds"):
+        tp_upper, tn_upper = classifier_metrics(data_dist, threshold, upper=True)
+        upper_boundary.append((tp_upper, tn_upper))
+
+        tp_lower, tn_lower = classifier_metrics(data_dist, threshold, upper=False)
+        lower_boundary.append((tp_lower, tn_lower))
+
+    return upper_boundary, lower_boundary
+
+class Oracle:
+    def __init__(self, theta: float):
+        """
+        Initializes the oracle with a given theta for preference evaluation.
+        
+        Args:
+        - theta (float): Oracle angle in radians.
+        """
+        self.theta = torch.tensor(theta)
+
+    def evaluate_lpm(self, tp, tn):
+        """
+        Computes the linear performance metric (LPM) based on theta.
+        
+        Args:
+        - tp (float): True Positive rate.
+        - tn (float): True Negative rate.
+        
+        Returns:
+        - float: Linear performance metric evaluation.
+        """
+        return torch.cos(self.theta) * tp + torch.sin(self.theta) * tn
+    
+    def preferred_classifier(self, tp_1, tn_1, tp_2, tn_2):
+        """
+        Determines the preferred classifier based on LPM values.
+        
+        Args:
+        - tp_1, tn_1, tp_2, tn_2 (float): True Positive and True Negative rates for two classifiers.
+        
+        Returns:
+        - bool: True if first classifier is preferred, False otherwise.
+        """
+        lpm_1 = self.evaluate_lpm(tp_1, tn_1)
+        lpm_2 = self.evaluate_lpm(tp_2, tn_2)
+        return (lpm_1 > lpm_2).item()
+    
+def theta_to_threshold(theta):
+    """Converts theta angle to classification threshold."""
+    return 1 / (1 + torch.tan(theta) ** -1)
+
+def search_theta(oracle: Oracle, data_dist, lower_bound, upper_bound):
+    """
+    Performs a search over theta values to optimize the classification threshold.
+    
+    Args:
+    - oracle (Oracle): The oracle for LPM evaluation.
+    - data_dist (DataDistribution): The data distribution instance.
+    - lower_bound (float): Lower bound for theta.
+    - upper_bound (float): Upper bound for theta.
+    
+    Returns:
+    - tuple: Updated lower and upper bounds for theta.
+    """
+    left = 0.75 * lower_bound + 0.25 * upper_bound
+    middle = 0.5 * lower_bound + 0.5 * upper_bound
+    right = 0.25 * lower_bound + 0.75 * upper_bound
+
+    thetas = [lower_bound, left, middle, right, upper_bound]
+    thresholds = theta_to_threshold(torch.tensor(thetas))
+    new_lower, new_upper = None, None
+
+    # YOUR CODE HERE (~18-25 lines)
+    # 1. Collect metrics for each threshold value.
+    # 2. Determine if LPM increases as theta increases.
+    # 3. Check for pattern of increases and decreases in LPM.
+    # 4. Update bounds based on observed LPM patterns.
+    pass
+    # END OF YOUR CODE
+
+    return new_lower, new_upper
+
+# Create instance and get upper & lower boundary data
+data_dist = DataDistribution(N=10000000)
+oracle = Oracle(theta=0.1)
+
+def plot_confusion_region():
+    """
+    Plots the True Positive vs. True Negative rates for the upper and lower classifier boundaries.
+    """
+    upper_boundary, lower_boundary = sweep_classifiers(data_dist)
+
+    # Prepare data for plotting for upper and lower boundaries
+    tp_upper, tn_upper = zip(*upper_boundary)
+    tp_lower, tn_lower = zip(*lower_boundary)
+
+    # Plot the results for upper boundary
+    plt.figure(figsize=(8, 6))
+    plt.plot(tp_upper, tn_upper, marker='o', linestyle='-', alpha=0.7, label="Upper Boundary")
+    plt.plot(tp_lower, tn_lower, marker='o', linestyle='--', alpha=0.7, label="Lower Boundary")
+    plt.title("True Positive vs. True Negative Rates (Upper & Lower Boundaries)")
+    plt.xlabel("True Positive Rate (TP)")
+    plt.ylabel("True Negative Rate (TN)")
+    plt.legend()
+    plt.grid(True)
+    plt.show()
+
+def start_search():
+    """
+    Starts the theta search using the LPM-based oracle and prints the search range per iteration.
+    """
+    lower_bound = 0
+    upper_bound = torch.pi / 2
+    for _ in tqdm(range(10), desc="LPM Search"):
+        print(f"Theta Search Space: [{lower_bound}, {upper_bound}]")
+        lower_bound, upper_bound = search_theta(oracle, data_dist, lower_bound=lower_bound, upper_bound=upper_bound)
+    print(f"Theta Search Space: [{lower_bound}, {upper_bound}]")
+```
 
 ### Question 4: D-optimal Design with Logistic Model (30 points) {#sec-question-4-d-optimal-design-with-logistic-model-30-points .unnumbered}
 
@@ -653,6 +1071,164 @@ analyze D-optimal designs for this model.
          a plot of the norm of the covariance matrix of the posterior.
          What difference do you observe between greedy and random
          sampling? What is the win rate of greedy?
+
+
+```{python ex2-q4-1}
+import numpy as np
+import matplotlib.pyplot as plt
+from tqdm import tqdm
+
+def sigmoid(x):
+    """Helper function to compute the sigmoid of x."""
+    return 1 / (1 + np.exp(-x))
+
+class LogisticData:
+    def __init__(self, weights, seed=42):
+        """
+        Initializes the LogisticData class with specified weights and seed.
+        
+        Args:
+        - weights (np.array): True weights for data generation.
+        - seed (int): Random seed for reproducibility.
+        """
+        self.rng = np.random.default_rng(seed)
+        self.weights = weights
+    
+    def generate_data(self, N):
+        """
+        Generates synthetic data for logistic regression.
+        
+        Args:
+        - N (int): Number of data points.
+        
+        Returns:
+        - tuple: Generated data and labels.
+        """
+        data = self.rng.standard_normal((N, len(self.weights)))
+        probs = sigmoid(data @ self.weights)
+        labels = (self.rng.random(N) < probs).astype(int)
+        return data, labels
+
+def fisher_matrix(difference_vector, weights):
+    """
+    Computes the Fisher information matrix for a single data point.
+    
+    Args:
+    - difference_vector (np.array): Difference vector (input data point).
+    - weights (np.array): Weights for the logistic model.
+    
+    Returns:
+    - np.array: Fisher information matrix for the data point.
+    """
+    # YOUR CODE HERE (~2-4 lines)
+    pass
+    # END OF YOUR CODE
+
+# Initialization
+true_weights = np.array([-0.3356, -1.4104, 0.3144, -0.5591, 1.0426, 0.6036, -0.7549, -1.1909, 1.4779, -0.7513])
+data_dim = len(true_weights)
+dataset_generator = LogisticData(weights=true_weights)
+
+# Number of iterations for sampling 500 points
+num_iterations = 200
+
+# Store covariance matrix norms for comparison
+cov_norms_greedy = []
+cov_norms_random = []
+
+def greedy_fisher(data, curr_fisher_matrix, selected_indices):
+    """
+    Selects the data point that maximizes the Fisher information determinant.
+    
+    Args:
+    - data (np.array): The data matrix.
+    - curr_fisher_matrix (np.array): Fisher matrix of already selected indices.
+    - selected_indices (list): List of already selected indices.
+    
+    Returns:
+    - int: Index of the selected data point.
+    """
+    best_det = -np.inf
+    best_index = -1
+    
+    # Iterate over data points to find the one maximizing Fisher determinant.
+    for i, difference_vector in enumerate(data):
+        # YOUR CODE HERE (~5-10 lines)
+        # Make sure to skip already selected data points!
+        pass
+        # END OF YOUR CODE
+    return best_index
+
+def posterior_inv_cov(X, laplace_center):
+    """
+    Computes the posterior inverse covariance matrix using Laplace approximation.
+    
+    Args:
+    - X (np.array): Data matrix.
+    - laplace_center (np.array): Center point (weights).
+    
+    Returns:
+    - np.array: Posterior inverse covariance matrix.
+    """
+    # Calculate probabilities for logistic regression model.
+    probs = sigmoid(X @ laplace_center)
+    W = np.diag(probs * (1 - probs))
+    
+    # Compute inverse covariance matrix assuming standard Gaussian prior.
+    inv_cov = X.T @ W @ X + np.eye(len(true_weights))
+    return inv_cov
+
+for _ in tqdm(range(num_iterations)):
+    # Generate a new sample of 500 data points
+    data, _ = dataset_generator.generate_data(N=500)
+    
+    # Greedy selection of best 30 data points
+    selected_indices = []
+    curr_fisher_matrix = np.zeros((data_dim, data_dim))
+
+    for _ in range(30):
+        # Select the data point maximizing Fisher information determinant.
+        best_index = greedy_fisher(data, curr_fisher_matrix, selected_indices)
+        selected_indices.append(best_index)
+        curr_fisher_matrix += fisher_matrix(data[best_index], true_weights)
+
+    # Prepare greedy and random samples
+    X_greedy = data[selected_indices]
+
+    # Generate 30 random samples for comparison
+    random_indices = np.random.choice(len(data), 30, replace=False)
+    X_random = data[random_indices]
+
+    # Compute posterior inverse covariance matrices for both strategies
+    posterior_inv_cov_greedy = posterior_inv_cov(X_greedy, laplace_center=true_weights) 
+    posterior_inv_cov_random = posterior_inv_cov(X_random, laplace_center=true_weights)
+
+    # Calculate covariance matrices (inverse of posterior inverse covariance)
+    cov_matrix_greedy = np.linalg.inv(posterior_inv_cov_greedy)
+    cov_matrix_random = np.linalg.inv(posterior_inv_cov_random)
+
+    # Measure the norm (Frobenius norm) of the covariance matrices
+    cov_norm_greedy = np.linalg.norm(cov_matrix_greedy, 'fro')
+    cov_norm_random = np.linalg.norm(cov_matrix_random, 'fro')
+
+    # Store norms for analysis
+    cov_norms_greedy.append(cov_norm_greedy)
+    cov_norms_random.append(cov_norm_random)
+
+# Display comparison results
+print(f'Greedy mean: {np.mean(cov_norms_greedy)}')
+print(f'Random mean: {np.mean(cov_norms_random)}')
+print(f'Greedy win rate: {(np.array(cov_norms_greedy) < np.array(cov_norms_random)).mean()}')
+
+# Plot the distributions of covariance matrix norms
+plt.hist(cov_norms_greedy, bins=30, alpha=0.7, color='blue', label='Greedy')
+plt.hist(cov_norms_random, bins=30, alpha=0.7, color='red', label='Random')
+plt.xlabel('L2 Norm of Covariance Matrix')
+plt.ylabel('Frequency')
+plt.title('Comparison of Covariance Norms (Greedy vs. Random) Across Iterations')
+plt.legend()
+plt.show()
+```
 
 ### Question 5: Nonparametric Metric Elicitation (30 points) {#sec-question-5-nonparametric-metric-elicitation-30-points .unnumbered}
 
@@ -736,3 +1312,216 @@ slice sampling for posterior inference.
          user's true preferences and implement it in
          `evaluate_elicited_metric` taking into the plot you saw in part
          (iii).
+
+```{python ex2-q5-1}
+import numpy as np
+import matplotlib.pyplot as plt
+from typing import Callable
+import numpy as np
+from tqdm import tqdm
+
+class EllipticalSliceSampler:
+    def __init__(self,
+                 prior_cov: np.ndarray,
+                 loglik: Callable):
+        """
+        Initializes the Elliptical Slice Sampler.
+        
+        Args:
+        - prior_cov (np.ndarray): Prior covariance matrix.
+        - loglik (Callable): Log-likelihood function.
+        """
+        self.prior_cov = prior_cov
+        self.loglik = loglik
+
+        self._n = prior_cov.shape[0]  # Dimensionality of the space
+        self._chol = np.linalg.cholesky(prior_cov)  # Cache Cholesky decomposition
+
+        # Initialize state by sampling from prior
+        self._state_f = self._chol @ np.random.randn(self._n)
+
+    def _indiv_sample(self):
+        """
+        Main algorithm for generating an individual sample using Elliptical Slice Sampling.
+        """
+        f = self._state_f  # Previous state
+        nu = self._chol @ np.random.randn(self._n)  # Sample from prior for the ellipse
+        log_y = self.loglik(f) + np.log(np.random.uniform())  # Log-likelihood threshold
+
+        theta = np.random.uniform(0., 2 * np.pi)  # Initial proposal angle
+        theta_min, theta_max = theta - 2 * np.pi, theta  # Define bracketing interval
+
+        # Main loop: Accept sample if it meets log-likelihood threshold; otherwise, shrink the bracket.
+        while True:
+            # YOUR CODE HERE (~10 lines)
+            # 1. Generate a new sample point based on the current angle.
+            # 2. Check if the proposed point meets the acceptance criterion.            
+            # 3. If not accepted, adjust the bracket and select a new angle.
+            break
+            # END OF YOUR CODE
+
+    def sample(self,
+               n_samples: int,
+               n_burn: int = 500) -> np.ndarray:
+        """
+        Generates samples using Elliptical Slice Sampling.
+
+        Args:
+        - n_samples (int): Total number of samples to return.
+        - n_burn (int): Number of initial samples to discard (burn-in).
+
+        Returns:
+        - np.ndarray: Array of samples after burn-in.
+        """
+        samples = []
+        for i in tqdm(range(n_samples), desc="Sampling"):
+            self._indiv_sample()
+            if i > n_burn:
+                samples.append(self._state_f.copy())  # Store sample post burn-in
+
+        return np.stack(samples)
+
+def sigmoid(x):
+    """Sigmoid function to map values between 0 and 1."""
+    return 1 / (1 + np.exp(-x))
+
+# Step 1: Define a New Two-Dimensional Non-linear Function
+def nonlinear_function(x1, x2):
+    """
+    Computes a non-linear function of x1 and x2.
+    
+    Args:
+    - x1 (np.array): First input array.
+    - x2 (np.array): Second input array.
+    
+    Returns:
+    - np.array: Computed function values.
+    """
+    return np.log(1 + x1) + np.log(1 + x2)
+
+# Generate a 2D grid of points
+x1 = np.linspace(0, 1, 20)
+x2 = np.linspace(0, 1, 20)
+x1_grid, x2_grid = np.meshgrid(x1, x2)
+x_grid_points = np.vstack([x1_grid.ravel(), x2_grid.ravel()]).T
+f_values = nonlinear_function(x_grid_points[:, 0], x_grid_points[:, 1])
+
+# Step 2: Generate Preferences Using Bradley-Terry Model Over the Grid
+def generate_preferences(f_vals, num_prefs=10000):
+    """
+    Generates preferences based on the Bradley-Terry model.
+    
+    Args:
+    - f_vals (np.array): Function values at grid points.
+    - num_prefs (int): Number of preference pairs to generate.
+    
+    Returns:
+    - list of tuple: Generated preference pairs (i, j).
+    """
+    preferences = []
+    num_points = len(f_vals)
+    for _ in range(num_prefs):
+        i, j = np.random.choice(num_points, size=2, replace=False)
+        # Probability of preference using Bradley-Terry model
+        p_ij = sigmoid(f_vals[i] - f_vals[j])
+        # Decide preference based on random draw
+        if np.random.rand() < p_ij:
+            preferences.append((i, j))
+        else:
+            preferences.append((j, i))
+    return preferences
+
+preferences = generate_preferences(f_values)
+
+# Step 3: Define the Likelihood Function for Elliptical Slice Sampling
+def loglik_from_preferences(f):
+    """
+    Log-likelihood function using Bradley-Terry model for preferences.
+    
+    Args:
+    - f (np.array): Sampled function values.
+    
+    Returns:
+    - float: Log-likelihood value.
+    """
+    log_lik = 0
+    for idx_i, idx_j in preferences:
+        # YOUR CODE HERE (~2 lines)
+        pass
+        # END OF YOUR CODE
+    return log_lik
+
+# Step 4: Define the RBF Kernel to Compute Prior Covariance Matrix
+def rbf_kernel(X1, X2, length_scale=1.0, sigma_f=1.0):
+    """
+    Computes the Radial Basis Function (RBF) kernel between two sets of points.
+    
+    Args:
+    - X1, X2 (np.array): Input data points.
+    - length_scale (float): Kernel length scale parameter.
+    - sigma_f (float): Kernel output scale.
+    
+    Returns:
+    - np.array: RBF kernel matrix.
+    """
+    sqdist = np.sum(X1**2, axis=1).reshape(-1, 1) + np.sum(X2**2, axis=1) - 2 * np.dot(X1, X2.T)
+    return sigma_f**2 * np.exp(-0.5 / length_scale**2 * sqdist)
+
+# Define prior covariance (prior mean is zero vector)
+sigma_prior = rbf_kernel(x_grid_points, x_grid_points, length_scale=1.0, sigma_f=1.0)
+
+# Add small jitter to diagonal for numerical stability
+jitter = 1e-6
+sigma_prior += jitter * np.eye(sigma_prior.shape[0])
+
+# Ensure the matrix is symmetric to avoid numerical issues
+sigma_prior = (sigma_prior + sigma_prior.T) / 2
+
+# Step 5: Run Elliptical Slice Sampling
+sampler = EllipticalSliceSampler(sigma_prior, loglik_from_preferences)
+samples = sampler.sample(1000, n_burn=500)
+average_samples = np.mean(samples, axis=0)
+
+# Generate true function values on grid points
+true_values_on_grid = nonlinear_function(x_grid_points[:, 0], x_grid_points[:, 1])
+
+def evaluate_elicited_metric(true_metric, elicited_metric):
+    """
+    Evaluates and prints the mean and standard deviation of the difference
+    between true and elicited metrics.
+    
+    Args:
+    - true_metric (np.array): True values of the function.
+    - elicited_metric (np.array): Elicited (estimated) function values.
+    """
+    # YOUR CODE HERE
+    pass
+    # END OF YOUR CODE
+
+evaluate_elicited_metric(true_values_on_grid, average_samples)
+
+# Step 6: Plot the True Non-linear Function and Elicited Metric in 3D
+fig = plt.figure(figsize=(12, 8))
+ax = fig.add_subplot(111, projection='3d')
+
+# Plot the true function
+x1_fine = np.linspace(0, 1, 50)
+x2_fine = np.linspace(0, 1, 50)
+x1_fine_grid, x2_fine_grid = np.meshgrid(x1_fine, x2_fine)
+true_f_values = nonlinear_function(x1_fine_grid, x2_fine_grid)
+ax.plot_surface(x1_fine_grid, x2_fine_grid, true_f_values, color='blue', alpha=0.5, label='True Function')
+
+# Plot the averaged samples as a surface
+x1_avg = x_grid_points[:, 0].reshape(20, 20)
+x2_avg = x_grid_points[:, 1].reshape(20, 20)
+avg_values = average_samples.reshape(20, 20)
+ax.plot_surface(x1_avg, x2_avg, avg_values, color='red', alpha=0.5, label='Estimated Function')
+
+# Customize plot
+ax.set_xlabel('x1')
+ax.set_ylabel('x2')
+ax.set_zlabel('f(x1, x2)')
+ax.set_title('True Function vs. Averaged Estimated Function')
+plt.legend()
+plt.show()
+```

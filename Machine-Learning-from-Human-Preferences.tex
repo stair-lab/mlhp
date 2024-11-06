@@ -6,8 +6,7 @@
 \documentclass[
   letterpaper,
   numbers=noenddot,
-  DIV=11,
-  oneside]{scrreprt}
+  DIV=11]{scrreprt}
 
 \usepackage{amsmath,amssymb}
 \usepackage{iftex}
@@ -41,7 +40,6 @@
   \KOMAoptions{parskip=half}}
 \makeatother
 \usepackage{xcolor}
-\usepackage[left=1in,marginparwidth=2.0666666666667in,textwidth=4.1333333333333in,marginparsep=0.3in]{geometry}
 \setlength{\emergencystretch}{3em} % prevent overfull lines
 \setcounter{secnumdepth}{5}
 % Make \paragraph and \subparagraph free-standing
@@ -174,6 +172,7 @@
 \input{resources/tex/boxes.tex}
 
 % page layout
+\usepackage{geometry}
 \geometry{
   dvips=false, pdftex=false, vtex=false, % drivers can have unexpected behaviors
   papersize={8in,10in},                  % size specified by MIT Press
@@ -391,10 +390,6 @@
 \@ifpackageloaded{subcaption}{}{\usepackage{subcaption}}
 \makeatother
 \makeatletter
-\@ifpackageloaded{sidenotes}{}{\usepackage{sidenotes}}
-\@ifpackageloaded{marginnote}{}{\usepackage{marginnote}}
-\makeatother
-\makeatletter
 \@ifpackageloaded{algorithm}{}{\usepackage{algorithm}}
 \makeatother
 \makeatletter
@@ -412,7 +407,7 @@
 \IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
 \urlstyle{same} % disable monospaced font for URLs
 % Make links footnotes instead of hotlinks:
-\DeclareRobustCommand{\href}[2]{#2\sidenote{\footnotesize \url{#1}}}
+\DeclareRobustCommand{\href}[2]{#2\footnote{\url{#1}}}
 \hypersetup{
   pdftitle={Machine Learning from Human Preferences},
   pdfauthor={Sang T. Truong; Sanmi Koyejo},
@@ -1225,7 +1220,7 @@ utility}
 
 Human preference models are centered around the notion of utility, which
 can mean a reward one attains after expressing one's preference over
-options.\sidenote{\footnotesize GPT-4 is good at coming up with longer-rendered
+options.\footnote{GPT-4 is good at coming up with longer-rendered
   answers about why some things are appropriate or not.} In health
 coaching, the utility, as a function of the health choices users make,
 may be satiety, latent promotion of overall health, or even a
@@ -4519,41 +4514,33 @@ enough data has been collected or the model is good enough.}
 
 \end{figure}%
 
-Within this decision process Figure~\ref{fig-schema}, the model is never
-actually trained on those prospective points. The estimate of the added
-value of a point can be correct, but it can also diverge from reality.
-If the strategy used is effective, then the model not only improves, but
-it could also do so using much less data than if it was trained on a
-dataset built manually without exploiting the model feedback.
-
 Active learning has been successfully applied to various domains to
 enhance real-world systems, including computer vision, natural language
-processing, and recommender systems. For example, active learning may be
-used to improve the computer vision models used in autonomous vehicles
-(\citeproc{ref-AL_app_autonomous}{Jarl et al. 2021}), where driving
-scenes can take infinitely many forms and gathering an exhaustive data
-set is impossible. Instead, probing a model and understanding what type
-of data it would benefit from sounds more practical. In robotics,
-autonomous agents may query humans when unsure how to act or face new
+processing, and recommender systems. For example, active learning can
+improve the computer vision models used in autonomous vehicles
+(\citeproc{ref-AL_app_autonomous}{Jarl et al. 2021}), here driving
+scenes can take infinitely many forms, making it impossible to gather an
+exhaustive dataset. Instead, probing a model to understand what type of
+data it would benefit from is more practical. In robotics, autonomous
+agents may query humans when unsure how to act or when facing new
 situations (\citeproc{ref-AL_app_robotics}{Taylor, Berrueta, and Murphey
-2021}). In this space, there is often a significant financial and time
-cost incurred for collecting data: the robot must act in real-time in
-the real world, and while parallelization is possible, being strategic
-about which examples should be collected to best benefit the model
-helps. In meteorology, active learning can help decide where to place
-additional sensors for weather predictions
-(\citeproc{ref-AL_app_sensors}{Singh, Nowak, and Ramanathan 2006}).
-Sensor placement involves deploying teams of people to remote locations
-and expensive construction for an extra data point. Choosing these
-locations and where to allocate resources wisely interests governments
-and businesses. Active learning could also be employed to select data
-for fine-tuning large language models (LLMs) for specific downstream
-tasks (\citeproc{ref-AL_app_LLMs}{Margatina et al. 2023}). In this
-space, it might be difficult to fully describe an NLP task one might
-want an LLM to solve. Often, instead of defining a task via a dataset of
-examples, it may be easier for the human to interact with the LLM for a
-specific use case, find holes in the model, and cover those using active
-learning.
+2021}). In this field, collecting data often incurs significant
+financial and time costs: the robot must act in real-time in the real
+world, and while parallelization is possible, being strategic about
+which examples to collect can best benefit the model. In meteorology,
+active learning can help decide where to place additional sensors for
+weather predictions (\citeproc{ref-AL_app_sensors}{Singh, Nowak, and
+Ramanathan 2006}). Sensor placement involves deploying teams to remote
+locations and expensive construction for an extra data point. Choosing
+these locations and allocating resources wisely is of interest to
+governments and businesses. Active learning could also be employed to
+select data for fine-tuning large language models (LLMs) for specific
+downstream tasks (\citeproc{ref-AL_app_LLMs}{Margatina et al. 2023}). In
+this context, it might be difficult to fully describe an NLP task one
+might want an LLM to solve. Often, instead of defining a task via a
+dataset of examples, it may be easier for a human to interact with the
+LLM for a specific use case, identify gaps in the model, and address
+those using active learning.
 
 \subsection{Introduction to Active Preference
 Learning}\label{introduction-to-active-preference-learning}
@@ -4562,19 +4549,19 @@ Consider the scenario where a robot is being trained to assist
 individuals with feeding. How can such a robot be effectively taught to
 perform necessary tasks, such as determining the appropriate distance to
 reach, detecting the location of a person's mouth, and, most
-importantly, understanding human preferences? In most cases, robots
-learn by observing human demonstrations, where they replicate the ways a
-person performs the task. However, this method poses significant
-challenges. Expert demonstrations are often limited, and training a
-supervised learning model would require vast amounts of demonstration
-data, which is difficult to obtain at scale. Moreover, demonstrations
-tend to be variable, as they reflect the actions of individual humans,
-making the data collection process inconsistent. To address these
-limitations, alternative approaches have been proposed, such as using
-pairwise comparisons, where humans evaluate two action trajectories to
-determine the superior one, or employing physical corrections, in which
-reward functions are learned through human-robot interactions, with
-humans guiding the robot's actions during the task.
+importantly, understanding human preferences? Typically, robots learn by
+observing human demonstrations, replicating the ways a person performs
+the task. However, this method poses significant challenges. Expert
+demonstrations are often limited, and training a supervised learning
+model would require vast amounts of demonstration data, which is
+difficult to obtain at scale. Moreover, demonstrations tend to be
+variable, reflecting the actions of individual humans, making the data
+collection process inconsistent. To address these limitations,
+alternative approaches have been proposed, such as using pairwise
+comparisons, where humans evaluate two action trajectories to determine
+the superior one, or employing physical corrections, in which reward
+functions are learned through human-robot interactions, with humans
+guiding the robot's actions during the task.
 
 Active learning algorithms can be employed in preference learning tasks,
 such as the previously mentioned example, where the objective is to
@@ -4590,7 +4577,7 @@ techniques.
 
 \subsection{Uncertainty Qualification}\label{uncertainty-qualification}
 
-\textbf{Problem Setup}: In this section, we will consider a binary
+\textbf{Problem Setup}: In this section, we consider a binary
 classification problem. The model is trained on a small labeled dataset
 \(\mathcal{D} = \{(x_1, y_1), \ldots, (x_n, y_n)\}\), where \(x_i\)
 represents the input data and \(y_i\) is the corresponding label. The
@@ -4611,17 +4598,16 @@ hand, \textbf{aleatoric uncertainty}, or data uncertainty, stems from
 the inherent randomness within the data itself. Unlike epistemic
 uncertainty, aleatoric uncertainty cannot be reduced, even with
 additional data, as it reflects noise or unpredictability in the real
-data-generating process.
+data-generating process. Several approaches exist to quantify
+uncertainty in active learning, each with its strengths and limitations.
 
-Several approaches exist to quantify uncertainty in active learning,
-each with its strengths and limitations. \textbf{Bayesian methods}, such
-as Bayesian Neural Networks (BNNs) and Gaussian Processes (GPs), offer a
-principled way of estimating uncertainty by incorporating prior
-knowledge into the model. These approaches can generate meaningful
-uncertainty estimates that aid in choosing informative samples for
-labeling. However, they can become computationally prohibitive,
-especially for large and complex models, limiting their applicability in
-some practical scenarios.
+\textbf{Bayesian methods}, such as Bayesian Neural Networks (BNNs) and
+Gaussian Processes (GPs), offer a principled way of estimating
+uncertainty by incorporating prior knowledge into the model. These
+approaches can generate meaningful uncertainty estimates that aid in
+choosing informative samples for labeling. However, they can become
+computationally prohibitive, especially for large and complex models,
+limiting their applicability in some practical scenarios.
 
 Another common technique for uncertainty quantification is the use of
 \textbf{ensemble methods}, such as Random Forests or Gradient Boosting
@@ -4657,33 +4643,34 @@ samples, and \textbf{Bayesian Active Learning by Disagreement (BALD)}
 that maximize information gain by reducing model uncertainty. Through
 careful uncertainty quantification, acquisition functions guide the
 active learning process, improving the model's efficiency in learning
-from limited data. Other acquisition functions can also be employed
-listed below:
+from limited data. Other acquisition functions that can be employed
+include:
 
 \begin{itemize}
 \item
-  Active Thompson Sampling (\citeproc{ref-AL_exploreexploit}{Bouneffouf
-  et al. 2014}): This method leverages the Thompson Sampling algorithm
-  to select a posterior sample from the model's distribution and compute
-  the expected utility of labeling using that sample. By doing so, the
-  algorithm balances exploration and exploitation, leading to effective
-  active learning.
+  \textbf{Active Thompson Sampling}
+  (\citeproc{ref-AL_exploreexploit}{Bouneffouf et al. 2014}): This
+  method leverages the Thompson Sampling algorithm to select a posterior
+  sample from the model's distribution and compute the expected utility
+  of labeling using that sample. By doing so, the algorithm balances
+  exploration and exploitation, leading to effective active learning.
 \item
-  Expected model change (\citeproc{ref-AL_expmodelchange}{Cai, Zhang,
-  and Zhou 2013}): This approach focuses on labeling points that would
-  have the most impact on changing the current model parameters.
+  \textbf{Expected model change} (\citeproc{ref-AL_expmodelchange}{Cai,
+  Zhang, and Zhou 2013}): This approach focuses on labeling points that
+  would have the most impact on changing the current model parameters.
 \item
-  Expected error reduction (\citeproc{ref-AL_experrorredn}{Mussmann et
-  al. 2022}): Points that would most effectively reduce the model's
-  generalization error are labeled using this strategy.
+  \textbf{Expected error reduction}
+  (\citeproc{ref-AL_experrorredn}{Mussmann et al. 2022}): Points that
+  would most effectively reduce the model's generalization error are
+  labeled using this strategy.
 \item
-  Variance reduction (\citeproc{ref-AL_variance}{Cohn, Ghahramani, and
-  Jordan 1996}): This approach labels points that would minimize output
-  variance, which is one component of error. By selecting points that
-  reduce variability in the model's predictions, it aims to improve its
-  overall performance.
+  \textbf{Variance reduction} (\citeproc{ref-AL_variance}{Cohn,
+  Ghahramani, and Jordan 1996}): This approach labels points that would
+  minimize output variance, which is one component of error. By
+  selecting points that reduce variability in the model's predictions,
+  it aims to improve overall performance.
 \item
-  User Centered Labeling Strategies
+  \textbf{User Centered Labeling Strategies}
   (\citeproc{ref-AL_usercentered}{Bernard et al. 2018}): This approach
   involves actively involving the user in the labeling process by
   visualizing data through dimensionality reduction techniques. The user
@@ -4691,26 +4678,27 @@ listed below:
   expertise and preferences. This strategy leverages user input to
   improve the quality and relevance of the labeled data.
 \item
-  Querying from diverse subspaces or partitions
+  \textbf{Querying from diverse subspaces or partitions}
   (\citeproc{ref-AL_partition}{Ma et al. 2022}): When using a forest of
   trees as the underlying model, the leaf nodes can represent
   overlapping partitions of the feature space. This strategy selects
   instances from non-overlapping or minimally overlapping partitions for
   labeling.
 \item
-  Conformal prediction (\citeproc{ref-AL_conformal}{Makili, Sánchez, and
-  Dormido-Canto 2012}): This method predicts that a new data point will
-  have a label similar to old data points in some specified way. The
-  degree of similarity within the old examples is used to estimate the
-  confidence in the prediction.
+  \textbf{Conformal prediction} (\citeproc{ref-AL_conformal}{Makili,
+  Sánchez, and Dormido-Canto 2012}): This method predicts that a new
+  data point will have a label similar to old data points in some
+  specified way. The degree of similarity within the old examples is
+  used to estimate the confidence in the prediction.
 \item
-  Mismatch-first farthest-traversal (\citeproc{ref-AL_mismatch}{Zhao,
-  Heittola, and Virtanen 2020}): This strategy first prioritizes data
-  points that are wrongly predicted by the current model compared to the
-  nearest-neighbor prediction. The second criterion is the distance to
-  previously selected data, with preference given to those that are
-  farthest away. The goal is to optimize both the correction of
-  mispredictions and the diversity of the selected data.
+  \textbf{Mismatch-first farthest-traversal}
+  (\citeproc{ref-AL_mismatch}{Zhao, Heittola, and Virtanen 2020}): This
+  strategy first prioritizes data points that are wrongly predicted by
+  the current model compared to the nearest-neighbor prediction. The
+  second criterion is the distance to previously selected data, with
+  preference given to those that are farthest away. The goal is to
+  optimize both the correction of mispredictions and the diversity of
+  the selected data.
 \end{itemize}
 
 \subsubsection{Uncertainty Sampling}\label{uncertainty-sampling}
@@ -4728,7 +4716,7 @@ confidence sampling}, each providing a unique measure of uncertainty.
 
 \begin{itemize}
 \item
-  \textbf{Entropy sampling} measures the uncertainty by calculating the
+  \textbf{Entropy sampling} measures uncertainty by calculating the
   entropy of the predicted probability distribution. The acquisition
   function is given by \(\alpha(x) = - \sum_{y} p(y|x) \log p(y|x)\),
   with higher entropy values indicating higher uncertainty.
@@ -4736,7 +4724,7 @@ confidence sampling}, each providing a unique measure of uncertainty.
   \textbf{Margin sampling} focuses on the difference between the two
   highest predicted probabilities for a sample. The acquisition function
   is given by \(\alpha(x) = p(y_1|x) - p(y_2|x)\), where \(y_1\) and
-  \(y_2\) are the most likely classes. Smaller margins signify greater
+  \(y_2\) are two most likely classes. Smaller margins signify greater
   uncertainty.
 \item
   \textbf{Least confidence sampling} measures uncertainty by identifying
@@ -4755,22 +4743,59 @@ p(y_1|x_2) &= 0.3, \quad p(y_2|x_2) = 0.7\\
 p(y_1|x_3) &= 0.8, \quad p(y_2|x_3) = 0.2
 \end{aligned}}\end{equation}
 
-\textbf{Entropy Sampling} *
-\(\alpha(x_1) = -0.6 \log (0.6) - 0.4 \log (0.4) = 0.29\) *
-\(\alpha(x_2) = -0.3 \log (0.3) - 0.7 \log (0.7) = 0.27\) *
-\(\alpha(x_3) = -0.8 \log (0.8) - 0.2 \log (0.2) = 0.22\)
+\begin{itemize}
+\tightlist
+\item
+  \textbf{Entropy Sampling}
+
+  \begin{itemize}
+  \tightlist
+  \item
+    \(\alpha(x_1) = -0.6 \log (0.6) - 0.4 \log (0.4) = 0.29\)
+  \item
+    \(\alpha(x_2) = -0.3 \log (0.3) - 0.7 \log (0.7) = 0.27\)
+  \item
+    \(\alpha(x_3) = -0.8 \log (0.8) - 0.2 \log (0.2) = 0.22\)
+  \end{itemize}
+\end{itemize}
 
 We would select \(x_1\) for labeling as it has the highest entropy,
 indicating the model is most uncertain about its prediction at \(x_1\).
 
-\textbf{Margin Sampling} * \(\alpha(x_1) = 0.6 - 0.4 = 0.2\) *
-\(\alpha(x_2) = 0.7 - 0.3 = 0.4\) * \(\alpha(x_3) = 0.8 - 0.2 = 0.6\)
+\begin{itemize}
+\tightlist
+\item
+  \textbf{Margin Sampling}
+
+  \begin{itemize}
+  \tightlist
+  \item
+    \(\alpha(x_1) = 0.6 - 0.4 = 0.2\)
+  \item
+    \(\alpha(x_2) = 0.7 - 0.3 = 0.4\)
+  \item
+    \(\alpha(x_3) = 0.8 - 0.2 = 0.6\)
+  \end{itemize}
+\end{itemize}
 
 We would select \(x_1\) for labeling as it has the smallest margin,
 indicating the model is most uncertain about the prediction at \(x_1\).
 
-\textbf{Least Confidence Sampling} * \(\alpha(x_1) = 1 - 0.6 = 0.4\) *
-\(\alpha(x_2) = 1 - 0.7 = 0.3\) * \(\alpha(x_3) = 1 - 0.8 = 0.2\)
+\begin{itemize}
+\tightlist
+\item
+  \textbf{Least Confidence Sampling}
+
+  \begin{itemize}
+  \tightlist
+  \item
+    \(\alpha(x_1) = 1 - 0.6 = 0.4\)
+  \item
+    \(\alpha(x_2) = 1 - 0.7 = 0.3\)
+  \item
+    \(\alpha(x_3) = 1 - 0.8 = 0.2\)
+  \end{itemize}
+\end{itemize}
 
 We would select \(x_1\) for labeling as it has the lowest confidence,
 indicating the model is most uncertain about the prediction at \(x_1\).
@@ -4790,7 +4815,6 @@ members. Several acquisition functions can be employed under this
 framework to quantify the disagreement:
 
 \begin{itemize}
-\tightlist
 \item
   \textbf{Vote Entropy:} The vote entropy measures the uncertainty based
   on how often the committee members vote for each class. The
@@ -5068,22 +5092,23 @@ information gain for the model.
 Reduction}\label{active-learning-by-variance-reduction}
 
 Active Learning by Variance Reduction (\citeproc{ref-AL_variance}{Cohn,
-Ghahramani, and Jordan 1996}) is an algorithm that selects the next data
-point to label based on the expected reduction in the model's variance.
-The goal is to choose the point \(\tilde{x} \sim p(x)\) that, when
-labeled (\(y(\tilde{x})\)), will reduce the model's variance the most.
-To quantify the expected error at a given input \(x\), we can
-mathematically express it as follows:
+Ghahramani, and Jordan 1996}) is an algorithm designed to select the
+next data point for labeling based on the anticipated reduction in the
+model's variance. The objective is to identify the point
+\(\tilde{x} \sim p(x)\) that, when labeled (\(y(\tilde{x})\)), will most
+effectively decrease the model's variance. To quantify the expected
+error at a given input \(x\), we can mathematically express it as
+follows:
 
 \begin{equation}\phantomsection\label{eq-eq3.16}{
 \mathbb{E}_{\hat{y} \sim p(\hat{y} | \mathcal{D}; x), y \sim p(y|x)} (\hat{y} - y)^2
 }\end{equation}
 
-In this expression, \(\hat{y}\) represents the model's prediction, while
-\(y\) denotes the true label corresponding to the input \(x\). This
-formulation captures the average squared difference between the
-predicted and actual values, providing a measure of the model's
-accuracy. Utilizing concepts from bias-variance decomposition as
+In Equation~\ref{eq-eq3.16}, \(\hat{y}\) represents the model's
+prediction, while \(y\) denotes the true label corresponding to the
+input \(x\). This formulation captures the average squared difference
+between the predicted and actual values, providing a measure of the
+model's accuracy. Utilizing concepts from bias-variance decomposition as
 outlined in the literature
 (\citeproc{ref-bias_variance_orig_paper}{Geman, Bienenstock, and Doursat
 1992}), we can expand the expected error term. The expansion is given
@@ -5096,9 +5121,9 @@ by:
 &+ \mathbb{E}_{\hat{y}, y}(\hat{y} - \mathbb{E}[y|x])^2
 \end{aligned}}\end{equation}
 
-In this equation, the first term represents the variance of the true
-label \(y\), the second term evaluates to zero, and the third term
-accounts for the variance of the model's prediction \(\hat{y}\). To
+In Equation~\ref{eq-eq3.17}, the first term represents the variance of
+the true label \(y\), the second term evaluates to zero, and the third
+term accounts for the variance of the model's prediction \(\hat{y}\). To
 clarify why the second term is zero, we note that:
 
 \begin{equation}\phantomsection\label{eq-eq3.18}{
@@ -6457,7 +6482,7 @@ classifiers. Given a performance metric \(\phi\), we define:
 \begin{itemize}
 \item
   the \emph{Bayes utility} as
-  \(\bar{\tau} := \sup_{h \in \mathcal{H}} \phi(C(h)) = \sup_{C \in \mathcal{C}} \phi(C)\);\sidenote{\footnotesize GPT-4
+  \(\bar{\tau} := \sup_{h \in \mathcal{H}} \phi(C(h)) = \sup_{C \in \mathcal{C}} \phi(C)\);\footnote{GPT-4
     is good at coming up with longer-rendered answers about why some
     things are appropriate or not.} this is the highest achievable
   utility (using the metric \(\phi\)) over all classifiers
@@ -6888,7 +6913,7 @@ The pseudocode for LFPM elicitation is given in
  Algorithm~\ref{alg-lfpm} .
 
 \begin{algorithm}[H]
-    \caption{Grid Search for Best Ratio}
+\caption{Grid Search for Best Ratio}
     \label{alg-lfpm}
 \begin{algorithmic}[1]
         \State \textbf{Input:} $k, \Delta$.
@@ -6896,7 +6921,9 @@ The pseudocode for LFPM elicitation is given in
         \State Generate $C_1, \dots, C_k$ on $\partial C_+$ and $\partial C_-$ (Section 3).
         \State Generate $C_1, \dots, C_k$ on $\partial C_+$ and $\partial C_-$ (Section 3).
         \For{$p'_{11} = 0; \; p'_{11} \leq 1; \; p'_{11} = p'_{11} + \Delta$}
-            \State Compute $\phi'$, $\phi''$ using Proposition 4. Compute array $r = \left[ \frac{\phi'(C_1)}{\phi''(C_1)}, \dots, \frac{\phi'(C_k)}{\phi''(C_k)} \right]$. Set $\sigma = \text{std}(r)$.
+            \State Compute $\phi'$, $\phi''$ using Proposition 4. 
+            \State Compute array $r = \left[ \frac{\phi'(C_1)}{\phi''(C_1)}, \dots, \frac{\phi'(C_k)}{\phi''(C_k)} \right]$.
+            \State Set $\sigma = \text{std}(r)$.
             \If{$\sigma < \sigma_{\text{opt}}$}
                 \State Set $\sigma_{\text{opt}} = \sigma$ and $p'_{11,\text{opt}} = p'_{11}$.
             \EndIf
@@ -9225,6 +9252,257 @@ through preference queries.
   \end{enumerate}
 \end{enumerate}
 
+\begin{Shaded}
+\begin{Highlighting}[numbers=left,,]
+\ImportTok{import}\NormalTok{ torch}
+\ImportTok{import}\NormalTok{ torch.nn.functional }\ImportTok{as}\NormalTok{ F}
+\ImportTok{from}\NormalTok{ torch.optim }\ImportTok{import}\NormalTok{ Adam}
+\ImportTok{from}\NormalTok{ tqdm }\ImportTok{import}\NormalTok{ tqdm}
+\ImportTok{from}\NormalTok{ sklearn.model\_selection }\ImportTok{import}\NormalTok{ train\_test\_split}
+\ImportTok{from}\NormalTok{ sklearn.datasets }\ImportTok{import}\NormalTok{ make\_classification}
+
+\KeywordTok{class}\NormalTok{ LogisticActiveLearning:}
+    \KeywordTok{def} \FunctionTok{\_\_init\_\_}\NormalTok{(}\VariableTok{self}\NormalTok{, test\_size}\OperatorTok{=}\FloatTok{0.2}\NormalTok{):}
+        \CommentTok{"""}
+\CommentTok{        Initializes LogisticActiveLearning model, sets device, and prepares data.}
+\CommentTok{        }
+\CommentTok{        Args:}
+\CommentTok{        {-} test\_size (float): Proportion of the dataset used for validation.}
+\CommentTok{        """}
+        \CommentTok{\# Make device customizable}
+        \VariableTok{self}\NormalTok{.device }\OperatorTok{=}\NormalTok{ torch.device(}\StringTok{"cpu"}\NormalTok{)}
+\NormalTok{        X, y }\OperatorTok{=}\NormalTok{ make\_classification(n\_samples}\OperatorTok{=}\DecValTok{10000}\NormalTok{, random\_state}\OperatorTok{=}\DecValTok{42}\NormalTok{)}
+
+        \CommentTok{\# Convert data and labels to tensors}
+\NormalTok{        x\_data }\OperatorTok{=}\NormalTok{ torch.tensor(X, dtype}\OperatorTok{=}\NormalTok{torch.float32).to(}\VariableTok{self}\NormalTok{.device)}
+\NormalTok{        y\_data }\OperatorTok{=}\NormalTok{ torch.tensor(y, dtype}\OperatorTok{=}\NormalTok{torch.float32).to(}\VariableTok{self}\NormalTok{.device)}
+        \VariableTok{self}\NormalTok{.N, }\VariableTok{self}\NormalTok{.D }\OperatorTok{=}\NormalTok{ x\_data.shape}
+
+        \CommentTok{\# Split into training and validation sets}
+\NormalTok{        train\_indices, val\_indices }\OperatorTok{=}\NormalTok{ train\_test\_split(}\BuiltInTok{range}\NormalTok{(}\VariableTok{self}\NormalTok{.N), test\_size}\OperatorTok{=}\NormalTok{test\_size, random\_state}\OperatorTok{=}\DecValTok{42}\NormalTok{)}
+        \VariableTok{self}\NormalTok{.x\_train }\OperatorTok{=}\NormalTok{ x\_data[train\_indices]}
+        \VariableTok{self}\NormalTok{.y\_train }\OperatorTok{=}\NormalTok{ y\_data[train\_indices]}
+        \VariableTok{self}\NormalTok{.x\_val }\OperatorTok{=}\NormalTok{ x\_data[val\_indices]}
+        \VariableTok{self}\NormalTok{.y\_val }\OperatorTok{=}\NormalTok{ y\_data[val\_indices]}
+
+        \CommentTok{\# Initialize mean and inverse covariance for the prior}
+        \VariableTok{self}\NormalTok{.weights\_mean }\OperatorTok{=}\NormalTok{ torch.zeros(}\VariableTok{self}\NormalTok{.D, requires\_grad}\OperatorTok{=}\VariableTok{True}\NormalTok{, device}\OperatorTok{=}\VariableTok{self}\NormalTok{.device)}
+        \VariableTok{self}\NormalTok{.weights\_inv\_cov }\OperatorTok{=}\NormalTok{ torch.eye(}\VariableTok{self}\NormalTok{.D).to(}\VariableTok{self}\NormalTok{.device)  }\CommentTok{\# Start with identity inverse covariance}
+
+    \KeywordTok{def}\NormalTok{ negative\_log\_posterior(}\VariableTok{self}\NormalTok{, w, x, y):}
+        \CommentTok{"""}
+\CommentTok{        Computes the negative log{-}posterior (negative log{-}prior + log{-}likelihood).}
+\CommentTok{        }
+\CommentTok{        Args:}
+\CommentTok{        {-} w (torch.Tensor): Model weights.}
+\CommentTok{        {-} x (torch.Tensor): Input data point.}
+\CommentTok{        {-} y (torch.Tensor): True label.}
+\CommentTok{        }
+\CommentTok{        Returns:}
+\CommentTok{        {-} torch.Tensor: Negative log{-}posterior value.}
+\CommentTok{        """}
+        \CommentTok{\# YOUR CODE HERE (\textasciitilde{}4{-}6 lines)}
+        \CommentTok{\# Compute log{-}prior term using inverse covariance}
+        \ControlFlowTok{pass}
+        \CommentTok{\# }\RegionMarkerTok{END}\CommentTok{ OF YOUR CODE}
+
+    \KeywordTok{def}\NormalTok{ optimize\_weights(}\VariableTok{self}\NormalTok{, w, x, y, num\_steps}\OperatorTok{=}\DecValTok{50}\NormalTok{, lr}\OperatorTok{=}\FloatTok{1e{-}2}\NormalTok{):}
+        \CommentTok{"""}
+\CommentTok{        Optimizes weights using Adam optimizer.}
+\CommentTok{        }
+\CommentTok{        Args:}
+\CommentTok{        {-} w (torch.Tensor): Initial weights.}
+\CommentTok{        {-} x (torch.Tensor): Input data point.}
+\CommentTok{        {-} y (torch.Tensor): True label.}
+\CommentTok{        {-} num\_steps (int): Number of optimization steps.}
+\CommentTok{        {-} lr (float): Learning rate.}
+\CommentTok{        }
+\CommentTok{        Returns:}
+\CommentTok{        {-} torch.Tensor: Updated weights.}
+\CommentTok{        {-} torch.Tensor: Hessian inverse covariance.}
+\CommentTok{        """}
+\NormalTok{        optimizer }\OperatorTok{=}\NormalTok{ Adam([w], lr}\OperatorTok{=}\NormalTok{lr)}
+        
+        \ControlFlowTok{for}\NormalTok{ step }\KeywordTok{in} \BuiltInTok{range}\NormalTok{(num\_steps):}
+\NormalTok{            optimizer.zero\_grad()}
+\NormalTok{            loss }\OperatorTok{=} \VariableTok{self}\NormalTok{.negative\_log\_posterior(w, x, y)}
+\NormalTok{            loss.backward()}
+\NormalTok{            optimizer.step()}
+
+        \CommentTok{\# Compute the Hessian of log{-}posterior, serving as inverse covariance}
+\NormalTok{        inv\_cov }\OperatorTok{=} \VariableTok{self}\NormalTok{.compute\_hessian(w.detach(), x, y)}
+        \ControlFlowTok{return}\NormalTok{ w.detach().clone(), inv\_cov}
+
+    \KeywordTok{def}\NormalTok{ compute\_hessian(}\VariableTok{self}\NormalTok{, w, x, y):}
+        \CommentTok{"""}
+\CommentTok{        Computes the Hessian of the negative log{-}posterior, used as the inverse covariance.}
+\CommentTok{        }
+\CommentTok{        Args:}
+\CommentTok{        {-} w (torch.Tensor): Model weights.}
+\CommentTok{        {-} x (torch.Tensor): Input data point.}
+\CommentTok{        {-} y (torch.Tensor): True label.}
+\CommentTok{        }
+\CommentTok{        Returns:}
+\CommentTok{        {-} torch.Tensor: Hessian of the negative log{-}posterior.}
+\CommentTok{        """}
+        \CommentTok{\# YOUR CODE HERE (\textasciitilde{}5{-}8 lines)}
+        \CommentTok{\# Hessian of the prior term}
+        \ControlFlowTok{pass}
+        \CommentTok{\# }\RegionMarkerTok{END}\CommentTok{ OF YOUR CODE}
+
+    \KeywordTok{def}\NormalTok{ acquisition\_fn(}\VariableTok{self}\NormalTok{, x):}
+        \CommentTok{"""}
+\CommentTok{        Computes posterior means and inverse covariances for y=1 and y=0 without modifying original parameters.}
+\CommentTok{        }
+\CommentTok{        Args:}
+\CommentTok{        {-} x (torch.Tensor): Input data point.}
+\CommentTok{        }
+\CommentTok{        Returns:}
+\CommentTok{        {-} dict: Posterior properties for y=1 and y=0 cases.}
+\CommentTok{        """}
+\NormalTok{        weights\_y1 }\OperatorTok{=} \VariableTok{self}\NormalTok{.weights\_mean.clone().detach().requires\_grad\_(}\VariableTok{True}\NormalTok{)}
+\NormalTok{        weights\_y0 }\OperatorTok{=} \VariableTok{self}\NormalTok{.weights\_mean.clone().detach().requires\_grad\_(}\VariableTok{True}\NormalTok{)}
+
+        \CommentTok{\# Optimize weights and get Hessian for both y=1 and y=0 cases}
+\NormalTok{        posterior\_mean\_y1, inv\_cov\_y1 }\OperatorTok{=} \VariableTok{self}\NormalTok{.optimize\_weights(weights\_y1, x, }\DecValTok{1}\NormalTok{, num\_steps}\OperatorTok{=}\DecValTok{50}\NormalTok{)}
+\NormalTok{        posterior\_mean\_y0, inv\_cov\_y0 }\OperatorTok{=} \VariableTok{self}\NormalTok{.optimize\_weights(weights\_y0, x, }\DecValTok{0}\NormalTok{, num\_steps}\OperatorTok{=}\DecValTok{50}\NormalTok{)}
+
+        \CommentTok{\# Calculate probabilities for the acquisition function}
+\NormalTok{        prob\_y1 }\OperatorTok{=}\NormalTok{ torch.sigmoid(torch.dot(}\VariableTok{self}\NormalTok{.weights\_mean.detach(), x))}
+\NormalTok{        prob\_y0 }\OperatorTok{=} \DecValTok{1} \OperatorTok{{-}}\NormalTok{ prob\_y1}
+
+        \ControlFlowTok{return}\NormalTok{ \{}
+            \StringTok{\textquotesingle{}prob\_y1\textquotesingle{}}\NormalTok{: prob\_y1,}
+            \StringTok{\textquotesingle{}prob\_y0\textquotesingle{}}\NormalTok{: prob\_y0,}
+            \StringTok{\textquotesingle{}posterior\_mean\_y1\textquotesingle{}}\NormalTok{: posterior\_mean\_y1,}
+            \StringTok{\textquotesingle{}posterior\_inv\_cov\_y1\textquotesingle{}}\NormalTok{: inv\_cov\_y1,}
+            \StringTok{\textquotesingle{}posterior\_mean\_y0\textquotesingle{}}\NormalTok{: posterior\_mean\_y0,}
+            \StringTok{\textquotesingle{}posterior\_inv\_cov\_y0\textquotesingle{}}\NormalTok{: inv\_cov\_y0}
+\NormalTok{        \}}
+
+    \KeywordTok{def}\NormalTok{ expected\_information\_gain(}\VariableTok{self}\NormalTok{, x):}
+        \CommentTok{"""}
+\CommentTok{        Computes expected information gain for a given point \textasciigrave{}x\textasciigrave{}.}
+\CommentTok{        }
+\CommentTok{        Args:}
+\CommentTok{        {-} x (torch.Tensor): Input data point.}
+\CommentTok{        }
+\CommentTok{        Returns:}
+\CommentTok{        {-} torch.Tensor: Expected Information Gain (EIG) value.}
+\CommentTok{        """}
+\NormalTok{        acquisition }\OperatorTok{=} \VariableTok{self}\NormalTok{.acquisition\_fn(x)}
+
+        \CommentTok{\# Compute KL divergences for y=1 and y=0 using inverse covariances}
+\NormalTok{        kl\_y1 }\OperatorTok{=}\NormalTok{ kl\_divergence\_gaussians(}
+\NormalTok{            acquisition[}\StringTok{\textquotesingle{}posterior\_mean\_y1\textquotesingle{}}\NormalTok{],}
+\NormalTok{            acquisition[}\StringTok{\textquotesingle{}posterior\_inv\_cov\_y1\textquotesingle{}}\NormalTok{],}
+            \VariableTok{self}\NormalTok{.weights\_mean.detach(),}
+            \VariableTok{self}\NormalTok{.weights\_inv\_cov}
+\NormalTok{        )}
+
+\NormalTok{        kl\_y0 }\OperatorTok{=}\NormalTok{ kl\_divergence\_gaussians(}
+\NormalTok{            acquisition[}\StringTok{\textquotesingle{}posterior\_mean\_y0\textquotesingle{}}\NormalTok{],}
+\NormalTok{            acquisition[}\StringTok{\textquotesingle{}posterior\_inv\_cov\_y0\textquotesingle{}}\NormalTok{],}
+            \VariableTok{self}\NormalTok{.weights\_mean.detach(),}
+            \VariableTok{self}\NormalTok{.weights\_inv\_cov}
+\NormalTok{        )}
+
+        \CommentTok{\# Expected Information Gain (EIG)}
+\NormalTok{        eig }\OperatorTok{=} \VariableTok{None} \CommentTok{\# YOUR CODE HERE (1 line)}
+        \ControlFlowTok{return}\NormalTok{ eig}
+
+    \KeywordTok{def}\NormalTok{ active\_learning(}\VariableTok{self}\NormalTok{, selected\_indices, subset\_size}\OperatorTok{=}\DecValTok{50}\NormalTok{):}
+        \CommentTok{"""}
+\CommentTok{        Active learning loop that selects the most informative data point based on EIG.}
+\CommentTok{        }
+\CommentTok{        Args:}
+\CommentTok{        {-} selected\_indices (list): Indices of previously selected samples.}
+\CommentTok{        {-} subset\_size (int): Number of samples to consider in each subset.}
+
+\CommentTok{        Returns:}
+\CommentTok{        {-} best\_x, best\_x\_idx, best\_acquisition: Selected data point and acquisition details.}
+\CommentTok{        """}
+\NormalTok{        best\_eig }\OperatorTok{=} \OperatorTok{{-}}\BuiltInTok{float}\NormalTok{(}\StringTok{\textquotesingle{}inf\textquotesingle{}}\NormalTok{)}
+\NormalTok{        best\_x }\OperatorTok{=} \VariableTok{None}
+\NormalTok{        best\_x\_idx }\OperatorTok{=} \OperatorTok{{-}}\DecValTok{1}
+\NormalTok{        best\_acquisition }\OperatorTok{=} \VariableTok{None}
+
+\NormalTok{        subset\_indices }\OperatorTok{=}\NormalTok{ [i }\ControlFlowTok{for}\NormalTok{ i }\KeywordTok{in}\NormalTok{ torch.randperm(}\BuiltInTok{len}\NormalTok{(}\VariableTok{self}\NormalTok{.x\_train)).tolist() }\ControlFlowTok{if}\NormalTok{ i }\KeywordTok{not} \KeywordTok{in}\NormalTok{ selected\_indices][:subset\_size]}
+
+        \CommentTok{\# YOUR CODE HERE (\textasciitilde{} 10 lines)}
+        \ControlFlowTok{pass}
+        \CommentTok{\# }\RegionMarkerTok{END}\CommentTok{ OF YOUR CODE}
+        \ControlFlowTok{return}\NormalTok{ best\_x, best\_x\_idx, best\_acquisition}
+
+    \KeywordTok{def}\NormalTok{ validate(}\VariableTok{self}\NormalTok{):}
+        \CommentTok{"""}
+\CommentTok{        Computes accuracy on the validation set by predicting labels and comparing to true labels.}
+\CommentTok{        }
+\CommentTok{        Returns:}
+\CommentTok{        {-} float: Validation accuracy.}
+\CommentTok{        """}
+        \ControlFlowTok{with}\NormalTok{ torch.no\_grad():}
+\NormalTok{            logits }\OperatorTok{=} \VariableTok{self}\NormalTok{.x\_val }\OperatorTok{@} \VariableTok{self}\NormalTok{.weights\_mean}
+\NormalTok{            predictions }\OperatorTok{=}\NormalTok{ torch.sigmoid(logits) }\OperatorTok{\textgreater{}=} \FloatTok{0.5}  \CommentTok{\# Convert logits to binary predictions}
+\NormalTok{            accuracy }\OperatorTok{=}\NormalTok{ (predictions }\OperatorTok{==} \VariableTok{self}\NormalTok{.y\_val).}\BuiltInTok{float}\NormalTok{().mean().item()}
+            \BuiltInTok{print}\NormalTok{(}\SpecialStringTok{f"Validation accuracy: }\SpecialCharTok{\{}\NormalTok{accuracy }\OperatorTok{*} \DecValTok{100}\SpecialCharTok{:.2f\}}\SpecialStringTok{\%"}\NormalTok{)}
+        \ControlFlowTok{return}\NormalTok{ accuracy}
+
+    \KeywordTok{def}\NormalTok{ train(}\VariableTok{self}\NormalTok{, num\_iterations}\OperatorTok{=}\DecValTok{10}\NormalTok{, subset\_size}\OperatorTok{=}\DecValTok{50}\NormalTok{):}
+        \CommentTok{"""}
+\CommentTok{        Train the model using active learning with subset sampling.}
+\CommentTok{        }
+\CommentTok{        Args:}
+\CommentTok{        {-} num\_iterations (int): Number of active learning iterations.}
+\CommentTok{        {-} subset\_size (int): Number of samples to consider in each subset.}
+\CommentTok{        """}
+\NormalTok{        selected\_indices }\OperatorTok{=}\NormalTok{ []}
+        \ControlFlowTok{for}\NormalTok{ iteration }\KeywordTok{in} \BuiltInTok{range}\NormalTok{(num\_iterations):}
+            \BuiltInTok{print}\NormalTok{(}\SpecialStringTok{f"Iteration }\SpecialCharTok{\{}\NormalTok{iteration }\OperatorTok{+} \DecValTok{1}\SpecialCharTok{\}}\SpecialStringTok{/}\SpecialCharTok{\{}\NormalTok{num\_iterations}\SpecialCharTok{\}}\SpecialStringTok{"}\NormalTok{)}
+
+            \CommentTok{\# Select the most informative data point from a random subset}
+\NormalTok{            best\_x, best\_x\_idx, acquisition }\OperatorTok{=} \VariableTok{self}\NormalTok{.active\_learning(selected\_indices, subset\_size}\OperatorTok{=}\NormalTok{subset\_size)}
+\NormalTok{            selected\_indices.append(best\_x\_idx)}
+            \BuiltInTok{print}\NormalTok{(}\SpecialStringTok{f"Selected data point with EIG."}\NormalTok{)}
+
+            \CommentTok{\# Get the true label for the selected data point}
+\NormalTok{            y }\OperatorTok{=} \VariableTok{self}\NormalTok{.y\_train[best\_x\_idx].item()}
+
+            \CommentTok{\# Update posterior mean and inverse covariance based on true label}
+            \ControlFlowTok{if}\NormalTok{ y }\OperatorTok{==} \DecValTok{1}\NormalTok{:}
+                \VariableTok{self}\NormalTok{.weights\_mean }\OperatorTok{=}\NormalTok{ acquisition[}\StringTok{\textquotesingle{}posterior\_mean\_y1\textquotesingle{}}\NormalTok{]}
+                \VariableTok{self}\NormalTok{.weights\_inv\_cov }\OperatorTok{=}\NormalTok{ acquisition[}\StringTok{\textquotesingle{}posterior\_inv\_cov\_y1\textquotesingle{}}\NormalTok{]}
+            \ControlFlowTok{else}\NormalTok{:}
+                \VariableTok{self}\NormalTok{.weights\_mean }\OperatorTok{=}\NormalTok{ acquisition[}\StringTok{\textquotesingle{}posterior\_mean\_y0\textquotesingle{}}\NormalTok{]}
+                \VariableTok{self}\NormalTok{.weights\_inv\_cov }\OperatorTok{=}\NormalTok{ acquisition[}\StringTok{\textquotesingle{}posterior\_inv\_cov\_y0\textquotesingle{}}\NormalTok{]}
+
+            \BuiltInTok{print}\NormalTok{(}\SpecialStringTok{f"Covariance L2: }\SpecialCharTok{\{}\NormalTok{torch}\SpecialCharTok{.}\NormalTok{inverse(}\VariableTok{self}\NormalTok{.weights\_inv\_cov)}\SpecialCharTok{.}\NormalTok{norm()}\SpecialCharTok{\}}\SpecialStringTok{"}\NormalTok{)}
+
+            \CommentTok{\# Validate model performance on the validation set}
+            \VariableTok{self}\NormalTok{.validate()}
+
+\CommentTok{\# KL divergence between two multivariate normal distributions}
+\KeywordTok{def}\NormalTok{ kl\_divergence\_gaussians(mu1, sigma1\_inv, mu2, sigma2\_inv):}
+    \CommentTok{"""}
+\CommentTok{    Computes the KL divergence between two multivariate Gaussian distributions.}
+\CommentTok{    }
+\CommentTok{    Args:}
+\CommentTok{    {-} mu1, mu2 (torch.Tensor): Mean vectors of the distributions.}
+\CommentTok{    {-} sigma1\_inv, sigma2\_inv (torch.Tensor): Inverse covariance matrices of the distributions. PLEASE }\AlertTok{NOTE}\CommentTok{ THE INVERSE!}
+\CommentTok{    }
+\CommentTok{    Returns:}
+\CommentTok{    {-} torch.Tensor: KL divergence value.}
+\CommentTok{    """}
+    \CommentTok{\# YOUR CODE HERE (\textasciitilde{} 9{-}12 lines)}
+    \ControlFlowTok{pass}
+    \CommentTok{\# }\RegionMarkerTok{END}\CommentTok{ OF YOUR CODE}
+
+\CommentTok{\# Example usage}
+\NormalTok{model }\OperatorTok{=}\NormalTok{ LogisticActiveLearning()}
+\NormalTok{model.train(num\_iterations}\OperatorTok{=}\DecValTok{100}\NormalTok{, subset\_size}\OperatorTok{=}\DecValTok{50}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
 \subsection*{Question 3: Linear Performance Metric Elicitation (30
 points)}\label{sec-question-3-linear-performance-metric-elicitation-30-points}
 \addcontentsline{toc}{subsection}{Question 3: Linear Performance Metric
@@ -9260,6 +9538,176 @@ Elicitation (30 points)}
   by \(\theta\)). Play around with the oracle's theta and run
   \texttt{start\_search} to see how close you can approximate it!
 \end{enumerate}
+
+\begin{Shaded}
+\begin{Highlighting}[numbers=left,,]
+\ImportTok{import}\NormalTok{ torch}
+\ImportTok{import}\NormalTok{ matplotlib.pyplot }\ImportTok{as}\NormalTok{ plt}
+\ImportTok{from}\NormalTok{ tqdm }\ImportTok{import}\NormalTok{ tqdm}
+
+\KeywordTok{class}\NormalTok{ DataDistribution:}
+    \KeywordTok{def} \FunctionTok{\_\_init\_\_}\NormalTok{(}\VariableTok{self}\NormalTok{, N: }\BuiltInTok{int}\NormalTok{):}
+        \CommentTok{"""}
+\CommentTok{        Initializes the data distribution with a specified number of samples.}
+\CommentTok{        }
+\CommentTok{        Args:}
+\CommentTok{        {-} N (int): Number of data points.}
+\CommentTok{        """}
+        \VariableTok{self}\NormalTok{.weights }\OperatorTok{=}\NormalTok{ torch.tensor([}\OperatorTok{{-}}\FloatTok{0.3356}\NormalTok{, }\OperatorTok{{-}}\FloatTok{1.4104}\NormalTok{, }\FloatTok{0.3144}\NormalTok{, }\OperatorTok{{-}}\FloatTok{0.5591}\NormalTok{, }\FloatTok{1.0426}\NormalTok{, }\FloatTok{0.6036}\NormalTok{, }\OperatorTok{{-}}\FloatTok{0.7549}\NormalTok{, }\OperatorTok{{-}}\FloatTok{1.1909}\NormalTok{, }\FloatTok{1.4779}\NormalTok{, }\OperatorTok{{-}}\FloatTok{0.7513}\NormalTok{])}
+        \VariableTok{self}\NormalTok{.D }\OperatorTok{=} \BuiltInTok{len}\NormalTok{(}\VariableTok{self}\NormalTok{.weights)}
+
+\NormalTok{        gen }\OperatorTok{=}\NormalTok{ torch.Generator().manual\_seed(}\DecValTok{42}\NormalTok{)}
+        \VariableTok{self}\NormalTok{.data }\OperatorTok{=}\NormalTok{ torch.randn(N, }\VariableTok{self}\NormalTok{.D, generator}\OperatorTok{=}\NormalTok{gen)}
+        \VariableTok{self}\NormalTok{.probs }\OperatorTok{=}\NormalTok{ torch.sigmoid(}\VariableTok{self}\NormalTok{.data }\OperatorTok{@} \VariableTok{self}\NormalTok{.weights)}
+    
+\KeywordTok{def}\NormalTok{ classifier\_metrics(data\_dist, threshold, upper}\OperatorTok{=}\VariableTok{True}\NormalTok{):}
+    \CommentTok{"""}
+\CommentTok{    Computes the True Positive and True Negative rates based on a classifier threshold.}
+\CommentTok{    }
+\CommentTok{    Args:}
+\CommentTok{    {-} data\_dist (DataDistribution): The data distribution instance.}
+\CommentTok{    {-} threshold (float): Threshold value for classification.}
+\CommentTok{    {-} upper (bool): If True, classifies as positive if above threshold; else, if below.}
+\CommentTok{    }
+\CommentTok{    Returns:}
+\CommentTok{    {-} tuple (float, float): True Positive Rate (TP) and True Negative Rate (TN) in that order.}
+\CommentTok{    """}
+    \CommentTok{\# YOUR CODE HERE (\textasciitilde{}3{-}5 lines)}
+    \ControlFlowTok{pass}
+    \CommentTok{\# }\RegionMarkerTok{END}\CommentTok{ OF YOUR CODE}
+
+\KeywordTok{def}\NormalTok{ sweep\_classifiers(data\_dist: DataDistribution):}
+    \CommentTok{"""}
+\CommentTok{    Sweeps through classifier thresholds and calculates True Positive and True Negative rates.}
+\CommentTok{    }
+\CommentTok{    Args:}
+\CommentTok{    {-} data\_dist (DataDistribution): The data distribution instance.}
+\CommentTok{    }
+\CommentTok{    Returns:}
+\CommentTok{    {-} tuple: Upper and lower boundary data for True Positive and True Negative rates.}
+\CommentTok{    """}
+\NormalTok{    thresholds }\OperatorTok{=}\NormalTok{ torch.linspace(}\DecValTok{0}\NormalTok{, }\DecValTok{1}\NormalTok{, }\DecValTok{100}\NormalTok{)}
+\NormalTok{    upper\_boundary }\OperatorTok{=}\NormalTok{ []}
+\NormalTok{    lower\_boundary }\OperatorTok{=}\NormalTok{ []}
+    
+    \ControlFlowTok{for}\NormalTok{ threshold }\KeywordTok{in}\NormalTok{ tqdm(thresholds, desc}\OperatorTok{=}\StringTok{"Thresholds"}\NormalTok{):}
+\NormalTok{        tp\_upper, tn\_upper }\OperatorTok{=}\NormalTok{ classifier\_metrics(data\_dist, threshold, upper}\OperatorTok{=}\VariableTok{True}\NormalTok{)}
+\NormalTok{        upper\_boundary.append((tp\_upper, tn\_upper))}
+
+\NormalTok{        tp\_lower, tn\_lower }\OperatorTok{=}\NormalTok{ classifier\_metrics(data\_dist, threshold, upper}\OperatorTok{=}\VariableTok{False}\NormalTok{)}
+\NormalTok{        lower\_boundary.append((tp\_lower, tn\_lower))}
+
+    \ControlFlowTok{return}\NormalTok{ upper\_boundary, lower\_boundary}
+
+\KeywordTok{class}\NormalTok{ Oracle:}
+    \KeywordTok{def} \FunctionTok{\_\_init\_\_}\NormalTok{(}\VariableTok{self}\NormalTok{, theta: }\BuiltInTok{float}\NormalTok{):}
+        \CommentTok{"""}
+\CommentTok{        Initializes the oracle with a given theta for preference evaluation.}
+\CommentTok{        }
+\CommentTok{        Args:}
+\CommentTok{        {-} theta (float): Oracle angle in radians.}
+\CommentTok{        """}
+        \VariableTok{self}\NormalTok{.theta }\OperatorTok{=}\NormalTok{ torch.tensor(theta)}
+
+    \KeywordTok{def}\NormalTok{ evaluate\_lpm(}\VariableTok{self}\NormalTok{, tp, tn):}
+        \CommentTok{"""}
+\CommentTok{        Computes the linear performance metric (LPM) based on theta.}
+\CommentTok{        }
+\CommentTok{        Args:}
+\CommentTok{        {-} tp (float): True Positive rate.}
+\CommentTok{        {-} tn (float): True Negative rate.}
+\CommentTok{        }
+\CommentTok{        Returns:}
+\CommentTok{        {-} float: Linear performance metric evaluation.}
+\CommentTok{        """}
+        \ControlFlowTok{return}\NormalTok{ torch.cos(}\VariableTok{self}\NormalTok{.theta) }\OperatorTok{*}\NormalTok{ tp }\OperatorTok{+}\NormalTok{ torch.sin(}\VariableTok{self}\NormalTok{.theta) }\OperatorTok{*}\NormalTok{ tn}
+    
+    \KeywordTok{def}\NormalTok{ preferred\_classifier(}\VariableTok{self}\NormalTok{, tp\_1, tn\_1, tp\_2, tn\_2):}
+        \CommentTok{"""}
+\CommentTok{        Determines the preferred classifier based on LPM values.}
+\CommentTok{        }
+\CommentTok{        Args:}
+\CommentTok{        {-} tp\_1, tn\_1, tp\_2, tn\_2 (float): True Positive and True Negative rates for two classifiers.}
+\CommentTok{        }
+\CommentTok{        Returns:}
+\CommentTok{        {-} bool: True if first classifier is preferred, False otherwise.}
+\CommentTok{        """}
+\NormalTok{        lpm\_1 }\OperatorTok{=} \VariableTok{self}\NormalTok{.evaluate\_lpm(tp\_1, tn\_1)}
+\NormalTok{        lpm\_2 }\OperatorTok{=} \VariableTok{self}\NormalTok{.evaluate\_lpm(tp\_2, tn\_2)}
+        \ControlFlowTok{return}\NormalTok{ (lpm\_1 }\OperatorTok{\textgreater{}}\NormalTok{ lpm\_2).item()}
+    
+\KeywordTok{def}\NormalTok{ theta\_to\_threshold(theta):}
+    \CommentTok{"""Converts theta angle to classification threshold."""}
+    \ControlFlowTok{return} \DecValTok{1} \OperatorTok{/}\NormalTok{ (}\DecValTok{1} \OperatorTok{+}\NormalTok{ torch.tan(theta) }\OperatorTok{**} \OperatorTok{{-}}\DecValTok{1}\NormalTok{)}
+
+\KeywordTok{def}\NormalTok{ search\_theta(oracle: Oracle, data\_dist, lower\_bound, upper\_bound):}
+    \CommentTok{"""}
+\CommentTok{    Performs a search over theta values to optimize the classification threshold.}
+\CommentTok{    }
+\CommentTok{    Args:}
+\CommentTok{    {-} oracle (Oracle): The oracle for LPM evaluation.}
+\CommentTok{    {-} data\_dist (DataDistribution): The data distribution instance.}
+\CommentTok{    {-} lower\_bound (float): Lower bound for theta.}
+\CommentTok{    {-} upper\_bound (float): Upper bound for theta.}
+\CommentTok{    }
+\CommentTok{    Returns:}
+\CommentTok{    {-} tuple: Updated lower and upper bounds for theta.}
+\CommentTok{    """}
+\NormalTok{    left }\OperatorTok{=} \FloatTok{0.75} \OperatorTok{*}\NormalTok{ lower\_bound }\OperatorTok{+} \FloatTok{0.25} \OperatorTok{*}\NormalTok{ upper\_bound}
+\NormalTok{    middle }\OperatorTok{=} \FloatTok{0.5} \OperatorTok{*}\NormalTok{ lower\_bound }\OperatorTok{+} \FloatTok{0.5} \OperatorTok{*}\NormalTok{ upper\_bound}
+\NormalTok{    right }\OperatorTok{=} \FloatTok{0.25} \OperatorTok{*}\NormalTok{ lower\_bound }\OperatorTok{+} \FloatTok{0.75} \OperatorTok{*}\NormalTok{ upper\_bound}
+
+\NormalTok{    thetas }\OperatorTok{=}\NormalTok{ [lower\_bound, left, middle, right, upper\_bound]}
+\NormalTok{    thresholds }\OperatorTok{=}\NormalTok{ theta\_to\_threshold(torch.tensor(thetas))}
+\NormalTok{    new\_lower, new\_upper }\OperatorTok{=} \VariableTok{None}\NormalTok{, }\VariableTok{None}
+
+    \CommentTok{\# YOUR CODE HERE (\textasciitilde{}18{-}25 lines)}
+    \CommentTok{\# 1. Collect metrics for each threshold value.}
+    \CommentTok{\# 2. Determine if LPM increases as theta increases.}
+    \CommentTok{\# 3. Check for pattern of increases and decreases in LPM.}
+    \CommentTok{\# 4. Update bounds based on observed LPM patterns.}
+    \ControlFlowTok{pass}
+    \CommentTok{\# }\RegionMarkerTok{END}\CommentTok{ OF YOUR CODE}
+
+    \ControlFlowTok{return}\NormalTok{ new\_lower, new\_upper}
+
+\CommentTok{\# Create instance and get upper \& lower boundary data}
+\NormalTok{data\_dist }\OperatorTok{=}\NormalTok{ DataDistribution(N}\OperatorTok{=}\DecValTok{10000000}\NormalTok{)}
+\NormalTok{oracle }\OperatorTok{=}\NormalTok{ Oracle(theta}\OperatorTok{=}\FloatTok{0.1}\NormalTok{)}
+
+\KeywordTok{def}\NormalTok{ plot\_confusion\_region():}
+    \CommentTok{"""}
+\CommentTok{    Plots the True Positive vs. True Negative rates for the upper and lower classifier boundaries.}
+\CommentTok{    """}
+\NormalTok{    upper\_boundary, lower\_boundary }\OperatorTok{=}\NormalTok{ sweep\_classifiers(data\_dist)}
+
+    \CommentTok{\# Prepare data for plotting for upper and lower boundaries}
+\NormalTok{    tp\_upper, tn\_upper }\OperatorTok{=} \BuiltInTok{zip}\NormalTok{(}\OperatorTok{*}\NormalTok{upper\_boundary)}
+\NormalTok{    tp\_lower, tn\_lower }\OperatorTok{=} \BuiltInTok{zip}\NormalTok{(}\OperatorTok{*}\NormalTok{lower\_boundary)}
+
+    \CommentTok{\# Plot the results for upper boundary}
+\NormalTok{    plt.figure(figsize}\OperatorTok{=}\NormalTok{(}\DecValTok{8}\NormalTok{, }\DecValTok{6}\NormalTok{))}
+\NormalTok{    plt.plot(tp\_upper, tn\_upper, marker}\OperatorTok{=}\StringTok{\textquotesingle{}o\textquotesingle{}}\NormalTok{, linestyle}\OperatorTok{=}\StringTok{\textquotesingle{}{-}\textquotesingle{}}\NormalTok{, alpha}\OperatorTok{=}\FloatTok{0.7}\NormalTok{, label}\OperatorTok{=}\StringTok{"Upper Boundary"}\NormalTok{)}
+\NormalTok{    plt.plot(tp\_lower, tn\_lower, marker}\OperatorTok{=}\StringTok{\textquotesingle{}o\textquotesingle{}}\NormalTok{, linestyle}\OperatorTok{=}\StringTok{\textquotesingle{}{-}{-}\textquotesingle{}}\NormalTok{, alpha}\OperatorTok{=}\FloatTok{0.7}\NormalTok{, label}\OperatorTok{=}\StringTok{"Lower Boundary"}\NormalTok{)}
+\NormalTok{    plt.title(}\StringTok{"True Positive vs. True Negative Rates (Upper \& Lower Boundaries)"}\NormalTok{)}
+\NormalTok{    plt.xlabel(}\StringTok{"True Positive Rate (TP)"}\NormalTok{)}
+\NormalTok{    plt.ylabel(}\StringTok{"True Negative Rate (TN)"}\NormalTok{)}
+\NormalTok{    plt.legend()}
+\NormalTok{    plt.grid(}\VariableTok{True}\NormalTok{)}
+\NormalTok{    plt.show()}
+
+\KeywordTok{def}\NormalTok{ start\_search():}
+    \CommentTok{"""}
+\CommentTok{    Starts the theta search using the LPM{-}based oracle and prints the search range per iteration.}
+\CommentTok{    """}
+\NormalTok{    lower\_bound }\OperatorTok{=} \DecValTok{0}
+\NormalTok{    upper\_bound }\OperatorTok{=}\NormalTok{ torch.pi }\OperatorTok{/} \DecValTok{2}
+    \ControlFlowTok{for}\NormalTok{ \_ }\KeywordTok{in}\NormalTok{ tqdm(}\BuiltInTok{range}\NormalTok{(}\DecValTok{10}\NormalTok{), desc}\OperatorTok{=}\StringTok{"LPM Search"}\NormalTok{):}
+        \BuiltInTok{print}\NormalTok{(}\SpecialStringTok{f"Theta Search Space: [}\SpecialCharTok{\{}\NormalTok{lower\_bound}\SpecialCharTok{\}}\SpecialStringTok{, }\SpecialCharTok{\{}\NormalTok{upper\_bound}\SpecialCharTok{\}}\SpecialStringTok{]"}\NormalTok{)}
+\NormalTok{        lower\_bound, upper\_bound }\OperatorTok{=}\NormalTok{ search\_theta(oracle, data\_dist, lower\_bound}\OperatorTok{=}\NormalTok{lower\_bound, upper\_bound}\OperatorTok{=}\NormalTok{upper\_bound)}
+    \BuiltInTok{print}\NormalTok{(}\SpecialStringTok{f"Theta Search Space: [}\SpecialCharTok{\{}\NormalTok{lower\_bound}\SpecialCharTok{\}}\SpecialStringTok{, }\SpecialCharTok{\{}\NormalTok{upper\_bound}\SpecialCharTok{\}}\SpecialStringTok{]"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
 
 \subsection*{Question 4: D-optimal Design with Logistic Model (30
 points)}\label{sec-question-4-d-optimal-design-with-logistic-model-30-points}
@@ -9334,6 +9782,165 @@ exercise, you will analyze D-optimal designs for this model.
     greedy?
   \end{enumerate}
 \end{enumerate}
+
+\begin{Shaded}
+\begin{Highlighting}[numbers=left,,]
+\ImportTok{import}\NormalTok{ numpy }\ImportTok{as}\NormalTok{ np}
+\ImportTok{import}\NormalTok{ matplotlib.pyplot }\ImportTok{as}\NormalTok{ plt}
+\ImportTok{from}\NormalTok{ tqdm }\ImportTok{import}\NormalTok{ tqdm}
+
+\KeywordTok{def}\NormalTok{ sigmoid(x):}
+    \CommentTok{"""Helper function to compute the sigmoid of x."""}
+    \ControlFlowTok{return} \DecValTok{1} \OperatorTok{/}\NormalTok{ (}\DecValTok{1} \OperatorTok{+}\NormalTok{ np.exp(}\OperatorTok{{-}}\NormalTok{x))}
+
+\KeywordTok{class}\NormalTok{ LogisticData:}
+    \KeywordTok{def} \FunctionTok{\_\_init\_\_}\NormalTok{(}\VariableTok{self}\NormalTok{, weights, seed}\OperatorTok{=}\DecValTok{42}\NormalTok{):}
+        \CommentTok{"""}
+\CommentTok{        Initializes the LogisticData class with specified weights and seed.}
+\CommentTok{        }
+\CommentTok{        Args:}
+\CommentTok{        {-} weights (np.array): True weights for data generation.}
+\CommentTok{        {-} seed (int): Random seed for reproducibility.}
+\CommentTok{        """}
+        \VariableTok{self}\NormalTok{.rng }\OperatorTok{=}\NormalTok{ np.random.default\_rng(seed)}
+        \VariableTok{self}\NormalTok{.weights }\OperatorTok{=}\NormalTok{ weights}
+    
+    \KeywordTok{def}\NormalTok{ generate\_data(}\VariableTok{self}\NormalTok{, N):}
+        \CommentTok{"""}
+\CommentTok{        Generates synthetic data for logistic regression.}
+\CommentTok{        }
+\CommentTok{        Args:}
+\CommentTok{        {-} N (int): Number of data points.}
+\CommentTok{        }
+\CommentTok{        Returns:}
+\CommentTok{        {-} tuple: Generated data and labels.}
+\CommentTok{        """}
+\NormalTok{        data }\OperatorTok{=} \VariableTok{self}\NormalTok{.rng.standard\_normal((N, }\BuiltInTok{len}\NormalTok{(}\VariableTok{self}\NormalTok{.weights)))}
+\NormalTok{        probs }\OperatorTok{=}\NormalTok{ sigmoid(data }\OperatorTok{@} \VariableTok{self}\NormalTok{.weights)}
+\NormalTok{        labels }\OperatorTok{=}\NormalTok{ (}\VariableTok{self}\NormalTok{.rng.random(N) }\OperatorTok{\textless{}}\NormalTok{ probs).astype(}\BuiltInTok{int}\NormalTok{)}
+        \ControlFlowTok{return}\NormalTok{ data, labels}
+
+\KeywordTok{def}\NormalTok{ fisher\_matrix(difference\_vector, weights):}
+    \CommentTok{"""}
+\CommentTok{    Computes the Fisher information matrix for a single data point.}
+\CommentTok{    }
+\CommentTok{    Args:}
+\CommentTok{    {-} difference\_vector (np.array): Difference vector (input data point).}
+\CommentTok{    {-} weights (np.array): Weights for the logistic model.}
+\CommentTok{    }
+\CommentTok{    Returns:}
+\CommentTok{    {-} np.array: Fisher information matrix for the data point.}
+\CommentTok{    """}
+    \CommentTok{\# YOUR CODE HERE (\textasciitilde{}2{-}4 lines)}
+    \ControlFlowTok{pass}
+    \CommentTok{\# }\RegionMarkerTok{END}\CommentTok{ OF YOUR CODE}
+
+\CommentTok{\# Initialization}
+\NormalTok{true\_weights }\OperatorTok{=}\NormalTok{ np.array([}\OperatorTok{{-}}\FloatTok{0.3356}\NormalTok{, }\OperatorTok{{-}}\FloatTok{1.4104}\NormalTok{, }\FloatTok{0.3144}\NormalTok{, }\OperatorTok{{-}}\FloatTok{0.5591}\NormalTok{, }\FloatTok{1.0426}\NormalTok{, }\FloatTok{0.6036}\NormalTok{, }\OperatorTok{{-}}\FloatTok{0.7549}\NormalTok{, }\OperatorTok{{-}}\FloatTok{1.1909}\NormalTok{, }\FloatTok{1.4779}\NormalTok{, }\OperatorTok{{-}}\FloatTok{0.7513}\NormalTok{])}
+\NormalTok{data\_dim }\OperatorTok{=} \BuiltInTok{len}\NormalTok{(true\_weights)}
+\NormalTok{dataset\_generator }\OperatorTok{=}\NormalTok{ LogisticData(weights}\OperatorTok{=}\NormalTok{true\_weights)}
+
+\CommentTok{\# Number of iterations for sampling 500 points}
+\NormalTok{num\_iterations }\OperatorTok{=} \DecValTok{200}
+
+\CommentTok{\# Store covariance matrix norms for comparison}
+\NormalTok{cov\_norms\_greedy }\OperatorTok{=}\NormalTok{ []}
+\NormalTok{cov\_norms\_random }\OperatorTok{=}\NormalTok{ []}
+
+\KeywordTok{def}\NormalTok{ greedy\_fisher(data, curr\_fisher\_matrix, selected\_indices):}
+    \CommentTok{"""}
+\CommentTok{    Selects the data point that maximizes the Fisher information determinant.}
+\CommentTok{    }
+\CommentTok{    Args:}
+\CommentTok{    {-} data (np.array): The data matrix.}
+\CommentTok{    {-} curr\_fisher\_matrix (np.array): Fisher matrix of already selected indices.}
+\CommentTok{    {-} selected\_indices (list): List of already selected indices.}
+\CommentTok{    }
+\CommentTok{    Returns:}
+\CommentTok{    {-} int: Index of the selected data point.}
+\CommentTok{    """}
+\NormalTok{    best\_det }\OperatorTok{=} \OperatorTok{{-}}\NormalTok{np.inf}
+\NormalTok{    best\_index }\OperatorTok{=} \OperatorTok{{-}}\DecValTok{1}
+    
+    \CommentTok{\# Iterate over data points to find the one maximizing Fisher determinant.}
+    \ControlFlowTok{for}\NormalTok{ i, difference\_vector }\KeywordTok{in} \BuiltInTok{enumerate}\NormalTok{(data):}
+        \CommentTok{\# YOUR CODE HERE (\textasciitilde{}5{-}10 lines)}
+        \CommentTok{\# Make sure to skip already selected data points!}
+        \ControlFlowTok{pass}
+        \CommentTok{\# }\RegionMarkerTok{END}\CommentTok{ OF YOUR CODE}
+    \ControlFlowTok{return}\NormalTok{ best\_index}
+
+\KeywordTok{def}\NormalTok{ posterior\_inv\_cov(X, laplace\_center):}
+    \CommentTok{"""}
+\CommentTok{    Computes the posterior inverse covariance matrix using Laplace approximation.}
+\CommentTok{    }
+\CommentTok{    Args:}
+\CommentTok{    {-} X (np.array): Data matrix.}
+\CommentTok{    {-} laplace\_center (np.array): Center point (weights).}
+\CommentTok{    }
+\CommentTok{    Returns:}
+\CommentTok{    {-} np.array: Posterior inverse covariance matrix.}
+\CommentTok{    """}
+    \CommentTok{\# Calculate probabilities for logistic regression model.}
+\NormalTok{    probs }\OperatorTok{=}\NormalTok{ sigmoid(X }\OperatorTok{@}\NormalTok{ laplace\_center)}
+\NormalTok{    W }\OperatorTok{=}\NormalTok{ np.diag(probs }\OperatorTok{*}\NormalTok{ (}\DecValTok{1} \OperatorTok{{-}}\NormalTok{ probs))}
+    
+    \CommentTok{\# Compute inverse covariance matrix assuming standard Gaussian prior.}
+\NormalTok{    inv\_cov }\OperatorTok{=}\NormalTok{ X.T }\OperatorTok{@}\NormalTok{ W }\OperatorTok{@}\NormalTok{ X }\OperatorTok{+}\NormalTok{ np.eye(}\BuiltInTok{len}\NormalTok{(true\_weights))}
+    \ControlFlowTok{return}\NormalTok{ inv\_cov}
+
+\ControlFlowTok{for}\NormalTok{ \_ }\KeywordTok{in}\NormalTok{ tqdm(}\BuiltInTok{range}\NormalTok{(num\_iterations)):}
+    \CommentTok{\# Generate a new sample of 500 data points}
+\NormalTok{    data, \_ }\OperatorTok{=}\NormalTok{ dataset\_generator.generate\_data(N}\OperatorTok{=}\DecValTok{500}\NormalTok{)}
+    
+    \CommentTok{\# Greedy selection of best 30 data points}
+\NormalTok{    selected\_indices }\OperatorTok{=}\NormalTok{ []}
+\NormalTok{    curr\_fisher\_matrix }\OperatorTok{=}\NormalTok{ np.zeros((data\_dim, data\_dim))}
+
+    \ControlFlowTok{for}\NormalTok{ \_ }\KeywordTok{in} \BuiltInTok{range}\NormalTok{(}\DecValTok{30}\NormalTok{):}
+        \CommentTok{\# Select the data point maximizing Fisher information determinant.}
+\NormalTok{        best\_index }\OperatorTok{=}\NormalTok{ greedy\_fisher(data, curr\_fisher\_matrix, selected\_indices)}
+\NormalTok{        selected\_indices.append(best\_index)}
+\NormalTok{        curr\_fisher\_matrix }\OperatorTok{+=}\NormalTok{ fisher\_matrix(data[best\_index], true\_weights)}
+
+    \CommentTok{\# Prepare greedy and random samples}
+\NormalTok{    X\_greedy }\OperatorTok{=}\NormalTok{ data[selected\_indices]}
+
+    \CommentTok{\# Generate 30 random samples for comparison}
+\NormalTok{    random\_indices }\OperatorTok{=}\NormalTok{ np.random.choice(}\BuiltInTok{len}\NormalTok{(data), }\DecValTok{30}\NormalTok{, replace}\OperatorTok{=}\VariableTok{False}\NormalTok{)}
+\NormalTok{    X\_random }\OperatorTok{=}\NormalTok{ data[random\_indices]}
+
+    \CommentTok{\# Compute posterior inverse covariance matrices for both strategies}
+\NormalTok{    posterior\_inv\_cov\_greedy }\OperatorTok{=}\NormalTok{ posterior\_inv\_cov(X\_greedy, laplace\_center}\OperatorTok{=}\NormalTok{true\_weights) }
+\NormalTok{    posterior\_inv\_cov\_random }\OperatorTok{=}\NormalTok{ posterior\_inv\_cov(X\_random, laplace\_center}\OperatorTok{=}\NormalTok{true\_weights)}
+
+    \CommentTok{\# Calculate covariance matrices (inverse of posterior inverse covariance)}
+\NormalTok{    cov\_matrix\_greedy }\OperatorTok{=}\NormalTok{ np.linalg.inv(posterior\_inv\_cov\_greedy)}
+\NormalTok{    cov\_matrix\_random }\OperatorTok{=}\NormalTok{ np.linalg.inv(posterior\_inv\_cov\_random)}
+
+    \CommentTok{\# Measure the norm (Frobenius norm) of the covariance matrices}
+\NormalTok{    cov\_norm\_greedy }\OperatorTok{=}\NormalTok{ np.linalg.norm(cov\_matrix\_greedy, }\StringTok{\textquotesingle{}fro\textquotesingle{}}\NormalTok{)}
+\NormalTok{    cov\_norm\_random }\OperatorTok{=}\NormalTok{ np.linalg.norm(cov\_matrix\_random, }\StringTok{\textquotesingle{}fro\textquotesingle{}}\NormalTok{)}
+
+    \CommentTok{\# Store norms for analysis}
+\NormalTok{    cov\_norms\_greedy.append(cov\_norm\_greedy)}
+\NormalTok{    cov\_norms\_random.append(cov\_norm\_random)}
+
+\CommentTok{\# Display comparison results}
+\BuiltInTok{print}\NormalTok{(}\SpecialStringTok{f\textquotesingle{}Greedy mean: }\SpecialCharTok{\{}\NormalTok{np}\SpecialCharTok{.}\NormalTok{mean(cov\_norms\_greedy)}\SpecialCharTok{\}}\SpecialStringTok{\textquotesingle{}}\NormalTok{)}
+\BuiltInTok{print}\NormalTok{(}\SpecialStringTok{f\textquotesingle{}Random mean: }\SpecialCharTok{\{}\NormalTok{np}\SpecialCharTok{.}\NormalTok{mean(cov\_norms\_random)}\SpecialCharTok{\}}\SpecialStringTok{\textquotesingle{}}\NormalTok{)}
+\BuiltInTok{print}\NormalTok{(}\SpecialStringTok{f\textquotesingle{}Greedy win rate: }\SpecialCharTok{\{}\NormalTok{(np.array(cov\_norms\_greedy) }\OperatorTok{\textless{}}\NormalTok{ np.array(cov\_norms\_random))}\SpecialCharTok{.}\NormalTok{mean()}\SpecialCharTok{\}}\SpecialStringTok{\textquotesingle{}}\NormalTok{)}
+
+\CommentTok{\# Plot the distributions of covariance matrix norms}
+\NormalTok{plt.hist(cov\_norms\_greedy, bins}\OperatorTok{=}\DecValTok{30}\NormalTok{, alpha}\OperatorTok{=}\FloatTok{0.7}\NormalTok{, color}\OperatorTok{=}\StringTok{\textquotesingle{}blue\textquotesingle{}}\NormalTok{, label}\OperatorTok{=}\StringTok{\textquotesingle{}Greedy\textquotesingle{}}\NormalTok{)}
+\NormalTok{plt.hist(cov\_norms\_random, bins}\OperatorTok{=}\DecValTok{30}\NormalTok{, alpha}\OperatorTok{=}\FloatTok{0.7}\NormalTok{, color}\OperatorTok{=}\StringTok{\textquotesingle{}red\textquotesingle{}}\NormalTok{, label}\OperatorTok{=}\StringTok{\textquotesingle{}Random\textquotesingle{}}\NormalTok{)}
+\NormalTok{plt.xlabel(}\StringTok{\textquotesingle{}L2 Norm of Covariance Matrix\textquotesingle{}}\NormalTok{)}
+\NormalTok{plt.ylabel(}\StringTok{\textquotesingle{}Frequency\textquotesingle{}}\NormalTok{)}
+\NormalTok{plt.title(}\StringTok{\textquotesingle{}Comparison of Covariance Norms (Greedy vs. Random) Across Iterations\textquotesingle{}}\NormalTok{)}
+\NormalTok{plt.legend()}
+\NormalTok{plt.show()}
+\end{Highlighting}
+\end{Shaded}
 
 \subsection*{Question 5: Nonparametric Metric Elicitation (30
 points)}\label{sec-question-5-nonparametric-metric-elicitation-30-points}
@@ -9429,6 +10036,221 @@ slice sampling for posterior inference.
     part (iii).
   \end{enumerate}
 \end{enumerate}
+
+\begin{Shaded}
+\begin{Highlighting}[numbers=left,,]
+\ImportTok{import}\NormalTok{ numpy }\ImportTok{as}\NormalTok{ np}
+\ImportTok{import}\NormalTok{ matplotlib.pyplot }\ImportTok{as}\NormalTok{ plt}
+\ImportTok{from}\NormalTok{ typing }\ImportTok{import}\NormalTok{ Callable}
+\ImportTok{import}\NormalTok{ numpy }\ImportTok{as}\NormalTok{ np}
+\ImportTok{from}\NormalTok{ tqdm }\ImportTok{import}\NormalTok{ tqdm}
+
+\KeywordTok{class}\NormalTok{ EllipticalSliceSampler:}
+    \KeywordTok{def} \FunctionTok{\_\_init\_\_}\NormalTok{(}\VariableTok{self}\NormalTok{,}
+\NormalTok{                 prior\_cov: np.ndarray,}
+\NormalTok{                 loglik: Callable):}
+        \CommentTok{"""}
+\CommentTok{        Initializes the Elliptical Slice Sampler.}
+\CommentTok{        }
+\CommentTok{        Args:}
+\CommentTok{        {-} prior\_cov (np.ndarray): Prior covariance matrix.}
+\CommentTok{        {-} loglik (Callable): Log{-}likelihood function.}
+\CommentTok{        """}
+        \VariableTok{self}\NormalTok{.prior\_cov }\OperatorTok{=}\NormalTok{ prior\_cov}
+        \VariableTok{self}\NormalTok{.loglik }\OperatorTok{=}\NormalTok{ loglik}
+
+        \VariableTok{self}\NormalTok{.\_n }\OperatorTok{=}\NormalTok{ prior\_cov.shape[}\DecValTok{0}\NormalTok{]  }\CommentTok{\# Dimensionality of the space}
+        \VariableTok{self}\NormalTok{.\_chol }\OperatorTok{=}\NormalTok{ np.linalg.cholesky(prior\_cov)  }\CommentTok{\# Cache Cholesky decomposition}
+
+        \CommentTok{\# Initialize state by sampling from prior}
+        \VariableTok{self}\NormalTok{.\_state\_f }\OperatorTok{=} \VariableTok{self}\NormalTok{.\_chol }\OperatorTok{@}\NormalTok{ np.random.randn(}\VariableTok{self}\NormalTok{.\_n)}
+
+    \KeywordTok{def}\NormalTok{ \_indiv\_sample(}\VariableTok{self}\NormalTok{):}
+        \CommentTok{"""}
+\CommentTok{        Main algorithm for generating an individual sample using Elliptical Slice Sampling.}
+\CommentTok{        """}
+\NormalTok{        f }\OperatorTok{=} \VariableTok{self}\NormalTok{.\_state\_f  }\CommentTok{\# Previous state}
+\NormalTok{        nu }\OperatorTok{=} \VariableTok{self}\NormalTok{.\_chol }\OperatorTok{@}\NormalTok{ np.random.randn(}\VariableTok{self}\NormalTok{.\_n)  }\CommentTok{\# Sample from prior for the ellipse}
+\NormalTok{        log\_y }\OperatorTok{=} \VariableTok{self}\NormalTok{.loglik(f) }\OperatorTok{+}\NormalTok{ np.log(np.random.uniform())  }\CommentTok{\# Log{-}likelihood threshold}
+
+\NormalTok{        theta }\OperatorTok{=}\NormalTok{ np.random.uniform(}\FloatTok{0.}\NormalTok{, }\DecValTok{2} \OperatorTok{*}\NormalTok{ np.pi)  }\CommentTok{\# Initial proposal angle}
+\NormalTok{        theta\_min, theta\_max }\OperatorTok{=}\NormalTok{ theta }\OperatorTok{{-}} \DecValTok{2} \OperatorTok{*}\NormalTok{ np.pi, theta  }\CommentTok{\# Define bracketing interval}
+
+        \CommentTok{\# Main loop: Accept sample if it meets log{-}likelihood threshold; otherwise, shrink the bracket.}
+        \ControlFlowTok{while} \VariableTok{True}\NormalTok{:}
+            \CommentTok{\# YOUR CODE HERE (\textasciitilde{}10 lines)}
+            \CommentTok{\# 1. Generate a new sample point based on the current angle.}
+            \CommentTok{\# 2. Check if the proposed point meets the acceptance criterion.            }
+            \CommentTok{\# 3. If not accepted, adjust the bracket and select a new angle.}
+            \ControlFlowTok{break}
+            \CommentTok{\# }\RegionMarkerTok{END}\CommentTok{ OF YOUR CODE}
+
+    \KeywordTok{def}\NormalTok{ sample(}\VariableTok{self}\NormalTok{,}
+\NormalTok{               n\_samples: }\BuiltInTok{int}\NormalTok{,}
+\NormalTok{               n\_burn: }\BuiltInTok{int} \OperatorTok{=} \DecValTok{500}\NormalTok{) }\OperatorTok{{-}\textgreater{}}\NormalTok{ np.ndarray:}
+        \CommentTok{"""}
+\CommentTok{        Generates samples using Elliptical Slice Sampling.}
+
+\CommentTok{        Args:}
+\CommentTok{        {-} n\_samples (int): Total number of samples to return.}
+\CommentTok{        {-} n\_burn (int): Number of initial samples to discard (burn{-}in).}
+
+\CommentTok{        Returns:}
+\CommentTok{        {-} np.ndarray: Array of samples after burn{-}in.}
+\CommentTok{        """}
+\NormalTok{        samples }\OperatorTok{=}\NormalTok{ []}
+        \ControlFlowTok{for}\NormalTok{ i }\KeywordTok{in}\NormalTok{ tqdm(}\BuiltInTok{range}\NormalTok{(n\_samples), desc}\OperatorTok{=}\StringTok{"Sampling"}\NormalTok{):}
+            \VariableTok{self}\NormalTok{.\_indiv\_sample()}
+            \ControlFlowTok{if}\NormalTok{ i }\OperatorTok{\textgreater{}}\NormalTok{ n\_burn:}
+\NormalTok{                samples.append(}\VariableTok{self}\NormalTok{.\_state\_f.copy())  }\CommentTok{\# Store sample post burn{-}in}
+
+        \ControlFlowTok{return}\NormalTok{ np.stack(samples)}
+
+\KeywordTok{def}\NormalTok{ sigmoid(x):}
+    \CommentTok{"""Sigmoid function to map values between 0 and 1."""}
+    \ControlFlowTok{return} \DecValTok{1} \OperatorTok{/}\NormalTok{ (}\DecValTok{1} \OperatorTok{+}\NormalTok{ np.exp(}\OperatorTok{{-}}\NormalTok{x))}
+
+\CommentTok{\# Step 1: Define a New Two{-}Dimensional Non{-}linear Function}
+\KeywordTok{def}\NormalTok{ nonlinear\_function(x1, x2):}
+    \CommentTok{"""}
+\CommentTok{    Computes a non{-}linear function of x1 and x2.}
+\CommentTok{    }
+\CommentTok{    Args:}
+\CommentTok{    {-} x1 (np.array): First input array.}
+\CommentTok{    {-} x2 (np.array): Second input array.}
+\CommentTok{    }
+\CommentTok{    Returns:}
+\CommentTok{    {-} np.array: Computed function values.}
+\CommentTok{    """}
+    \ControlFlowTok{return}\NormalTok{ np.log(}\DecValTok{1} \OperatorTok{+}\NormalTok{ x1) }\OperatorTok{+}\NormalTok{ np.log(}\DecValTok{1} \OperatorTok{+}\NormalTok{ x2)}
+
+\CommentTok{\# Generate a 2D grid of points}
+\NormalTok{x1 }\OperatorTok{=}\NormalTok{ np.linspace(}\DecValTok{0}\NormalTok{, }\DecValTok{1}\NormalTok{, }\DecValTok{20}\NormalTok{)}
+\NormalTok{x2 }\OperatorTok{=}\NormalTok{ np.linspace(}\DecValTok{0}\NormalTok{, }\DecValTok{1}\NormalTok{, }\DecValTok{20}\NormalTok{)}
+\NormalTok{x1\_grid, x2\_grid }\OperatorTok{=}\NormalTok{ np.meshgrid(x1, x2)}
+\NormalTok{x\_grid\_points }\OperatorTok{=}\NormalTok{ np.vstack([x1\_grid.ravel(), x2\_grid.ravel()]).T}
+\NormalTok{f\_values }\OperatorTok{=}\NormalTok{ nonlinear\_function(x\_grid\_points[:, }\DecValTok{0}\NormalTok{], x\_grid\_points[:, }\DecValTok{1}\NormalTok{])}
+
+\CommentTok{\# Step 2: Generate Preferences Using Bradley{-}Terry Model Over the Grid}
+\KeywordTok{def}\NormalTok{ generate\_preferences(f\_vals, num\_prefs}\OperatorTok{=}\DecValTok{10000}\NormalTok{):}
+    \CommentTok{"""}
+\CommentTok{    Generates preferences based on the Bradley{-}Terry model.}
+\CommentTok{    }
+\CommentTok{    Args:}
+\CommentTok{    {-} f\_vals (np.array): Function values at grid points.}
+\CommentTok{    {-} num\_prefs (int): Number of preference pairs to generate.}
+\CommentTok{    }
+\CommentTok{    Returns:}
+\CommentTok{    {-} list of tuple: Generated preference pairs (i, j).}
+\CommentTok{    """}
+\NormalTok{    preferences }\OperatorTok{=}\NormalTok{ []}
+\NormalTok{    num\_points }\OperatorTok{=} \BuiltInTok{len}\NormalTok{(f\_vals)}
+    \ControlFlowTok{for}\NormalTok{ \_ }\KeywordTok{in} \BuiltInTok{range}\NormalTok{(num\_prefs):}
+\NormalTok{        i, j }\OperatorTok{=}\NormalTok{ np.random.choice(num\_points, size}\OperatorTok{=}\DecValTok{2}\NormalTok{, replace}\OperatorTok{=}\VariableTok{False}\NormalTok{)}
+        \CommentTok{\# Probability of preference using Bradley{-}Terry model}
+\NormalTok{        p\_ij }\OperatorTok{=}\NormalTok{ sigmoid(f\_vals[i] }\OperatorTok{{-}}\NormalTok{ f\_vals[j])}
+        \CommentTok{\# Decide preference based on random draw}
+        \ControlFlowTok{if}\NormalTok{ np.random.rand() }\OperatorTok{\textless{}}\NormalTok{ p\_ij:}
+\NormalTok{            preferences.append((i, j))}
+        \ControlFlowTok{else}\NormalTok{:}
+\NormalTok{            preferences.append((j, i))}
+    \ControlFlowTok{return}\NormalTok{ preferences}
+
+\NormalTok{preferences }\OperatorTok{=}\NormalTok{ generate\_preferences(f\_values)}
+
+\CommentTok{\# Step 3: Define the Likelihood Function for Elliptical Slice Sampling}
+\KeywordTok{def}\NormalTok{ loglik\_from\_preferences(f):}
+    \CommentTok{"""}
+\CommentTok{    Log{-}likelihood function using Bradley{-}Terry model for preferences.}
+\CommentTok{    }
+\CommentTok{    Args:}
+\CommentTok{    {-} f (np.array): Sampled function values.}
+\CommentTok{    }
+\CommentTok{    Returns:}
+\CommentTok{    {-} float: Log{-}likelihood value.}
+\CommentTok{    """}
+\NormalTok{    log\_lik }\OperatorTok{=} \DecValTok{0}
+    \ControlFlowTok{for}\NormalTok{ idx\_i, idx\_j }\KeywordTok{in}\NormalTok{ preferences:}
+        \CommentTok{\# YOUR CODE HERE (\textasciitilde{}2 lines)}
+        \ControlFlowTok{pass}
+        \CommentTok{\# }\RegionMarkerTok{END}\CommentTok{ OF YOUR CODE}
+    \ControlFlowTok{return}\NormalTok{ log\_lik}
+
+\CommentTok{\# Step 4: Define the RBF Kernel to Compute Prior Covariance Matrix}
+\KeywordTok{def}\NormalTok{ rbf\_kernel(X1, X2, length\_scale}\OperatorTok{=}\FloatTok{1.0}\NormalTok{, sigma\_f}\OperatorTok{=}\FloatTok{1.0}\NormalTok{):}
+    \CommentTok{"""}
+\CommentTok{    Computes the Radial Basis Function (RBF) kernel between two sets of points.}
+\CommentTok{    }
+\CommentTok{    Args:}
+\CommentTok{    {-} X1, X2 (np.array): Input data points.}
+\CommentTok{    {-} length\_scale (float): Kernel length scale parameter.}
+\CommentTok{    {-} sigma\_f (float): Kernel output scale.}
+\CommentTok{    }
+\CommentTok{    Returns:}
+\CommentTok{    {-} np.array: RBF kernel matrix.}
+\CommentTok{    """}
+\NormalTok{    sqdist }\OperatorTok{=}\NormalTok{ np.}\BuiltInTok{sum}\NormalTok{(X1}\OperatorTok{**}\DecValTok{2}\NormalTok{, axis}\OperatorTok{=}\DecValTok{1}\NormalTok{).reshape(}\OperatorTok{{-}}\DecValTok{1}\NormalTok{, }\DecValTok{1}\NormalTok{) }\OperatorTok{+}\NormalTok{ np.}\BuiltInTok{sum}\NormalTok{(X2}\OperatorTok{**}\DecValTok{2}\NormalTok{, axis}\OperatorTok{=}\DecValTok{1}\NormalTok{) }\OperatorTok{{-}} \DecValTok{2} \OperatorTok{*}\NormalTok{ np.dot(X1, X2.T)}
+    \ControlFlowTok{return}\NormalTok{ sigma\_f}\OperatorTok{**}\DecValTok{2} \OperatorTok{*}\NormalTok{ np.exp(}\OperatorTok{{-}}\FloatTok{0.5} \OperatorTok{/}\NormalTok{ length\_scale}\OperatorTok{**}\DecValTok{2} \OperatorTok{*}\NormalTok{ sqdist)}
+
+\CommentTok{\# Define prior covariance (prior mean is zero vector)}
+\NormalTok{sigma\_prior }\OperatorTok{=}\NormalTok{ rbf\_kernel(x\_grid\_points, x\_grid\_points, length\_scale}\OperatorTok{=}\FloatTok{1.0}\NormalTok{, sigma\_f}\OperatorTok{=}\FloatTok{1.0}\NormalTok{)}
+
+\CommentTok{\# Add small jitter to diagonal for numerical stability}
+\NormalTok{jitter }\OperatorTok{=} \FloatTok{1e{-}6}
+\NormalTok{sigma\_prior }\OperatorTok{+=}\NormalTok{ jitter }\OperatorTok{*}\NormalTok{ np.eye(sigma\_prior.shape[}\DecValTok{0}\NormalTok{])}
+
+\CommentTok{\# Ensure the matrix is symmetric to avoid numerical issues}
+\NormalTok{sigma\_prior }\OperatorTok{=}\NormalTok{ (sigma\_prior }\OperatorTok{+}\NormalTok{ sigma\_prior.T) }\OperatorTok{/} \DecValTok{2}
+
+\CommentTok{\# Step 5: Run Elliptical Slice Sampling}
+\NormalTok{sampler }\OperatorTok{=}\NormalTok{ EllipticalSliceSampler(sigma\_prior, loglik\_from\_preferences)}
+\NormalTok{samples }\OperatorTok{=}\NormalTok{ sampler.sample(}\DecValTok{1000}\NormalTok{, n\_burn}\OperatorTok{=}\DecValTok{500}\NormalTok{)}
+\NormalTok{average\_samples }\OperatorTok{=}\NormalTok{ np.mean(samples, axis}\OperatorTok{=}\DecValTok{0}\NormalTok{)}
+
+\CommentTok{\# Generate true function values on grid points}
+\NormalTok{true\_values\_on\_grid }\OperatorTok{=}\NormalTok{ nonlinear\_function(x\_grid\_points[:, }\DecValTok{0}\NormalTok{], x\_grid\_points[:, }\DecValTok{1}\NormalTok{])}
+
+\KeywordTok{def}\NormalTok{ evaluate\_elicited\_metric(true\_metric, elicited\_metric):}
+    \CommentTok{"""}
+\CommentTok{    Evaluates and prints the mean and standard deviation of the difference}
+\CommentTok{    between true and elicited metrics.}
+\CommentTok{    }
+\CommentTok{    Args:}
+\CommentTok{    {-} true\_metric (np.array): True values of the function.}
+\CommentTok{    {-} elicited\_metric (np.array): Elicited (estimated) function values.}
+\CommentTok{    """}
+    \CommentTok{\# YOUR CODE HERE}
+    \ControlFlowTok{pass}
+    \CommentTok{\# }\RegionMarkerTok{END}\CommentTok{ OF YOUR CODE}
+
+\NormalTok{evaluate\_elicited\_metric(true\_values\_on\_grid, average\_samples)}
+
+\CommentTok{\# Step 6: Plot the True Non{-}linear Function and Elicited Metric in 3D}
+\NormalTok{fig }\OperatorTok{=}\NormalTok{ plt.figure(figsize}\OperatorTok{=}\NormalTok{(}\DecValTok{12}\NormalTok{, }\DecValTok{8}\NormalTok{))}
+\NormalTok{ax }\OperatorTok{=}\NormalTok{ fig.add\_subplot(}\DecValTok{111}\NormalTok{, projection}\OperatorTok{=}\StringTok{\textquotesingle{}3d\textquotesingle{}}\NormalTok{)}
+
+\CommentTok{\# Plot the true function}
+\NormalTok{x1\_fine }\OperatorTok{=}\NormalTok{ np.linspace(}\DecValTok{0}\NormalTok{, }\DecValTok{1}\NormalTok{, }\DecValTok{50}\NormalTok{)}
+\NormalTok{x2\_fine }\OperatorTok{=}\NormalTok{ np.linspace(}\DecValTok{0}\NormalTok{, }\DecValTok{1}\NormalTok{, }\DecValTok{50}\NormalTok{)}
+\NormalTok{x1\_fine\_grid, x2\_fine\_grid }\OperatorTok{=}\NormalTok{ np.meshgrid(x1\_fine, x2\_fine)}
+\NormalTok{true\_f\_values }\OperatorTok{=}\NormalTok{ nonlinear\_function(x1\_fine\_grid, x2\_fine\_grid)}
+\NormalTok{ax.plot\_surface(x1\_fine\_grid, x2\_fine\_grid, true\_f\_values, color}\OperatorTok{=}\StringTok{\textquotesingle{}blue\textquotesingle{}}\NormalTok{, alpha}\OperatorTok{=}\FloatTok{0.5}\NormalTok{, label}\OperatorTok{=}\StringTok{\textquotesingle{}True Function\textquotesingle{}}\NormalTok{)}
+
+\CommentTok{\# Plot the averaged samples as a surface}
+\NormalTok{x1\_avg }\OperatorTok{=}\NormalTok{ x\_grid\_points[:, }\DecValTok{0}\NormalTok{].reshape(}\DecValTok{20}\NormalTok{, }\DecValTok{20}\NormalTok{)}
+\NormalTok{x2\_avg }\OperatorTok{=}\NormalTok{ x\_grid\_points[:, }\DecValTok{1}\NormalTok{].reshape(}\DecValTok{20}\NormalTok{, }\DecValTok{20}\NormalTok{)}
+\NormalTok{avg\_values }\OperatorTok{=}\NormalTok{ average\_samples.reshape(}\DecValTok{20}\NormalTok{, }\DecValTok{20}\NormalTok{)}
+\NormalTok{ax.plot\_surface(x1\_avg, x2\_avg, avg\_values, color}\OperatorTok{=}\StringTok{\textquotesingle{}red\textquotesingle{}}\NormalTok{, alpha}\OperatorTok{=}\FloatTok{0.5}\NormalTok{, label}\OperatorTok{=}\StringTok{\textquotesingle{}Estimated Function\textquotesingle{}}\NormalTok{)}
+
+\CommentTok{\# Customize plot}
+\NormalTok{ax.set\_xlabel(}\StringTok{\textquotesingle{}x1\textquotesingle{}}\NormalTok{)}
+\NormalTok{ax.set\_ylabel(}\StringTok{\textquotesingle{}x2\textquotesingle{}}\NormalTok{)}
+\NormalTok{ax.set\_zlabel(}\StringTok{\textquotesingle{}f(x1, x2)\textquotesingle{}}\NormalTok{)}
+\NormalTok{ax.set\_title(}\StringTok{\textquotesingle{}True Function vs. Averaged Estimated Function\textquotesingle{}}\NormalTok{)}
+\NormalTok{plt.legend()}
+\NormalTok{plt.show()}
+\end{Highlighting}
+\end{Shaded}
 
 \section*{References}\label{bibliography-3}
 \addcontentsline{toc}{section}{References}
@@ -9778,26 +10600,26 @@ Bandit}\label{individual-preference-optimization-via-dueling-bandit}
 \subsection{Introduction to Dueling Bandit Problem and Its
 Extension}\label{introduction-to-dueling-bandit-problem-and-its-extension}
 
-The multi-armed bandit (MAB) problem is when a gambler must choose which
-lever to pull on an MAB machine to maximize the winning rate despite not
-knowing which machine is the most rewarding. This scenario illustrates
-the need to balance exploration (trying new machines to discover
-potential higher rewards) and exploitation (using current knowledge to
-maximize gains). MAB algorithms navigate this dilemma by making
-decisions under uncertainty to achieve the best possible outcomes based
-on gathered data. At the core of the MAB problem lies a set of actions,
-or `arms,' denoted by \(\mathcal{A} = \{1, 2, \ldots, K\}\), where \(K\)
-signifies the total number of arms. For each round \(t\), the agent
-selects an arm \(a_t \in \mathcal{A}\) and receives a reward \(r_t\),
-sampling from an arm-specific, unknown probability distribution. The
-expected reward of pulling arm \(a\) is represented as
+The multi-armed bandit (MAB) problem involves a gambler deciding which
+lever to pull on an MAB machine to maximize the winning rate, despite
+not knowing which machine is the most rewarding. This scenario
+highlights the need to balance exploration (trying new machines to
+discover potential higher rewards) and exploitation (using current
+knowledge to maximize gains). MAB algorithms address this dilemma by
+making decisions under uncertainty to achieve the best possible outcomes
+based on gathered data. At the core of the MAB problem is a set of
+actions, or `arms,' denoted by \(\mathcal{A} = \{1, 2, \ldots, K\}\),
+where \(K\) signifies the total number of arms. For each round \(t\),
+the agent selects an arm \(a_t \in \mathcal{A}\) and receives a reward
+\(r_t\), sampled from an arm-specific, unknown probability distribution.
+The expected reward of pulling arm \(a\) is represented as
 \(\mu_a = \mathbb{E}[r_t | a]\).
 
 The multi-armed bandit framework can be extended in various ways to
 model more complex scenarios. In the infinite-armed bandit problem, the
-set of possible arms \(\mathcal{A}\) is either very large or indeed
-infinite. This introduces significant challenges in exploration, as the
-agent can no longer afford to explore each arm even once. Algorithms for
+set of possible arms \(\mathcal{A}\) is either very large or infinite.
+This introduces significant challenges in exploration, as the agent
+cannot afford to explore each arm even once. Algorithms for
 infinite-armed bandits typically assume some regularity or structure of
 the reward function across arms to make the problem tractable. The
 contextual bandit problem extends the bandit framework by incorporating
@@ -9812,147 +10634,144 @@ pairwise comparison model is especially useful in scenarios where
 absolute evaluations are difficult, but relative preferences are easier
 to determine, such as in ranking systems.
 
-Contextual bandits extend the multi-armed bandits: the decisions are now
-also conditional on the state of the environment and previous
-observations. The benefit of such a model is that observing the
-environment can add more information and possibly lead to better rewards
-and outcomes. Over each iteration, the agent is presented with the
-context of the environment then decides on an action based on the
-context and previous observations. Lastly, the agent observes the
-action's outcome and reward. Throughout all this, the agent tries to
-maximize the average reward.
+Contextual bandits extend the multi-armed bandits by making decisions
+conditional on the state of the environment and previous observations.
+The benefit of such a model is that observing the environment can
+provide additional information, potentially leading to better rewards
+and outcomes. In each iteration, the agent is presented with the context
+of the environment, then decides on an action based on the context and
+previous observations. Finally, the agent observes the action's outcome
+and reward. Throughout this process, the agent aims to maximize the
+expected reward.
 
-In many real-world contexts, one may not have a real-value reward (or at
-least a reliable one) that we can associate with a decision. We may only
-be provided with observations of which of a set of bandits was optimal
-in a given scenario. The assumption we will make is that within these
-observations of preferred choice amongst a set of options, there is an
-implicit reward or payoff encapsulated in that decision. Let us look at
-some examples:
+In many real-world contexts, one may not have a real-valued reward (or
+at least a reliable one) associated with a decision. Instead, we may
+only have observations indicating which of a set of bandits was optimal
+in a given scenario. The assumption is that within these observations of
+preferred choices among a set of options, there is an implicit reward or
+payoff encapsulated in that decision. Consider the following examples:
 
 \begin{enumerate}
 \def\labelenumi{\arabic{enumi}.}
 \item
-  Dietary preferences: If we aim to provide food recommendations to
-  humans, we likely can't quantify an explicit reward the person attains
-  from being recommended a specific food item. Rather, we can provide
-  them meal options, and observe which one the person selects.
+  \textbf{Dietary preferences}: When providing food recommendations to
+  humans, it is often not possible to quantify an explicit reward from
+  recommending a specific food item. Instead, we can offer meal options
+  and observe which one the person selects.
 \item
-  Video recommendation: Some websites like YouTube and TikTok recommend
-  specific videos to users. It is likely not possible to measure the
-  reward a person attains from watching a video. Still, we can
-  understand that a user preferred one video over another. From these
-  relative preference observations, we can learn a strategy always to
+  \textbf{Video recommendation}: Websites like YouTube and TikTok
+  recommend specific videos to users. It is typically not feasible to
+  measure the reward a person gains from watching a video. However, we
+  can infer that a user preferred one video over another. From these
+  relative preference observations, we can develop a strategy to
   recommend videos they are likely to enjoy.
 \item
-  Exoskeleton gait optimization:
-  (\citeproc{ref-tucker2020preferencebased}{Tucker et al. 2020}) created
-  a framework that uses human-evaluated preferences for an exoskeleton
-  gait algorithm to ultimately develop an optimal strategy for the
-  exoskeleton to assist a human in walking. A human cannot reliably
-  produce a numerical value attributed to how well the exoskeleton
-  helped them walk, but can reliably indicate which out of a set of
-  options performed the best according to their preferences.
+  \textbf{Exoskeleton gait optimization}: Tucker et al.~(2020) created a
+  framework that uses human-evaluated preferences for an exoskeleton
+  gait algorithm to develop an optimal strategy for the exoskeleton to
+  assist a human in walking. A human cannot reliably produce a numerical
+  value for how well the exoskeleton helped them walk but can reliably
+  indicate which option performed best according to their preferences.
 \end{enumerate}
 
-Generally, we will assume that we have access to a set of actions. A
-noteworthy assumption we make is that any observations we can make are
-an unbiased estimate of the payoff. This means that if we observe that a
-human preferred one option over another (or several others), the
-preferred option had a higher implicit reward or payoff than the
-alternatives. In the case of dietary preferences, this may mean that a
-human liked the preferred option; in the case of video recommendation, a
-user was more entertained, satisfied, or educated by the video they
-selected than the other options (which is what we can observe).
+Generally, we assume access to a set of actions. A noteworthy assumption
+is that any observations we make are unbiased estimates of the payoff.
+This means that if we observe a human preferred one option over another
+(or several others), the preferred option had a higher implicit reward
+or payoff than the alternatives. In the case of dietary preferences,
+this may mean that a human liked the preferred option; in the case of
+video recommendations, a user was more entertained, satisfied, or
+educated by the video they selected than the other options.
 
 The overarching context is that we do not have direct or reliable access
 to rewards. We may not have a reward at all (for some decisions, it may
 be impossible to define a real value to the outcome), or it may be noisy
-(for example, if we ask a human to rate the satisfaction from their
-choice on a scale of 1 to 10). We use relative comparisons to evaluate
-the best of multiple options in this case. We aim to minimize the total
-regret in the face of noisy comparisons. Humans may not always provide
-consistent observations (since human decision making is not guaranteed
-to be consistent). However, we can still determine an optimal strategy
-with the observed comparison. We can think of it as minimizing the
-frequency by which we make sub-optimal decisions according to human
-preferences. In practice, many formulations of bandits can allow for
-infinitely many bandits (for example, in continuous-value and
-high-dimensional spaces). However, this situation can be intractable
-when determining an optimal decision strategy --- with infinite options,
-how can we always ensure we have chosen the best? We will constrain our
-bandits to a discrete space to enable efficient exploration. We will
-assume that we have \(k\) bandits, \(b_i, i \in [1, k]\), and our job is
-to choose the one that will minimize regret.
+(for example, if we ask a human to rate their satisfaction on a scale of
+1 to 10). We use relative comparisons to evaluate the best of multiple
+options in this case. Our goal is to minimize total regret in the face
+of noisy comparisons. Humans may not always provide consistent
+observations (since human decision-making is not guaranteed to be
+consistent). However, we can still determine an optimal strategy with
+the observed comparisons. We aim to minimize the frequency of
+sub-optimal decisions according to human preferences. In practice, many
+formulations of bandits can allow for infinitely many bandits (for
+example, in continuous-value and high-dimensional spaces). However, this
+situation can be intractable when determining an optimal decision
+strategy. With infinite options, how can we always ensure we have chosen
+the best? We will constrain our bandits to a discrete space to enable
+efficient exploration. We will assume that we have \(k\) bandits,
+\(b_i, i \in [1, k]\), and our task is to choose the one that will
+minimize regret.
 
-With the framework outlined, let us now define our approach more
-formally. Note that this method was introduced in
-(\citeproc{ref-YUE20121538}{Yue et al. 2012}), and proofs for the
-guarantees and derivations of parameters can be found in that work.
+With the framework outlined, we now define our approach more formally.
+This method was introduced by (\citeproc{ref-YUE20121538}{Yue et al.
+2012}), and proofs for the guarantees and derivations of parameters can
+be found in their work.
 
 To determine the optimal action, we will compare pairwise to ascertain
 the probability that an action \(b_i\) is preferred over another
-\(b_j, i \ne j\). Concretely, we will assume that we have access to a
-function \(\epsilon\) which helps us determine this probability; in
-practice, this can be done with an oracle, such as asking a human which
-of two options they prefer:
-\(P(b_i > b_j) = \varepsilon(b_i, b_j) + \frac{1}{2}\). With this model,
-three basic properties govern the values provided by \(\epsilon\):
-\[\epsilon(b_i, b_j) = -\epsilon(b_j, b_i), \epsilon(b_i, b_i) = 0, \epsilon(b_i, b_j) \in \left(-\frac{1}{2}, \frac{1}{2} \right)\]
+\(b_j\), where \(i \ne j\). Concretely, we assume access to a function
+\(\epsilon\) that helps determine this probability; in practice, this
+can be done with an oracle, such as asking a human which of two options
+they prefer: \[P(b_i > b_j) = \varepsilon(b_i, b_j) + \frac{1}{2}.\]
+With this model, three basic properties govern the values provided by
+\(\epsilon\):
+\[\epsilon(b_i, b_j) = -\epsilon(b_j, b_i), \epsilon(b_i, b_i) = 0, \epsilon(b_i, b_j) \in \left(-\frac{1}{2}, \frac{1}{2} \right).\]
 
-We will always assume that there is a total ordering of bandits, such
-that \(b_i \succ b_j\) implies \(\epsilon(b_i, b_j) > 0\). We impose two
-constraints which enable us to properly model comparisons:
+We assume there is a total ordering of bandits, such that
+\(b_i \succ b_j\) implies \(\epsilon(b_i, b_j) > 0\). We impose two
+constraints to properly model comparisons:
 
 \begin{itemize}
 \item
-  Strong Stochastic Transitivity: We must maintain our total ordering of
-  bandits, and as such, the comparison model also respects this
-  ordering:
-  \(b_i \succ b_j \succ b_k \Rightarrow \epsilon(b_i, b_k) \ge \text{max}\{\epsilon(b_i, b_j), \epsilon(b_j, b_k)\}\)
+  \textbf{Strong Stochastic Transitivity}: We must maintain our total
+  ordering of bandits, and as such, the comparison model also respects
+  this ordering:
+  \begin{equation}\phantomsection\label{eq-stochastic-transitivity}{b_i \succ b_j \succ b_k \Rightarrow \epsilon(b_i, b_k) \ge \text{max}\{\epsilon(b_i, b_j), \epsilon(b_j, b_k)\}.}\end{equation}
 \item
-  Stochastic Triangle Inequality: We also impose a triangle inequality,
-  which captures the condition that the probability of a bandit winning
-  (or losing) a comparison will exhibit diminishing returns as it
-  becomes increasingly superior (or inferior) to the competing bandit:
-  \(b_i \succ b_j \succ b_k \Rightarrow \epsilon(b_i, b_k) \le \epsilon(b_i, b_j) + \epsilon(b_j, b_k)\)
+  \textbf{Stochastic Triangle Inequality}: We also impose a triangle
+  inequality, which captures the condition that the probability of a
+  bandit winning (or losing) a comparison will exhibit diminishing
+  returns as it becomes increasingly superior (or inferior) to the
+  competing bandit:
+  \begin{equation}\phantomsection\label{eq-triangle-inequality}{b_i \succ b_j \succ b_k \Rightarrow \epsilon(b_i, b_k) \le \epsilon(b_i, b_j) + \epsilon(b_j, b_k).}\end{equation}
 \end{itemize}
 
-These assumptions may initially seem limiting, however common models for
-comparisons satisfy these constraints. For example, the Bradley-Terry
-Model follows \(P(b_i > b_j) = \frac{\mu_i}{\mu_i + \mu_j}\). The
-Gaussian model with unit variance also satisfies these constraints:
+These assumptions may initially seem limiting; however, common models
+for comparisons satisfy these constraints. For example, the
+Bradley-Terry Model follows
+\(P(b_i > b_j) = \frac{\mu_i}{\mu_i + \mu_j}\). The Gaussian model with
+unit variance also satisfies these constraints:
 \(P(b_i > b_j) = P(X_i - X_j > 0)\), where
 \(X_i - X_j \sim N(\mu_i - \mu_j, 2)\).
 
-To truly model the preferences between bandits in our framework of
-pairwise bandit comparisons and regret, we must keep track of certain
-parameters in our algorithm. First, we will keep a running empirical
-estimate of our probability of bandit preferences based on our
-observations. Keep in mind that we don't have direct access to an
-\(\epsilon\) function. Instead, we must provide two bandits to a human,
-who selects a winner. To do this, we will define:
-\[\hat{P}_{i, j} = \frac{\# b_i\ \text{wins}}{\# \text{comparisons between}\ i \text{and}\ j}\]
+To accurately model the preferences between bandits in our framework of
+pairwise bandit comparisons and regret, we must track certain parameters
+in our algorithm. First, we will maintain a running empirical estimate
+of the probability of bandit preferences based on our observations. It
+is important to note that we do not have direct access to an
+\(\epsilon\) function. Instead, we must present two bandits to a human,
+who selects a winner. To do this, we define:
+\[\hat{P}_{i, j} = \frac{\# b_i\ \text{wins}}{\# \text{comparisons between}\ i \text{and}\ j}.\]
 
 We will also compute confidence intervals at each timestep for each of
 the entries in \(\hat{P}\) as
-\(\hat{C}_t = \left( \hat{P}_t - c_t, \hat{P}_t + c+t \right)\), where
+\[\hat{C}_t = \left( \hat{P}_t - c_t, \hat{P}_t + c_t \right),\] where
 \(c_t = \sqrt{\frac{4\log(\frac{1}{\delta})}{t}}\). Note that
 \(\delta = \frac{1}{TK^2}\), where \(T\) is the time horizon and \(K\)
 is the number of bandits.
 
-Previously we discussed approaches finding the best action in a specific
-context. Now we want to consider changing contexts, which means, that
-there is no longer a static hidden preference matrix \(P\). Instead - at
-every time step - there is now a preference matrix \(P_C\) depending on
-context \(C\). We consider a context \(C\) and a preference matrix
-\(P_C\) to be chosen by nature as they result of the given environment
-(\citeproc{ref-Contextual_Dueling}{Dudík et al. 2015}). The goal of a
-contextual bandits algorithm is to find some policy \(\pi\) which maps
-contexts to Von Neumann winner distribution over our bandits. That is,
-our policy \(\pi\) should map any context to some distribution over our
-bandits such that sampling from that distribution is preferred to a
-random action for that context.
+Previously, we discussed approaches for finding the best action in a
+specific context. Now, we consider changing contexts, which means there
+is no longer a static hidden preference matrix \(P\). Instead, at every
+time step, there is a preference matrix \(P_C\) depending on context
+\(C\). We consider a context \(C\) and a preference matrix \(P_C\) to be
+chosen by nature as a result of the given environment (Yue et al.,
+2012). The goal of a contextual bandits algorithm is to find a policy
+\(\pi\) that maps contexts to a Von Neumann winner distribution over our
+bandits. That is, our policy \(\pi\) should map any context to some
+distribution over our bandits such that sampling from that distribution
+is preferred to a random action for that context.
 
 \subsection{Regret}\label{regret}
 
@@ -11527,14 +12346,6 @@ ACM International Conference on Web Search and Data Mining}, 357--65.
 WSDM '19. New York, NY, USA: Association for Computing Machinery.
 \url{https://doi.org/10.1145/3289600.3290964}.
 
-\bibitem[\citeproctext]{ref-Contextual_Dueling}
-Dudík, Miroslav, Katja Hofmann, Robert E. Schapire, Aleksandrs Slivkins,
-and Masrour Zoghi. 2015. {``Contextual Dueling Bandits.''} In
-\emph{Proceedings of the 28th Conference on Learning Theory}, edited by
-Peter Grünwald, Elad Hazan, and Satyen Kale, 40:563--87. Proceedings of
-Machine Learning Research. Paris, France: PMLR.
-\url{https://proceedings.mlr.press/v40/Dudik15.html}.
-
 \bibitem[\citeproctext]{ref-huo2017risk}
 Huo, Xiaoguang, and Feng Fu. 2017. {``Risk-Aware Multi-Armed Bandit
 Problem with Application to Portfolio Selection.''} \emph{Royal Society
@@ -11596,12 +12407,6 @@ Sui, Yanan, Masrour Zoghi, Katja Hofmann, and Yisong Yue. 2018.
 {``Advancements in Dueling Bandits.''} \emph{Proceedings of the
 Twenty-Seventh International Joint Conference on Artificial
 Intelligence}. \url{https://doi.org/10.24963/ijcai.2018/776}.
-
-\bibitem[\citeproctext]{ref-tucker2020preferencebased}
-Tucker, Maegan, Ellen Novoseller, Claudia Kann, Yanan Sui, Yisong Yue,
-Joel Burdick, and Aaron D. Ames. 2020. {``Preference-Based Learning for
-Exoskeleton Gait Optimization.''}
-\url{https://arxiv.org/abs/1909.12316}.
 
 \bibitem[\citeproctext]{ref-upadhyay2019a}
 Upadhyay, Sohini, Mayank Agarwal, Djallel Bouneffouf, and Yasaman
@@ -12208,7 +13013,7 @@ how ought we best formalize these kinds of norms, and is this
 necessarily the right approach? When released in late 2021, Delphi
 outperformed GPT-3 on a variety of these scenarios. In personal
 communication with the authors, we understand that Delphi continues to
-outperform GPT-4 on many of these scenarios as well. \sidenote{\footnotesize GPT-4 is
+outperform GPT-4 on many of these scenarios as well. \footnote{GPT-4 is
   good at coming up with longer-rendered answers about why some things
   are appropriate or not.}
 

@@ -55,176 +55,140 @@ $v(\tilde{x}_1), \ldots, v(\tilde{x}_m)$. The point with the highest value is
 selected and added to $\mathcal{D}$. This cycle repeats until enough data has 
 been collected or the model is good enough.](Figures/active_learning_schema.png){#fig-schema width="40%"}
 
-Within this decision process @fig-schema, the
-model is never actually trained on those prospective points. The
-estimate of the added value of a point can be correct, but it can also
-diverge from reality. If the strategy used is effective, then the model
-not only improves, but it could also do so using much less data than if
-it was trained on a dataset built manually without exploiting the model
-feedback.
-
 Active learning has been successfully applied to various domains to enhance real-world systems, 
-including computer vision, natural language processing, and recommender systems.
-For example, active learning may be used to improve the
-computer vision models used in autonomous vehicles [@AL_app_autonomous],
-where driving scenes can take infinitely many forms and gathering an
-exhaustive data set is impossible. Instead, probing a model and
-understanding what type of data it would benefit from sounds more practical. 
-In robotics, autonomous agents may query humans when unsure
-how to act or face new situations [@AL_app_robotics]. In this space,
-there is often a significant financial and time cost incurred for
-collecting data: the robot must act in real-time in the real world, and
-while parallelization is possible, being strategic about which examples
-should be collected to best benefit the model helps. In meteorology,
-active learning can help decide where to place additional sensors for
-weather predictions [@AL_app_sensors]. Sensor placement involves
-deploying teams of people to remote locations and expensive construction
-for an extra data point. Choosing these locations and where to allocate
-resources wisely interests governments and businesses. Active learning
-could also be employed to select data for fine-tuning large language models (LLMs) for specific
-downstream tasks [@AL_app_LLMs]. In this space, it might be difficult to
-fully describe an NLP task one might want an LLM to solve. Often,
-instead of defining a task via a dataset of examples, it may be easier
-for the human to interact with the LLM for a specific use case, find
-holes in the model, and cover those using active learning.
+including computer vision, natural language processing, and recommender systems. For example, active 
+learning can improve the computer vision models used in autonomous vehicles [@AL_app_autonomous], 
+here driving scenes can take infinitely many forms, making it impossible to gather an exhaustive dataset. 
+Instead, probing a model to understand what type of data it would benefit from is more practical. 
+In robotics, autonomous agents may query humans when unsure how to act or when facing new situations 
+[@AL_app_robotics]. In this field, collecting data often incurs significant financial and time costs: 
+the robot must act in real-time in the real world, and while parallelization is possible, being strategic 
+about which examples to collect can best benefit the model. In meteorology, active learning can help decide 
+where to place additional sensors for weather predictions [@AL_app_sensors]. Sensor placement involves 
+deploying teams to remote locations and expensive construction for an extra data point. Choosing these 
+locations and allocating resources wisely is of interest to governments and businesses. Active learning 
+could also be employed to select data for fine-tuning large language models (LLMs) for specific downstream 
+tasks [@AL_app_LLMs]. In this context, it might be difficult to fully describe an NLP task one might want an 
+LLM to solve. Often, instead of defining a task via a dataset of examples, it may be easier for a human to 
+interact with the LLM for a specific use case, identify gaps in the model, and address those using active learning.
 
 
 ### Introduction to Active Preference Learning
 
-Consider the scenario where a robot is being trained to assist individuals with feeding. 
-How can such a robot be effectively taught to perform necessary tasks, such as determining 
-the appropriate distance to reach, detecting the location of a person's mouth, and, most 
-importantly, understanding human preferences? In most cases, robots learn by observing human 
-demonstrations, where they replicate the ways a person performs the task. However, this method 
-poses significant challenges. Expert demonstrations are often limited, and training a supervised 
-learning model would require vast amounts of demonstration data, which is difficult to obtain at 
-scale. Moreover, demonstrations tend to be variable, as they reflect the actions of individual 
-humans, making the data collection process inconsistent. To address these limitations, alternative 
-approaches have been proposed, such as using pairwise comparisons, where humans evaluate two 
-action trajectories to determine the superior one, or employing physical corrections, in which 
-reward functions are learned through human-robot interactions, with humans guiding the robot’s 
-actions during the task.
+Consider the scenario where a robot is being trained to assist individuals with feeding. How can such a robot be 
+effectively taught to perform necessary tasks, such as determining the appropriate distance to reach, detecting the 
+location of a person's mouth, and, most importantly, understanding human preferences? Typically, robots learn by 
+observing human demonstrations, replicating the ways a person performs the task. However, this method poses 
+significant challenges. Expert demonstrations are often limited, and training a supervised learning model would 
+require vast amounts of demonstration data, which is difficult to obtain at scale. Moreover, demonstrations tend 
+to be variable, reflecting the actions of individual humans, making the data collection process inconsistent. To 
+address these limitations, alternative approaches have been proposed, such as using pairwise comparisons, where 
+humans evaluate two action trajectories to determine the superior one, or employing physical corrections, in which 
+reward functions are learned through human-robot interactions, with humans guiding the robot’s actions during the task.
 
-Active learning algorithms can be employed in preference learning tasks, such as the previously 
-mentioned example, where the objective is to develop a model that aligns with human preferences 
-while minimizing the need for extensive labeled data or reducing the high cost of annotations. 
-This chapter will explore the theoretical foundations of pairwise comparisons and active preference 
-learning, along with extensions to these methods that address known limitations. Practical examples 
-where these approaches prove beneficial will also be discussed. Additionally, we will examine the 
-role of LLMs in assisting robots through corrective feedback and highlight 
-the applications of these techniques.
+Active learning algorithms can be employed in preference learning tasks, such as the previously mentioned example, 
+where the objective is to develop a model that aligns with human preferences while minimizing the need for extensive 
+labeled data or reducing the high cost of annotations. This chapter will explore the theoretical foundations of 
+pairwise comparisons and active preference learning, along with extensions to these methods that address known 
+limitations. Practical examples where these approaches prove beneficial will also be discussed. Additionally, we 
+will examine the role of LLMs in assisting robots through corrective feedback and highlight the applications of these techniques.
 
 
 ### Uncertainty Qualification
 
-**Problem Setup**: In this section, we will consider a binary classification problem. The model is trained on a small labeled dataset 
-$\mathcal{D} = \{(x_1, y_1), \ldots, (x_n, y_n)\}$, where $x_i$ represents the input data and $y_i$ 
-is the corresponding label. The model is uncertain about the class labels of some data points and 
-can query an oracle to obtain the true labels of these data points. The goal is to minimize the number 
-of queries to the oracle while maximizing the model's performance.
+**Problem Setup**: In this section, we consider a binary classification problem. The model is trained on a small 
+labeled dataset $\mathcal{D} = \{(x_1, y_1), \ldots, (x_n, y_n)\}$, where $x_i$ represents the input data and $y_i$ 
+is the corresponding label. The model is uncertain about the class labels of some data points and can query an oracle 
+to obtain the true labels of these data points. The goal is to minimize the number of queries to the oracle while 
+maximizing the model's performance.
 
-Uncertainty quantification (UQ) is a critical aspect of active learning that allows models to evaluate the 
-informativeness of new data points. In machine learning (ML), two primary types of uncertainty are often considered: 
-epistemic and aleatoric uncertainty. **Epistemic uncertainty**, or model uncertainty, arises from a lack of knowledge and 
-can be reduced by acquiring more data. This type of uncertainty is especially significant when the model lacks confidence 
+Uncertainty quantification (UQ) is a critical aspect of active learning that allows models to evaluate the informativeness 
+of new data points. In machine learning (ML), two primary types of uncertainty are often considered: epistemic and 
+aleatoric uncertainty. **Epistemic uncertainty**, or model uncertainty, arises from a lack of knowledge and can be 
+reduced by acquiring more data. This type of uncertainty is especially significant when the model lacks confidence 
 due to insufficient or incomplete information in its training set. On the other hand, **aleatoric uncertainty**, or 
 data uncertainty, stems from the inherent randomness within the data itself. Unlike epistemic uncertainty, aleatoric 
-uncertainty cannot be reduced, even with additional data, as it reflects noise or unpredictability in the real data-generating process.
+uncertainty cannot be reduced, even with additional data, as it reflects noise or unpredictability in the real 
+data-generating process. Several approaches exist to quantify uncertainty in active learning, each with its strengths and limitations. 
 
-Several approaches exist to quantify uncertainty in active learning, each with its strengths and limitations. 
-**Bayesian methods**, such as Bayesian Neural Networks (BNNs) and Gaussian Processes (GPs), offer a principled way of 
-estimating uncertainty by incorporating prior knowledge into the model. These approaches can generate meaningful uncertainty 
-estimates that aid in choosing informative samples for labeling. However, they can become computationally prohibitive, 
-especially for large and complex models, limiting their applicability in some practical scenarios.
+**Bayesian methods**, such as Bayesian Neural Networks (BNNs) and Gaussian Processes (GPs), offer a principled way 
+of estimating uncertainty by incorporating prior knowledge into the model. These approaches can generate meaningful 
+uncertainty estimates that aid in choosing informative samples for labeling. However, they can become computationally 
+prohibitive, especially for large and complex models, limiting their applicability in some practical scenarios.
 
-Another common technique for uncertainty quantification is the use of **ensemble methods**, such as Random Forests or Gradient 
-Boosting Machines. These methods involve training multiple models and combining their predictions to provide an estimate of 
-uncertainty. Ensemble methods are relatively easy to implement and can give valuable insights into model uncertainty. However, 
-they can be computationally expensive and may not always produce well-calibrated uncertainty estimates. Moreover, they do not 
-integrate prior knowledge, which can be a disadvantage in certain applications.
+Another common technique for uncertainty quantification is the use of **ensemble methods**, such as Random Forests or 
+Gradient Boosting Machines. These methods involve training multiple models and combining their predictions to provide 
+an estimate of uncertainty. Ensemble methods are relatively easy to implement and can give valuable insights into model 
+uncertainty. However, they can be computationally expensive and may not always produce well-calibrated uncertainty 
+estimates. Moreover, they do not integrate prior knowledge, which can be a disadvantage in certain applications.
 
-**Conformal prediction methods** also provide a framework for estimating uncertainty by offering a measure of confidence in 
-predictions based on the conformity of a given instance with the training data. While these methods are useful in some contexts, 
-this book focuses primarily on the Bayesian approach due to its theoretical robustness and capacity to quantify uncertainty 
-in a more comprehensive manner.
+**Conformal prediction methods** also provide a framework for estimating uncertainty by offering a measure of confidence 
+in predictions based on the conformity of a given instance with the training data. While these methods are useful in 
+some contexts, this book focuses primarily on the Bayesian approach due to its theoretical robustness and capacity to 
+quantify uncertainty in a more comprehensive manner.
 
 
 ### Acquisition Function
 
 Uncertainty quantification plays a vital role in **acquisition functions**, which are central to active learning strategies. 
-These functions determine which samples are most valuable to label by evaluating their utility based on the model's current 
-uncertainty estimates. Common acquisition functions include **uncertainty sampling** [@AL_uncertainty], which selects samples the model is least 
-confident about, **query-by-committee** [@AL_committee], which utilizes a set of models to choose the most uncertain samples, and **Bayesian 
-Active Learning by Disagreement (BALD)** [@AL_BALD], which selects samples that maximize information gain by reducing model uncertainty. 
-Through careful uncertainty quantification, acquisition functions guide the active learning process, improving the model's 
-efficiency in learning from limited data. Other acquisition functions can also be employed listed below:
+These functions determine which samples are most valuable to label by evaluating their utility based on the model's 
+current uncertainty estimates. Common acquisition functions include **uncertainty sampling** [@AL_uncertainty], 
+which selects samples the model is least confident about, **query-by-committee** [@AL_committee], which utilizes a set 
+of models to choose the most uncertain samples, and **Bayesian Active Learning by Disagreement (BALD)** [@AL_BALD], 
+which selects samples that maximize information gain by reducing model uncertainty. Through careful uncertainty quantification, 
+acquisition functions guide the active learning process, improving the model's efficiency in learning from limited data. 
+Other acquisition functions that can be employed include:
 
--   Active Thompson Sampling [@AL_exploreexploit]: This method leverages the 
-    Thompson Sampling algorithm to select a posterior sample from the
-    model's distribution and compute the expected utility of labeling 
-    using that sample. By doing so, the algorithm balances
-    exploration and exploitation, leading to effective active learning.
+-   **Active Thompson Sampling** [@AL_exploreexploit]: This method leverages the Thompson Sampling algorithm to select a 
+    posterior sample from the model's distribution and compute the expected utility of labeling using that sample. By doing so, 
+    the algorithm balances exploration and exploitation, leading to effective active learning.
 
--   Expected model change [@AL_expmodelchange]: This approach focuses on
-    labeling points that would have the most impact on changing the
-    current model parameters.
+-   **Expected model change** [@AL_expmodelchange]: This approach focuses on labeling points that would have the most 
+    impact on changing the current model parameters.
 
--   Expected error reduction [@AL_experrorredn]: Points that would most
-    effectively reduce the model's generalization error are labeled
-    using this strategy.
+-   **Expected error reduction** [@AL_experrorredn]: Points that would most effectively reduce the model's generalization 
+    error are labeled using this strategy.
 
--   Variance reduction [@AL_variance]: This approach labels points that
-    would minimize output variance, which is one component of error. By
-    selecting points that reduce variability in the model's predictions,
-    it aims to improve its overall performance.
+-   **Variance reduction** [@AL_variance]: This approach labels points that would minimize output variance, which is one 
+    component of error. By selecting points that reduce variability in the model's predictions, it aims to improve overall performance.
 
--   User Centered Labeling Strategies [@AL_usercentered]: This approach
-    involves actively involving the user in the labeling process by
-    visualizing data through dimensionality reduction techniques. The
-    user then provides labels for the compiled data based on their
-    domain expertise and preferences. This strategy leverages user input
-    to improve the quality and relevance of the labeled data.
+-   **User Centered Labeling Strategies** [@AL_usercentered]: This approach involves actively involving the user in 
+    the labeling process by visualizing data through dimensionality reduction techniques. The user then provides labels 
+    for the compiled data based on their domain expertise and preferences. This strategy leverages user input to improve 
+    the quality and relevance of the labeled data.
 
--   Querying from diverse subspaces or partitions [@AL_partition]: When
-    using a forest of trees as the underlying model, the leaf nodes can
-    represent overlapping partitions of the feature space. This strategy
-    selects instances from non-overlapping or minimally overlapping
-    partitions for labeling.
+-   **Querying from diverse subspaces or partitions** [@AL_partition]: When using a forest of trees as the underlying model, 
+    the leaf nodes can represent overlapping partitions of the feature space. This strategy selects instances from non-overlapping 
+    or minimally overlapping partitions for labeling.
 
--   Conformal prediction [@AL_conformal]: This method predicts that a
-    new data point will have a label similar to old data points in some
-    specified way. The degree of similarity within the old examples is
-    used to estimate the confidence in the prediction.
+-   **Conformal prediction** [@AL_conformal]: This method predicts that a new data point will have a label similar to old 
+    data points in some specified way. The degree of similarity within the old examples is used to estimate the confidence 
+    in the prediction.
 
--   Mismatch-first farthest-traversal [@AL_mismatch]: This strategy
-    first prioritizes data points that are wrongly predicted by the
-    current model compared to the nearest-neighbor prediction. The
-    second criterion is the distance to previously selected data, with
-    preference given to those that are farthest away. The goal is to
-    optimize both the correction of mispredictions and the diversity of
-    the selected data.
+-   **Mismatch-first farthest-traversal** [@AL_mismatch]: This strategy first prioritizes data points that are wrongly 
+    predicted by the current model compared to the nearest-neighbor prediction. The second criterion is the distance to 
+    previously selected data, with preference given to those that are farthest away. The goal is to optimize both the 
+    correction of mispredictions and the diversity of the selected data.
 
 #### Uncertainty Sampling
-Uncertainty sampling [@AL_uncertainty] is a widely used acquisition function in active learning 
-that selects data points for which the model exhibits the greatest uncertainty. 
-This method aims to improve model performance by focusing labeling efforts on ambiguous 
-samples, where additional information is likely to yield the greatest benefit. Let $x$ 
-represent the input, and $p(y|x)$ the probability distribution of the output $y$ given $x$. 
-Several acquisition strategies fall under uncertainty sampling, including **entropy sampling**, 
-**margin sampling**, and **least confidence sampling**, each providing a unique measure of uncertainty.
+Uncertainty sampling [@AL_uncertainty] is a widely used acquisition function in active learning that selects data 
+points for which the model exhibits the greatest uncertainty. This method aims to improve model performance by focusing 
+labeling efforts on ambiguous samples, where additional information is likely to yield the greatest benefit. Let $x$ 
+represent the input, and $p(y|x)$ the probability distribution of the output $y$ given $x$. Several acquisition strategies 
+fall under uncertainty sampling, including **entropy sampling**, **margin sampling**, and **least confidence sampling**, 
+each providing a unique measure of uncertainty.
 
--   **Entropy sampling** measures the uncertainty by calculating the entropy of the predicted 
-probability distribution. The acquisition function is given by $\alpha(x) = - \sum_{y} p(y|x) \log p(y|x)$, 
-with higher entropy values indicating higher uncertainty. 
+-   **Entropy sampling** measures uncertainty by calculating the entropy of the predicted probability distribution. 
+    The acquisition function is given by $\alpha(x) = - \sum_{y} p(y|x) \log p(y|x)$, with higher entropy values indicating 
+    higher uncertainty.
 
--   **Margin sampling** focuses on the difference between the two highest predicted probabilities for a sample. 
-The acquisition function is given by $\alpha(x) = p(y_1|x) - p(y_2|x)$, where $y_1$ and $y_2$ are the most likely
- classes. Smaller margins signify greater uncertainty.
+-   **Margin sampling** focuses on the difference between the two highest predicted probabilities for a sample. The 
+    acquisition function is given by $\alpha(x) = p(y_1|x) - p(y_2|x)$, where $y_1$ and $y_2$ are two most likely classes. 
+    Smaller margins signify greater uncertainty.
 
 -   **Least confidence sampling** measures uncertainty by identifying the sample with the lowest predicted probability 
-for its most likely class. The acquisition function is $\alpha(x) = 1 - p(y_{\text{max}}|x)$, where $y_{\text{max}}$ 
-is the class with the highest probability.
-
+    for its most likely class. The acquisition function is $\alpha(x) = 1 - p(y_{\text{max}}|x)$, where $y_{\text{max}}$ 
+    is the class with the highest probability.
 
 **Example:** Consider a binary classification problem with two classes $y_1$ and $y_2$. 
 We have three samples $x_1, x_2, x_3$ and the corresponding predictive distributions are as follows:
@@ -234,24 +198,24 @@ p(y_1|x_2) &= 0.3, \quad p(y_2|x_2) = 0.7\\
 p(y_1|x_3) &= 0.8, \quad p(y_2|x_3) = 0.2
 \end{aligned}$$ {#eq-eq3.1}
 
-**Entropy Sampling** 
-*   $\alpha(x_1) = -0.6 \log (0.6) - 0.4 \log (0.4) = 0.29$
-*   $\alpha(x_2) = -0.3 \log (0.3) - 0.7 \log (0.7) = 0.27$
-*   $\alpha(x_3) = -0.8 \log (0.8) - 0.2 \log (0.2) = 0.22$
+-   **Entropy Sampling** 
+    +   $\alpha(x_1) = -0.6 \log (0.6) - 0.4 \log (0.4) = 0.29$
+    +   $\alpha(x_2) = -0.3 \log (0.3) - 0.7 \log (0.7) = 0.27$
+    +   $\alpha(x_3) = -0.8 \log (0.8) - 0.2 \log (0.2) = 0.22$
 
 We would select $x_1$ for labeling as it has the highest entropy, indicating the model is most uncertain about its prediction at $x_1$.
 
-**Margin Sampling** 
-*   $\alpha(x_1) = 0.6 - 0.4 = 0.2$
-*   $\alpha(x_2) = 0.7 - 0.3 = 0.4$
-*   $\alpha(x_3) = 0.8 - 0.2 = 0.6$
+-   **Margin Sampling** 
+    +   $\alpha(x_1) = 0.6 - 0.4 = 0.2$
+    +   $\alpha(x_2) = 0.7 - 0.3 = 0.4$
+    +   $\alpha(x_3) = 0.8 - 0.2 = 0.6$
 
 We would select $x_1$ for labeling as it has the smallest margin, indicating the model is most uncertain about the prediction at $x_1$.
 
-**Least Confidence Sampling** 
-*   $\alpha(x_1) = 1 - 0.6 = 0.4$
-*   $\alpha(x_2) = 1 - 0.7 = 0.3$
-*   $\alpha(x_3) = 1 - 0.8 = 0.2$
+-   **Least Confidence Sampling** 
+    +   $\alpha(x_1) = 1 - 0.6 = 0.4$
+    +   $\alpha(x_2) = 1 - 0.7 = 0.3$
+    +   $\alpha(x_3) = 1 - 0.8 = 0.2$
 
 We would select $x_1$ for labeling as it has the lowest confidence, indicating the model is most uncertain about the prediction at $x_1$.
 
@@ -260,11 +224,23 @@ points that the model struggles with the most. By focusing on these uncertain sa
 improve its performance, making uncertainty sampling a key tool in active learning.
 
 #### Query-by-Committee
-Query-by-Committee [@AL_committee] is an active learning strategy where a committee of models selects samples for labeling based on the level of disagreement among the committee members. Several acquisition functions can be employed under this framework to quantify the disagreement:
+Query-by-Committee [@AL_committee] is an active learning strategy where a committee of models selects samples for 
+labeling based on the level of disagreement among the committee members. Several acquisition functions can be employed 
+under this framework to quantify the disagreement:
 
--   **Vote Entropy:** The vote entropy measures the uncertainty based on how often the committee members vote for each class. The acquisition function is defined as $\alpha(x) = \mathbb{H}\left[\frac{V(y)}{C}\right]$, where $V(y)$ is the number of votes for class $y$ and $C$ is the number of committee members.
--   **Consensus Entropy:** This acquisition function measures the entropy of the average probability distribution across committee members. It is given by $\alpha(x) = \mathbb{H}[P_C(y|x)]$, where $P_C(y|x)$ is the average probability distribution for sample $x$ across all committee members.
--   **KL Divergence:** The KL divergence quantifies the disagreement by comparing the probability distribution of each committee member to the average distribution. The acquisition function is given by $\alpha(x) = \frac{1}{C} \sum_{c=1}^{C} D_{KL}[P_c(y|x) || P_C(y|x)]$, where $P_c(y|x)$ is the probability distribution of committee member $c$ and $P_C(y|x)$ is the average distribution across the committee.
+-   **Vote Entropy:** The vote entropy measures the uncertainty based on how often the committee members vote for each class. 
+    The acquisition function is defined as $\alpha(x) = \mathbb{H}\left[\frac{V(y)}{C}\right]$, where $V(y)$ is the number of 
+    votes for class $y$ and $C$ is the number of committee members.
+
+-   **Consensus Entropy:** This acquisition function measures the entropy of the average probability distribution across committee 
+    members. It is given by $\alpha(x) = \mathbb{H}[P_C(y|x)]$, where $P_C(y|x)$ is the average probability distribution for sample 
+    $x$ across all committee members.
+
+-   **KL Divergence:** The KL divergence quantifies the disagreement by comparing the probability distribution of each 
+    committee member to the average distribution. The acquisition function is given by 
+    $\alpha(x) = \frac{1}{C} \sum_{c=1}^{C} D_{KL}[P_c(y|x) || P_C(y|x)]$, 
+    where $P_c(y|x)$ is the probability distribution of committee member $c$ and $P_C(y|x)$ is the average distribution 
+    across the committee.
 
 **Example:** Consider a binary classification problem with two classes $y_1$ and $y_2$. We have three committee members and three samples: $x_1$, $x_2$, and $x_3$. The predictive distributions for each committee member are given below:
 
@@ -414,19 +390,19 @@ We would select $x_1$ for labeling since it has the highest BALD score, indicati
 
 ### Active Learning by Variance Reduction
 
-Active Learning by Variance Reduction [@AL_variance] is an algorithm that selects the next data point to label based 
-on the expected reduction in the model's variance. The goal is to choose the point $\tilde{x} \sim p(x)$ that, when labeled ($y(\tilde{x})$), 
-will reduce the model's variance the most. To quantify the expected error at a given input $x$, we can mathematically express it as follows:
+Active Learning by Variance Reduction [@AL_variance] is an algorithm designed to select the next data point for labeling 
+based on the anticipated reduction in the model's variance. The objective is to identify the point $\tilde{x} \sim p(x)$ 
+that, when labeled ($y(\tilde{x})$), will most effectively decrease the model's variance. To quantify the expected error 
+at a given input $x$, we can mathematically express it as follows:
 
 $$
 \mathbb{E}_{\hat{y} \sim p(\hat{y} | \mathcal{D}; x), y \sim p(y|x)} (\hat{y} - y)^2
 $$ {#eq-eq3.16}
 
-In this expression, $\hat{y}$ represents the model's prediction, while $y$ denotes the true label 
-corresponding to the input $x$. This formulation captures the average squared difference between the 
-predicted and actual values, providing a measure of the model's accuracy. Utilizing concepts from bias-variance 
-decomposition as outlined in the literature [@bias_variance_orig_paper], 
-we can expand the expected error term. The expansion is given by:
+In @eq-eq3.16, $\hat{y}$ represents the model's prediction, while $y$ denotes the true label corresponding 
+to the input $x$. This formulation captures the average squared difference between the predicted and actual values, 
+providing a measure of the model's accuracy. Utilizing concepts from bias-variance decomposition as outlined in the 
+literature [@bias_variance_orig_paper], we can expand the expected error term. The expansion is given by:
 
 $$\begin{aligned}
 \mathbb{E}_{\hat{y} \sim p(\hat{y} | \mathcal{D}; x), y \sim p(y|x)} (\hat{y} - y)^2 &= \mathbb{E}_{\hat{y}, y}[(\hat{y} - \mathbb{E}[y|x]) + (\mathbb{E}[y|x] - y)]^2 \\
@@ -435,8 +411,8 @@ $$\begin{aligned}
 &+ \mathbb{E}_{\hat{y}, y}(\hat{y} - \mathbb{E}[y|x])^2
 \end{aligned}$$ {#eq-eq3.17}
 
-In this equation, the first term represents the variance of the true label $y$, the second term evaluates 
-to zero, and the third term accounts for the variance of the model's prediction $\hat{y}$.
+In @eq-eq3.17, the first term represents the variance of the true label $y$, the second term evaluates to zero, 
+and the third term accounts for the variance of the model's prediction $\hat{y}$. 
 To clarify why the second term is zero, we note that:
 
 $$
@@ -1942,14 +1918,16 @@ The pseudocode for LFPM elicitation is given in @alg-lfpm.
 ```pseudocode
 #| label: alg-lfpm
 \begin{algorithm}
-    \caption{Grid Search for Best Ratio}
+\caption{Grid Search for Best Ratio}
     \begin{algorithmic}
         \State \textbf{Input:} $k, \Delta$.
         \State \textbf{Initialize:} $\sigma_{\text{opt}} = \infty, p'_{11,\text{opt}} = 0$.
         \State Generate $C_1, \dots, C_k$ on $\partial C_+$ and $\partial C_-$ (Section 3).
         \State Generate $C_1, \dots, C_k$ on $\partial C_+$ and $\partial C_-$ (Section 3).
         \For{$p'_{11} = 0; \; p'_{11} \leq 1; \; p'_{11} = p'_{11} + \Delta$}
-            \State Compute $\phi'$, $\phi''$ using Proposition 4. Compute array $r = \left[ \frac{\phi'(C_1)}{\phi''(C_1)}, \dots, \frac{\phi'(C_k)}{\phi''(C_k)} \right]$. Set $\sigma = \text{std}(r)$.
+            \State Compute $\phi'$, $\phi''$ using Proposition 4. 
+            \State Compute array $r = \left[ \frac{\phi'(C_1)}{\phi''(C_1)}, \dots, \frac{\phi'(C_k)}{\phi''(C_k)} \right]$.
+            \State Set $\sigma = \text{std}(r)$.
             \If{$\sigma < \sigma_{\text{opt}}$}
                 \State Set $\sigma_{\text{opt}} = \sigma$ and $p'_{11,\text{opt}} = p'_{11}$.
             \EndIf

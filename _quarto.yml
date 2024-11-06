@@ -6,7 +6,8 @@ project:
 resources:
   - CNAME
   
-reference-location: margin # footnotes in margin
+reference-location: document # footnotes in margin
+citation-location: document # citations in margin
 link-citations: true       # citations link to references
 
 bibliography: references.bib

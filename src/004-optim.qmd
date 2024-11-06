@@ -18,174 +18,119 @@
 ## Individual Preference Optimization via Dueling Bandit
 
 ### Introduction to Dueling Bandit Problem and Its Extension
+The multi-armed bandit (MAB) problem involves a gambler deciding which lever to pull on an MAB 
+machine to maximize the winning rate, despite not knowing which machine is the most rewarding. 
+This scenario highlights the need to balance exploration (trying new machines to discover potential 
+higher rewards) and exploitation (using current knowledge to maximize gains). MAB algorithms 
+address this dilemma by making decisions under uncertainty to achieve the best possible outcomes 
+based on gathered data. At the core of the MAB problem is a set of actions, or 'arms,' denoted by 
+$\mathcal{A} = \{1, 2, \ldots, K\}$, where $K$ signifies the total number of arms. For each round $t$, 
+the agent selects an arm $a_t \in \mathcal{A}$ and receives a reward $r_t$, sampled from an arm-specific,
+unknown probability distribution. The expected reward of pulling arm $a$ is represented as $\mu_a = \mathbb{E}[r_t | a]$.
 
-The multi-armed bandit (MAB) problem is when a gambler must choose which
-lever to pull on an MAB machine to maximize the winning rate despite not
-knowing which machine is the most rewarding. This scenario illustrates
-the need to balance exploration (trying new machines to discover
-potential higher rewards) and exploitation (using current knowledge to
-maximize gains). MAB algorithms navigate this dilemma by making
-decisions under uncertainty to achieve the best possible outcomes based
-on gathered data. At the core of the MAB problem lies a set of actions,
-or 'arms,' denoted by $\mathcal{A} = \{1, 2, \ldots, K\}$, where $K$
-signifies the total number of arms. For each round $t$, the agent
-selects an arm $a_t \in \mathcal{A}$ and receives a reward $r_t$,
-sampling from an arm-specific, unknown probability distribution. The
-expected reward of pulling arm $a$ is represented as
-$\mu_a = \mathbb{E}[r_t | a]$.
+The multi-armed bandit framework can be extended in various ways to model more complex scenarios. 
+In the infinite-armed bandit problem, the set of possible arms $\mathcal{A}$ is either very large 
+or infinite. This introduces significant challenges in exploration, as the agent cannot afford to 
+explore each arm even once. Algorithms for infinite-armed bandits typically assume some regularity 
+or structure of the reward function across arms to make the problem tractable. The contextual bandit 
+problem extends the bandit framework by incorporating observable external states or contexts that 
+influence the reward distributions of arms. The agent's task is to learn policies that map contexts 
+to arms to maximize reward. This model is particularly powerful for personalized recommendations, where 
+the context can include user features or historical interactions. In dueling bandit problems, the agent 
+chooses two arms to pull simultaneously and receives feedback only on which of the two is better, not 
+the actual reward values. This pairwise comparison model is especially useful in scenarios where absolute 
+evaluations are difficult, but relative preferences are easier to determine, such as in ranking systems.
 
-The multi-armed bandit framework can be extended in various ways to
-model more complex scenarios. In the infinite-armed bandit problem, the
-set of possible arms $\mathcal{A}$ is either very large or indeed
-infinite. This introduces significant challenges in exploration, as the
-agent can no longer afford to explore each arm even once. Algorithms for
-infinite-armed bandits typically assume some regularity or structure of
-the reward function across arms to make the problem tractable. The
-contextual bandit problem extends the bandit framework by incorporating
-observable external states or contexts that influence the reward
-distributions of arms. The agent's task is to learn policies that map
-contexts to arms to maximize reward. This model is particularly powerful
-for personalized recommendations, where the context can include user
-features or historical interactions. In dueling bandit problems, the
-agent chooses two arms to pull simultaneously and receives feedback only
-on which of the two is better, not the actual reward values. This
-pairwise comparison model is especially useful in scenarios where
-absolute evaluations are difficult, but relative preferences are easier
-to determine, such as in ranking systems.
+Contextual bandits extend the multi-armed bandits by making decisions conditional on the state of the 
+environment and previous observations. The benefit of such a model is that observing the environment 
+can provide additional information, potentially leading to better rewards and outcomes. In each 
+iteration, the agent is presented with the context of the environment, then decides on an action 
+based on the context and previous observations. Finally, the agent observes the action's outcome and 
+reward. Throughout this process, the agent aims to maximize the expected reward.
 
-Contextual bandits extend the multi-armed bandits: the decisions are now
-also conditional on the state of the environment and previous
-observations. The benefit of such a model is that observing the
-environment can add more information and possibly lead to better rewards
-and outcomes. Over each iteration, the agent is presented with the
-context of the environment then decides on an action based on the
-context and previous observations. Lastly, the agent observes the
-action's outcome and reward. Throughout all this, the agent tries to
-maximize the average reward.
+In many real-world contexts, one may not have a real-valued reward (or at least a reliable one) 
+associated with a decision. Instead, we may only have observations indicating which of a set of 
+bandits was optimal in a given scenario. The assumption is that within these observations of 
+preferred choices among a set of options, there is an implicit reward or payoff encapsulated in that 
+decision. Consider the following examples:
 
-In many real-world contexts, one may not have a real-value reward (or at
-least a reliable one) that we can associate with a decision. We may only
-be provided with observations of which of a set of bandits was optimal
-in a given scenario. The assumption we will make is that within these
-observations of preferred choice amongst a set of options, there is an
-implicit reward or payoff encapsulated in that decision. Let us look at
-some examples:
+1.  **Dietary preferences**: When providing food recommendations to humans, it is often not possible 
+    to quantify an explicit reward from recommending a specific food item. Instead, we can offer meal 
+    options and observe which one the person selects.
 
-1.  Dietary preferences: If we aim to provide food recommendations to
-    humans, we likely can't quantify an explicit reward the person
-    attains from being recommended a specific food item. Rather, we can
-    provide them meal options, and observe which one the person selects.
+2.  **Video recommendation**: Websites like YouTube and TikTok recommend specific videos to users. It is 
+    typically not feasible to measure the reward a person gains from watching a video. However, we can infer 
+    that a user preferred one video over another. From these relative preference observations, we can develop 
+    a strategy to recommend videos they are likely to enjoy.
 
-2.  Video recommendation: Some websites like YouTube and TikTok
-    recommend specific videos to users. It is likely not possible to
-    measure the reward a person attains from watching a video. Still, we
-    can understand that a user preferred one video over another. From
-    these relative preference observations, we can learn a strategy
-    always to recommend videos they are likely to enjoy.
+3.  **Exoskeleton gait optimization**: Tucker et al. (2020) created a framework that uses human-evaluated 
+    preferences for an exoskeleton gait algorithm to develop an optimal strategy for the exoskeleton to assist
+    a human in walking. A human cannot reliably produce a numerical value for how well the exoskeleton helped 
+    them walk but can reliably indicate which option performed best according to their preferences.
 
-3.  Exoskeleton gait optimization:  [@tucker2020preferencebased] created
-    a framework that uses human-evaluated preferences for an exoskeleton
-    gait algorithm to ultimately develop an optimal strategy for the
-    exoskeleton to assist a human in walking. A human cannot reliably
-    produce a numerical value attributed to how well the exoskeleton
-    helped them walk, but can reliably indicate which out of a set of
-    options performed the best according to their preferences.
+Generally, we assume access to a set of actions. A noteworthy assumption is that any observations we make
+are unbiased estimates of the payoff. This means that if we observe a human preferred one option over another 
+(or several others), the preferred option had a higher implicit reward or payoff than the alternatives. In the 
+case of dietary preferences, this may mean that a human liked the preferred option; in the case of video 
+recommendations, a user was more entertained, satisfied, or educated by the video they selected than the other options.
 
-Generally, we will assume that we have access to a set of actions. A
-noteworthy assumption we make is that any observations we can make are
-an unbiased estimate of the payoff. This means that if we observe that a
-human preferred one option over another (or several others), the
-preferred option had a higher implicit reward or payoff than the
-alternatives. In the case of dietary preferences, this may mean that a
-human liked the preferred option; in the case of video recommendation, a
-user was more entertained, satisfied, or educated by the video they
-selected than the other options (which is what we can observe).
+The overarching context is that we do not have direct or reliable access to rewards. We may not have a 
+reward at all (for some decisions, it may be impossible to define a real value to the outcome), or it may be 
+noisy (for example, if we ask a human to rate their satisfaction on a scale of 1 to 10). We use relative 
+comparisons to evaluate the best of multiple options in this case. Our goal is to minimize total regret in 
+the face of noisy comparisons. Humans may not always provide consistent observations (since human decision-making 
+is not guaranteed to be consistent). However, we can still determine an optimal strategy with the observed 
+comparisons. We aim to minimize the frequency of sub-optimal decisions according to human preferences. In practice, 
+many formulations of bandits can allow for infinitely many bandits (for example, in continuous-value and high-dimensional 
+spaces). However, this situation can be intractable when determining an optimal decision strategy. With 
+infinite options, how can we always ensure we have chosen the best? We will constrain our bandits to a 
+discrete space to enable efficient exploration. We will assume that we have $k$ bandits, $b_i, i \in [1, k]$, 
+and our task is to choose the one that will minimize regret.
 
-The overarching context is that we do not have direct or reliable access
-to rewards. We may not have a reward at all (for some decisions, it may
-be impossible to define a real value to the outcome), or it may be noisy
-(for example, if we ask a human to rate the satisfaction from their
-choice on a scale of 1 to 10). We use relative comparisons to evaluate
-the best of multiple options in this case. We aim to minimize the total
-regret in the face of noisy comparisons. Humans may not always provide
-consistent observations (since human decision making is not guaranteed
-to be consistent). However, we can still determine an optimal strategy
-with the observed comparison. We can think of it as minimizing the
-frequency by which we make sub-optimal decisions according to human
-preferences. In practice, many formulations of bandits can allow for
-infinitely many bandits (for example, in continuous-value and
-high-dimensional spaces). However, this situation can be intractable
-when determining an optimal decision strategy --- with infinite options,
-how can we always ensure we have chosen the best? We will constrain our
-bandits to a discrete space to enable efficient exploration. We will
-assume that we have $k$ bandits, $b_i, i \in [1, k]$, and our job is to
-choose the one that will minimize regret.
+With the framework outlined, we now define our approach more formally. This method was introduced by 
+ [@YUE20121538], and proofs for the guarantees and derivations of parameters can be found in their work.
 
-With the framework outlined, let us now define our approach more
-formally. Note that this method was introduced in [@YUE20121538], and
-proofs for the guarantees and derivations of parameters can be found in
-that work.
+To determine the optimal action, we will compare pairwise to ascertain the probability that an action $b_i$ is 
+preferred over another $b_j$, where $i \ne j$. Concretely, we assume access to a function $\epsilon$ that helps 
+determine this probability; in practice, this can be done with an oracle, such as asking a human which of two 
+options they prefer: $$P(b_i > b_j) = \varepsilon(b_i, b_j) + \frac{1}{2}.$$ With this model, three basic properties 
+govern the values provided by $\epsilon$:
+$$\epsilon(b_i, b_j) = -\epsilon(b_j, b_i), \epsilon(b_i, b_i) = 0, \epsilon(b_i, b_j) \in \left(-\frac{1}{2}, \frac{1}{2} \right).$$
 
-To determine the optimal action, we will compare pairwise to ascertain
-the probability that an action $b_i$ is preferred over another
-$b_j, i \ne j$. Concretely, we will assume that we have access to a
-function $\epsilon$ which helps us determine this probability; in
-practice, this can be done with an oracle, such as asking a human which
-of two options they prefer:
-$P(b_i > b_j) = \varepsilon(b_i, b_j) + \frac{1}{2}$. With this model,
-three basic properties govern the values provided by $\epsilon$:
-$$\epsilon(b_i, b_j) = -\epsilon(b_j, b_i), \epsilon(b_i, b_i) = 0, \epsilon(b_i, b_j) \in \left(-\frac{1}{2}, \frac{1}{2} \right)$$
+We assume there is a total ordering of bandits, such that $b_i \succ b_j$ implies $\epsilon(b_i, b_j) > 0$. We 
+impose two constraints to properly model comparisons:
 
-We will always assume that there is a total ordering of bandits, such
-that $b_i \succ b_j$ implies $\epsilon(b_i, b_j) > 0$. We impose two
-constraints which enable us to properly model comparisons:
+-   **Strong Stochastic Transitivity**: We must maintain our total ordering of bandits, and as such, the comparison 
+    model also respects this ordering:
+    $$b_i \succ b_j \succ b_k \Rightarrow \epsilon(b_i, b_k) \ge \text{max}\{\epsilon(b_i, b_j), \epsilon(b_j, b_k)\}.$$ {#eq-stochastic-transitivity}
 
--   Strong Stochastic Transitivity: We must maintain our total ordering
-    of bandits, and as such, the comparison model also respects this
-    ordering:
-    $b_i \succ b_j \succ b_k \Rightarrow \epsilon(b_i, b_k) \ge \text{max}\{\epsilon(b_i, b_j), \epsilon(b_j, b_k)\}$
+-   **Stochastic Triangle Inequality**: We also impose a triangle inequality, which captures the condition that the probability 
+    of a bandit winning (or losing) a comparison will exhibit diminishing returns as it becomes increasingly superior (or inferior) 
+    to the competing bandit:
+    $$b_i \succ b_j \succ b_k \Rightarrow \epsilon(b_i, b_k) \le \epsilon(b_i, b_j) + \epsilon(b_j, b_k).$$ {#eq-triangle-inequality}
 
--   Stochastic Triangle Inequality: We also impose a triangle
-    inequality, which captures the condition that the probability of a
-    bandit winning (or losing) a comparison will exhibit diminishing
-    returns as it becomes increasingly superior (or inferior) to the
-    competing bandit:
-    $b_i \succ b_j \succ b_k \Rightarrow \epsilon(b_i, b_k) \le \epsilon(b_i, b_j) + \epsilon(b_j, b_k)$
+These assumptions may initially seem limiting; however, common models for comparisons satisfy these constraints. 
+For example, the Bradley-Terry Model follows $P(b_i > b_j) = \frac{\mu_i}{\mu_i + \mu_j}$. 
+The Gaussian model with unit variance also satisfies these constraints: $P(b_i > b_j) = P(X_i - X_j > 0)$, 
+where $X_i - X_j \sim N(\mu_i - \mu_j, 2)$.
 
-These assumptions may initially seem limiting, however common models for
-comparisons satisfy these constraints. For example, the Bradley-Terry
-Model follows $P(b_i > b_j) = \frac{\mu_i}{\mu_i + \mu_j}$. The Gaussian
-model with unit variance also satisfies these constraints:
-$P(b_i > b_j) = P(X_i - X_j > 0)$, where
-$X_i - X_j \sim N(\mu_i - \mu_j, 2)$.
+To accurately model the preferences between bandits in our framework of pairwise bandit comparisons and regret, 
+we must track certain parameters in our algorithm. First, we will maintain a running empirical estimate of the probability 
+of bandit preferences based on our observations. It is important to note that we do not have direct access to an $\epsilon$ 
+function. Instead, we must present two bandits to a human, who selects a winner. To do this, we define:
+$$\hat{P}_{i, j} = \frac{\# b_i\ \text{wins}}{\# \text{comparisons between}\ i \text{and}\ j}.$$
 
-To truly model the preferences between bandits in our framework of
-pairwise bandit comparisons and regret, we must keep track of certain
-parameters in our algorithm. First, we will keep a running empirical
-estimate of our probability of bandit preferences based on our
-observations. Keep in mind that we don't have direct access to an
-$\epsilon$ function. Instead, we must provide two bandits to a human,
-who selects a winner. To do this, we will define:
-$$\hat{P}_{i, j} = \frac{\# b_i\ \text{wins}}{\# \text{comparisons between}\ i \text{and}\ j}$$
+We will also compute confidence intervals at each timestep for each of the entries in $\hat{P}$ as
+$$\hat{C}_t = \left( \hat{P}_t - c_t, \hat{P}_t + c_t \right),$$
+where $c_t = \sqrt{\frac{4\log(\frac{1}{\delta})}{t}}$. Note that $\delta = \frac{1}{TK^2}$, where $T$ is the 
+time horizon and $K$ is the number of bandits.
 
-We will also compute confidence intervals at each timestep for each of
-the entries in $\hat{P}$ as
-$\hat{C}_t = \left( \hat{P}_t - c_t, \hat{P}_t + c+t \right)$, where
-$c_t = \sqrt{\frac{4\log(\frac{1}{\delta})}{t}}$. Note that
-$\delta = \frac{1}{TK^2}$, where $T$ is the time horizon and $K$ is the
-number of bandits.
-
-Previously we discussed approaches finding the best action in a specific
-context. Now we want to consider changing contexts, which means, that
-there is no longer a static hidden preference matrix $P$. Instead - at
-every time step - there is now a preference matrix $P_C$ depending on
-context $C$. We consider a context $C$ and a preference matrix $P_C$ to
-be chosen by nature as they result of the given environment
-[@Contextual_Dueling]. The goal of a contextual bandits algorithm is to
-find some policy $\pi$ which maps contexts to Von Neumann winner
-distribution over our bandits. That is, our policy $\pi$ should map any
-context to some distribution over our bandits such that sampling from
-that distribution is preferred to a random action for that context.
+Previously, we discussed approaches for finding the best action in a specific context. Now, we consider changing contexts, 
+which means there is no longer a static hidden preference matrix $P$. Instead, at every time step, there is a preference 
+matrix $P_C$ depending on context $C$. We consider a context $C$ and a preference matrix $P_C$ to be chosen by nature as a 
+result of the given environment (Yue et al., 2012). The goal of a contextual bandits algorithm is to find a policy $\pi$ that 
+maps contexts to a Von Neumann winner distribution over our bandits. That is, our policy $\pi$ should map any context to some 
+distribution over our bandits such that sampling from that distribution is preferred to a random action for that context.
 
 ### Regret
 
