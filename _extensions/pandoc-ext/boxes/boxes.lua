@@ -11,6 +11,11 @@ local boxes = {
 	[ 'exercises'              ] = {color = '.yellow',  icon = '\\faPenRuler',            collapse = true},
 	[ 'discussion questions'   ] = {color = '.cyan',    icon = '\\faComments',            collapse = true},
 	[ 'readings'               ] = {color = '.magenta', icon = '\\faBook',                collapse = true},
+	[ 'proposition'            ] = {color = '.orange',  icon = '\\faPenSquare',           collapse = false},
+	[ 'definition'             ] = {color = '.blue',    icon = '\\faPenSquare',           collapse = false},
+	[ 'theorem'                ] = {color = '.red',     icon = '\\faPenSquare',           collapse = false},
+	[ 'lemma'                  ] = {color = '.orange',  icon = '\\faPenSquare',           collapse = false},
+	[ 'remark'                 ] = {color = '.green',   icon = '\\faQuestion',            collapse = false},
 }
 
 -- TODO: shrink learning goals boxes

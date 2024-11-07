@@ -59,6 +59,11 @@ $boxes: (
 	'exercises'              var(--yellow)  $fa-var-pen-ruler,
 	'discussion questions'   var(--cyan)    $fa-var-comments,
 	'readings'               var(--magenta) $fa-var-book,
+	'proposition'            var(--orange)  $fa-var-pen-square,
+	'definition'             var(--blue)    $fa-var-pen-square,
+	'theorem'                var(--red)     $fa-var-pen-square,
+	'lemma'                  var(--orange)  $fa-var-pen-square,
+	'remark'                 var(--green)   $fa-var-question,
 );
 
 @each $name, $color, $icon in $boxes {

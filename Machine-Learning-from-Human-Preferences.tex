@@ -337,6 +337,22 @@
 % end preamble.tex
 %%%%%%%%%%%%%%%%%%
 \makeatletter
+\@ifpackageloaded{tcolorbox}{}{\usepackage[skins,breakable]{tcolorbox}}
+\@ifpackageloaded{fontawesome5}{}{\usepackage{fontawesome5}}
+\definecolor{quarto-callout-color}{HTML}{909090}
+\definecolor{quarto-callout-note-color}{HTML}{0758E5}
+\definecolor{quarto-callout-important-color}{HTML}{CC1914}
+\definecolor{quarto-callout-warning-color}{HTML}{EB9113}
+\definecolor{quarto-callout-tip-color}{HTML}{00A047}
+\definecolor{quarto-callout-caution-color}{HTML}{FC5300}
+\definecolor{quarto-callout-color-frame}{HTML}{acacac}
+\definecolor{quarto-callout-note-color-frame}{HTML}{4582ec}
+\definecolor{quarto-callout-important-color-frame}{HTML}{d9534f}
+\definecolor{quarto-callout-warning-color-frame}{HTML}{f0ad4e}
+\definecolor{quarto-callout-tip-color-frame}{HTML}{02b875}
+\definecolor{quarto-callout-caution-color-frame}{HTML}{fd7e14}
+\makeatother
+\makeatletter
 \@ifpackageloaded{bookmark}{}{\usepackage{bookmark}}
 \makeatother
 \makeatletter
@@ -374,6 +390,10 @@
 \floatname{codelisting}{Listing}
 \newcommand*\listoflistings{\listof{codelisting}{List of Listings}}
 \usepackage{amsthm}
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}[chapter]
+\theoremstyle{plain}
+\newtheorem{proposition}{Proposition}[chapter]
 \theoremstyle{plain}
 \newtheorem{theorem}{Theorem}[chapter]
 \theoremstyle{remark}
@@ -3136,6 +3156,8 @@ along with \(\log\). The gradient of loss is
   improving over time.
 \end{enumerate}
 
+\begin{tcolorbox}[colframe=.grey, title=\faCode \enspace Code]
+
 \begin{Shaded}
 \begin{Highlighting}[numbers=left,,]
 \ImportTok{from}\NormalTok{ sklearn.model\_selection }\ImportTok{import}\NormalTok{ train\_test\_split}
@@ -3215,6 +3237,8 @@ along with \(\log\). The gradient of loss is
 \end{Highlighting}
 \end{Shaded}
 
+\end{tcolorbox}
+
 \subsection*{Question 2: Revealed and Stated Preferences (20
 points)}\label{question-2-revealed-and-stated-preferences-20-points}
 \addcontentsline{toc}{subsection}{Question 2: Revealed and Stated
@@ -3258,6 +3282,8 @@ correctness.''
   simulations. Attach the plot to this question and briefly explain what
   you notice.
 \end{enumerate}
+
+\begin{tcolorbox}[colframe=.grey, title=\faCode \enspace Code]
 
 \begin{Shaded}
 \begin{Highlighting}[numbers=left,,]
@@ -3380,6 +3406,8 @@ correctness.''
 \end{Highlighting}
 \end{Shaded}
 
+\end{tcolorbox}
+
 \subsection*{Question 3: Probabilistic Multi-modal Preferences (25
 points)}\label{question-3-probabilistic-multi-modal-preferences-25-points}
 \addcontentsline{toc}{subsection}{Question 3: Probabilistic Multi-modal
@@ -3477,6 +3505,8 @@ part of Group 1, and users with weights \(w_2\) are part of Group 2.
   of your MCMC samples overlayed on top of the true posterior
   \(B(10, 4)\) by running \texttt{python\ biased\_coin.py}.
 \end{enumerate}
+
+\begin{tcolorbox}[colframe=.grey, title=\faCode \enspace Code]
 
 \begin{Shaded}
 \begin{Highlighting}[numbers=left,,]
@@ -3596,6 +3626,8 @@ part of Group 1, and users with weights \(w_2\) are part of Group 2.
 \end{Highlighting}
 \end{Shaded}
 
+\end{tcolorbox}
+
 \begin{enumerate}
 \def\labelenumi{(\alph{enumi})}
 \setcounter{enumi}{4}
@@ -3613,6 +3645,8 @@ part of Group 1, and users with weights \(w_2\) are part of Group 2.
   failures that occur due to lack of convergence which we will account
   for in grading.
 \end{enumerate}
+
+\begin{tcolorbox}[colframe=.grey, title=\faCode \enspace Code]
 
 \begin{Shaded}
 \begin{Highlighting}[numbers=left,,]
@@ -3844,6 +3878,8 @@ part of Group 1, and users with weights \(w_2\) are part of Group 2.
 \end{Highlighting}
 \end{Shaded}
 
+\end{tcolorbox}
+
 \subsection*{Question 4: Direct Preference Optimization (40
 points)}\label{question-4-direct-preference-optimization-40-points}
 \addcontentsline{toc}{subsection}{Question 4: Direct Preference
@@ -3963,6 +3999,8 @@ I am here.<end_of_turn>
   Report the proportion of ``because of'' occurences before and after
   fine-tuning. Additionally, include a plot of the DPO loss curve.
 \end{enumerate}
+
+\begin{tcolorbox}[colframe=.grey, title=\faCode \enspace Code]
 
 \begin{Shaded}
 \begin{Highlighting}[numbers=left,,]
@@ -4234,6 +4272,8 @@ I am here.<end_of_turn>
     \BuiltInTok{print}\NormalTok{(}\SpecialStringTok{f\textquotesingle{}Fraction responses with because of: }\SpecialCharTok{\{}\NormalTok{fraction\_responses\_with\_because\_of(post\_tuning\_responses)}\SpecialCharTok{\}}\SpecialStringTok{\textquotesingle{}}\NormalTok{) }\CommentTok{\# should be more than half}
 \end{Highlighting}
 \end{Shaded}
+
+\end{tcolorbox}
 
 \section*{References}\label{bibliography-2}
 \addcontentsline{toc}{section}{References}
@@ -4701,7 +4741,8 @@ include:
   the selected data.
 \end{itemize}
 
-\subsubsection{Uncertainty Sampling}\label{uncertainty-sampling}
+\subsubsection*{Uncertainty Sampling}\label{uncertainty-sampling}
+\addcontentsline{toc}{subsubsection}{Uncertainty Sampling}
 
 Uncertainty sampling (\citeproc{ref-AL_uncertainty}{Zhu et al. 2010}) is
 a widely used acquisition function in active learning that selects data
@@ -4806,7 +4847,8 @@ struggles with the most. By focusing on these uncertain samples, the
 model can more efficiently improve its performance, making uncertainty
 sampling a key tool in active learning.
 
-\subsubsection{Query-by-Committee}\label{query-by-committee}
+\subsubsection*{Query-by-Committee}\label{query-by-committee}
+\addcontentsline{toc}{subsubsection}{Query-by-Committee}
 
 Query-by-Committee (\citeproc{ref-AL_committee}{Beluch et al. 2018}) is
 an active learning strategy where a committee of models selects samples
@@ -4933,8 +4975,10 @@ Thus, \(x_1\) would be selected for labeling as it has the highest
 consensus entropy, indicating the highest level of disagreement among
 the committee members.
 
-\subsubsection{Bayesian Active Learning by
+\subsubsection*{Bayesian Active Learning by
 Disagreement}\label{bayesian-active-learning-by-disagreement}
+\addcontentsline{toc}{subsubsection}{Bayesian Active Learning by
+Disagreement}
 
 Bayesian Active Learning by Disagreement (BALD)
 (\citeproc{ref-AL_BALD}{Houlsby et al. 2011}) selects the samples for
@@ -5337,8 +5381,9 @@ necessary. Applying similar knowledge in the ranking field leads to an
 active learning approach that selects data based on the relevance of a
 comparison query toward finding the final \(\sigma(\Theta)\).
 
-\subsubsection{Geometric Approach to
+\subsubsection*{Geometric Approach to
 Comparisons}\label{geometric-approach-to-comparisons}
+\addcontentsline{toc}{subsubsection}{Geometric Approach to Comparisons}
 
 In this section, we will review the paper (\citeproc{ref-geo_paper}{G.
 and Nowak 2011}), which explores active learning within data that can be
@@ -5356,7 +5401,7 @@ For this application, the following terms are defined:
 \item
   \textbf{\(R^d\)}: The space in which objects can be embedded.
 \item
-  \textbf{\(\theta_1,...,\theta_n\)}: The objects, now representing
+  \textbf{\(\theta_1, \cdots,\theta_n\)}: The objects, now representing
   their locations in \(R^d\).
 \item
   For each ranking \(\sigma\), there is a reference point
@@ -5383,7 +5428,8 @@ For this application, the following terms are defined:
   and \(j\).
 \end{enumerate}
 
-\subsubsection{Embedding Space}\label{embedding-space}
+\subsubsection*{Embedding Space}\label{embedding-space}
+\addcontentsline{toc}{subsubsection}{Embedding Space}
 
 \begin{figure}
 
@@ -5465,8 +5511,10 @@ ambiguous. However, if one of the half-spaces does not exist, it means
 the other is the full space, representing consistency in the label
 assignment and a non-ambiguous query.
 
-\paragraph{Algorithms for Ambiguous Query
+\paragraph*{Algorithms for Ambiguous Query
 Selection}\label{algorithms-for-ambiguous-query-selection}
+\addcontentsline{toc}{paragraph}{Algorithms for Ambiguous Query
+Selection}
 
 \begin{algorithm}[H]
     \caption{Query Selection Algorithm}
@@ -5532,7 +5580,8 @@ the algorithm to see if it can become a non-ambiguous query with more
 information learned. If it does not, an odd number of voters is used to
 determine the final ranking.
 
-\paragraph{Performance Analysis}\label{sec-QSA}
+\paragraph*{Performance Analysis}\label{sec-QSA}
+\addcontentsline{toc}{paragraph}{Performance Analysis}
 
 \begin{figure}
 
@@ -5551,8 +5600,8 @@ queries (solid) in the noiseless case for \(n = 100\);
 \begin{longtable}[]{@{}llcc@{}}
 \caption{Statistics for the Robust Query Selection Algorithm (RQSA)
 (\citeproc{ref-geo_paper}{G. and Nowak 2011}) discussed at the end of
-Section~\ref{sec-QSA} and the baseline of conducting all comparisons.
-\(y\) serves as a noisy ground truth, \(\tilde{y}\) is the result of all
+\textbf{?@sec-QSA} and the baseline of conducting all comparisons. \(y\)
+serves as a noisy ground truth, \(\tilde{y}\) is the result of all
 comparisons, and \(\hat{y}\) is the output of the
 RQSA.}\label{tbl-geo_acc}\tabularnewline
 \toprule\noalign{}
@@ -5585,18 +5634,20 @@ came from humans, indicated by \(y\) in the table. That resulted in the
 existence of noise and potential errors in the ground truth, which could
 influence the performance of both the baseline algorithm that does all
 comparisons (\(\tilde{y}\)) and the Robust Query Selection Algorithm
-(RQSA) proposed in Section~\ref{sec-QSA} (\(\hat{y}\)). As can be seen
-in both 2 and 3-dimensional spaces RQSA performed worse by \(8\%\)
-compared to the baseline, which indicates that active learning that uses
-the domain information can still be erroneous due to the inference of
+(RQSA) proposed in \textbf{?@sec-QSA} (\(\hat{y}\)). As can be seen in
+both 2 and 3-dimensional spaces RQSA performed worse by \(8\%\) compared
+to the baseline, which indicates that active learning that uses the
+domain information can still be erroneous due to the inference of
 certain comparisons that sometimes may not be entirely correct. However,
 as can be seen by the upper part of Table~\ref{tbl-geo_acc},
 significantly less queries were requested compared to the baseline,
 which means that the approach can have a significant benefit at a cost
 of slight loss in accuracy.
 
-\subsubsection{User Information as Domain Knowledge for Active
+\subsubsection*{User Information as Domain Knowledge for Active
 Learning}\label{sec-geo_app}
+\addcontentsline{toc}{subsubsection}{User Information as Domain
+Knowledge for Active Learning}
 
 An alternative source of domain knowledge could be users themselves, who
 can indicate their uncertainty when it comes to comparing two objects.
@@ -5644,7 +5695,7 @@ For this problem, the following terms are defined:
   \(w(H|S)\) - probability mass of all hypotheses that are still
   consistent with the observations (similar to the dark grey area from
   Figure~\ref{fig-dim-space} and \(Q(i,j)\) discussed in
-  Section~\ref{sec-QSA}. This means that if \(h \in H\) is inconsistent
+  \textbf{?@sec-QSA}. This means that if \(h \in H\) is inconsistent
   with user responses received, it is removed from \(H\).
 \end{enumerate}
 
@@ -5897,7 +5948,7 @@ responses and feelings in users. Moreover, GBS and CLAUS-type responses
 were mixed in the same set of questions to the user, which splits the
 metrics for both in two as can be seen in Table~\ref{tbl-claus_tab}. The
 performance of CLAUS is lower by \(3\%\) on average, indicating similar
-results to Section~\ref{sec-geo_app}, showing that a smaller number of
+results to \textbf{?@sec-geo\_app}, showing that a smaller number of
 queries can still lead to a performance loss. However, the second column
 of Table~\ref{tbl-claus_tab} supports the information in
 Figure~\ref{fig-claus_num}, as it also shows that 10 fewer queries were
@@ -5941,7 +5992,9 @@ R_{H}(x^0, u_R, u_H) &= \sum_{t=0}^{N} r_{H}(x^t, u^t, u_H^t)\\
 \Phi &= \sum \phi(x^t, u_R^t, u_H^t)\\ 
 R_H(traj) &= w\cdot\Phi(traj)\end{aligned}}\end{equation}
 
-\subsubsection{Properties of W}\label{properties-of-w}
+\subsubsection*{\texorpdfstring{Properties of
+\(W\)}{Properties of W}}\label{properties-of-w}
+\addcontentsline{toc}{subsubsection}{Properties of \(W\)}
 
 First, the scale of \(w\) does not matter because we only care about the
 relative rewards produced with \(w\) (given two different trajectories,
@@ -5972,7 +6025,8 @@ from a human preference query using Bayes:
 We do not need to know \(p(I_t)\) because we can use an algorithm like
 the Metropolis algorithm to actually sample.
 
-\subsubsection{Generating Queries}\label{generating-queries}
+\subsubsection*{Generating Queries}\label{generating-queries}
+\addcontentsline{toc}{subsubsection}{Generating Queries}
 
 This is where the interesting part of the paper comes into play. How do
 we actually generate queries for the user to pick between? This paper
@@ -6021,7 +6075,8 @@ Altogether, the algorithm looks like the following:
 \end{algorithmic}
 \end{algorithm}
 
-\subsubsection{Batching Queries}\label{batching-queries}
+\subsubsection*{Batching Queries}\label{batching-queries}
+\addcontentsline{toc}{subsubsection}{Batching Queries}
 
 The algorithm itself works well, however there ends up being a bottle
 neck that each query needs to be synthesized before being sent to the
@@ -6058,7 +6113,8 @@ depicted as:
 
 \end{figure}%
 
-\subsubsection{Results}\label{results}
+\subsubsection*{Results}\label{results}
+\addcontentsline{toc}{subsubsection}{Results}
 
 The authors test both the non-batched and variety of batched learning
 algorithms on multiple environments:
@@ -6081,8 +6137,8 @@ non-batched active learning approach does in the same ball-park of
 performance as the batched approaches. However, if you graph it over
 time, we see that learning is a much slower process when not-batched.
 
-\subsection{Foundation Models for
-Robotics}\label{foundation-models-for-robotics}
+\subsection{Application: Foundation Models for
+Robotics}\label{application-foundation-models-for-robotics}
 
 Modern foundation models have been ubiquitous in discussions of
 powerful, general purpose AI systems that can accomplish myriad tasks
@@ -6100,8 +6156,10 @@ towards performance improvement on downstream robotic tasks despite the
 aforementioned issues (\citeproc{ref-nair2022r3m}{Nair et al. 2022};
 \citeproc{ref-karamcheti2023languagedriven}{Karamcheti et al. 2023}).
 
-\subsubsection{R3M: Universal Visual Representation for
+\subsubsection*{R3M: Universal Visual Representation for
 Robotics}\label{r3m-universal-visual-representation-for-robotics}
+\addcontentsline{toc}{subsubsection}{R3M: Universal Visual
+Representation for Robotics}
 
 \begin{figure}
 
@@ -6154,8 +6212,10 @@ MoCo or even CLIP (\citeproc{ref-deng2009imagenet}{Deng et al. 2009};
 that R3m does \textbf{not} use any language data which leaves quite a
 bit of supervision to be desired.
 
-\subsubsection{Voltron: Language Driven Representation Learning for
+\subsubsection*{Voltron: Language Driven Representation Learning for
 Robotics}\label{voltron-language-driven-representation-learning-for-robotics}
+\addcontentsline{toc}{subsubsection}{Voltron: Language Driven
+Representation Learning for Robotics}
 
 Building off the success of R3M, Voltron proposes a further extension of
 leveraging self-supervision and advancements in foundation models, and
@@ -6333,234 +6393,138 @@ Max Halford (\citeproc{ref-max_halford}{Halford 2023}).
 \subsection{Introduction to Performance Metric
 Elicitation}\label{introduction-to-performance-metric-elicitation}
 
-In binary classification problems, one important consideration is the
-selection of an appropriate performance metric corresponding to the
-real-world task at hand. The problem of \emph{metric elicitation}
-attempts to characterize and discover the performance metric of a
-practitioner, reflecting the rewards or costs that come with correct or
-incorrect classification. For example, in medical contexts such as
-diagnosing a disease or choosing whether a given treatment is
-appropriate for a certain condition, tradeoffs are made for incorrect
-decisions; for example, not administering a treatment could lead to the
-worsening of a disease (a false negative), whereas delivering the wrong
-kind of treatment could lead to adverse side effects that would be worse
-than not treating the condition (a false positive).
+In binary classification problems, selecting an appropriate performance
+metric that aligns with the real-world task is crucial. The problem of
+\emph{metric elicitation} aims to characterize and discover the
+performance metric of a practitioner, reflecting the rewards or costs
+associated with correct or incorrect classification. For instance, in
+medical contexts such as diagnosing a disease or determining the
+appropriateness of a treatment, trade-offs are made for incorrect
+decisions. Not administering a treatment could lead to the worsening of
+a disease (a false negative), whereas delivering the wrong treatment
+could cause adverse side effects worse than not treating the condition
+(a false positive).
 
 Rather than choosing from a limited set of default choices like the
 F1-score or weighted accuracy, metric elicitation considers the process
-by which we can devise a metric that best matches the preferences of the
-practitioners or users, by querying an ``oracle" who provides feedback
-on proposed potential metrics in the form of pairwise comparisons.
-Because queries to humans are often expensive, the aim is to minimize
-the amount of comparisons needed.
+of devising a metric that best matches the preferences of practitioners
+or users. This is achieved by querying an ``oracle'' who provides
+feedback on proposed potential metrics through pairwise comparisons.
+Since queries to humans are often expensive, the goal is to minimize the
+number of comparisons needed.
 
-\textbf{Note:} Almost all of the content in this chapter comes from
-``Performance Metric Elicitation from Pairwise Classifier Comparisons''
-by Hiranandani et al.
+\textbf{Note:} Contents in this section are derived from ``Performance
+Metric Elicitation from Pairwise Classifier Comparisons'' by
 (\citeproc{ref-pmlr-v89-hiranandani19a}{Hiranandani et al. 2019a}),
 which introduced the problem of metric elicitation and the framework for
-binary-class metric elicitation from pairwise comparisons. In this
-chapter, we aim to present their work expository while providing
-additional motivation and intuitive explanations to supplement their
-work.
+binary-class metric elicitation from pairwise comparisons. This section
+aims to present their work expository while providing additional
+motivation and intuitive explanations to supplement their work.
 
-The motivation for the pairwise comparison portion of metric elicitation
-comes from a rich history of literature in psychology, economics, and
+The motivation for the pairwise comparison aspect of metric elicitation
+stems from a rich history of literature in psychology, economics, and
 computer science (\citeproc{ref-pref1}{Samuelson 1938};
 \citeproc{ref-pref2}{Mas-Colell 1977}; \citeproc{ref-pref3}{Varian
 2006}; \citeproc{ref-pref4}{Braziunas and Boutilier 2012};
-\citeproc{ref-ab}{Tamburrelli and Margara 2014}) demonstrating that
-humans are often ineffective at providing absolute feedback on things
-like potential prices, user interfaces, or even ML model outputs (hence
-the comparison-based structure of RLHF, for instance). In addition,
-confusion matrices are a way to accurately capture binary metrics such
+\citeproc{ref-ab}{Tamburrelli and Margara 2014}), demonstrating that
+humans are often ineffective at providing absolute feedback on aspects
+such as potential prices, user interfaces, or even ML model outputs
+(hence the comparison-based structure of RLHF, for instance).
+Additionally, confusion matrices accurately capture binary metrics such
 as accuracy, \(F_\beta\), and Jaccard similarity by recording the number
 of false positives, true positives, false negatives, and true negatives
-obtained by a certain classifier. The main goal of this chapter is to
-introduce two binary-search procedures that can be used to approximate
-the oracle's performance metric for two types of metrics (linear and
+obtained by a classifier. The main goal of this chapter is to introduce
+two binary-search procedures that can approximate the oracle's
+performance metric for two types of metrics (linear and
 linear-fractional performance metrics) by presenting the oracle with
-confusion matrices generated by various classifiers; in essence, we are
+confusion matrices generated by various classifiers. Essentially, we are
 learning an optimal threshold for classification given a decision
 boundary for a binary classification problem.
 
 First, we introduce some relevant notation that will later be used to
-formalize notions of oracle queries, classifiers, and metrics.
+formalize notions of oracle queries, classifiers, and metrics. In this
+context, \(X \in \mathcal{X}\) represents an input random variable,
+while \(Y \in \{0, 1\}\) denotes the output random variable. We learn
+from a dataset of size \(n\), denoted by \(\{(x, y)_i\}^n_{i=1}\), which
+is generated independently and identically distributed (i.i.d.) from
+some distribution \(\mathbb{P}(X, Y)\). The conditional probability of
+the positive class, given some sample \(x\), is denoted by
+\(\eta(\vec{x}) = \mathbb{P}(Y=1 | X=x)\). The marginal probability of
+the positive class is represented by \(\zeta = \mathbb{P}(Y=1)\).
 
-\begin{itemize}
-\item
-  \(X \in \mathcal{X}\) is an input random variable.
-\item
-  \(Y \in \{0, 1\}\) is the output random variable.
-\item
-  We learn from a dataset of size \(n\), denoted by
-  \(\{(x, y)_i\}^n_{i=1}\), generated iid from some distribution
-  \(\mathbb{P}(X, Y)\).
-\item
-  \(\eta(\vec{x}) = \mathbb{P}(Y=1 | X=x)\) is the conditional
-  probability of the positive class, given some sample \(x\).
-\item
-  \(\zeta = \mathbb{P}(Y=1)\) is the unconditional probability of the
-  positive class
-\item
-  The set of all potential classifiers is
-  \(\mathcal{H} = \{h : \mathcal{X} \rightarrow \{0,1\}\}\)
-\item
-  The confusion matrix for some classifier \(h\) is
-  \(C(h, \mathbb{P}) \in \mathbb{R}^{2 \times 2}\), where
-  \(C_{ij}(h, \mathbb{P}) = \mathbb{P}(Y=i, h=j)\) for
-  \(i, j \in \{0,1\}\); these represent the false positives, true
-  positives, false negatives, and true negatives, so
-  \(\sum_{i,j}C_{ij}=1\).
-\item
-  \(\mathcal{C}\) is the set of all confusion matrices
-\item
-  Note: Since \(FN(h, \mathbb{P}) =\zeta - TP(h, \mathbb{P})\) and
-  \(FP(h, \mathbb{P}) = 1 - \zeta - TN(h, \mathbb{P})\); \(\mathcal{C}\)
-  is in fact a 2-dimensional space, not a 4-dimensional space
-\item
-  Any hyperplane (line) in \((tp, tn)\) given by
-  \(\ell := a \cdot tp + b \cdot tn = c; a, b, c\in \mathbb{R}\)
-\item
-  Given a classifier \(h\), we define a performance metric
-  \(\phi : [0, 1]^{2 \times 2} \rightarrow \mathbb{R}\). We refer to the
-  value \(\phi(C(h))\), which represents the performance of a certain
-  classifier with respect to a certain metric, as the \emph{utility} of
-  the classifier \(h\). We assume, without loss of generality, that a
-  higher value of \(\phi\) means \(h\) is a better performance metric.
-\end{itemize}
+The set of all potential classifiers is
+\(\mathcal{H} = \{h : \mathcal{X} \rightarrow \{0,1\}\}\). The confusion
+matrix for a classifier \(h\) is
+\(C(h, \mathbb{P}) \in \mathbb{R}^{2 \times 2}\), where
+\(C_{ij}(h, \mathbb{P}) = \mathbb{P}(Y=i, h=j)\) for
+\(i, j \in \{0,1\}\). These entries represent the false positives, true
+positives, false negatives, and true negatives, ensuring that
+\(\sum_{i,j}C_{ij}=1\). The set of all confusion matrices is denoted by
+\(\mathcal{C}\). Since \(FN(h, \mathbb{P}) = \zeta - TP(h, \mathbb{P})\)
+and \(FP(h, \mathbb{P}) = 1 - \zeta - TN(h, \mathbb{P})\),
+\(\mathcal{C}\) is actually a 2-dimensional space, not a 4-dimensional
+space.
 
-Our focus is to recover some metric \(\phi\) using comparisons between
+Any hyperplane in the \((tp, tn)\) space is given by
+\(\ell := a \cdot tp + b \cdot tn = c\), where
+\(a, b, c \in \mathbb{R}\). Given a classifier \(h\), we define a
+performance metric
+\(\phi : [0, 1]^{2 \times 2} \rightarrow \mathbb{R}\). The value
+\(\phi(C(h))\), which represents the performance of a classifier with
+respect to a certain metric, is referred to as the \emph{utility} of the
+classifier \(h\). We assume, without loss of generality, that a higher
+value of \(\phi\) indicates a better performance metric for \(h\). Our
+focus is to recover some metric \(\phi\) using comparisons between
 confusion matrices \(C(h)\), determined by classifiers \(h\), which
-comes close to the oracle's ``ground-truth" metric \(\phi^*\).
+approximates the oracle's ``ground-truth'' metric \(\phi^*\).
 
-Next, we introduce two classes of performance metrics, for which we will
-present two elicitation algorithms. A \emph{linear performance metric
-(LPM)}, given some constants
-\(\{a_{11}, a_{01}, a_{10}, a_{00}\} \in \mathbb{R}^{4}\), is of the
-form \[\begin{aligned}
-\phi(C) &= a_{11} T P + a_{01} F P + a_{10} F N + a_{00} TN\\
-&= m_{11} T P + m_{00} T N + m_{0},
-\end{aligned}\] where \(m_{11} = (a_{11} - a_{10})\),
-\(m_{00} = (a_{00} - a_{01})\), and
-\(m_{0} = a_{10} \zeta + a_{01} (1 - \zeta)\); the second line is a
-useful parametrization of the metric, constructed using our observation
-about the dimensionality of \(\mathcal{C}\). For example, one common LPM
-is weighted accuracy: \(WA = w_1TP + w_2TN\), where varying the
-proportion between \(w_1\) and \(w_2\) corresponds to different
-importances afforded to various types of misclassification.
+Next, we introduce two classes of performance metrics---\emph{Linear
+Performance Metrics (LPM)} and \emph{Linear-Fractional Performance
+Metrics (LFPM)}---for which we will present two elicitation algorithms.
 
-A slightly more complicated class of metrics are the
-\emph{Linear-Fractional Performance Metrics (LFPM)}; given constants
+An \emph{LPM}, given constants
+\(\{a_{11}, a_{01}, a_{10}, a_{00}\} \in \mathbb{R}^{4}\), is defined
+as:
 
+\begin{equation}\phantomsection\label{eq-eqlpm}{\begin{aligned}
+\phi(C) &= a_{11} TP + a_{01} FP + a_{10} FN + a_{00} TN\\
+&= m_{11} TP + m_{00} TN + m_{0},
+\end{aligned}}\end{equation}
+
+where \(m_{11} = (a_{11} - a_{10})\), \(m_{00} = (a_{00} - a_{01})\),
+and \(m_{0} = a_{10} \zeta + a_{01} (1 - \zeta)\). This
+reparametrization simplifies the metric by reducing dimensionality,
+making it more tractable for elicitation. One example of an LPM is
+\emph{weighted accuracy}, defined as \(WA = w_1TP + w_2TN\), where
+adjusting \(w_1\) and \(w_2\) controls the relative importance of
+different types of misclassification.
+
+An \emph{LFPM}, defined by constants
 \(\{a_{11}, a_{01}, a_{10}, a_{00}, b_{11}, b_{01}, b_{10}, b_{00}\} \in \mathbb{R}^{8}\),
-an LFPM is defined as: \[\begin{aligned}
-\phi(C) &= \frac{a_{11} T P + a_{01} F P + a_{10} F N + a_{00} T N}{b_{11} T P + b_{01} F P + b_{10} F N + b_{00} T N}\\
-&= \frac{p_{11} T P + p_{00} T N + p_{0}}{q_{11} T P + q_{00} T N + q_{0}}
-\end{aligned}\] where \(p_{11} = (a_{11} - a_{10})\),
-\(p_{00} = (a_{00} - a_{01})\), \(q_{11} = (b_{11} - b_{10})\),
-\(q_{00} = (b_{00} - b_{01})\),
+is given by:
+
+\begin{equation}\phantomsection\label{eq-eqlfpm}{\begin{aligned}
+\phi(C) &= \frac{a_{11} TP + a_{01} FP + a_{10} FN + a_{00} TN}{b_{11} TP + b_{01} FP + b_{10} FN + b_{00} TN}\\
+&= \frac{p_{11} TP + p_{00} TN + p_{0}}{q_{11} TP + q_{00} TN + q_{0}},
+\end{aligned}}\end{equation}
+
+where \(p_{11} = (a_{11} - a_{10})\), \(p_{00} = (a_{00} - a_{01})\),
+\(q_{11} = (b_{11} - b_{10})\), \(q_{00} = (b_{00} - b_{01})\),
 \(p_{0} = a_{10} \zeta + a_{01} (1 - \zeta)\), and
-\(q_{0} = b_{10} \zeta + b_{01} (1 - \zeta)\); again, these are useful
-reparametrizations that will simplify the elicitation process by
-reducing the number of variables to consider. Some commonly-used LFPMs
-are \(F_\beta\) score and Jaccard similarity, given by
-\[F_{\beta}=\frac{T P}{\frac{T P}{1+\beta^{2}}-\frac{T N}{1+\beta^{2}}+\frac{\beta^{2} \zeta+1-\zeta}{1+\beta^{2}}}, J A C=\frac{T P}{1-T N};\]
-Taking \(\beta = 1\), for example, gives the familiar F1 score, which is
-often used as a metric in ML classification problems.
+\(q_{0} = b_{10} \zeta + b_{01} (1 - \zeta)\). This parametrization also
+simplifies the elicitation process by reducing the number of variables.
+Common LFPMs include the \(F_\beta\) score and Jaccard similarity,
+defined as:
 
-Defining these notions of LPMs and LFPMs will allow us to consider a far
-more general array of metrics for learning problems, potentially
-allowing us to align better with practitioners' preferences.
+\begin{equation}\phantomsection\label{eq-lfpm_metrics}{F_{\beta} = \frac{TP}{\frac{TP}{1+\beta^{2}} - \frac{TN}{1+\beta^{2}} + \frac{\beta^{2} \zeta + 1 - \zeta}{1+\beta^{2}}}, \quad JAC = \frac{TP}{1 - TN}.}\end{equation}
 
-\subsection{Bayes Optimal and Inverse-Optimal
-Classifiers}\label{bayes-optimal-and-inverse-optimal-classifiers}
+Setting \(\beta = 1\) gives the F1 score, which is widely used as a
+classification metric in machine learning.
 
-In addition, we define the notions of Bayes optimal and inverse-optimal
-classifiers. Given a performance metric \(\phi\), we define:
+\subsection{Preliminaries}\label{sec-me-preliminaries}
 
-\begin{itemize}
-\item
-  the \emph{Bayes utility} as
-  \(\bar{\tau} := \sup_{h \in \mathcal{H}} \phi(C(h)) = \sup_{C \in \mathcal{C}} \phi(C)\);\footnote{GPT-4
-    is good at coming up with longer-rendered answers about why some
-    things are appropriate or not.} this is the highest achievable
-  utility (using the metric \(\phi\)) over all classifiers
-  \(h \in \mathcal{H}\) for a given problem.
-\item
-  the \emph{Bayes classifier} as
-  \(\bar{h} := \arg \max_{h \in \mathcal{H}} \phi(C(h))\); this is the
-  classifier \(h\) corresponding to the Bayes utility.
-\item
-  the \emph{Bayes confusion matrix} as
-  \(\bar{C} := \arg \max_{C \in \mathcal{C}} \phi(C)\); this is the
-  confusion matrix corresponding to the Bayes utility and classifier.
-\end{itemize}
-
-Similarly, the inverse Bayes utility, classifier, and confusion matrix
-can be defined by replacing ``\(\sup\)" with''\(\inf\)"; they represent
-the classifier and confusion matrix corresponding to the lower bound on
-utility for a given problem.
-
-We also have the following useful proposition:
-
-Let \(\phi \in \varphi_{L P M}\). Then
-
-\begin{equation}\phantomsection\label{eq-eq3.46}{\bar{h}(x)=\left\{\begin{array}{lr}
-\mathbbm{1}\left[\eta(x) \geq \frac{m_{00}}{m_{11}+m_{00}}\right], & m_{11}+m_{00} \geq 0 \\
-\mathbbm{1}\left[\frac{m_{00}}{m_{11}+m_{00}} \geq \eta(x)\right], & \text { o.w. }
-\end{array}\right\}}\end{equation}
-
-is a Bayes optimal classifier w.r.t \(\phi\). The inverse Bayes
-classifier is given by \(\underline{h}=1-\bar{h}\).
-
-This is a simple derivation based on the fact that we only get rewards
-from true positives and true negatives. Essentially, if we recover an
-LPM, we can use it to determine the best-performing classifier, obtained
-by placing a threshold on the conditional probability of a given sample,
-that corresponds to a confusion matrix. Therefore, the three notions of
-Bayes utility, classifier, and confusion matrix are functionally
-equivalent in our setting.
-
-\subsection{Problem Setup}\label{sec-metric-elicitation-setup}
-
-Now, we will formalize the problem of metric elicitation.
-
-Given two classifiers \(h, h'\) (or equivalently, two confusion matrices
-\(C, C'\)), we define an \emph{oracle query} as the function
-
-\(\Gamma\left(h, h^{\prime}\right)=\Omega\left(C, C^{\prime}\right)=\mathbbm{1}\left[\phi(C)>\phi\left(C^{\prime}\right)\right]=: \mathbbm{1} \left[C \succ C^{\prime}\right],\)
-
-which represents the classifier that is preferred by the practitioner.
-
-Then, we can define the metric elicitation problem for populations.
-
-Suppose the true (oracle) performance metric is \(\phi\). The goal is to
-recover a metric \(\hat{\phi}\) by querying the oracle for as few
-pairwise comparisons of the form \(\Omega\left(C, C^{\prime}\right)\) so
-that \(\|\phi-\hat{\phi}\|_{--}<\kappa\) for a sufficiently small
-\(\kappa > 0\) and for any suitable norm \(\|\cdot\|_{--}\).
-
-In practice, we would not have access to the true probability
-distribution or the population, which would give us the true values of
-\(C\) and \(C'\). We can, however, subtly alter this problem description
-to use \(\hat{C}\) and \(\hat{C}^{\prime}\), which come from our dataset
-of \(n\) samples.
-
-Suppose the true (oracle) performance metric is \(\phi\). The aim is to
-recover a metric \(\hat{\phi}\) by querying the oracle for as few
-pairwise comparisons of the form
-\(\Omega\left(\hat{C}, \hat{C}^{\prime}\right)\) so that
-\(\|\phi-\hat{\phi}\|_{--}<\kappa\) for a sufficiently small
-\(\kappa > 0\) and for any suitable norm \(\|\cdot\|_{--}\).
-
-As is common in theoretical ML research, we solve the population problem
-and then consider ways to extend this to practical settings where we
-only have limited datasets of samples. In our case, this would
-correspond to calculating the confusion matrices from a portion of the
-dataset we have access to.
-
-\subsection{Confusion Matrices}\label{sec-confusion-matrices}
+\subsubsection*{Confusion Matrices}\label{sec-confusion-matrices}
+\addcontentsline{toc}{subsubsection}{Confusion Matrices}
 
 Since we are considering all possible metrics in the LPM and LFPM
 families, we need to make certain assumptions about \(\mathcal{C}\).
@@ -6568,14 +6532,14 @@ Particularly, we will assume that \(g(t) = \mathbb{P}[\eta(X) \geq t]\)
 is continuous and strictly decreasing for \(t \in [0, 1]\); essentially,
 \(\eta\) has positive density and zero probability.
 
-In addition, \(\mathcal{C}\) is convex, closed, and contained in the
-rectangle \([0, \zeta] \times[0,1-\zeta]\), and rotationally symmetric
-around its center, \((\frac{\zeta}{2}, \frac{1-\zeta}{2})\), where the
-axes represent the proportion of true positives and negatives. Also, the
-only vertices of \(\mathcal{C}\) are \((0,1-\zeta)\) and \((\zeta, 0)\),
-corresponding to predicting all \(0\)'s or all \(1\)'s on a given
-dataset. Therefore, \(\mathcal{C}\) is strictly convex, and any line
-that is tangent to it is tangent at exactly one point, corresponding to
+Additionally, \(\mathcal{C}\) is convex, closed, and contained within
+the rectangle \([0, \zeta] \times [0, 1-\zeta]\), and is rotationally
+symmetric around its center, \((\frac{\zeta}{2}, \frac{1-\zeta}{2})\),
+where the axes represent the proportion of true positives and negatives.
+The only vertices of \(\mathcal{C}\) are \((0, 1-\zeta)\) and
+\((\zeta, 0)\), corresponding to predicting all \(0\)'s or all \(1\)'s
+on a given dataset. Therefore, \(\mathcal{C}\) is strictly convex, and
+any line tangent to it is tangent at exactly one point, corresponding to
 one particular confusion matrix; these properties can be visually
 observed in Figure~\ref{fig-c}.
 
@@ -6595,47 +6559,157 @@ Next, recall that an LPM is represented in terms of three parameters
 (\(\phi = m_{11}TP + m_{00}TN + m_0\)). We have just seen that this LPM
 and its corresponding confusion matrix correspond to a certain point on
 the boundary of \(\mathcal{C}\). We first note that this point is
-independent of \(m_0\). In addition, we only care about the relative
-weightings of \(m_{11}\) and \(m_{00}\), not their actual values--they
+independent of \(m_0\). Additionally, we only care about the relative
+weightings of \(m_{11}\) and \(m_{00}\), not their actual values---they
 are scale invariant. Therefore, we can parametrize the space of LPMs as
-\(\varphi_{L P M}=\{\mathbf{m}=(\cos \theta, \sin \theta): \theta \in[0,2 \pi]\}\),
+\(\varphi_{LPM} = \{\mathbf{m} = (\cos \theta, \sin \theta) : \theta \in [0, 2\pi]\}\),
 where \(\cos \theta\) corresponds to \(m_{00}\) and \(\sin \theta\)
-corresponds to \(m_{11}\). And, as we already know, we can recover the
-Bayes classifier given \(\mathbf{m}\), and it is unique, corresponding
-to one point on the boundary of \(\mathcal{C}\), due to its convexity.
-The supporting hyperplane at this point is defined as
+corresponds to \(m_{11}\). As we already know, we can recover the Bayes
+classifier given \(\mathbf{m}\), and it is unique, corresponding to one
+point on the boundary of \(\mathcal{C}\) due to its convexity. The
+supporting hyperplane at this point is defined as
 
-\begin{equation}\phantomsection\label{eq-eq3.47}{\bar{\ell}_{\mathbf{m}}:=m_{11} \cdot tp+m_{00} \cdot tn=m_{11} \overline{TP}_{\mathbf{m}}+m_{00} \overline{TN}_{\mathbf{m}}}\end{equation}
+\begin{equation}\phantomsection\label{eq-eq3.47}{\bar{\ell}_{\mathbf{m}} := m_{11} \cdot tp + m_{00} \cdot tn = m_{11} \overline{TP}_{\mathbf{m}} + m_{00} \overline{TN}_{\mathbf{m}}}\end{equation}
 
 We note that if \(m_{00}\) and \(m_{11}\) have opposite signs, then
 \(\bar{h}_m\) is the trivial classifier predicting all 1's or all 0's,
 since either predicting true positives or true negatives results in
-negative reward. This corresponds to a supporting hyperplane with
+negative reward. This corresponds to a supporting hyperplane with a
 positive slope, so it can only be tangent at the vertices.
 
-In addition, the boundary \(\partial \mathcal{C}\) can be split into
+Additionally, the boundary \(\partial \mathcal{C}\) can be split into
 upper and lower boundaries
 (\(\partial \mathcal{C}_{+}, \partial \mathcal{C}_{-}\)), corresponding
 to \(\theta \in (0, \pi/2)\) and \(\theta \in (\pi, 3\pi/2)\)
 respectively (and whether \(m_{00}, m_{11}\) are positive or negative).
 
-\subsection{LPM and LFPM Metric Elicitation
-Algorithms}\label{sec-orga500da0}
+\subsubsection*{Bayes Optimal and Inverse-Optimal
+Classifiers}\label{bayes-optimal-and-inverse-optimal-classifiers}
+\addcontentsline{toc}{subsubsection}{Bayes Optimal and Inverse-Optimal
+Classifiers}
 
-Now that we have established all of this background, we are ready to
-present the main two results of this section. First, we introduce an
-algorithm for LPM elicitation, which also forms the backbone for LFPM
-elicitation.
+We also define the notions of Bayes optimal and inverse-optimal
+classifiers. Given a performance metric \(\phi\), we define:
 
-\subsubsection{LPM Elicitation}\label{sec-orgb6dac4e}
+\begin{itemize}
+\tightlist
+\item
+  The \emph{Bayes utility} as
+  \(\bar{\tau} := \sup_{h \in \mathcal{H}} \phi(C(h)) = \sup_{C \in \mathcal{C}} \phi(C)\);
+  this is the highest achievable utility (using the metric \(\phi\))
+  over all classifiers \$h \in \(\mathcal{H}\) for a given problem.
+\item
+  The \emph{Bayes classifier} as
+  \(\bar{h} := \arg \max_{h \in \mathcal{H}} \phi(C(h))\); this is the
+  classifier \(h\) corresponding to the Bayes utility.
+\item
+  The \emph{Bayes confusion matrix} as
+  \(\bar{C} := \arg \max_{C \in \mathcal{C}} \phi(C)\); this is the
+  confusion matrix corresponding to the Bayes utility and classifier.
+\end{itemize}
+
+Similarly, the inverse Bayes utility, classifier, and confusion matrix
+can be defined by replacing ``\(\sup\)'' with ``\(\inf\)''; they
+represent the classifier and confusion matrix corresponding to the lower
+bound on utility for a given problem.
+
+We also have the following useful proposition:
+
+\begin{tcolorbox}[colframe=.grey, title=\faPenSquare \enspace Proposition]
+
+\begin{proposition}[]\protect\hypertarget{prp-prp3.1}{}\label{prp-prp3.1}
+
+Let \(\phi \in \varphi_{LPM}\). Then
+
+\begin{equation}\phantomsection\label{eq-eq3.46}{\bar{h}(x) = \left\{\begin{array}{lr}
+\mathbbm{1}\left[\eta(x) \geq \frac{m_{00}}{m_{11} + m_{00}}\right], & m_{11} + m_{00} \geq 0 \\
+\mathbbm{1}\left[\frac{m_{00}}{m_{11} + m_{00}} \geq \eta(x)\right], & \text { o.w. }
+\end{array}\right\}}\end{equation}
+
+is a Bayes optimal classifier with respect to \(\phi\). The inverse
+Bayes classifier is given by \(\underline{h} = 1 - \bar{h}\).
+
+\end{proposition}
+
+\end{tcolorbox}
+
+This is a simple derivation based on the fact that we only get rewards
+from true positives and true negatives. Essentially, if we recover an
+LPM, we can use it to determine the best-performing classifier, obtained
+by placing a threshold on the conditional probability of a given sample,
+that corresponds to a confusion matrix. Therefore, the three notions of
+Bayes utility, classifier, and confusion matrix are functionally
+equivalent in our setting.
+
+\subsection{Problem Setup}\label{sec-metric-elicitation-setup}
+
+We will now formalize the problem of metric elicitation. Given two
+classifiers \(h\) and \(h'\) (or equivalently, two confusion matrices
+\(C\) and \(C'\)), we define an \emph{oracle query} as the function:
+
+\begin{equation}\phantomsection\label{eq-oracle}{\Gamma\left(h, h^{\prime}\right)=\Omega\left(C, C^{\prime}\right)=\mathbbm{1}\left[\phi(C)>\phi\left(C^{\prime}\right)\right]=: \mathbbm{1} \left[C \succ C^{\prime}\right],}\end{equation}
+
+which represents the classifier preferred by the practitioner. We can
+then define the metric elicitation problem for populations:
+
+\begin{tcolorbox}[colframe=.grey, title=\faPenSquare \enspace Definition]
+
+\begin{definition}[]\protect\hypertarget{def-def3.1}{}\label{def-def3.1}
+
+Suppose the true (oracle) performance metric is \(\phi\). The goal is to
+recover a metric \(\hat{\phi}\) by querying the oracle for as few
+pairwise comparisons of the form \(\Omega\left(C, C^{\prime}\right)\) so
+that \(\|\phi - \hat{\phi}\|_{--} < \kappa\) for a sufficiently small
+\(\kappa > 0\) and for any suitable norm \(\|\cdot\|_{--}\).
+
+\end{definition}
+
+\end{tcolorbox}
+
+In practice, we do not have access to the true probability distribution
+or the population, which would provide the true values of \(C\) and
+\(C'\). However, we can subtly alter this problem description to use
+\(\hat{C}\) and \(\hat{C}^{\prime}\), which are derived from our dataset
+of \(n\) samples:
+
+\begin{tcolorbox}[colframe=.grey, title=\faPenSquare \enspace Definition]
+
+\begin{definition}[]\protect\hypertarget{def-def3.2}{}\label{def-def3.2}
+
+Suppose the true (oracle) performance metric is \(\phi\). The aim is to
+recover a metric \(\hat{\phi}\) by querying the oracle for as few
+pairwise comparisons of the form
+\(\Omega\left(\hat{C}, \hat{C}^{\prime}\right)\) so that
+\(\|\phi - \hat{\phi}\|_{--} < \kappa\) for a sufficiently small
+\(\kappa > 0\) and for any suitable norm \(\|\cdot\|_{--}\).
+
+\end{definition}
+
+\end{tcolorbox}
+
+As is common in theoretical ML research, we solve the population problem
+and then consider ways to extend this to practical settings where we
+only have limited datasets of samples. In our case, this corresponds to
+calculating the confusion matrices from a portion of the dataset we have
+access to.
+
+\subsection{Linear Performance Metric Elicitation}\label{sec-orgb6dac4e}
 
 For LPM elicitation, we need one more proposition.
+
+\begin{tcolorbox}[colframe=.grey, title=\faPenSquare \enspace Proposition]
+
+\begin{proposition}[]\protect\hypertarget{prp-prp3.2}{}\label{prp-prp3.2}
 
 For a metric \(\psi\) (quasiconvex and monotone increasing in TP/TN) or
 \(\phi\) (quasiconcave and monotone increasing), and parametrization
 \(\rho^+\)/\(\rho^-\) of upper/lower boundary, composition
 \(\psi \circ \rho^-\) is quasiconvex and unimodal on {[}0, 1{]}, and
 \(\phi \circ \rho^+\) is quasiconcave and unimodal on {[}0, 1{]}.
+
+\end{proposition}
+
+\end{tcolorbox}
 
 Quasiconcavity and quasiconvexity are slightly more general variations
 on concavity and convexity. Their main useful property in our setting is
@@ -6649,33 +6723,49 @@ is monotonically increasing in \(TP\) and \(TN\), we note that the
 resulting maximizer (and supporting hyperplane) will occur on the upper
 boundary of \(\mathcal{C}\). We thus set our initial search range to be
 \([0, \pi/2]\) and repeatedly divide it into four regions. Then, we
-calculate the resulting CM on the 5 resulting boundaries of these
-regions and query the oracle \(4\) times. We repeat this in each
-iteration of the binary search until a maximizer is found.
+calculate the resulting confusion matrix on the 5 resulting boundaries
+of these regions and query the oracle \(4\) times. We repeat this in
+each iteration of the binary search until a maximizer is found.
 
+\begin{tcolorbox}[colframe=.grey, title=\faQuestion \enspace Remark]
+
+\begin{refremark}
 In the case of quasiconcave and quasiconvex search ranges, a slightly
 more sophisticated variation on typical binary search must be used. To
-illustrate this, we provide the following example.
+illustrate this, consider the two distributions in
+Figure~\ref{fig-bsearch}:
 
-Figure 3.17: Binary search algorithm example for quasiconvex functions
+\begin{figure}[H]
 
-Consider the two distributions in Figure \hyperref[bsearch]{3.17}. Note
-that if, for both the symmetric and skewed distributions, we were to
-divide the search range into two portions and compare \(A\), \(C\), and
-\(E\), we would find that \(C>A\) and \(C>E\). In both of these cases,
-this does not help us reduce our search range, since the true maximum
-could lie on either of the two intervals (as in the second case), or at
-\(C\) itself (as in the first case). Therefore, we must make comparisons
-between all five points \(A, B, C, D, E\). This allows us to correctly
-restrict our search range to \([B, D]\) in the first case and \([C, E]\)
-in the second. These extra search requirements are due to the
-quasiconcavity of the search space we are considering, in which there
-exists a maximum but we need to make several comparisons at various
-points throughout the search space to be able to reduce its size in each
-iteration.
+\begin{minipage}{0.50\linewidth}
+
+\includegraphics[width=0.45\textwidth,height=\textheight]{src/Figures/normaldistribution.png}
+
+\end{minipage}%
+
+\end{figure}%
+
+For both the symmetric and skewed distributions, if we were to divide
+the search range into two portions and compare \(A\), \(C\), and \(E\),
+we would find that \(C > A\) and \(C > E\). In both cases, this does not
+help us reduce our search range, since the true maximum could lie on
+either of the two intervals (as in the second case), or at \(C\) itself
+(as in the first case). Therefore, we must make comparisons between all
+five points \(A, B, C, D, and E\). This allows us to correctly restrict
+our search range to \([B, D]\) in the first case and \([C, E]\) in the
+second. These extra search requirements are due to the quasiconcavity of
+the search space we are considering, in which there exists a maximum but
+we need to make several comparisons at various points throughout the
+search space to be able to reduce its size in each iteration.
+
+\label{rem-explaination_binary_search}
+
+\end{refremark}
+
+\end{tcolorbox}
 
 \begin{algorithm}[H]
-    \caption{Quasiconcave Metric Maximization}\label{lpm}
+    \caption{Quasiconcave Metric Maximization}
     \label{alg-lpm}
 \begin{algorithmic}[1]
         \State \textbf{input:} $\epsilon > 0$ and oracle $\Omega$
@@ -6725,12 +6815,23 @@ each iteration, and set the elicited metric \(\hat{m}\) (which is the
 maximizer on \(\mathcal{C}\)) to be the slope of the resulting
 hyperplane, since the metric is linear.
 
+\begin{tcolorbox}[colframe=.grey, title=\faQuestion \enspace Remark]
+
+\begin{refremark}
 To find the minimum of a quasiconvex metric, we flip all instances of
 \(\prec\) and \(\succ\), and use an initial search range of
 \([\pi, 3\pi/2]\); we use this algorithm, which we refer to as
  Algorithm~\ref{alg-lfpm} , in our elicitation of LFPMs.
 
+\label{rem-explaination_lpm}
+
+\end{refremark}
+
+\end{tcolorbox}
+
 Next, we provide a Python implementation of  Algorithm~\ref{alg-lpm} .
+
+\begin{tcolorbox}[colframe=.grey, title=\faCode \enspace Code]
 
 \begin{Shaded}
 \begin{Highlighting}[numbers=left,,]
@@ -6785,7 +6886,10 @@ Next, we provide a Python implementation of  Algorithm~\ref{alg-lpm} .
 \end{Highlighting}
 \end{Shaded}
 
-\subsubsection{LFPM Elicitation}\label{sec-orga500da1}
+\end{tcolorbox}
+
+\subsection{Linear-Fractional Performance Metric
+Elicitation}\label{sec-lfpm-elicitation}
 
 Now, we present the next main result, which is an algorithm to elicit
 linear-fractional performance metrics. For this task, we will need the
@@ -6907,13 +7011,11 @@ point in our search, we will compute \(\phi'\) and \(\phi''\). Then, we
 will generate several confusion matrices on the boundaries and calculate
 the ratio \$\phi'\,' / \(\phi'\) for each. We will select the value of
 \(p_{11}'\) for which the ratio \(\phi'' / \phi'\) is closest to
-constant and use it to compute the elicited metric \(\hat{\phi}\).
-
-The pseudocode for LFPM elicitation is given in
- Algorithm~\ref{alg-lfpm} .
+constant and use it to compute the elicited metric \(\hat{\phi}\). The
+pseudocode for LFPM elicitation is given in  Algorithm~\ref{alg-lfpm} .
 
 \begin{algorithm}[H]
-\caption{Grid Search for Best Ratio}
+    \caption{Grid Search for Best Ratio}
     \label{alg-lfpm}
 \begin{algorithmic}[1]
         \State \textbf{Input:} $k, \Delta$.
@@ -6933,6 +7035,8 @@ The pseudocode for LFPM elicitation is given in
 \end{algorithm}
 
 We provide a Python implementation as below.
+
+\begin{tcolorbox}[colframe=.grey, title=\faCode \enspace Code]
 
 \begin{Shaded}
 \begin{Highlighting}[numbers=left,,]
@@ -6968,6 +7072,8 @@ We provide a Python implementation as below.
 \end{Highlighting}
 \end{Shaded}
 
+\end{tcolorbox}
+
 In summary, to elicit LFPMs, we utilize a special property of the LPM
 minimizer and maximizer on \(\mathcal{C}\)--namely, that we can use the
 corresponding supporting hyperplanes to form a system of equations that
@@ -6975,91 +7081,76 @@ can be used to approximate \(\phi^*\) if one parameter (\(p_{11}'\)) is
 found, and that this parameter can be found using an oracle-independent
 grid search.
 
-\subsubsection{Guarantees}\label{sec-orga500da2}
+\subsubsection*{Guarantees}\label{guarantees}
+\addcontentsline{toc}{subsubsection}{Guarantees}
 
-Importantly, these algorithms can be shown to satisfy some important
-theoretical guarantees. We provide a formal statement and intuitive
-interpretation of them here, and their proofs can be found in the
-appendix of the original paper.
+Importantly, these algorithms can be shown to satisfy significant
+theoretical guarantees. We provide formal statement and intuitive
+interpretation of these guarantees here, with their proofs available in
+the appendix of the original paper.
 
-First, we define the oracle noise \(\epsilon_{\Omega}\), which comes
+First, we define the oracle noise \(\epsilon_{\Omega}\), which arises
 from the oracle potentially flipping the comparison output on two
 confusion matrices that are close enough in utility.
+
+\begin{tcolorbox}[colframe=.grey, title=\faPenSquare \enspace Theorem]
 
 \begin{theorem}[]\protect\hypertarget{thm-thm1}{}\label{thm-thm1}
 
 Given \(\epsilon, \epsilon_{\Omega} \geq 0\) and a metric \(\phi\)
 satisfying our assumptions,  Algorithm~\ref{alg-lpm}  or
  Algorithm~\ref{alg-lfpm}  finds an approximate maximizer/minimizer and
-supporting hyperplane. Also, the value of \(\phi\) at that point is
-within \(O\left(\sqrt{\epsilon_{\Omega}}+\epsilon\right)\) of the
+supporting hyperplane. Additionally, the value of \(\phi\) at that point
+is within \(O\left(\sqrt{\epsilon_{\Omega}} + \epsilon\right)\) of the
 optimum, and the number of queries is
 \(O\left(\log \frac{1}{\epsilon}\right)\).
 
 \end{theorem}
 
+\end{tcolorbox}
+
+\begin{tcolorbox}[colframe=.grey, title=\faPenSquare \enspace Theorem]
+
 \begin{theorem}[]\protect\hypertarget{thm-thm2}{}\label{thm-thm2}
 
 Let \(\mathbf{m}^{*}\) be the true performance metric. Given
-\(\epsilon>0, L P M\) elicitation outputs a performance metric
-\(\hat{\mathbf{m}}\), s.t.
-\(\left\|\mathbf{m}^{*}-\hat{\mathbf{m}}\right\|_{\infty} \leq \sqrt{2} \epsilon+\frac{2}{k_{0}} \sqrt{2 k_{1} \epsilon_{\Omega}}\).
+\(\epsilon > 0\), LPM elicitation outputs a performance metric
+\(\hat{\mathbf{m}}\), such that
+\(\left\|\mathbf{m}^{*} - \hat{\mathbf{m}}\right\|_{\infty} \leq \sqrt{2} \epsilon + \frac{2}{k_{0}} \sqrt{2 k_{1} \epsilon_{\Omega}}\).
 
 \end{theorem}
+
+\end{tcolorbox}
 
 These two theorems ensure that  Algorithm~\ref{alg-lpm}  and
  Algorithm~\ref{alg-lfpm}  find an appropriate maximizer and minimizer
 in the search space, within a certain range of accuracy that depends on
-oracle and sample noise, and in a certain number of queries. Both of
+oracle and sample noise, and within a certain number of queries. Both of
 these statements are guaranteed by the binary search approach.
+
+\begin{tcolorbox}[colframe=.grey, title=\faPenSquare \enspace Theorem]
 
 \begin{theorem}[]\protect\hypertarget{thm-thm3}{}\label{thm-thm3}
 
 Let \(h_{\theta}\) and \(\hat{h}_{\theta}\) be two classifiers estimated
 using \(\eta\) and \(\hat{\eta}\), respectively. Further, let
 \(\bar{\theta}\) be such that
-\(h_{\bar{\theta}}=\arg \max _{\theta} \phi\left(h_{\theta}\right)\).
+\(h_{\bar{\theta}} = \arg \max _{\theta} \phi\left(h_{\theta}\right)\).
 Then
-\(\|C(\hat{h}_{\bar{\theta}})-C\left(h_{\bar{\theta}}\right)\|_{\infty}=O\left(\left\|\hat{\eta}_{n}-\eta\right\|_{\infty}\right)\).
+\(\|C(\hat{h}_{\bar{\theta}}) - C\left(h_{\bar{\theta}}\right)\|_{\infty} = O\left(\left\|\hat{\eta}_{n} - \eta\right\|_{\infty}\right)\).
 
 \end{theorem}
 
-This says, importantly, that the drop in elicited metric quality caused
-by using a dataset of samples rather than population CMs is bounded by
-the drop in performance of the decision boundary \(\eta\). These three
-guarantees together ensure that oracle noise and sample noise do not
-amplify drops in performance when using metric elicitation; rather,
-these drops in performance are bounded by the drops that would usually
-occur when using the typical machine learning paradigm of training a
-decision boundary and using a pre-established metric.
+\end{tcolorbox}
 
-\subsubsection{Summary and Further
-Expansions}\label{summary-and-further-expansions}
-
-In this section, we have introduced the framework of metric elicitation
-for binary classification. After motivating the problem from a
-psychological and theoretical perspective, we have introduced the
-notions of linear performance metrics and linear-fractional performance
-metrics. Next, we set up the problem of metric elicitation from a
-population and sample perspective. We then made several key observations
-about the space of confusion matrices which, along with the notions of
-the Bayes utility and classifier, allow us to reduce the problem of
-linear performance metric elicitation to a binary search algorithm over
-a quasiconvex (or quasiconcave) space.
-
-Next, we presented an algorithm to elicit linear-fractional performance
-metrics that builds upon the method for eliciting linear performance
-metrics. We used a key result about the dimensionality of
-linear-fractional performance metrics to create a simple
-oracle-independent grid search algorithm, which, in conjunction with the
-linear performance metric elicitation algorithm, results in an algorithm
-with the same time complexity that can be used to elicit a much broader
-range of metrics. We also provided Python implementations for both of
-these algorithms.
-
-Lastly, we have described three important guarantees about the
-performance of these algorithms, which makes them suited to real-world,
-practical settings.
+This theorem indicates that the drop in elicited metric quality caused
+by using a dataset of samples rather than population confusion matrices
+is bounded by the drop in performance of the decision boundary \(\eta\).
+These three guarantees together ensure that oracle noise and sample
+noise do not amplify drops in performance when using metric elicitation;
+rather, these drops in performance are bounded by the drops that would
+typically occur when using the standard machine learning paradigm of
+training a decision boundary and using a pre-established metric.
 
 For further interesting exploration of the types of problems that can be
 solved using the framework of metric elicitation, we refer the reader to
@@ -7074,8 +7165,8 @@ Elicitation}\label{multiclass-performance-metric-elicitation}
 Although the previous section only described metric elicitation for
 binary classification problems, the general framework can still be
 applied to multiclass classification problems, as described in
-``Multiclass Performance Metric Elicitation'' by Hiranandani et al.
-(\citeproc{ref-NEURIPS2019_1fd09c5f}{Hiranandani et al. 2019b})
+``Multiclass Performance Metric Elicitation'' by
+(\citeproc{ref-NEURIPS2019_1fd09c5f}{Hiranandani et al. 2019b}).
 
 Consider the case of classifying subtypes of leukemia
 (\citeproc{ref-YangNaiman+2014+477+496}{Yang and Naiman 2014}). We can
@@ -7096,7 +7187,8 @@ classifier has the best tradeoffs. In
 authors focus on eliciting linear performance metrics, which is what we
 will describe in this chapter.
 
-\subsubsection{Preliminaries}\label{preliminaries}
+\subsubsection*{Preliminaries}\label{preliminaries}
+\addcontentsline{toc}{subsubsection}{Preliminaries}
 
 Most of the notation from Binary Metric Elicitation still persists, just
 modified to provide categorical responses:
@@ -7167,13 +7259,10 @@ The two different types of confusion vectors result in different
 algorithms for metric elicitation, which we will explore in later
 sections.
 
-\subsection{Diagonal Linear Performance Metric
-Elicitation}\label{diagonal-linear-performance-metric-elicitation}
-
-In this section, we study metric elicitation in the case where the
-performance metric is linear and we only care about diagonal confusions.
-
-\subsubsection{DLPM}\label{dlpm}
+\subsubsection*{Introduction to Diagonal Linear Performance Metric
+Elicitation}\label{introduction-to-diagonal-linear-performance-metric-elicitation}
+\addcontentsline{toc}{subsubsection}{Introduction to Diagonal Linear
+Performance Metric Elicitation}
 
 A Diagonal Linear Performance Metric (DLPM) is a performance metric that
 only considers the diagonal elements in the confusion matrix. The metric
@@ -7187,19 +7276,10 @@ consider the diagonal elements, which we want to maximize, we can focus
 on only eliciting monotonically increasing DLPMs, meaning that all
 elements in \(\vec{a}\) are non-negative.
 
-\subsubsection{Bayes Optimal
-Classifiers}\label{bayes-optimal-classifiers}
-
-The Bayes Optimal diagonal confusion given a metric \(\psi\) is
-\(\bar{d} = \arg\max_{\vec{d} \in \mathcal{D}} \psi(\vec{d})\).
-
-The Restricted Bayes Optimal (RBO) diagonal confusion is the diagonal
-confusion that maximizes metric \(\psi\) given that it is only allowed
-to predict classes \(k_1\) and \(k_2\). It is denoted as
-\(\bar{c}_{k_1, k_2} := \arg\max_{\vec{d} \in \mathcal{D}_{k_1, k_2}} \psi(\vec{d})\).
-
-\subsubsection{Geometry of Space of Diagonal Confusions
-D}\label{geometry-of-space-of-diagonal-confusions-d}
+\subsubsection*{\texorpdfstring{Geometry of Space of Diagonal Confusions
+\(\mathcal{D}\)}{Geometry of Space of Diagonal Confusions \textbackslash mathcal\{D\}}}\label{geometry-of-space-of-diagonal-confusions-mathcald}
+\addcontentsline{toc}{subsubsection}{Geometry of Space of Diagonal
+Confusions \(\mathcal{D}\)}
 
 Consider the trivial classifiers that only predict a single class at all
 times. The diagonal confusions when only predicting class \(i\) are
@@ -7264,7 +7344,10 @@ Equation~\ref{eq-rbo_eq}, we can get the diagonal confusions, so varying
 \(m\) parameterizes \(\partial \mathcal{D}^{+}_{k_1, k_2}\). The
 parameterization is denoted as \(\nu(m; k_1, k_2)\).
 
-\subsubsection{DLPM Elicitation}\label{dlpm-elicitation}
+\subsubsection*{Diagonal Linear Performance Metric
+Elicitation}\label{diagonal-linear-performance-metric-elicitation}
+\addcontentsline{toc}{subsubsection}{Diagonal Linear Performance Metric
+Elicitation}
 
 Suppose the oracle follows a true metric, \(\psi\), that is linear and
 monotone increasing across all axes. If we consider the composition
@@ -7283,6 +7366,8 @@ Equation~\ref{eq-rbo_eq}), finding the value of \(m\) that maximizes
 can therefore simply calculate the ratio between \(a_1\) and all other
 weights to reconstruct an estimate for the true metric. A python
 implementation of this algorithm is provided below.
+
+\begin{tcolorbox}[colframe=.grey, title=\faCode \enspace Code]
 
 \begin{Shaded}
 \begin{Highlighting}[numbers=left,,]
@@ -7360,6 +7445,8 @@ implementation of this algorithm is provided below.
 \end{Highlighting}
 \end{Shaded}
 
+\end{tcolorbox}
+
 To use this algorithm for metric elicitation on a real dataset, we need
 to supply the ``oracle'' and ``get\_d'' functions. The oracle function
 is an interface to an expert who judges which of two confusion matrices
@@ -7368,12 +7455,15 @@ the DLPM weights, following the principles of the RBO classifier from
 Equation~\ref{eq-rbo_eq}, and calculate the confusion matrix from a
 validation set.
 
-\subsubsection{DLPM Elicitation
-Guarantees}\label{dlpm-elicitation-guarantees}
+\subsubsection*{Guarantees}\label{guarantees-1}
+\addcontentsline{toc}{subsubsection}{Guarantees}
 
 Using the same oracle feedback noise model from the binary metric
 elicitation, we can make the following guarantees:
 
+\begin{tcolorbox}[colframe=.grey, title=\faPenSquare \enspace Proposition]
+
+\phantomsection\label{prop-prop_dlpm}
 Given \(\epsilon, \epsilon_\Omega \geq 0\), and a 1-Lipschitz DLPM
 \(\varphi^*\) parameterized by \(\vec{a}^*\). Then the output
 \(\hat{a}\) of the DLPM elicitation algorithm after
@@ -7382,210 +7472,12 @@ Given \(\epsilon, \epsilon_\Omega \geq 0\), and a 1-Lipschitz DLPM
 which is equivalent to
 \(||\vec{a}^* - \hat{a}||_2 \leq O(\sqrt{k}(\epsilon + \sqrt{\epsilon_\Omega}))\).
 
+\end{tcolorbox}
+
 In other words, the maximum difference between the estimate and true
 value along any component (indicated by the L-infinity norm) is linearly
 bounded by the sum of the epsilon specified by the algorithm and the
 square root of the oracle's correctness guarantee (\(\epsilon_\Omega\)).
-
-\subsection{Linear Performance Metric
-Elicitation}\label{linear-performance-metric-elicitation}
-
-In this section, we study metric elicitation in the case where
-performance metric is linear and we care about the entire confusion
-matrix (i.e.~the off-diagonal confusions).
-
-A Linear Performance Metric (LPM) is a performance metric that uses the
-off-diagonal confusions, which is equivalent to the whole confusion
-matrix. The metric is defined as
-\(\phi(\vec{c}) = \langle \vec{a}, \vec{c} \rangle\), where
-\(\vec{a} \in \mathbb{R}^q\) such that \(||\vec{a}||_2 = 1\). As a
-reminder, \(q = k^2 - k\), which is the number of off-diagonal elements
-of the confusion matrix. The family of LPMs is denoted as
-\(\varphi_{LPM}\). Since these only consider the off-diagonal elements,
-which we want to minimize, we can focus on only eliciting monotonically
-decreasing LPMs, meaning all elements in \(\vec{a}\) are non-positive.
-The Bayes Optimal confusion given a metric \(\phi\) over a subset
-\(\mathcal{S} \subseteq \mathcal{C}\) is
-\(\bar{c} = \arg\max_{\vec{c} \in \mathcal{S}} \phi(\vec{c})\).
-
-\subsubsection{Geometry of Space of Off-Diagonal Confusions
-C}\label{geometry-of-space-of-off-diagonal-confusions-c}
-
-Consider the trivial classifiers that only predict a single class at all
-times. The off-diagonal confusions when only predicting class \(i\) are
-\(\vec{u}_i \in \mathbb{R}^q\), and all \(\xi_j\) (where \(j \neq i\))
-will appear in this vector, because all classes other than \(i\) will be
-incorrectly predicted.
-
-The space of off-diagonal confusions, \(\mathcal{C}\) is convex and
-contained in the box
-\([0, \xi_1]^{(k-1)} \times \dots \times [0, \xi_k]^{(k-1)}\). We also
-know that each \(\vec{u}_i\) is a vertex. Furthermore,
-\(\vec{o} = \frac{1}{k} \sum_{i=1}^k \vec{u}_i\) is always contained in
-\(\mathcal{C}\) and represents the confusion matrix for the classifier
-that chooses a class uniformly at random.
-
-Notice that \(\mathcal{C}\) is not \emph{strictly} convex, unlike
-\(\mathcal{D}\). However, if we make the assumption that there exists a
-\(q\)-dimensional sphere \(\mathcal{S}_\lambda \subset \mathcal{C}\) of
-radius \(\lambda > 0\) centered at \(\vec{o}\), we can now operate on
-this convex space. Note that this sphere always exists as long as there
-is some signal for non-trivial classification, so this assumption is
-safe in practice. Furthermore, since we are eliciting some linear metric
-with weights \(\vec{a}\), we know the optimal off-diagonal confusion
-\(\bar{c}\) over \(\mathcal{S}\) is a point on its boundary
-\(\bar{c} = \lambda \vec{a} + \vec{o}\).
-
-Since we are only eliciting monotonically decreasing LPMs, we can
-parameterize the lower boundary of \(\mathcal{S}_\lambda\), denoted as
-\(\partial S^{-}_\lambda\), using sphere angles. Specifically, let
-\(\vec{\theta}\) be a (q-1) dimensional vector of angles, with all
-angles in the second quadrant (\(\theta_i \in [\pi/2, \pi]\)), except
-for the primary angle, which is in the third quadrant
-(\(\theta_{(q-1)} \in [\pi, 3\pi/2]\). To construct the LPM, we can set
-\(a_i = \prod_{j=1}^{i-1} \sin(\theta_j) \cos(\theta_i)\) for
-\(i \in [q-1]\) while \(a_q =  \prod_{j=1}^{q-1} \sin(\theta_j)\). This
-parameterization ensures that all elements in \(\vec{a}\) are
-non-positive and the 2-norm is 1. This parameterization is denoted as
-\(\mu(\vec{\theta})\).
-
-\subsubsection{LPM Elicitation}\label{lpm-elicitation}
-
-Unlike the diagonal case, \(\mathcal{C}\) is not \emph{strictly} convex,
-so the boundary may have flat regions. This means the DLPM elicitation
-algorithm cannot be used in this case. Instead, we can use the query
-space of the sphere \(\mathcal{S}_\lambda\) to find an optimal point,
-allowing us to recover the metric.
-
-Drawing from Derivative-Free Optimization (DFO)
-(\citeproc{ref-NIPS2012_e6d8545d}{Jamieson, Nowak, and Recht 2012}), we
-can perform binary search on one coordinate at a time and keep updating
-cyclically. This algorithm will converge, because the metric is unimodal
-(over the lower boundary of the sphere) so progress is guaranteed.
-
-A python implementation of this algorithm is provided below.
-
-\begin{Shaded}
-\begin{Highlighting}[numbers=left,,]
-\ImportTok{import}\NormalTok{ numpy }\ImportTok{as}\NormalTok{ np}
-
-\KeywordTok{def}\NormalTok{ get\_lpm(theta):}
-    \CommentTok{"""}
-\CommentTok{    This constructs LPM weights for the lower boundary of the}
-\CommentTok{    sphere.}
-\CommentTok{    }
-\CommentTok{    Inputs:}
-\CommentTok{    {-} theta: parameter for the lower boundary}
-\CommentTok{    Outputs:}
-\CommentTok{    {-} LPM weights}
-\CommentTok{    """}
-\NormalTok{    new\_a }\OperatorTok{=}\NormalTok{ np.ones(theta.size }\OperatorTok{+} \DecValTok{1}\NormalTok{)}
-\NormalTok{    sin\_theta }\OperatorTok{=}\NormalTok{ np.sin(theta)}
-\NormalTok{    new\_a[}\DecValTok{1}\NormalTok{:] }\OperatorTok{=}\NormalTok{ sin\_theta}
-\NormalTok{    new\_a[:}\OperatorTok{{-}}\DecValTok{1}\NormalTok{] }\OperatorTok{*=}\NormalTok{ np.cos(theta)}
-    \ControlFlowTok{return}\NormalTok{ new\_a}
-
-\KeywordTok{def}\NormalTok{ get\_mod\_lpm(theta, j, new\_val):}
-    \CommentTok{"""}
-\CommentTok{    This constructs LPM weights where index j of the parameter}
-\CommentTok{    is set to new\_val}
-\CommentTok{    """}
-\NormalTok{    new\_theta }\OperatorTok{=}\NormalTok{ np.copy(theta)}
-\NormalTok{    new\_theta[j] }\OperatorTok{=}\NormalTok{ new\_val}
-    \ControlFlowTok{return}\NormalTok{ get\_lpm(new\_theta)}
-
-\KeywordTok{def}\NormalTok{ lpm\_elicitation(epsilon, oracle, get\_c, k, T):}
-    \CommentTok{"""}
-\CommentTok{    Inputs:}
-\CommentTok{    {-} epsilon: some epsilon \textgreater{} 0 representing threshold of error}
-\CommentTok{    {-} oracle: some function that accepts 2 confusion matrices and}
-\CommentTok{        returns true if the first is preferred and false otherwise}
-\CommentTok{    {-} get\_c: some function that accepts lpm weights and returns }
-\CommentTok{        off{-}diagonal confusions}
-\CommentTok{    {-} k: number of classes}
-\CommentTok{    {-} T: maximum number of iterations}
-\CommentTok{    Outputs:}
-\CommentTok{    {-} estimate for true DLPM weights}
-\CommentTok{    """}
-\NormalTok{    q }\OperatorTok{=}\NormalTok{ k }\OperatorTok{*}\NormalTok{ k }\OperatorTok{{-}}\NormalTok{ k}
-\NormalTok{    theta }\OperatorTok{=}\NormalTok{ np.random.rand(q}\OperatorTok{{-}}\DecValTok{1}\NormalTok{)}
-\NormalTok{    theta[:}\OperatorTok{{-}}\DecValTok{1}\NormalTok{] }\OperatorTok{=}\NormalTok{ (}\DecValTok{1} \OperatorTok{+}\NormalTok{ theta[:}\OperatorTok{{-}}\DecValTok{1}\NormalTok{]) }\OperatorTok{*}\NormalTok{ np.pi}\OperatorTok{/}\DecValTok{2}  \CommentTok{\# initialize params to [pi/2, pi]}
-\NormalTok{    theta[:}\OperatorTok{{-}}\DecValTok{1}\NormalTok{] }\OperatorTok{=}\NormalTok{ (}\DecValTok{2} \OperatorTok{+}\NormalTok{ theta[:}\OperatorTok{{-}}\DecValTok{1}\NormalTok{]) }\OperatorTok{*}\NormalTok{ np.pi}\OperatorTok{/}\DecValTok{2}  \CommentTok{\# last param in [pi, 3pi/2]}
-
-    \ControlFlowTok{for}\NormalTok{ t }\KeywordTok{in} \BuiltInTok{range}\NormalTok{(T):}
-\NormalTok{        j }\OperatorTok{=}\NormalTok{ t }\OperatorTok{\%}\NormalTok{ (q}\OperatorTok{{-}}\DecValTok{1}\NormalTok{)  }\CommentTok{\# current coordinate to optimize}
-
-        \CommentTok{\# initialize range of binary search}
-        \ControlFlowTok{if}\NormalTok{ j }\OperatorTok{==}\NormalTok{ q}\OperatorTok{{-}}\DecValTok{2}\NormalTok{:}
-\NormalTok{            a }\OperatorTok{=}\NormalTok{ np.pi}
-\NormalTok{            b }\OperatorTok{=} \DecValTok{3} \OperatorTok{*}\NormalTok{ np.pi }\OperatorTok{/} \DecValTok{2}
-        \ControlFlowTok{else}\NormalTok{:}
-\NormalTok{            a }\OperatorTok{=}\NormalTok{ np.pi }\OperatorTok{/} \DecValTok{2}
-\NormalTok{            b }\OperatorTok{=}\NormalTok{ np.pi}
-        
-        \ControlFlowTok{while}\NormalTok{ (b }\OperatorTok{{-}}\NormalTok{ a }\OperatorTok{\textgreater{}}\NormalTok{ epsilon):}
-\NormalTok{            c }\OperatorTok{=}\NormalTok{ (}\DecValTok{3} \OperatorTok{*}\NormalTok{ a }\OperatorTok{+}\NormalTok{ b) }\OperatorTok{/} \DecValTok{4}
-\NormalTok{            d }\OperatorTok{=}\NormalTok{ (a }\OperatorTok{+}\NormalTok{ b) }\OperatorTok{/} \DecValTok{2}
-\NormalTok{            e }\OperatorTok{=}\NormalTok{ (a }\OperatorTok{+} \DecValTok{3} \OperatorTok{*}\NormalTok{ b) }\OperatorTok{/} \DecValTok{4}
-
-            \CommentTok{\# get confusions for each point}
-\NormalTok{            c\_a, c\_c, c\_d, c\_e, c\_b }\OperatorTok{=}\NormalTok{ (get\_c(get\_mod\_lpm(theta, j, x)) }
-                \ControlFlowTok{for}\NormalTok{ x }\KeywordTok{in}\NormalTok{ [a, c, d, e, b])}
-
-            \CommentTok{\# query oracle for each pair}
-\NormalTok{            response\_ac }\OperatorTok{=}\NormalTok{ oracle(c\_a, c\_c)}
-\NormalTok{            response\_cd }\OperatorTok{=}\NormalTok{ oracle(c\_c, c\_d)}
-\NormalTok{            response\_de }\OperatorTok{=}\NormalTok{ oracle(c\_d, c\_e)}
-\NormalTok{            response\_eb }\OperatorTok{=}\NormalTok{ oracle(c\_e, c\_b)}
-
-            \CommentTok{\# update ranges to keep the peak}
-            \ControlFlowTok{if}\NormalTok{ response\_ac:}
-\NormalTok{                b }\OperatorTok{=}\NormalTok{ d}
-            \ControlFlowTok{elif}\NormalTok{ response\_cd:}
-\NormalTok{                b }\OperatorTok{=}\NormalTok{ d}
-            \ControlFlowTok{elif}\NormalTok{ response\_de:}
-\NormalTok{                a }\OperatorTok{=}\NormalTok{ c}
-\NormalTok{                b }\OperatorTok{=}\NormalTok{ e}
-            \ControlFlowTok{elif}\NormalTok{ response\_eb:}
-\NormalTok{                a }\OperatorTok{=}\NormalTok{ d}
-            \ControlFlowTok{else}\NormalTok{:}
-\NormalTok{                a }\OperatorTok{=}\NormalTok{ d}
-
-\NormalTok{        midpt }\OperatorTok{=}\NormalTok{ (a }\OperatorTok{+}\NormalTok{ b) }\OperatorTok{/} \DecValTok{2}
-\NormalTok{        theta[j] }\OperatorTok{=}\NormalTok{ midpt}
-    \ControlFlowTok{return}\NormalTok{ get\_lpm(theta)}
-\end{Highlighting}
-\end{Shaded}
-
-Similar to the DLPM case, we need to supply the ``oracle'' and
-``get\_c'' functions. The oracle function is an interface to an expert
-who judges which of two confusion matrices is better. The get\_c
-function will need to construct a classifier given the LPM weights,
-following the fact that \(\bar{c} = \lambda \vec{a} + \vec{o}\), and
-calculate the confusion matrix from a validation set. Using the same
-oracle feedback noise model from the binary metric elicitation, we can
-make the following guarantees:
-
-Given \(\epsilon, \epsilon_\Omega \geq 0\), and a 1-Lipschitz LPM
-\(\phi^*\) parameterized by \(\vec{a}^*\). Suppose
-\(\lambda \gg \epsilon_\Omega\), then the output \(\hat{a}\) of the LPM
-elicitation algorithm after
-\(O(z_1 \log(z_2/(q\epsilon^2))(q-1) log(\frac{\pi}{2\epsilon}))\)
-queries to the oracle satisfies
-\(||a^* - \hat{a}||_2 \leq O(\sqrt{q}(\epsilon + \sqrt{\epsilon_\Omega/\lambda}))\),
-where \(z_1\) and \(z_2\) are constants independent of \(\epsilon\) and
-\(q\).
-
-\subsection{Summary}\label{summary}
-
-In this chapter, we explore multiclass performance metric elicitation,
-extending metric elicitation beyond binary classification. In practice,
-if weighted accuracy is all that is needed to determine if one
-classifier is better than another, the DLPM elicitation algorithm is
-preferred for its lower query complexity. However, if the type of
-misclassification is important, like in the leukemia example at the
-start of this chapter, the LPM elicitation algorithm enables more
-flexibility.
 
 \subsection{Linear Reward Estimation}\label{linear-reward-estimation}
 
@@ -7594,8 +7486,9 @@ comparisons, if they need to learn how to act in the environment itself?
 The comparisons in turn help robots learn the reward function of the
 human, which allows them to further take actions in real settings.
 
-\subsubsection{Geometry of Pairwise
+\subsubsection*{Geometry of Pairwise
 Comparisons}\label{geometry-of-pairwise-comparisons}
+\addcontentsline{toc}{subsubsection}{Geometry of Pairwise Comparisons}
 
 Let's say there are two trajectories \(\xi_A\) and \(\xi_B\) that might
 be taken as the next course of action in any context, like choosing the
@@ -7606,7 +7499,7 @@ with \(R(\xi) = w * \phi(\xi)\) being the reward function. In this
 equation \(w\) and \(\phi(\xi)\) are vectors of weights and features of
 the trajectory, so alternatively, we can express this as:
 
-\(R(\xi) = \begin{bmatrix} w_1 \\ w_2 \\ ... \\ w_N \end{bmatrix} \cdot \begin{bmatrix} \phi_1(\xi) \\ \phi_2(\xi) \\ ... \\ \phi_N(\xi) \end{bmatrix}\)
+\begin{equation}\phantomsection\label{eq-reward_eq}{R(\xi) = \begin{bmatrix} w_1 \\ w_2 \\ ... \\ w_N \end{bmatrix} \cdot \begin{bmatrix} \phi_1(\xi) \\ \phi_2(\xi) \\ ... \\ \phi_N(\xi) \end{bmatrix}}\end{equation}
 
 If one says that they preferred \(\xi_2\) less than \(\xi_1\) then it
 means
@@ -7706,8 +7599,9 @@ require extra constraints, however in robotics one might want to add
 more constraints that satisfy certain rules, so that the resulting query
 follows the dynamics of the physical world.
 
-\subsubsection{Driving Simulator
+\subsubsection*{Driving Simulator
 Example}\label{driving-simulator-example}
+\addcontentsline{toc}{subsubsection}{Driving Simulator Example}
 
 The first real example of learning reward functions from pairwise
 comparisons is a 2D driving simulator from
@@ -7748,8 +7642,10 @@ go straight but still experienced collisions. After 70 queries, the
 simulator learned to avoid collisions, as well as keep the car within
 the lane without swerving.
 
-\subsubsection{Active Learning for Pairwise
+\subsubsection*{Active Learning for Pairwise
 Comparisons}\label{active-learning-for-pairwise-comparisons}
+\addcontentsline{toc}{subsubsection}{Active Learning for Pairwise
+Comparisons}
 
 We have discussed that pairwise comparisons should be selected to
 maximize the minimum volume of remaining options removed. The question
@@ -7785,8 +7681,10 @@ human preferences. (\citeproc{ref-Li_2021}{Li et al. 2021})}
 
 \end{figure}%
 
-\subsubsection{Multi-Modal Reward Functions for Pairwise
+\subsubsection*{Multi-Modal Reward Functions for Pairwise
 Comparisons}\label{multi-modal-reward-functions-for-pairwise-comparisons}
+\addcontentsline{toc}{subsubsection}{Multi-Modal Reward Functions for
+Pairwise Comparisons}
 
 What if one is working with multiple people and their responses to the
 queries for comparisons? It will be impossible to recover the different
@@ -7849,298 +7747,6 @@ applications in terms of time spent getting to the result in case of
 exoskeleton adjustments, as well as getting to a middle ground between
 polar behaviors in applications like negotiations.
 
-\subsection{Guiding Human Demonstrations in
-Robotics}\label{guiding-human-demonstrations-in-robotics}
-
-A strong approach to learning policies for robotic manipulation is
-imitation learning, the technique of learning behaviors from human
-demonstrations. In particular, interactive imitation learning allows a
-group of humans to contribute their own demonstrations for a task,
-allowing for scalable learning. However, not all groups of demonstrators
-are equally helpful for interactive imitation learning.
-
-The ideal set of demonstrations for imitation learning would follow a
-single, optimal method for performing the task, which a robot could
-learn to mimic. Conversely, \emph{multimodality}, the presence of
-multiple optimal methods in the demonstration set, is challenging for
-imitation learning since it has to learn from contradicting information
-for how to accomplish a task.
-
-A common reason for multimodality is the fact that different people
-often subconsciously choose different paths for execution, as
-illustrated in Figure~\ref{fig-multimodalexecution}.
-
-\begin{figure}
-
-\centering{
-
-\includegraphics[width=0.5\textwidth,height=\textheight]{src/Figures/multimodal_peg.png}
-
-}
-
-\caption{\label{fig-multimodalexecution}Examples of two different ways
-to insert a nut onto a round peg. The orange demonstration picks up the
-nut from the hole while the blue demonstration picks up the nut from the
-side (\citeproc{ref-gandhi2022eliciting}{Gandhi et al. 2022})}
-
-\end{figure}%
-
-Gandhi et al. (\citeproc{ref-gandhi2022eliciting}{Gandhi et al. 2022})
-identifies whether demonstrations are compatible with one another and
-offer an active elicitation interface to guide humans to provide better
-demonstrations in interactive imitation learning. Their key motivation
-is to allow multiple users to contribute demonstrations over the course
-of data collection by guiding users towards compatible demonstrations.
-
-To identify whether a demonstration is ``compatible'' with a base policy
-trained with prior demonstrations, the researchers measure the
-\emph{likelihood} of demonstrated actions under the base policy, and the
-\emph{novelty} of the visited states. Intuitively, low likelihood and
-low novelty demonstrations should be excluded since they represent
-conflicting modes of behavior on states that the robot can already
-handle, and are therefore incompatible. This concept of compatibility is
-used for filtering a new set of demonstrations and actively eliciting
-compatible demonstrations.
-
-In the following subsections, we describe the process of estimating
-compatibility and active elicitation in more detal.
-
-\subsubsection{Estimating Compatiblity}\label{estimating-compatiblity}
-
-We want to define a compatibility measure \(\mathcal{M}\), that
-estimates the performance of policy \(\pi_{base}\) that is retrained on
-a union of \(\mathcal{D}_{base}\), the known base dataset, and
-\(\mathcal{D}_{new}\), the newly collected dataset. To define this
-compatibility measure in a way that is easy to compute, we can use two
-interpretable metrics: likelihood and novelty.
-
-The likelihood of actions \(a_{new}\) in \(\mathcal{D}_{new}\) is
-measured as the negative mean squared error between actions predicted by
-the base policy and this proposed action:
-
-\begin{equation}\phantomsection\label{eq-eq3.61}{\begin{aligned}
-    likelihood(s_{new}, a_{new}) = -\mathbb{E}[|| \pi_{base}(s_{new}) - a_{new} ||^2_2].
-\end{aligned}}\end{equation}
-
-The novelty of the state \(s_{new}\) in \(\mathcal{D}_{new}\) is the
-standard deviation in the predicted actions under base policy:
-
-\begin{equation}\phantomsection\label{eq-eq3.62}{\begin{aligned}
-    novelty(s_{new}) = \mathrm{Var}[\pi_{base}(s_{new})].
-\end{aligned}}\end{equation}
-
-We can plot likelihood and novelty on a 2D plane, as shown in
-Figure~\ref{fig-likelihood_novelty}, and identify thresholds on
-likelihood and novelty, denoted as \(\lambda\) and \(\eta\)
-respectively. Intuitively, demonstrations with low likelihood in low
-novelty states should be excluded, because this indicates that there is
-a conflict between the base behavior and the new demonstration due to
-multimodality. Note that in high novelty states, the likelihood should
-be disregarded because the base policy does not have a concrete idea for
-how to handle these states anyways so more data is needed.
-
-\begin{figure}
-
-\centering{
-
-\includegraphics[width=0.8\textwidth,height=\textheight]{src/Figures/likelihood_novelty.png}
-
-}
-
-\caption{\label{fig-likelihood_novelty}Examples of plots of likelihood
-and novelty for compatible and incompatible operators
-(\citeproc{ref-gandhi2022eliciting}{Gandhi et al. 2022})}
-
-\end{figure}%
-
-The final compatibility metric, parameterized by the likelihood and
-novelty thresholds \(\lambda\) and \(\eta\), is
-\(\mathcal{M}(\mathcal{D}_{base}, (s_{new}, a_{new})) \in [0, 1]\),
-defined as:
-
-\begin{equation}\phantomsection\label{eq-eq3.63}{\begin{aligned}
-    \mathcal{M} = \begin{cases} 
-        1 - \min(\frac{\mathbb{E}[|| \pi_{base}(s_{new}) - a_{new} ||^2_2]}{\lambda}, 1) & \text{ if } \text{novelty}(s_{new}) < \eta \\
-        1 & \text{ otherwise }
-       \end{cases}.
-\end{aligned}}\end{equation}
-
-Note that \(\lambda\) and \(\eta\) need to be specified by hand. This is
-accomplished by assuming the ability to collect \emph{a priori
-incompatible} demonstrations to identify reasonable thresholds that
-remove the most datapoints in the incompatible demonstrations while
-keeping the most datapoints in the compatible demonstrations.
-
-\subsubsection{Case Studies with Fixed
-Sets}\label{case-studies-with-fixed-sets}
-
-The researchers evaluate the utility of the compatibility metric on
-three tasks: placing a square nut on a square peg, placing a round nut
-on a round peg, and opening a drawer and placing a hammer inside. For
-each task, they train a base policy using a ``proficient'' operator's
-demonstration while sampling trajectories from other operators for the
-new set.
-
-The naive baseline is to use all datapoints while the
-\(\mathcal{M}\)-Filtered demonstrations use the compatibility metric to
-filter out incompatible demonstrations. The results are presented in
-Table~\ref{tbl-m_filter_table}. As you can see, M-filtering results in
-equal or greater performance despite using less data than the naive
-baseline, demonstrating the effectiveness of compatibility-based
-filtering.
-
-\begin{longtable}[]{@{}lclclcl@{}}
-\caption{Success rates (mean/std across 3 training runs) for policies
-trained on \(\mathcal{D}_{new}\) by using all the data (Naive) or
-filtering by compatibility (\(\mathcal{M}\)-Filtered)
-(\citeproc{ref-gandhi2022eliciting}{Gandhi et al.
-2022})}\label{tbl-m_filter_table}\tabularnewline
-\toprule\noalign{}
-\endfirsthead
-\endhead
-\bottomrule\noalign{}
-\endlastfoot
-& \textbf{Square Nut} & & \textbf{Round Nut} & & \textbf{Hammer
-Placement} & \\
-\textbf{Operator} & Naive & \(\mathcal{M}\)-Filtered & Naive &
-\(\mathcal{M}\)-Filtered & Naive & \(\mathcal{M}\)-Filtered \\
-Base Operator & 38.7 (2.1) & - & 13.3 (2.3) & - & 24.7 (6.1) & - \\
-Operator 1 & 54.3 (1.5) & 61.0 (4.4) & 26.7 (11.7) & 32.0 (12.2) & 38.0
-(2.0) & 39.7 (4.6) \\
-Operator 2 & 40.3 (5.1) & 42.0 (2.0) & 22.0 (7.2) & 26.7 (5.0) & 33.3
-(3.1) & 32.7 (6.4) \\
-Operator 3 & 37.3 (2.1) & 42.7 (0.6) & 17.3 (4.6) & 18.0 (13.9) & 8.0
-(0.0) & 12.0 (0.0) \\
-Operator 4 & 27.3 (3.5) & 37.3 (2.1) & 7.3 (4.6) & 13.3 (1.2) & 4.0
-(0.0) & 4.0 (0.0) \\
-\end{longtable}
-
-\begin{figure}
-
-\centering{
-
-\includegraphics[width=0.8\textwidth,height=\textheight]{src/Figures/active_elicitation.png}
-
-}
-
-\caption{\label{fig-active_elicitation}The phases of the active
-elicitation interface: (a) initial prompting, (b) demonstrations with
-live feedback, and (c) corrective feedback
-(\citeproc{ref-gandhi2022eliciting}{Gandhi et al. 2022})}
-
-\end{figure}%
-
-\subsubsection{Actively Eliciting Compatible
-Demonstrations}\label{actively-eliciting-compatible-demonstrations}
-
-In the previous section, we assume access to a dataset that has already
-been collected, and we see how filtering out incompatible demonstrations
-helps improve performance. However, when collecting a new dataset, it
-would be better to ensure that operators collect compatible
-demonstrations from the start, allowing us to retain as much data as
-possible for training.
-
-To actively elicit compatible demonstrations, the researchers set up a
-pipeline for live feedback and examples. At the start, operators are
-given a task specification and some episodes to practice using the
-robot. Then, the active elicitation process begins, as shown in
-Figure~\ref{fig-active_elicitation}. Each operator is shown some
-rollouts of the base policy to understand the style of the base
-operator. Next, the operator provides a demonstration similar to the
-ones they were shown. As they record their demonstrations, the interface
-provides online feedback, with green indicating compatible actions and
-red indicating incompatible actions. If the number of incompatible
-state-action pairs (ones where \(\mathcal{M}\) is zero) exceeds 5\% of
-the demonstration length, the demonstration is rejected. However, to
-provide corrective feedback, the interface shows the areas of the
-demonstration with the highest average incompatibility and also provides
-an expert demo that shows what should actually be done. Demonstrators
-can use this feedback to provide more compatible demonstrations moving
-forward.
-
-This process helps improve the demonstration quality in both simulation
-and real experiments, as show in
-Table~\ref{tbl-active_elicitation_results}. Specifically, on the real
-results, active elicitation outperformed the base policy by 25\% and
-naive data collection by 55\%. Overall, active elicitation is a powerful
-tool to ensure that data collected for imitation learning improves the
-quality of the learned policy.
-
-\begin{longtable}[]{@{}lcccc@{}}
-\caption{Success rates (mean/std across users) for policies trained on
-\(\mathcal{D}_{new}\) by using all the data (Naive), filtering by
-compatibility (\(\mathcal{M}\)-Filtered), or using informed
-demonstration collection (\citeproc{ref-gandhi2022eliciting}{Gandhi et
-al. 2022})}\label{tbl-active_elicitation_results}\tabularnewline
-\toprule\noalign{}
-\textbf{Task} & \textbf{Base} & \textbf{Naive} & \textbf{Naive +
-Filtered} & \textbf{Informed} \\
-\midrule\noalign{}
-\endfirsthead
-\toprule\noalign{}
-\textbf{Task} & \textbf{Base} & \textbf{Naive} & \textbf{Naive +
-Filtered} & \textbf{Informed} \\
-\midrule\noalign{}
-\endhead
-\bottomrule\noalign{}
-\endlastfoot
-\textbf{Round Nut} & 13.3 (2.3) & 9.6 (4.6) & 9.7 (4.2) & 15.7 (6.0) \\
-\textbf{Hammer Placement} & 24.7 (6.1) & 20.8 (15.7) & 22.0 (15.5) &
-31.8 (16.3) \\
-\textbf{\(\left[ \textup{Real} \right]\) Food Plating} & 60.0 & 30.0
-(17.3) & - & 85.0 (9.6) \\
-\end{longtable}
-
-\subsubsection{Limitations and Future Work for Active
-Elicitation}\label{limitations-and-future-work-for-active-elicitation}
-
-A fundamental limitation of eliciting compatible demonstrations is the
-fact that the ``base'' demonstrator is considered the ground truth. When
-the base demonstrator specifies a preference, all other demonstrators
-must abide by it, even if they have strong preferences against it. For
-instance, when pouring milk and cereal into a bowl, different people
-have different preferences for what is the correct order, but active
-elicitation forces all demonstrators to follow the initial preference of
-the base operator. The researchers hope that future work can enable
-users to override the default demonstration set and follow a base
-behavior that better aligns with their preferences. This could enable
-multiple modes of behavior to be collected in data while only following
-a user's specified preference instead of attempting to collapse all
-modes into a single policy.
-
-Looking forward, active elicitation provides a foundation for allowing
-robots to query humans about the type of data needed, enabling more
-efficient data collection through transparency.
-
-\subsection{Conclusion}\label{conclusion-1}
-
-In summary, this chapter has explored the complexities and innovations
-in interactive learning as applied to large models within robotics. It
-begins by investigating pairwise comparisons and their role in
-efficiently learning linear reward functions from large datasets,
-overcoming limitations in supervised learning. When combined with active
-learning techniques, these comparisons supply timely, targeted, and
-context-appropriate feedback, enhancing performance in time-critical
-applications like exoskeleton adjustments during rehabilitation.
-
-We then shift to imitation learning or inverse reward learning from
-demonstrations, emphasizing the difficulties introduced by multimodal
-demonstration sets. active elicitation approaches to compile compatible
-demonstrations, streamlining the learning process by guiding users to
-provide more valuable, steady examples are incredibly promising,
-however, to tackling this issue. This method shows promise in refining
-the interactive imitation learning data collection pipeline, enabling
-more capable and effective robotic training.
-
-Additionally, the chapter examines the integration of foundation models
-into robotics, highlighting the transformative innovations of R3M and
-Voltron. R3M's pre-training on diverse human activities dramatically
-improves robotic manipulation with minimal supervision. Meanwhile,
-Voltron builds on these capabilities by incorporating language-driven
-representation learning for remarkably adaptable and nuanced robotic
-task performance. These models represent significant leaps in robotics
-while opening new frontiers for future research and applications.
-
 \subsection{Truthful Preference Elicitation with
 Adversary}\label{truthful-preference-elicitation-with-adversary}
 
@@ -8173,7 +7779,8 @@ exploration); auctions (where bidders will try to maximise their reward
 compared to others); and peer grading (where truthful reporting is not
 necessarily an incentive for students).
 
-\subsubsection{Auction Theory}\label{auction-theory}
+\subsubsection*{Auction Theory}\label{auction-theory}
+\addcontentsline{toc}{subsubsection}{Auction Theory}
 
 \paragraph*{Single-Item Auctions}\label{single-item-auctions}
 \addcontentsline{toc}{paragraph}{Single-Item Auctions}
@@ -8323,10 +7930,18 @@ optimal auctions. The theorem states that for a single-item auction with
 bidders' valuations drawn independently from a regular distribution
 \(F\):
 
+\begin{tcolorbox}[colframe=.grey, title=\faPenSquare \enspace Theorem]
+
+\begin{theorem}[]\protect\hypertarget{thm-bulow-klemperer}{}\label{thm-bulow-klemperer}
+
 Let \(F\) be a regular distribution and \(n\) a positive integer. Then:
 \begin{equation}\phantomsection\label{eq-eq3.64}{E_{v_1,\ldots,v_{n+1} \sim F}[\text{Rev(VA)}(n+1 \text{ bidders})] \geq E_{v_1,\ldots,v_n \sim F}[\text{Rev(OPT}_F)(n \text{ bidders})]}\end{equation}
 where VA denotes the Vickrey auction and \(\text{OPT}_F\) denotes the
 optimal auction for \(F\).
+
+\end{theorem}
+
+\end{tcolorbox}
 
 This shows that running a simple Vickrey auction with one extra bidder
 outperforms the revenue-optimal auction that requires precise knowledge
@@ -8341,9 +7956,17 @@ The VCG mechanism is a cornerstone of mechanism design theory, providing
 a general solution for welfare maximization in multi-parameter
 environments. The key result is:
 
+\begin{tcolorbox}[colframe=.grey, title=\faPenSquare \enspace Theorem]
+
+\begin{theorem}[]\protect\hypertarget{thm-VCG}{}\label{thm-VCG}
+
 \phantomsection\label{thm:VCG}{} In every general mechanism design
 environment, there is a dominant-strategy incentive-compatible (DSIC)
 welfare-maximizing mechanism.
+
+\end{theorem}
+
+\end{tcolorbox}
 
 The VCG mechanism operates as follows:
 
@@ -8614,7 +8237,8 @@ designing truthful mechanisms, MIP-based approaches have significant
 potential to improve preference elicitation and aggregation in
 real-world applications lacking verifiable ground truth.
 
-\subsubsection{Auction Theory 2}\label{auction-theory-2}
+\subsubsection*{Auction Theory 2}\label{auction-theory-2}
+\addcontentsline{toc}{subsubsection}{Auction Theory 2}
 
 \paragraph*{Single-Item Auctions}\label{single-item-auctions-1}
 \addcontentsline{toc}{paragraph}{Single-Item Auctions}
@@ -8623,6 +8247,304 @@ The first problem within auction we will consider is the
 \emph{single-item auction}. In this problem setup, there is a single
 item to sell and \(n\) bidders each with unknown private valuations of
 the item \(v_1, \ldots, v_n\),
+
+\subsection{Application: Guiding Human Demonstrations in
+Robotics}\label{application-guiding-human-demonstrations-in-robotics}
+
+A strong approach to learning policies for robotic manipulation is
+imitation learning, the technique of learning behaviors from human
+demonstrations. In particular, interactive imitation learning allows a
+group of humans to contribute their own demonstrations for a task,
+allowing for scalable learning. However, not all groups of demonstrators
+are equally helpful for interactive imitation learning.
+
+The ideal set of demonstrations for imitation learning would follow a
+single, optimal method for performing the task, which a robot could
+learn to mimic. Conversely, \emph{multimodality}, the presence of
+multiple optimal methods in the demonstration set, is challenging for
+imitation learning since it has to learn from contradicting information
+for how to accomplish a task.
+
+A common reason for multimodality is the fact that different people
+often subconsciously choose different paths for execution, as
+illustrated in Figure~\ref{fig-multimodalexecution}.
+
+\begin{figure}
+
+\centering{
+
+\includegraphics[width=0.5\textwidth,height=\textheight]{src/Figures/multimodal_peg.png}
+
+}
+
+\caption{\label{fig-multimodalexecution}Examples of two different ways
+to insert a nut onto a round peg. The orange demonstration picks up the
+nut from the hole while the blue demonstration picks up the nut from the
+side (\citeproc{ref-gandhi2022eliciting}{Gandhi et al. 2022})}
+
+\end{figure}%
+
+Gandhi et al. (\citeproc{ref-gandhi2022eliciting}{Gandhi et al. 2022})
+identifies whether demonstrations are compatible with one another and
+offer an active elicitation interface to guide humans to provide better
+demonstrations in interactive imitation learning. Their key motivation
+is to allow multiple users to contribute demonstrations over the course
+of data collection by guiding users towards compatible demonstrations.
+
+To identify whether a demonstration is ``compatible'' with a base policy
+trained with prior demonstrations, the researchers measure the
+\emph{likelihood} of demonstrated actions under the base policy, and the
+\emph{novelty} of the visited states. Intuitively, low likelihood and
+low novelty demonstrations should be excluded since they represent
+conflicting modes of behavior on states that the robot can already
+handle, and are therefore incompatible. This concept of compatibility is
+used for filtering a new set of demonstrations and actively eliciting
+compatible demonstrations.
+
+In the following subsections, we describe the process of estimating
+compatibility and active elicitation in more detal.
+
+\subsubsection*{Estimating Compatiblity}\label{estimating-compatiblity}
+\addcontentsline{toc}{subsubsection}{Estimating Compatiblity}
+
+We want to define a compatibility measure \(\mathcal{M}\), that
+estimates the performance of policy \(\pi_{base}\) that is retrained on
+a union of \(\mathcal{D}_{base}\), the known base dataset, and
+\(\mathcal{D}_{new}\), the newly collected dataset. To define this
+compatibility measure in a way that is easy to compute, we can use two
+interpretable metrics: likelihood and novelty.
+
+The likelihood of actions \(a_{new}\) in \(\mathcal{D}_{new}\) is
+measured as the negative mean squared error between actions predicted by
+the base policy and this proposed action:
+
+\begin{equation}\phantomsection\label{eq-eq3.61}{\begin{aligned}
+    likelihood(s_{new}, a_{new}) = -\mathbb{E}[|| \pi_{base}(s_{new}) - a_{new} ||^2_2].
+\end{aligned}}\end{equation}
+
+The novelty of the state \(s_{new}\) in \(\mathcal{D}_{new}\) is the
+standard deviation in the predicted actions under base policy:
+
+\begin{equation}\phantomsection\label{eq-eq3.62}{\begin{aligned}
+    novelty(s_{new}) = \mathrm{Var}[\pi_{base}(s_{new})].
+\end{aligned}}\end{equation}
+
+We can plot likelihood and novelty on a 2D plane, as shown in
+Figure~\ref{fig-likelihood_novelty}, and identify thresholds on
+likelihood and novelty, denoted as \(\lambda\) and \(\eta\)
+respectively. Intuitively, demonstrations with low likelihood in low
+novelty states should be excluded, because this indicates that there is
+a conflict between the base behavior and the new demonstration due to
+multimodality. Note that in high novelty states, the likelihood should
+be disregarded because the base policy does not have a concrete idea for
+how to handle these states anyways so more data is needed.
+
+\begin{figure}
+
+\centering{
+
+\includegraphics[width=0.8\textwidth,height=\textheight]{src/Figures/likelihood_novelty.png}
+
+}
+
+\caption{\label{fig-likelihood_novelty}Examples of plots of likelihood
+and novelty for compatible and incompatible operators
+(\citeproc{ref-gandhi2022eliciting}{Gandhi et al. 2022})}
+
+\end{figure}%
+
+The final compatibility metric, parameterized by the likelihood and
+novelty thresholds \(\lambda\) and \(\eta\), is
+\(\mathcal{M}(\mathcal{D}_{base}, (s_{new}, a_{new})) \in [0, 1]\),
+defined as:
+
+\begin{equation}\phantomsection\label{eq-eq3.63}{\begin{aligned}
+    \mathcal{M} = \begin{cases} 
+        1 - \min(\frac{\mathbb{E}[|| \pi_{base}(s_{new}) - a_{new} ||^2_2]}{\lambda}, 1) & \text{ if } \text{novelty}(s_{new}) < \eta \\
+        1 & \text{ otherwise }
+       \end{cases}.
+\end{aligned}}\end{equation}
+
+Note that \(\lambda\) and \(\eta\) need to be specified by hand. This is
+accomplished by assuming the ability to collect \emph{a priori
+incompatible} demonstrations to identify reasonable thresholds that
+remove the most datapoints in the incompatible demonstrations while
+keeping the most datapoints in the compatible demonstrations.
+
+\subsubsection*{Case Studies with Fixed
+Sets}\label{case-studies-with-fixed-sets}
+\addcontentsline{toc}{subsubsection}{Case Studies with Fixed Sets}
+
+The researchers evaluate the utility of the compatibility metric on
+three tasks: placing a square nut on a square peg, placing a round nut
+on a round peg, and opening a drawer and placing a hammer inside. For
+each task, they train a base policy using a ``proficient'' operator's
+demonstration while sampling trajectories from other operators for the
+new set.
+
+The naive baseline is to use all datapoints while the
+\(\mathcal{M}\)-Filtered demonstrations use the compatibility metric to
+filter out incompatible demonstrations. The results are presented in
+Table~\ref{tbl-m_filter_table}. As you can see, M-filtering results in
+equal or greater performance despite using less data than the naive
+baseline, demonstrating the effectiveness of compatibility-based
+filtering.
+
+\begin{longtable}[]{@{}lclclcl@{}}
+\caption{Success rates (mean/std across 3 training runs) for policies
+trained on \(\mathcal{D}_{new}\) by using all the data (Naive) or
+filtering by compatibility (\(\mathcal{M}\)-Filtered)
+(\citeproc{ref-gandhi2022eliciting}{Gandhi et al.
+2022})}\label{tbl-m_filter_table}\tabularnewline
+\toprule\noalign{}
+\endfirsthead
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+& \textbf{Square Nut} & & \textbf{Round Nut} & & \textbf{Hammer
+Placement} & \\
+\textbf{Operator} & Naive & \(\mathcal{M}\)-Filtered & Naive &
+\(\mathcal{M}\)-Filtered & Naive & \(\mathcal{M}\)-Filtered \\
+Base Operator & 38.7 (2.1) & - & 13.3 (2.3) & - & 24.7 (6.1) & - \\
+Operator 1 & 54.3 (1.5) & 61.0 (4.4) & 26.7 (11.7) & 32.0 (12.2) & 38.0
+(2.0) & 39.7 (4.6) \\
+Operator 2 & 40.3 (5.1) & 42.0 (2.0) & 22.0 (7.2) & 26.7 (5.0) & 33.3
+(3.1) & 32.7 (6.4) \\
+Operator 3 & 37.3 (2.1) & 42.7 (0.6) & 17.3 (4.6) & 18.0 (13.9) & 8.0
+(0.0) & 12.0 (0.0) \\
+Operator 4 & 27.3 (3.5) & 37.3 (2.1) & 7.3 (4.6) & 13.3 (1.2) & 4.0
+(0.0) & 4.0 (0.0) \\
+\end{longtable}
+
+\begin{figure}
+
+\centering{
+
+\includegraphics[width=0.8\textwidth,height=\textheight]{src/Figures/active_elicitation.png}
+
+}
+
+\caption{\label{fig-active_elicitation}The phases of the active
+elicitation interface: (a) initial prompting, (b) demonstrations with
+live feedback, and (c) corrective feedback
+(\citeproc{ref-gandhi2022eliciting}{Gandhi et al. 2022})}
+
+\end{figure}%
+
+\subsubsection*{Actively Eliciting Compatible
+Demonstrations}\label{actively-eliciting-compatible-demonstrations}
+\addcontentsline{toc}{subsubsection}{Actively Eliciting Compatible
+Demonstrations}
+
+In the previous section, we assume access to a dataset that has already
+been collected, and we see how filtering out incompatible demonstrations
+helps improve performance. However, when collecting a new dataset, it
+would be better to ensure that operators collect compatible
+demonstrations from the start, allowing us to retain as much data as
+possible for training.
+
+To actively elicit compatible demonstrations, the researchers set up a
+pipeline for live feedback and examples. At the start, operators are
+given a task specification and some episodes to practice using the
+robot. Then, the active elicitation process begins, as shown in
+Figure~\ref{fig-active_elicitation}. Each operator is shown some
+rollouts of the base policy to understand the style of the base
+operator. Next, the operator provides a demonstration similar to the
+ones they were shown. As they record their demonstrations, the interface
+provides online feedback, with green indicating compatible actions and
+red indicating incompatible actions. If the number of incompatible
+state-action pairs (ones where \(\mathcal{M}\) is zero) exceeds 5\% of
+the demonstration length, the demonstration is rejected. However, to
+provide corrective feedback, the interface shows the areas of the
+demonstration with the highest average incompatibility and also provides
+an expert demo that shows what should actually be done. Demonstrators
+can use this feedback to provide more compatible demonstrations moving
+forward.
+
+This process helps improve the demonstration quality in both simulation
+and real experiments, as show in
+Table~\ref{tbl-active_elicitation_results}. Specifically, on the real
+results, active elicitation outperformed the base policy by 25\% and
+naive data collection by 55\%. Overall, active elicitation is a powerful
+tool to ensure that data collected for imitation learning improves the
+quality of the learned policy.
+
+\begin{longtable}[]{@{}lcccc@{}}
+\caption{Success rates (mean/std across users) for policies trained on
+\(\mathcal{D}_{new}\) by using all the data (Naive), filtering by
+compatibility (\(\mathcal{M}\)-Filtered), or using informed
+demonstration collection (\citeproc{ref-gandhi2022eliciting}{Gandhi et
+al. 2022})}\label{tbl-active_elicitation_results}\tabularnewline
+\toprule\noalign{}
+\textbf{Task} & \textbf{Base} & \textbf{Naive} & \textbf{Naive +
+Filtered} & \textbf{Informed} \\
+\midrule\noalign{}
+\endfirsthead
+\toprule\noalign{}
+\textbf{Task} & \textbf{Base} & \textbf{Naive} & \textbf{Naive +
+Filtered} & \textbf{Informed} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+\textbf{Round Nut} & 13.3 (2.3) & 9.6 (4.6) & 9.7 (4.2) & 15.7 (6.0) \\
+\textbf{Hammer Placement} & 24.7 (6.1) & 20.8 (15.7) & 22.0 (15.5) &
+31.8 (16.3) \\
+\textbf{\(\left[ \textup{Real} \right]\) Food Plating} & 60.0 & 30.0
+(17.3) & - & 85.0 (9.6) \\
+\end{longtable}
+
+\subsubsection*{Limitations and Future Work for Active
+Elicitation}\label{limitations-and-future-work-for-active-elicitation}
+\addcontentsline{toc}{subsubsection}{Limitations and Future Work for
+Active Elicitation}
+
+A fundamental limitation of eliciting compatible demonstrations is the
+fact that the ``base'' demonstrator is considered the ground truth. When
+the base demonstrator specifies a preference, all other demonstrators
+must abide by it, even if they have strong preferences against it. For
+instance, when pouring milk and cereal into a bowl, different people
+have different preferences for what is the correct order, but active
+elicitation forces all demonstrators to follow the initial preference of
+the base operator. The researchers hope that future work can enable
+users to override the default demonstration set and follow a base
+behavior that better aligns with their preferences. This could enable
+multiple modes of behavior to be collected in data while only following
+a user's specified preference instead of attempting to collapse all
+modes into a single policy.
+
+Looking forward, active elicitation provides a foundation for allowing
+robots to query humans about the type of data needed, enabling more
+efficient data collection through transparency.
+
+\subsection{Conclusion}\label{conclusion-1}
+
+In summary, this chapter has explored the complexities and innovations
+in interactive learning as applied to large models within robotics. It
+begins by investigating pairwise comparisons and their role in
+efficiently learning linear reward functions from large datasets,
+overcoming limitations in supervised learning. When combined with active
+learning techniques, these comparisons supply timely, targeted, and
+context-appropriate feedback, enhancing performance in time-critical
+applications like exoskeleton adjustments during rehabilitation.
+
+We then shift to imitation learning or inverse reward learning from
+demonstrations, emphasizing the difficulties introduced by multimodal
+demonstration sets. active elicitation approaches to compile compatible
+demonstrations, streamlining the learning process by guiding users to
+provide more valuable, steady examples are incredibly promising,
+however, to tackling this issue. This method shows promise in refining
+the interactive imitation learning data collection pipeline, enabling
+more capable and effective robotic training.
+
+Additionally, the chapter examines the integration of foundation models
+into robotics, highlighting the transformative innovations of R3M and
+Voltron. R3M's pre-training on diverse human activities dramatically
+improves robotic manipulation with minimal supervision. Meanwhile,
+Voltron builds on these capabilities by incorporating language-driven
+representation learning for remarkably adaptable and nuanced robotic
+task performance. These models represent significant leaps in robotics
+while opening new frontiers for future research and applications.
 
 \section{Exercises}\label{exercises-1}
 
@@ -8686,6 +8608,8 @@ the posterior distributions.
     possible reasons for the observed differences.
   \end{enumerate}
 \end{enumerate}
+
+\begin{tcolorbox}[colframe=.grey, title=\faCode \enspace Code]
 
 \begin{Shaded}
 \begin{Highlighting}[numbers=left,,]
@@ -8799,6 +8723,8 @@ the posterior distributions.
 \end{Highlighting}
 \end{Shaded}
 
+\end{tcolorbox}
+
 \begin{enumerate}
 \def\labelenumi{(\alph{enumi})}
 \setcounter{enumi}{1}
@@ -8825,6 +8751,8 @@ the posterior distributions.
     and mixing of your MCMC chain?
   \end{enumerate}
 \end{enumerate}
+
+\begin{tcolorbox}[colframe=.grey, title=\faCode \enspace Code]
 
 \begin{Shaded}
 \begin{Highlighting}[numbers=left,,]
@@ -8939,6 +8867,8 @@ the posterior distributions.
 \end{Highlighting}
 \end{Shaded}
 
+\end{tcolorbox}
+
 \begin{enumerate}
 \def\labelenumi{(\alph{enumi})}
 \setcounter{enumi}{2}
@@ -8964,6 +8894,8 @@ the posterior distributions.
     numbers.
   \end{enumerate}
 \end{enumerate}
+
+\begin{tcolorbox}[colframe=.grey, title=\faCode \enspace Code]
 
 \begin{Shaded}
 \begin{Highlighting}[numbers=left,,]
@@ -9080,6 +9012,8 @@ the posterior distributions.
 \end{Highlighting}
 \end{Shaded}
 
+\end{tcolorbox}
+
 \begin{enumerate}
 \def\labelenumi{(\alph{enumi})}
 \setcounter{enumi}{3}
@@ -9104,6 +9038,8 @@ the posterior distributions.
     advantages and disadvantages of using a GP in this setting?
   \end{enumerate}
 \end{enumerate}
+
+\begin{tcolorbox}[colframe=.grey, title=\faCode \enspace Code]
 
 \begin{Shaded}
 \begin{Highlighting}[numbers=left,,]
@@ -9134,6 +9070,8 @@ the posterior distributions.
 \NormalTok{expected\_calibration\_error(y\_pred\_probs, y\_test, model\_name}\OperatorTok{=}\StringTok{"Gaussian Process Classifier"}\NormalTok{)}
 \end{Highlighting}
 \end{Shaded}
+
+\end{tcolorbox}
 
 \subsection*{Question 2: Active Learning for Preference Learning (40
 points)}\label{sec-question-2-active-learning-for-preference-learning-40-points}
@@ -9251,6 +9189,8 @@ through preference queries.
     function. Interpret your plot and use it to compare the two methods.
   \end{enumerate}
 \end{enumerate}
+
+\begin{tcolorbox}[colframe=.grey, title=\faCode \enspace Code]
 
 \begin{Shaded}
 \begin{Highlighting}[numbers=left,,]
@@ -9503,6 +9443,8 @@ through preference queries.
 \end{Highlighting}
 \end{Shaded}
 
+\end{tcolorbox}
+
 \subsection*{Question 3: Linear Performance Metric Elicitation (30
 points)}\label{sec-question-3-linear-performance-metric-elicitation-30-points}
 \addcontentsline{toc}{subsection}{Question 3: Linear Performance Metric
@@ -9538,6 +9480,8 @@ Elicitation (30 points)}
   by \(\theta\)). Play around with the oracle's theta and run
   \texttt{start\_search} to see how close you can approximate it!
 \end{enumerate}
+
+\begin{tcolorbox}[colframe=.grey, title=\faCode \enspace Code]
 
 \begin{Shaded}
 \begin{Highlighting}[numbers=left,,]
@@ -9709,6 +9653,8 @@ Elicitation (30 points)}
 \end{Highlighting}
 \end{Shaded}
 
+\end{tcolorbox}
+
 \subsection*{Question 4: D-optimal Design with Logistic Model (30
 points)}\label{sec-question-4-d-optimal-design-with-logistic-model-30-points}
 \addcontentsline{toc}{subsection}{Question 4: D-optimal Design with
@@ -9782,6 +9728,8 @@ exercise, you will analyze D-optimal designs for this model.
     greedy?
   \end{enumerate}
 \end{enumerate}
+
+\begin{tcolorbox}[colframe=.grey, title=\faCode \enspace Code]
 
 \begin{Shaded}
 \begin{Highlighting}[numbers=left,,]
@@ -9942,6 +9890,8 @@ exercise, you will analyze D-optimal designs for this model.
 \end{Highlighting}
 \end{Shaded}
 
+\end{tcolorbox}
+
 \subsection*{Question 5: Nonparametric Metric Elicitation (30
 points)}\label{sec-question-5-nonparametric-metric-elicitation-30-points}
 \addcontentsline{toc}{subsection}{Question 5: Nonparametric Metric
@@ -10036,6 +9986,8 @@ slice sampling for posterior inference.
     part (iii).
   \end{enumerate}
 \end{enumerate}
+
+\begin{tcolorbox}[colframe=.grey, title=\faCode \enspace Code]
 
 \begin{Shaded}
 \begin{Highlighting}[numbers=left,,]
@@ -10252,6 +10204,8 @@ slice sampling for posterior inference.
 \end{Highlighting}
 \end{Shaded}
 
+\end{tcolorbox}
+
 \section*{References}\label{bibliography-3}
 \addcontentsline{toc}{section}{References}
 
@@ -10418,14 +10372,6 @@ Learning for Human-Robot Communication}.
 Houlsby, Neil, Ferenc Huszár, Zoubin Ghahramani, and Máté Lengyel. 2011.
 {``Bayesian Active Learning for Classification and Preference
 Learning.''} \emph{arXiv Preprint arXiv:1112.5745}.
-
-\bibitem[\citeproctext]{ref-NIPS2012_e6d8545d}
-Jamieson, Kevin G, Robert Nowak, and Ben Recht. 2012. {``Query
-Complexity of Derivative-Free Optimization.''} In \emph{Advances in
-Neural Information Processing Systems}, edited by F. Pereira, C. J.
-Burges, L. Bottou, and K. Q. Weinberger. Vol. 25. Curran Associates,
-Inc.
-\url{https://proceedings.neurips.cc/paper_files/paper/2012/file/e6d8545daa42d5ced125a4bf747b3688-Paper.pdf}.
 
 \bibitem[\citeproctext]{ref-AL_app_autonomous}
 Jarl, Sanna, Linus Aronsson, Sadegh Rahrovani, and Morteza Haghir

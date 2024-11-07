@@ -1026,8 +1026,7 @@ preference pairs annotators rate as easier to separate.
   Margin Large          3           2         1              0
   -------------- --------------- -------- ---------- -----------------
 
-  : Two variants of preference rating based margin with different
-  magnitude.
+  : Two variants of preference rating based margin with different magnitude.
 :::
 
 ![Reward model score distribution shift caused by incorporating

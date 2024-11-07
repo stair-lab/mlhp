@@ -33,7 +33,7 @@ format:
       light: [flatly, resources/scss/global.scss]
       dark: [darkly, resources/scss/global.scss]
     published-title: "Updated"
-    code-fold: true
+    code-fold: false
     code-overflow: scroll
     code-line-numbers: true
     code-tools: true

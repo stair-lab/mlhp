@@ -64,6 +64,7 @@ $$\nabla_\theta J(\theta)=\frac{1}{N}X^T(\sigma(X\theta)-y).$$
     reporting to the `train` function to verify your model is improving
     over time.
 
+::: {.callout-note title="code"}
 ```{python ex1-q1}
 from sklearn.model_selection import train_test_split
 import torch
@@ -141,6 +142,7 @@ if __name__ == "__main__":
     print(f"Expected Validation Accuracy: {y_val_probs.mean()}") # Should reach at least 90%
 
 ```
+:::
 
 ### Question 2: Revealed and Stated Preferences (20 points) {#question-2-revealed-and-stated-preferences-20-points .unnumbered}
 
@@ -176,6 +178,7 @@ reasons of "political correctness."
     vs. voters surveyed averaged across $100$ simulations. Attach the
     plot to this question and briefly explain what you notice.
 
+::: {.callout-note title="code"}
 ```{python ex1-q2}
 import torch
 import random
@@ -294,6 +297,7 @@ if __name__ == "__main__":
     plt.title(f'MLE MAE Error (z={z}, {num_sims} simulations)')
     plt.show()
 ```
+:::
 
 ### Question 3: Probabilistic Multi-modal Preferences (25 points) {#question-3-probabilistic-multi-modal-preferences-25-points .unnumbered}
 
@@ -385,6 +389,7 @@ weights $w_2$ are part of Group 2.
     MCMC samples overlayed on top of the true posterior $B(10, 4)$ by
     running `python biased_coin.py`.
 
+::: {.callout-note title="code"}
 ```{python ex1-q3.1}
 import numpy as np
 import matplotlib.pyplot as plt
@@ -500,6 +505,7 @@ if __name__ == "__main__":
     samples = metropolis_hastings(N, T, x_init, sigma)
     plot_results(samples)
 ```
+:::
 
 (e) **(Coding, 9 points)**. Implement Metropolis-Hastings in the movie
     setting inside\
@@ -512,6 +518,7 @@ if __name__ == "__main__":
     to true parameters. You may notice occasional failures that occur
     due to lack of convergence which we will account for in grading.
 
+::: {.callout-note title="code"}
 ```{python ex1-q3.2}
 import torch
 import torch.distributions as dist
@@ -739,7 +746,7 @@ def evaluate_metropolis(num_sims: int, num_movies: int, feature_dim: int) -> Non
 if __name__ == "__main__":
     evaluate_metropolis(num_sims=10, num_movies=30000, feature_dim=10)
 ```
-
+:::
 
 ### Question 4: Direct Preference Optimization (40 points) {#question-4-direct-preference-optimization-40-points .unnumbered}
 
@@ -844,6 +851,7 @@ variant of the model (i.e., designed for chat-based interactions).
     Report the proportion of "because of" occurences before and after
     fine-tuning. Additionally, include a plot of the DPO loss curve.
 
+::: {.callout-note title="code"}
 ```{python ex1-q4}
 import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM, set_seed
@@ -1112,3 +1120,4 @@ if __name__ == '__main__':
     print('Sampled responses after fine-tuning:\n' + '\n'.join(post_tuning_responses[:10]))
     print(f'Fraction responses with because of: {fraction_responses_with_because_of(post_tuning_responses)}') # should be more than half
 ```
+:::

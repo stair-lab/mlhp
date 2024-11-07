@@ -48,6 +48,7 @@ the posterior distributions.
           quantification? Discuss possible reasons for the observed
           differences.
 
+::: {.callout-note title="code"}
 ```{python ex2-q1-1}
 import numpy as np
 import matplotlib.pyplot as plt
@@ -157,6 +158,7 @@ if __name__ == "__main__":
     ece_value = expected_calibration_error(probs, labels, "Test Model", plot=True)
     print(f"ECE Value: {ece_value}")
 ```
+:::
 
 (b) **Parametric Linear Model Estimated Using Metropolis-Hastings (11
     points)**
@@ -176,6 +178,7 @@ if __name__ == "__main__":
           $T_{\text{burn-in}}$. How did these choices affect the
           convergence and mixing of your MCMC chain?
 
+::: {.callout-note title="code"}
 ```{python ex2-q1-2}
 import torch
 import matplotlib.pyplot as plt
@@ -287,7 +290,7 @@ print(f'Test Accuracy: {acc}')
 expected_calibration_error(torch.sigmoid(x_test @ averaged_weights).numpy(), y_test.numpy(), model_name="Metropolis-Hastings")
 
 ```
-
+:::
 
 (c) **Parametric Neural Network Model Estimated Using Hamiltonian Monte
     Carlo (11 points)**
@@ -306,6 +309,7 @@ expected_calibration_error(torch.sigmoid(x_test @ averaged_weights).numpy(), y_t
           the HMC and Metropolis-Hastings models and provide the
           accuracy numbers.
 
+::: {.callout-note title="code"}
 ```{python ex2-q1-3}
 # Use a GPU when running this file! JAX should automatically default to GPU.
 import jax.numpy as np
@@ -418,7 +422,7 @@ if __name__ == "__main__":
     # Compute expected calibration error on testing set
     expected_calibration_error(sigmoid(test_logits), y_test, model_name="HMC")
 ```
-
+:::
 
 (d) **Non-Parametric Model with Gaussian Process (GP) (7 points)**
 
@@ -437,6 +441,7 @@ if __name__ == "__main__":
           the advantages and disadvantages of using a GP in this
           setting?
 
+::: {.callout-note title="code"}
 ```{python ex2-q1-4}
 import numpy as np
 from sklearn.gaussian_process import GaussianProcessClassifier
@@ -464,7 +469,7 @@ print(f'Test Accuracy: {test_accuracy:.4f}')
 
 expected_calibration_error(y_pred_probs, y_test, model_name="Gaussian Process Classifier")
 ```
-
+:::
 
 ### Question 2: Active Learning for Preference Learning (40 points) {#sec-question-2-active-learning-for-preference-learning-40-points .unnumbered}
 
@@ -567,7 +572,7 @@ information gained about $\theta$ through preference queries.
          acquisition function. Interpret your plot and use it to compare
          the two methods.
 
-
+::: {.callout-note title="code"}
 ```{python ex2-q2-1}
 import torch
 import torch.nn.functional as F
@@ -816,6 +821,7 @@ def kl_divergence_gaussians(mu1, sigma1_inv, mu2, sigma2_inv):
 model = LogisticActiveLearning()
 model.train(num_iterations=100, subset_size=50)
 ```
+:::
 
 ### Question 3: Linear Performance Metric Elicitation (30 points) {#sec-question-3-linear-performance-metric-elicitation-30-points .unnumbered}
 
@@ -846,6 +852,7 @@ model.train(num_iterations=100, subset_size=50)
     Play around with the oracle's theta and run `start_search` to see
     how close you can approximate it!
 
+::: {.callout-note title="code"}
 ```{python ex2-q3-1}
 import torch
 import matplotlib.pyplot as plt
@@ -1013,6 +1020,7 @@ def start_search():
         lower_bound, upper_bound = search_theta(oracle, data_dist, lower_bound=lower_bound, upper_bound=upper_bound)
     print(f"Theta Search Space: [{lower_bound}, {upper_bound}]")
 ```
+:::
 
 ### Question 4: D-optimal Design with Logistic Model (30 points) {#sec-question-4-d-optimal-design-with-logistic-model-30-points .unnumbered}
 
@@ -1072,7 +1080,7 @@ analyze D-optimal designs for this model.
          What difference do you observe between greedy and random
          sampling? What is the win rate of greedy?
 
-
+::: {.callout-note title="code"}
 ```{python ex2-q4-1}
 import numpy as np
 import matplotlib.pyplot as plt
@@ -1229,6 +1237,7 @@ plt.title('Comparison of Covariance Norms (Greedy vs. Random) Across Iterations'
 plt.legend()
 plt.show()
 ```
+:::
 
 ### Question 5: Nonparametric Metric Elicitation (30 points) {#sec-question-5-nonparametric-metric-elicitation-30-points .unnumbered}
 
@@ -1313,6 +1322,7 @@ slice sampling for posterior inference.
          `evaluate_elicited_metric` taking into the plot you saw in part
          (iii).
 
+::: {.callout-note title="code"}
 ```{python ex2-q5-1}
 import numpy as np
 import matplotlib.pyplot as plt
@@ -1525,3 +1535,4 @@ ax.set_title('True Function vs. Averaged Estimated Function')
 plt.legend()
 plt.show()
 ```
+:::
