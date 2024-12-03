@@ -1,0 +1,1434 @@
+## Exercises
+### Question 1: Preferential Bayesian Optimization (30 points) {#sec-question-1-preferential-bayesian-optimization-30-points .unnumbered}
+
+**Preferential Bayesian Optimization (PBO)** is a variant of Bayesian
+Optimization (BO) designed to handle scenarios where feedback is
+provided in terms of preferences between alternatives rather than
+explicit numeric evaluations. Suppose you are optimizing an unknown
+function $f$ over a space $\mathcal{X}$, but instead of receiving
+function values, you only receive pairwise comparisons between different
+points in the input space. That is, given two points
+$x_1, x_2 \in \mathcal{X}$, you receive feedback in the form of a
+preference: $x_1 \succ x_2$ implies $f(x_1) > f(x_2)$.
+
+The **Gaussian Process (GP)** framework is used to model $f$, and the
+optimization is guided by this model. Let $p(x_1 \succ x_2 | f)$ be the
+probability that $x_1$ is preferred over $x_2$, which can be modeled
+using a Bradley-Terry or Thurstone model based on the GP prior.
+
+Using the paper "Preferential Bayesian Optimization"
+(<https://proceedings.mlr.press/v70/gonzalez17a/gonzalez17a.pdf>),
+answer the following:
+
+(a) **Modeling Preferences (6 points)**
+
+    (i) **Likelihood Derivation (Written, 2 points):** Given two points
+        $x_1$ and $x_2$ and their corresponding latent function values
+        $f(x_1)$ and $f(x_2)$, derive the likelihood of a preference
+        $x_1 \succ x_2$ using the Bradley-Terry model. Your solution
+        here.
+
+    (ii) **Incorporating into GP (Written, 2 points):** Explain how this
+         likelihood can be incorporated into the GP framework to model
+         preferences probabilistically. Specifically, describe how the
+         covariance function of the GP affects the joint distribution of
+         preferences and discuss any assumptions made regarding the
+         smoothness or structure of $f$.
+
+    (iii) **Posterior Update (Written, 2 points):** Write out an
+          expression for the posterior mean and variance at new query
+          points by using the posterior predictive distribution based on
+          previously observed preferences (no need to simplify since
+          it's intractable analytically). Suggest an approach that can
+          be used to approximate the mean and variance.
+
+(b) **Acquisition Function Adaptation (6 points)**
+
+    (i) **Expected Improvement (EI) for Preferences (Written, 2
+        points):** Explain how the Expected Improvement (EI) acquisition
+        function is adapted in the context of PBO to handle preferences
+        rather than absolute function values. Please read the paper for
+        this.
+
+    (ii) **EI Computation for Pairwise Comparisons (Written, 2
+         points):** Derive the expression for EI when dealing with
+         pairwise comparisons. Show how the computation of EI differs
+         from the standard BO setting and discuss how uncertainty in the
+         GP model is used in this context.
+
+    (iii) **Selection Strategy (Written, 2 points):** Describe how the
+          acquisition function uses the pairwise preference data to
+          select the next query point. Provide a rigorous justification
+          for this selection strategy in terms of maximizing expected
+          information gain.
+
+(c) **Exploration-Exploitation Balance in PBO (6 points)**
+
+    (i) **Exploration Mechanism (Written, 2 points):** Explain how
+        exploration is handled in the PBO framework. Describe how
+        uncertainty in the preference model (the GP posterior)
+        influences the selection of new points for evaluation.
+
+    (ii) **Uncertainty Quantification (Written, 2 points):** Define how
+         the variance in the GP posterior represents uncertainty in the
+         model and show how this uncertainty is updated as new
+         preferences are observed.
+
+    (iii) **Empirical Validation (Written, 2 points):** Design an
+          experiment to empirically validate the balance between
+          exploration and exploitation in PBO. Describe the setup,
+          including the objective function, the experimental conditions,
+          and the evaluation metric for measuring the quality of
+          exploration-exploitation balance.
+
+(d) **Scalability and Practical Considerations (6 points)**
+
+    (i) **Challenges in Preference Feedback (Written, 2 points):**
+        Discuss the challenges associated with preference feedback in
+        real-world applications, such as inconsistency in user
+        preferences and potential biases.
+
+    (ii) **GP Scalability (Written, 2 points):** Explain how the
+         scalability of the GP model affects the performance of PBO,
+         especially as the number of observations increases. Include a
+         discussion on computational complexity and possible solutions.
+
+    (iii) **Extensions for Large-Scale Problems (Written, 2 points):**
+          Propose potential extensions or modifications to improve the
+          applicability of PBO to large-scale optimization problems. For
+          example, discuss the feasibility of sparse GPs or other
+          approximation techniques and evaluate their potential impact
+          on PBO performance.
+
+(e) **Empirical Experimentation (6 points)**
+
+    (i) **Copeland Score (Coding, 2 points):** Implement
+        `compute_max_copeland_score` in\
+        `pbo/forrester_duel.py`.
+
+    (ii) **Copeland Acquisition (Coding, 4 points):** Implement
+         `copeland_acquisition`. Run `forrester_duel.py` and briefly
+         discuss any patterns you observe in the chosen duels (black Xs
+         on the heatmap).
+
+::: {.callout-note title="code"}
+```{python ex3-q1}
+import numpy as np
+from sklearn.gaussian_process import GaussianProcessClassifier
+from sklearn.gaussian_process.kernels import RBF, ConstantKernel as C
+import matplotlib.pyplot as plt
+from tqdm import tqdm
+
+# Define the Forrester function
+def forrester_function(x):
+    """
+    Evaluates the Forrester function at the given input.
+    
+    Args:
+    - x (float or numpy.ndarray): Input value(s) in the range [0, 1].
+    
+    Returns:
+    - float or numpy.ndarray: Evaluated Forrester function value(s).
+    """
+    return (6 * x - 2)**2 * np.sin(12 * x - 4)
+
+# Sigmoid function for probabilistic preferences
+def sigmoid(x):
+    """
+    Computes the sigmoid function for the given input.
+    
+    Args:
+    - x (float or numpy.ndarray): Input value(s).
+    
+    Returns:
+    - float or numpy.ndarray: Sigmoid-transformed value(s).
+    """
+    return 1 / (1 + np.exp(-x))
+
+# Simulate duel outcome probabilistically
+def simulate_duel_outcome(x, x_prime):
+    """
+    Simulates the outcome of a duel between two candidates based on probabilistic preferences.
+    
+    Args:
+    - x (float): First candidate's input value.
+    - x_prime (float): Second candidate's input value.
+    
+    Returns:
+    - int: 1 if x wins, 0 otherwise.
+    """
+    prob = sigmoid(forrester_function(x_prime) - forrester_function(x))  # Probability x beats x'
+    return np.random.choice([1, 0], p=[prob, 1 - prob])
+
+# Compute the Soft Copeland score for all candidates (vectorized)
+def compute_max_copeland_score(candidates, gp, landmarks):
+    """
+    Computes the maximum Copeland score for given candidates using predicted win probabilities.
+    
+    Args:
+    - candidates (numpy.ndarray): Array of candidate points.
+    - gp (GaussianProcessClassifier): Trained Gaussian process classifier for preference modeling.
+    - landmarks (numpy.ndarray): Array of landmark points used for Monte Carlo approximation.
+    
+    Returns:
+    - tuple: Maximum Copeland score and the best candidate.
+    """
+    # YOUR CODE HERE (~6 lines)
+        # 1. Generate all pairs between candidates and landmarks.
+        # 2. Get win probabilities and average
+        # 3. Return appropriate maximum and best candidate.
+    pass 
+    # END OF YOUR CODE
+
+# Acquisition function with GP retraining and maximum Copeland score for each outcome
+def copeland_acquisition(x, x_prime, x_candidates, gp, train_X, train_y, landmarks, max_copeland_score):
+    """
+    Computes the acquisition value for a candidate pair by simulating outcomes and retraining the GP.
+    
+    Args:
+    - x (float): First value of duel.
+    - x_prime (float): Second value of duel.
+    - x_candidates (numpy.ndarray): Array of candidate points to evaluate soft Copeland on.
+    - gp (GaussianProcessClassifier): Trained Gaussian process classifier for preference modeling.
+    - train_X (numpy.ndarray): Current training input pairs.
+    - train_y (numpy.ndarray): Current training labels.
+    - landmarks (numpy.ndarray): Array of landmark points used for Monte Carlo approximation.
+    - max_copeland_score (float): Maximum copeland score prior to acquiring any new pair
+    
+    Returns:
+    - float: Acquisition value for the given pair (x, x_prime).
+    """
+    # YOUR CODE HERE (~14-16 lines)
+        # 1. Predict dueling probabilities
+        # 2. Simulate adding (x, x') with y=1 (x beats x') and fit GP 
+        # 3. Simulate adding (x, x') with y=0 (x' beats x) and fit GP 
+        # 4. Compute expected improvement in max Copeland score
+        # 5. Return weighted acquisition value
+    pass
+    # END OF YOUR CODE
+
+if __name__ == "__main__":
+    # Initialization
+    np.random.seed(42)
+    kernel = C(28.0, constant_value_bounds='fixed') * RBF(length_scale=0.15, length_scale_bounds='fixed')
+    gp = GaussianProcessClassifier(kernel=kernel)
+
+    # Generate initial training data (random pairs)
+    train_X = np.array([[0, 0], [0, 0]]) #np.random.uniform(0, 1, (10, 2))  # 20 random dueling pairs [x, x']
+    train_y = np.array([simulate_duel_outcome(pair[0], pair[1]) for pair in train_X])
+
+    # Fixed landmark points and their function values
+    landmarks = np.linspace(0, 1, 30)  # 10 fixed landmarks
+
+    # Generate candidate pairs for optimization
+    x_candidates = np.linspace(0, 1, 30)  # Reduced grid for efficiency
+    X, X_prime = np.meshgrid(x_candidates, x_candidates)
+    candidate_pairs = np.c_[X.ravel(), X_prime.ravel()]
+
+    # Optimization loop
+    n_iterations = 20
+    for iteration in range(n_iterations):
+        # Retrain the GP with current training data
+        gp.fit(train_X, train_y)
+
+        # Compute global maximum Copeland score
+        max_copeland_score, condorcet_winner = compute_max_copeland_score(x_candidates, gp, landmarks)
+        print(f"Condorcet winner iteration {iteration}: {condorcet_winner} with soft-Copeland score {max_copeland_score}")
+
+        # Evaluate acquisition values for all candidate pairs
+        acquisition_values = np.zeros(len(candidate_pairs))
+        for idx, (x, x_prime) in tqdm(enumerate(candidate_pairs), total=len(candidate_pairs)):
+            acquisition_values[idx] = copeland_acquisition(
+                x, x_prime, x_candidates, gp, train_X, train_y, landmarks, max_copeland_score
+            )
+
+        # Select the pair with the highest acquisition value
+        best_idx = np.argmax(acquisition_values)
+        next_x, next_x_prime = candidate_pairs[best_idx]
+
+        # Simulate the actual outcome of the duel
+        outcome = simulate_duel_outcome(next_x, next_x_prime)
+
+        # Update training data with the new duel outcome
+        train_X = np.vstack([train_X, [next_x, next_x_prime]])
+        train_y = np.append(train_y, outcome)
+
+    # Generate heatmaps
+    x = np.linspace(0, 1, 100)
+    X, X_prime = np.meshgrid(x, x)
+    pairs = np.c_[X.ravel(), X_prime.ravel()]
+
+    # Ground Truth Preference Probabilities
+    gt_preferences = np.array([
+        sigmoid(forrester_function(x_prime) - forrester_function(x))
+        for x, x_prime in pairs
+    ]).reshape(X.shape)
+
+    # GP-Predicted Preferences
+    gp_predictions = gp.predict_proba(pairs)[:, 1].reshape(X.shape)
+
+    # Plot Ground Truth Preference Heatmap
+    plt.figure(figsize=(12, 6))
+    plt.subplot(1, 2, 1)
+    plt.contourf(X, X_prime, gt_preferences, levels=50, cmap='jet')
+    plt.colorbar(label="Ground Truth Preference Probability")
+    plt.title("Ground Truth Preference Heatmap")
+    plt.xlabel("x")
+    plt.ylabel("x'")
+
+    print(f'Chosen duels: {train_X[-n_iterations:]}')
+
+    # Plot GP-Predicted Preference Heatmap
+    plt.subplot(1, 2, 2)
+    plt.contourf(X, X_prime, gp_predictions, levels=50, cmap='jet')
+    plt.colorbar(label="GP-Predicted Preference Probability")
+    plt.scatter(train_X[-n_iterations:, 0], train_X[-n_iterations:, 1], c='black', label="Last Iterations", s=30, marker='x')
+    plt.title("GP-Predicted Preference Heatmap")
+    plt.xlabel("x")
+    plt.ylabel("x'")
+
+    plt.tight_layout()
+    plt.show()
+```
+:::
+
+### Question 2: Linear Dueling Bandit (30 points) {#sec-question-2-linear-dueling-bandit-30-points .unnumbered}
+
+In the linear dueling bandit problem, feedback is provided through
+pairwise comparisons between actions, rather than direct rewards.
+Consider a finite set of $K$ actions, each represented by a feature
+vector $x_1, x_2, \dots, x_K \in \mathbb{R}^d$. Let the unknown
+preference scores be $f(x_i) = \theta^\top x_i$ and
+$f(x_j) = \theta^\top x_j$, where $\theta \in \mathbb{R}^d$ is an
+unknown parameter vector. The goal is to identify the best action by
+iteratively comparing pairs of actions while minimizing cumulative
+regret. Using qEUBO from <https://arxiv.org/pdf/2303.15746>, complete
+the following:
+
+(a) **Acquisition Functions for Regret Minimization (Written, 10
+    points)**: Write out the expression for the acquisition function
+    Expected Improvement discussed in Q1 and qEUBO in the context of the
+    linear dueling bandit. Discuss conditions under which each
+    acquisition function could outperform the others in minimizing
+    cumulative regret.
+
+(b) **Experimental Evaluation of Acquisition Functions (Written +
+    Coding, 10 points)**: Benchmark the performance of the two
+    acquisition functions experimentally.
+
+    (i) Finish implementing the acquisition functions in a linear
+        dueling bandit simulation with $K = 10$ and $d = 5$, using
+        synthetic data by completing the function
+        `calculate_regret_from_gp` in `linear_dueling/run.py`.
+
+    (ii) Measure and compare cumulative regret over $T = 200$ rounds for
+         each acquisition function.
+
+    (iii) Report and analyze the empirical regret curves, discussing any
+          notable performance differences.
+
+(c) **Effect of Dimensionality on Regret (Written + Coding, 10
+    points)**: Analyze how increasing feature dimensionality impacts
+    regret.
+
+    (i) Experimentally evaluate the regret for different values of $d$
+        (e.g., $d = 5, 10, 20$) while keeping $K$ constant.
+
+    (ii) Plot the regret against $d$ and explain any observed trends.
+
+::: {.callout-note title="code"}
+```{python ex3-q2}
+from __future__ import annotations
+
+from typing import Optional
+import itertools
+
+import torch
+import matplotlib.pyplot as plt
+from torch import Tensor
+from tqdm import tqdm
+from botorch.acquisition.preference import qExpectedUtilityOfBestOption
+from botorch.acquisition.logei import qLogExpectedImprovement
+from botorch.fit import fit_gpytorch_mll
+from botorch.models.gpytorch import GPyTorchModel
+from botorch.utils.sampling import draw_sobol_samples
+from botorch.sampling import SobolQMCNormalSampler
+from botorch.posteriors.gpytorch import GPyTorchPosterior
+from gpytorch.distributions import base_distributions
+from gpytorch.likelihoods import Likelihood
+from gpytorch.distributions import MultivariateNormal
+from gpytorch.kernels import Kernel, RBFKernel, ScaleKernel
+from gpytorch.mlls.variational_elbo import VariationalELBO
+from gpytorch.means import ConstantMean
+from gpytorch.models import ApproximateGP
+from gpytorch.priors.torch_priors import GammaPrior
+from gpytorch.variational import (
+    CholeskyVariationalDistribution,
+    UnwhitenedVariationalStrategy,
+    VariationalStrategy,
+)
+
+
+class PreferentialSoftmaxLikelihood(Likelihood):
+    r"""
+    Implements the softmax likelihood used for GP-based preference learning.
+
+    .. math::
+        p(\mathbf y \mid \mathbf f) = \text{Softmax} \left( \mathbf f \right)
+
+    :param int num_alternatives: Number of alternatives (i.e., q).
+    """
+
+    def __init__(self, num_alternatives):
+        super().__init__()
+        self.num_alternatives = num_alternatives
+        self.noise = torch.tensor(1e-4)  # This is only used to draw RFFs-based
+        # samples. We set it close to zero because we want noise-free samples
+        self.sampler = SobolQMCNormalSampler(
+            sample_shape=torch.Size([512]))  # This allows for
+        # SAA-based optimization of the ELBO
+
+    def _draw_likelihood_samples(
+        self, function_dist, *args, sample_shape=None, **kwargs
+    ):
+        function_samples = self.sampler(
+            GPyTorchPosterior(function_dist)).squeeze(-1)
+        return self.forward(function_samples, *args, **kwargs)
+
+    def forward(self, function_samples, *params, **kwargs):
+        function_samples = function_samples.reshape(
+            function_samples.shape[:-1]
+            + torch.Size(
+                (
+                    int(function_samples.shape[-1] / self.num_alternatives),
+                    self.num_alternatives,
+                )
+            )
+        )  # Reshape samples as if they came from a multi-output model (with `q` outputs)
+        num_alternatives = function_samples.shape[-1]
+
+        if num_alternatives != self.num_alternatives:
+            raise RuntimeError("There should be %d points" %
+                               self.num_alternatives)
+
+        res = base_distributions.Categorical(
+            logits=function_samples)  # Passing the
+        # function values as logits recovers the softmax likelihood
+        return res
+
+
+class VariationalPreferentialGP(GPyTorchModel, ApproximateGP):
+    def __init__(
+        self,
+        queries: Tensor,
+        responses: Tensor,
+        use_withening: bool = True,
+        covar_module: Optional[Kernel] = None,
+    ) -> None:
+        r"""
+        Args:
+            queries: A `n x q x d` tensor of training inputs. Each of the `n` queries is constituted
+                by `q` `d`-dimensional decision vectors.
+            responses: A `n x 1` tensor of training outputs. Each of the `n` responses is an integer
+                between 0 and `q-1` indicating the decision vector selected by the user.
+            use_withening: If true, use withening to enhance variational inference.
+            covar_module: The module computing the covariance matrix.
+        """
+        self.queries = queries
+        self.responses = responses
+        self.input_dim = queries.shape[-1]
+        self.q = queries.shape[-2]
+        self.num_data = queries.shape[-3]
+        train_x = queries.reshape(
+            queries.shape[0] * queries.shape[1], queries.shape[2]
+        )  # Reshape queries in the form of "standard training inputs"
+        train_y = responses.squeeze(-1)  # Squeeze out output dimension
+        bounds = torch.tensor(
+            [[0, 1] for _ in range(self.input_dim)], dtype=torch.double
+        ).T  # This assumes the input space has been normalized beforehand
+        # Construct variational distribution and strategy
+        if use_withening:
+            inducing_points = draw_sobol_samples(
+                bounds=bounds,
+                n=2 * self.input_dim,
+                q=1,
+                seed=0,
+            ).squeeze(1)
+            inducing_points = torch.cat([inducing_points, train_x], dim=0)
+            variational_distribution = CholeskyVariationalDistribution(
+                inducing_points.size(-2)
+            )
+            variational_strategy = VariationalStrategy(
+                self,
+                inducing_points,
+                variational_distribution,
+                learn_inducing_locations=False,
+            )
+        else:
+            inducing_points = train_x
+            variational_distribution = CholeskyVariationalDistribution(
+                inducing_points.size(-2)
+            )
+            variational_strategy = UnwhitenedVariationalStrategy(
+                self,
+                inducing_points,
+                variational_distribution,
+                learn_inducing_locations=False,
+            )
+        super().__init__(variational_strategy)
+        self.likelihood = PreferentialSoftmaxLikelihood(
+            num_alternatives=self.q)
+        self.mean_module = ConstantMean()
+        scales = bounds[1, :] - bounds[0, :]
+
+        if covar_module is None:
+            self.covar_module = ScaleKernel(
+                RBFKernel(
+                    ard_num_dims=self.input_dim,
+                    lengthscale_prior=GammaPrior(3.0, 6.0 / scales),
+                ),
+                outputscale_prior=GammaPrior(2.0, 0.15),
+            )
+        else:
+            self.covar_module = covar_module
+        self._num_outputs = 1
+        self.train_inputs = (train_x,)
+        self.train_targets = train_y
+
+    def forward(self, X: Tensor) -> MultivariateNormal:
+        mean_X = self.mean_module(X)
+        covar_X = self.covar_module(X)
+        return MultivariateNormal(mean_X, covar_X)
+
+    @property
+    def num_outputs(self) -> int:
+        r"""The number of outputs of the model."""
+        return 1
+
+
+# Objective function for pairwise comparisons
+def f(x):
+    """
+    Computes the preference score for a given action.
+
+    Args:
+        x (torch.Tensor): A feature vector of dimension `d`.
+
+    Returns:
+        torch.Tensor: The computed preference score.
+    """
+    return x @ theta_true
+
+# Simulate pairwise comparisons
+
+
+def simulate_comparison(x1, x2):
+    """
+    Simulates a pairwise comparison between two actions based on their preference scores.
+
+    Args:
+        x1 (torch.Tensor): Feature vector of the first action.
+        x2 (torch.Tensor): Feature vector of the second action.
+
+    Returns:
+        torch.Tensor: The feature vector of the preferred action.
+    """
+    prob_x1 = torch.sigmoid(f(x1) - f(x2))
+    return x1 if torch.rand(1).item() < prob_x1 else x2
+
+# Function to fit a Variational GP model
+
+
+def fit_variational_gp(train_X, train_Y):
+    """
+    Fits a Variational Gaussian Process (GP) model to the given training data.
+
+    Args:
+        train_X (torch.Tensor): Training feature pairs of shape [n, 2, d].
+        train_Y (torch.Tensor): Training preferences of shape [n, 1].
+
+    Returns:
+        VariationalPreferentialGP: A fitted GP model.
+    """
+    queries = train_X.reshape(train_X.shape[0], 2, d)
+    responses = train_Y
+    return fit_model(queries, responses)
+
+
+def fit_model(queries, responses):
+    """
+    Internal helper to train a VariationalPreferentialGP.
+
+    Args:
+        queries (torch.Tensor): Training feature pairs.
+        responses (torch.Tensor): Training responses (preferences).
+
+    Returns:
+        VariationalPreferentialGP: Trained GP model.
+    """
+    model = VariationalPreferentialGP(queries, responses)
+    model.train()
+    model.likelihood.train()
+    mll = VariationalELBO(
+        likelihood=model.likelihood,
+        model=model,
+        num_data=2 * model.num_data,
+    )
+    fit_gpytorch_mll(mll)
+    model.eval()
+    model.likelihood.eval()
+    return model
+
+# Acquisition function definition
+
+
+def get_acquisition_functions(gp):
+    """
+    Returns acquisition functions (qLogEI and qEUBO) for a given GP model.
+
+    Args:
+        gp (VariationalPreferentialGP): The fitted GP model.
+
+    Returns:
+        tuple: qLogExpectedImprovement and qExpectedUtilityOfBestOption acquisition functions.
+    """
+    with torch.no_grad():
+        posterior = gp.posterior(gp.train_inputs[0])
+        best_f = posterior.mean.squeeze(-1).max()
+
+    qLogEI = qLogExpectedImprovement(model=gp, best_f=best_f)
+    qEUBO = qExpectedUtilityOfBestOption(pref_model=gp)
+    return qLogEI, qEUBO
+
+# Evaluate acquisition function on pairs
+
+
+def evaluate_acquisition_on_pairs(acq_function, arms):
+    """
+    Computes acquisition values for all possible pairs of arms.
+
+    Args:
+        acq_function: The acquisition function to evaluate.
+        arms (torch.Tensor): All available arms (feature vectors).
+
+    Returns:
+        tuple: A list of pairs and their corresponding acquisition values.
+    """
+    pairs = list(itertools.combinations(arms, 2))
+    pair_values = []
+    with torch.no_grad():
+        for x1, x2 in pairs:
+            pair = torch.stack([x1, x2]).unsqueeze(0)
+            pair_values.append(acq_function(pair))
+    return pairs, torch.tensor(pair_values)
+
+# Regret calculation
+
+
+def calculate_regret_from_gp(gp, actions):
+    """
+    Computes the regret for the current GP model.
+
+    Args:
+        gp (VariationalPreferentialGP): The fitted GP model.
+        actions (torch.Tensor): Feature vectors of arms.
+
+    Returns:
+        torch.Tensor: The calculated regret.
+    """
+    # YOUR CODE HERE (~6 lines)
+    # Compare the ground truth optimal arm to the GP's believed best arm
+    # Hint: To find GP believed best arm in expectation, use gp.posterior which returns with a mean property.
+    pass
+    # END OF YOUR CODE
+
+
+if __name__ == "__main__":
+    # Set default tensor precision
+    torch.set_default_dtype(torch.double)
+
+    # Problem settings
+    torch.manual_seed(55)
+    K = 30  # Number of arms (discrete choices)
+    d = 2   # Dimensionality of feature vectors
+    T = 100  # Number of rounds (iterations)
+    bounds = torch.tensor([[0.0] * d, [1.0] * d])  # Bounds for action space
+
+    # Generate random actions (feature vectors)
+    actions = torch.rand(K, d)
+
+    # Ground-truth preference parameter (unknown to the model)
+    theta_true = torch.ones(d)
+
+    # Generate initial observations
+    n_initial = 5
+    indices = torch.randint(0, K, (n_initial, 2))
+    train_X_logei = actions[indices]  # Shape: [n_initial, 2, d]
+    train_X_qeubo = train_X_logei.clone()
+    train_X_random = train_X_logei.clone()
+    train_Y_logei = torch.tensor([[0.0 if simulate_comparison(x1, x2).equal(x1) else 1.0]
+                                  for x1, x2 in train_X_logei])
+    train_Y_qeubo = train_Y_logei.clone()
+    train_Y_random = train_Y_logei.clone()
+
+    # Optimization loop
+    cumulative_regret_logei = []
+    cumulative_regret_qeubo = []
+    cumulative_regret_random = []
+
+    for t in tqdm(range(T)):
+        # Fit GP models
+        gp_logei = fit_variational_gp(train_X_logei, train_Y_logei)
+        gp_qeubo = fit_variational_gp(train_X_qeubo, train_Y_qeubo)
+        gp_random = fit_variational_gp(train_X_random, train_Y_random)
+
+        # Define acquisition functions
+        qLogEI, _ = get_acquisition_functions(gp_logei)
+        _, qEUBO = get_acquisition_functions(gp_qeubo)
+
+        # Evaluate acquisition functions
+        pairs_logei, acq_values_logei = evaluate_acquisition_on_pairs(
+            qLogEI, actions)
+        pairs_qeubo, acq_values_qeubo = evaluate_acquisition_on_pairs(
+            qEUBO, actions)
+
+        # Select pairs based on acquisition values
+        best_pair_idx_logei = torch.argmax(acq_values_logei)
+        best_pair_idx_qeubo = torch.argmax(acq_values_qeubo)
+        x1_logei, x2_logei = pairs_logei[best_pair_idx_logei]
+        x1_qeubo, x2_qeubo = pairs_qeubo[best_pair_idx_qeubo]
+
+        # Random pair selection
+        random_indices = torch.randint(0, K, (2,))
+        x1_random = actions[random_indices[0]]
+        x2_random = actions[random_indices[1]]
+
+        # Simulate comparisons
+        selected_logei = simulate_comparison(x1_logei, x2_logei)
+        selected_qeubo = simulate_comparison(x1_qeubo, x2_qeubo)
+        selected_random = simulate_comparison(x1_random, x2_random)
+
+        # Update training data
+        train_X_logei = torch.cat(
+            [train_X_logei, torch.stack([x1_logei, x2_logei]).unsqueeze(0)])
+        train_Y_logei = torch.cat([train_Y_logei, torch.tensor(
+            [[0.0 if selected_logei.equal(x1_logei) else 1.0]])])
+        train_X_qeubo = torch.cat(
+            [train_X_qeubo, torch.stack([x1_qeubo, x2_qeubo]).unsqueeze(0)])
+        train_Y_qeubo = torch.cat([train_Y_qeubo, torch.tensor(
+            [[0.0 if selected_qeubo.equal(x1_qeubo) else 1.0]])])
+        train_X_random = torch.cat(
+            [train_X_random, torch.stack([x1_random, x2_random]).unsqueeze(0)])
+        train_Y_random = torch.cat([train_Y_random, torch.tensor(
+            [[0.0 if selected_random.equal(x1_random) else 1.0]])])
+
+        # Calculate regrets
+        regret_logei = calculate_regret_from_gp(gp_logei, actions)
+        regret_qeubo = calculate_regret_from_gp(gp_qeubo, actions)
+        regret_random = calculate_regret_from_gp(gp_random, actions)
+
+        print(f'Regret LogEI: {regret_logei}')
+        print(f'Regret qEUBO: {regret_qeubo}')
+        print(f'Regret Random: {regret_random}')
+
+        cumulative_regret_logei.append(regret_logei)
+        cumulative_regret_qeubo.append(regret_qeubo)
+        cumulative_regret_random.append(regret_random)
+
+    # Plot cumulative regret
+    plt.plot(torch.cumsum(torch.tensor(
+        cumulative_regret_logei), dim=0), label='qLogEI')
+    plt.plot(torch.cumsum(torch.tensor(
+        cumulative_regret_qeubo), dim=0), label='qEUBO')
+    plt.plot(torch.cumsum(torch.tensor(
+        cumulative_regret_random), dim=0), label='Random')
+    plt.xlabel('Round')
+    plt.ylabel('Cumulative Regret')
+    plt.legend()
+    plt.title('Comparison of qLogEI, qEUBO, and Random Sampling')
+    plt.show()
+```
+:::
+
+
+### Question 3: Multi-Objective Thompson Sampling in Linear Contextual Bandits (30 points) {#sec-question-3-multi-objective-thompson-sampling-in-linear-contextual-bandits-30-points .unnumbered}
+
+Thompson Sampling (TS) is commonly used for reward maximization in
+multi-armed bandit problems, optimizing for the expected reward across
+actions. However, in many real-world scenarios, other objectives, such
+as the interpretability or reusability of learned parameters, are
+equally valuable. This is particularly relevant when modeling unknown
+reward functions with parameters that might offer insights or inform
+future experiments. A purely reward-focused Thompson Sampling approach
+may result in increased false positive rates due to aggressive
+exploitation, whereas a pure exploration approach---such as those used
+in active learning---might better suit the goal of parameter learning.
+
+Assume a multi-objective setting where the goal is to not only maximize
+the cumulative reward but also to accurately learn the parameters of the
+reward function itself in a linear contextual bandit setting. Let each
+arm be represented by a feature vector $x \in \mathbb{R}^d$, with
+rewards generated by an unknown linear model
+$r = \theta^\top x + \epsilon$, where
+$\epsilon \sim \mathcal{N}(0, \sigma^2)$. Given these considerations,
+answer the following:
+
+(a) **Theoretical Analysis of Multi-Objective Thompson Sampling (8
+    points)**
+
+    (i) **(Written, 3 points).** Define a cumulative regret objective
+        that balances maximizing the expected reward and minimizing the
+        parameter estimation error $\|\theta - \hat{\theta}\|_2$.
+        Explain how this multi-objective regret differs from the
+        single-objective regret typically used in linear bandits.
+
+    (ii) **(Written, 3 points).** Derive the expected regret bounds for
+         Thompson Sampling in the single-objective case and describe the
+         additional challenges posed when extending these bounds to the
+         multi-objective case.
+
+    (iii) **(Written, 2 points).** Suppose you were to use a pure
+          exploration approach for parameter estimation. Provide an
+          upper bound for the parameter error
+          $\|\theta - \hat{\theta}\|_2$ over $T$ rounds.
+
+(b) **Acquisition Strategies for Multi-Objective Optimization (8
+    points)**
+
+    (i) **(Written, 3 points).** Explain how to adapt the Upper
+        Confidence Bound (UCB) acquisition function to balance
+        exploration and exploitation for parameter learning alongside
+        reward maximization. Discuss the effect of tuning parameters on
+        exploration.
+
+    (ii) **(Written + Coding, 3 points).** Implement a Thompson Sampling
+         acquisition strategy that alternates between reward
+         maximization and parameter-focused exploration using a
+         multi-objective UCB. Implement the `select_arm` function of
+         `multi_obj_thompson/bandit.py`.
+
+    (iii) **(Written, 2 points).** Describe the impact of this
+          alternating acquisition strategy on false positive rates and
+          regret in comparison to standard Thompson Sampling.
+
+(c) **Posterior Distribution Analysis (8 points)**
+
+    (i) **(Written, 2 points).** Given a prior distribution for $\theta$
+        and observed rewards, derive the posterior distribution of
+        $\theta$ at each time step in the context of multi-objective
+        Thompson Sampling. Explain any assumptions needed for
+        computational tractability.
+
+    (ii) **(Coding, 4 points).** Implement a Bayesian update for the
+         posterior of $\theta$ following each observation. Do this in
+         `update`.
+
+    (iii) **(Written, 2 points).** Explain how this posterior update
+          accommodates both exploration for parameter estimation and
+          exploitation for reward maximization.
+
+(d) **Empirical Evaluation (6 points)**
+
+    (i) **(Coding, 3 points).** Design and conduct an experiment
+        comparing standard Thompson Sampling, pure exploration, and your
+        multi-objective TS algorithm. Run this experiment on a synthetic
+        dataset with $d = 5$ features and $K = 10$ arms by executing
+        `run.py`.
+
+    (ii) **(Written, 3 points).** Report and interpret the results by
+         comparing the cumulative reward and parameter estimation error
+         across methods. Provide insights on the trade-offs observed and
+         any patterns in the rate of regret reduction.
+
+::: {.callout-note title="code"}
+```{python ex3-q3}
+import numpy as np
+import matplotlib.pyplot as plt
+
+class MultiObjectiveThompsonSamplingBandit:
+    """
+    A class that implements a multi-objective Thompson sampling bandit.
+
+    Attributes:
+    - d (int): Dimension of the feature vector x.
+    - lambda_prior (float): Regularization parameter for the prior covariance matrix.
+    - sigma_noise (float): Standard deviation of the noise in rewards.
+    - mu (np.array): Prior mean of theta (initialized as a zero vector).
+    - Sigma (np.array): Prior covariance of theta (initialized as a scaled identity matrix).
+    """
+
+    def __init__(self, d, lambda_prior=1.0, sigma_noise=1.0):
+        """
+        Initializes the bandit with a prior on theta and noise variance.
+
+        Parameters:
+        - d (int): Dimension of the feature vector x.
+        - lambda_prior (float): Regularization parameter for the prior covariance matrix.
+        - sigma_noise (float): Standard deviation of the noise in rewards.
+        """
+        self.d = d
+        self.lambda_prior = lambda_prior
+        self.sigma_noise = sigma_noise
+
+        # Initialize prior mean and covariance matrix
+        self.mu = np.zeros(d)  # Prior mean of theta
+        self.Sigma = lambda_prior * np.eye(d)  # Prior covariance of theta
+
+    def select_arm(self, arms, mode):
+        """
+        Selects an arm (action) based on the specified mode.
+
+        Parameters:
+        - arms (np.array): A 2D NumPy array of shape (K, d) representing the feature vectors of K arms.
+        - mode (str): Selection mode, either 'exploit' (reward maximization) or 'explore' (focus on reducing uncertainty in theta).
+
+        Returns:
+        - selected_arm (np.array): The feature vector of the selected arm.
+        - arm_index (int): The index of the selected arm.
+        """
+        # Sample a belief for theta from the current posterior
+        theta_sample = np.random.multivariate_normal(self.mu, self.Sigma)
+
+        # Generate reward noise for the arms
+        reward_noise = np.random.normal(0, self.sigma_noise, size=len(arms))
+
+        if mode == 'exploit':
+            # YOUR CODE HERE (~2 lines)
+                # 1. Compute expected rewards with noise
+                # 2. Select the arm with the highest expected reward
+                pass 
+            # END OF YOUR CODE
+        elif mode == 'explore':
+            # Compute posterior covariance norms to evaluate exploration potential for each arm
+            posterior_cov_norms = []
+            for x in arms:
+                x = x.reshape(-1, 1)  # Reshape to column vector
+
+                # Find posterior covariance hypothetically and get its norm
+                # YOUR CODE HERE (~4 lines)
+                pass
+                # END OF YOUR CODE
+
+                posterior_cov_norms.append(norm)
+
+            # Select the arm that minimizes the posterior covariance norm
+            arm_index = np.argmin(posterior_cov_norms)
+
+        else:
+            raise ValueError("Mode must be either 'exploit' or 'explore'.")
+
+        return arms[arm_index], arm_index, posterior_cov_norms if mode == 'explore' else None
+
+    def update(self, x_t, r_t):
+        """
+        Updates the posterior distribution of theta given a new observation.
+
+        Parameters:
+        - x_t (np.array): Feature vector of the selected arm at time t.
+        - r_t (float): Observed reward at time t.
+        """
+        x_t = x_t.reshape(-1, 1)  # Reshape to column vector
+
+        # YOUR CODE HERE (~4 lines)
+        # Obtain mu_new and Sigma_new of theta posterior. This requires doing some math!
+        pass
+        # END OF YOUR CODE
+
+        # Update internal state
+        self.mu = mu_new.flatten()
+        self.Sigma = Sigma_new
+
+if __name__ == '__main__':
+    # Number of features (dimension) and arms
+    d = 5  # Feature dimension
+    K = 10  # Number of arms
+
+    # Generate random arms (feature vectors)
+    np.random.seed(42)
+    arms = np.random.randn(K, d)
+
+    # True theta (unknown to the bandit)
+    theta_true = np.random.randn(d)
+
+    # Initialize the bandit
+    bandit = MultiObjectiveThompsonSamplingBandit(d)
+
+    # Number of rounds
+    T = 1000
+
+    # Lists to store results
+    regrets = []  # Store the regret at each round
+    theta_errors = []  # Store the error between estimated and true theta
+
+    # Simulation loop
+    for t in range(T):
+        # Alternate between 'exploit' and 'explore' modes
+        mode = 'exploit' if t % 2 == 0 else 'explore'
+
+        # Select an arm based on the current mode
+        x_t, arm_index, _ = bandit.select_arm(arms, mode=mode)
+
+        # Observe the reward with noise
+        r_t = theta_true @ x_t + np.random.normal(0, bandit.sigma_noise)
+
+        # Update the bandit with the new observation
+        bandit.update(x_t, r_t)
+
+        # Compute regret (difference between optimal reward and received reward)
+        optimal_reward = np.max(arms @ theta_true)  # Best possible reward
+        regret = optimal_reward - (theta_true @ x_t)  # Regret for this round
+        regrets.append(regret)
+
+        # Compute parameter estimation error (distance between true and estimated theta)
+        theta_error = np.linalg.norm(theta_true - bandit.mu)
+        theta_errors.append(theta_error)
+
+    # Final estimates after all rounds
+    mu_estimate, Sigma_estimate = bandit.mu, bandit.Sigma
+
+    # Print results
+    print("Estimated theta:", mu_estimate)
+    print("True theta:", theta_true)
+    print("Cumulative regret:", np.sum(regrets))
+    print("Final covariance norm:", np.linalg.norm(Sigma_estimate))
+
+    # Visualization of results
+
+    # Plot cumulative regret over time
+    plt.figure()
+    plt.plot(np.cumsum(regrets))
+    plt.title('Cumulative Regret over Time')
+    plt.xlabel('Rounds')
+    plt.ylabel('Cumulative Regret')
+    plt.show()
+
+    # Plot estimation error over time
+    plt.figure()
+    plt.plot(theta_errors)
+    plt.title('Theta Estimation Error over Time')
+    plt.xlabel('Rounds')
+    plt.ylabel('Estimation Error (L2 Norm)')
+    plt.show()
+```
+:::
+
+### Question 4: Mechanism Design in Preference Learning (30 points) {#sec-question-4-mechanism-design-in-preference-learning-30-points .unnumbered}
+
+In mechanism design, a central challenge is optimizing resource
+allocation while accounting for user preferences, which may be private
+and complex. This problem can be addressed using learning techniques to
+infer user preferences, thereby enabling the designer to make informed
+pricing and allocation decisions. Consider a scenario where a designer
+allocates a divisible resource $B$ among $N$ players, each with a
+private, continuous, concave utility function $U_i(x_i)$ over their
+allocated share $x_i$, where $x = [x_1, x_2, \dots, x_N]$ denotes the
+allocation vector. The designer aims to maximize social welfare while
+ensuring full resource utilization.
+
+(a) **Modeling User Preferences (7 points)**:
+
+    (i) **(Written, 1 point)** Provide a realistic scenario in which we
+        estimate a utility function through eliciting preferences in the
+        context of the mechanism.
+
+    (ii) **(Written, 3 point)** Explain how elliptical slice sampling
+         can be used with a GP in order to estimate a utility function
+         through preferences.
+
+    (iii) **(Written, 3 point)** How can the elliptical slice posterior
+          samples be used to obtain the mean of the posterior predictive
+          for test points? (Hint: Read page $44$ of
+          <https://gaussianprocess.org/gpml/chapters/RW.pdf>.)
+
+(b) **Optimization with Learned Preferences (10 points)**:
+
+    (i) **(Written, 3 point)** Formulate the designer's optimization
+        problem, maximizing social welfare $\sum_{i=1}^N U_i(x_i)$
+        subject to the constraint $\sum_{i=1}^N x_i \leq B$.
+
+    (ii) **(Written, 4 point)** Using the Lagrange multiplier method,
+         derive the conditions that must be met for optimal allocation
+         and pricing.
+
+    (iii) **(Written, 3 point)** As an alternative approach to Lagrange
+          multipliers, explain how projected gradient descent (PGD) can
+          be used to solve the designer's optimization problem.
+
+(c) **Benchmarking Learning and Allocation Efficiency (13 points)**:
+
+    (i) **(Coding, 3 point)** Implement `preference_loglik` in the file
+        `gp_mechanism/preference_gp.py`.
+
+    (ii) **(Coding, 3 point)** Implement `predictive_function`.
+
+    (iii) **(Coding, 3 point)** Implement `optimize_allocations` inside
+          `gp_mechanism/run.py`.
+
+    (iv) **(Written, 4 point)** Compare GP-approximated utility
+         allocations through PGD, exact utility allocations through PGD,
+         and the optimal Lagrange-based allocation done by hand with
+         each other for your choice of utility functions $U_i$. Make
+         sure your utilities are continuous and concave.
+
+::: {.callout-note title="code"}
+```{python ex3-q4-1}
+from typing import Callable
+
+import numpy as np
+import matplotlib.pyplot as plt
+import torch  # Import PyTorch
+from tqdm import tqdm
+
+
+class EllipticalSliceSampler:
+    def __init__(self,
+                 prior_cov: np.ndarray,
+                 loglik: Callable):
+        """
+        Initializes the Elliptical Slice Sampler.
+
+        Args:
+        - prior_cov (np.ndarray): Prior covariance matrix.
+        - loglik (Callable): Log-likelihood function.
+        """
+        self.prior_cov = prior_cov
+        self.loglik = loglik
+
+        self._n = prior_cov.shape[0]  # Dimensionality of the space
+        # Cache Cholesky decomposition
+        self._chol = np.linalg.cholesky(prior_cov)
+
+        # Initialize state and cache previous states
+        self._state_f = self._chol @ np.random.randn(self._n)
+
+    def _indiv_sample(self):
+        """
+        Main algorithm for generating an individual sample using Elliptical Slice Sampling.
+        """
+        f = self._state_f  # Previous state
+        # Sample from prior for the ellipse
+        nu = self._chol @ np.random.randn(self._n)
+        log_y = self.loglik(f) + np.log(np.random.uniform()
+                                        )  # Log-likelihood threshold
+
+        theta = np.random.uniform(0., 2 * np.pi)  # Initial proposal angle
+        theta_min, theta_max = theta - 2 * np.pi, theta  # Define bracketing interval
+
+        # Main loop: Accept sample if it meets log-likelihood threshold; otherwise, shrink the bracket.
+        while True:
+            # YOUR CODE HERE (~10 lines)
+            # Generate a new sample point based on the current angle.
+            f_prime = f * np.cos(theta) + nu * np.sin(theta)
+
+            # Check if the proposed point meets the acceptance criterion.
+            if self.loglik(f_prime) > log_y:  # Accept the sample
+                self._state_f = f_prime
+                return
+
+            else:  # If not accepted, adjust the bracket and select a new angle.
+                if theta < 0:
+                    theta_min = theta
+                else:
+                    theta_max = theta
+                theta = np.random.uniform(theta_min, theta_max)
+            # END OF YOUR CODE
+
+    def sample(self,
+               n_samples: int,
+               n_burn: int = 500) -> np.ndarray:
+        """
+        Generates samples using Elliptical Slice Sampling.
+
+        Args:
+        - n_samples (int): Total number of samples to return.
+        - n_burn (int): Number of initial samples to discard (burn-in).
+
+        Returns:
+        - np.ndarray: Array of samples after burn-in.
+        """
+        samples = []
+        for i in tqdm(range(n_samples), desc="Sampling"):
+            self._indiv_sample()
+            if i > n_burn:
+                # Store sample post burn-in
+                samples.append(self._state_f.copy())
+
+        return np.stack(samples)
+
+
+def squared_exponential_cov_torch(X1, X2, length_scale=1.0, variance=1.0):
+    """
+    Squared Exponential (RBF) Covariance Function using PyTorch tensors.
+
+    Args:
+        X1 (torch.Tensor): First set of input points.
+        X2 (torch.Tensor): Second set of input points.
+        length_scale (float): Length scale of the kernel.
+        variance (float): Variance (amplitude) of the kernel.
+
+    Returns:
+        torch.Tensor: Covariance matrix between X1 and X2.
+    """
+    X1 = X1.reshape(-1, 1)
+    X2 = X2.reshape(-1, 1)
+    dists = torch.sum(X1**2, dim=1).reshape(-1, 1) + \
+        torch.sum(X2**2, dim=1) - 2 * torch.mm(X1, X2.T)
+    return variance * torch.exp(-0.5 * dists / length_scale**2)
+
+
+def generate_preferences(x_pairs, utility_fn):
+    """
+    Generates preference labels based on the Bradley-Terry model.
+
+    Args:
+        x_pairs (np.array): Array of preference pairs, shape [n_pairs, 2].
+        utility_fn (function): Ground truth utility function.
+
+    Returns:
+        np.array: Preference labels (1 if the first item in the pair is preferred, 0 otherwise).
+    """
+    preference_labels = []
+    for x1, x2 in x_pairs:
+        u1, u2 = utility_fn(x1), utility_fn(x2)
+        prob = np.exp(u1) / (np.exp(u1) + np.exp(u2))
+        preference_labels.append(1 if np.random.rand() < prob else 0)
+    return np.array(preference_labels)
+
+
+def create_predictive_function(ground_truth_utility, num_pairs=3000, n_samples=100, n_burn=50, length_scale=2.0, variance=0.5):
+    """
+    Creates a predictive function to compute the posterior predictive mean of a Gaussian Process.
+
+    Args:
+        ground_truth_utility (function): The ground truth utility function for generating preferences.
+        num_pairs (int): Number of random preference pairs to generate.
+        n_samples (int): Number of samples for Elliptical Slice Sampling.
+        n_burn (int): Number of burn-in samples for Elliptical Slice Sampling.
+        length_scale (float): Length scale for the Squared Exponential Kernel.
+        variance (float): Variance (amplitude) of the Squared Exponential Kernel.
+
+    Returns:
+        function: A predictive function that computes the posterior predictive mean.
+    """
+    # Generate random preference pairs
+    np.random.seed(42)
+    x_pairs = np.random.uniform(0, 10, size=(num_pairs, 2))
+    X_flat = x_pairs.flatten()
+
+    # Generate preference labels
+    preference_labels = generate_preferences(x_pairs, ground_truth_utility)
+
+    # Convert X_flat to PyTorch tensor
+    X_flat_torch = torch.tensor(X_flat, dtype=torch.float32)
+
+    # GP Prior (using PyTorch)
+    K_torch = squared_exponential_cov_torch(
+        X_flat_torch, X_flat_torch, length_scale=length_scale, variance=variance)
+    # Add jitter for numerical stability
+    K_torch += 1e-2 * torch.eye(len(X_flat_torch))
+    prior_cov = K_torch.numpy()  # Convert back to numpy for the sampler
+
+    # Log-likelihood function
+    def preference_loglik(f):
+        """
+        Computes the log-likelihood of the preferences under the Bradley-Terry model.
+
+        Args:
+            f (np.array): Latent utility values.
+
+        Returns:
+            float: Log-likelihood of the given latent utilities.
+        """
+        log_likelihood = 0.0
+        for (x1, x2), label in zip(x_pairs, preference_labels):
+            idx1 = np.where(X_flat == x1)[0][0]
+            idx2 = np.where(X_flat == x2)[0][0]
+            f1, f2 = f[idx1], f[idx2]
+
+            # YOUR CODE HERE (~4 lines)
+            # Add datapoint log likelihood using Bradley-Terry model
+            pass
+            # END OF YOUR CODE
+        return log_likelihood
+
+    # Elliptical Slice Sampling
+    sampler = EllipticalSliceSampler(
+        prior_cov=prior_cov, loglik=preference_loglik)
+    posterior_samples = sampler.sample(n_samples=n_samples, n_burn=n_burn)
+    posterior_mean = np.mean(posterior_samples, axis=0)
+
+    # Convert posterior_mean to PyTorch tensor
+    posterior_mean_torch = torch.tensor(posterior_mean, dtype=torch.float32)
+
+    # Compute K_inv using PyTorch
+    K_inv_torch = torch.inverse(K_torch)
+
+    # Define the predictive function
+    def predictive_function(x):
+        """
+        Predicts the utility for new input points.
+
+        Args:
+            x (torch.Tensor): Input points to predict utilities for.
+
+        Returns:
+            torch.Tensor: Predicted expected utilities.
+        """
+        if not torch.is_tensor(x):
+            raise ValueError('Predictive function must take in torch.tensor')
+        x = x.reshape(-1, 1)
+        X_flat_torch_reshaped = X_flat_torch.reshape(-1, 1)
+
+        # YOUR CODE HERE (~2 lines)
+        # Implement equation (3.21) on page 44 of https://gaussianprocess.org/gpml/chapters/RW.pdf
+        pass
+        # END OF YOUR CODE
+
+    return predictive_function
+
+
+if __name__ == "__main__":
+    # Ground truth utility function
+    def ground_truth_utility(x): return np.sin(x)
+
+    # Create the predictive function
+    predictive_fn = create_predictive_function(ground_truth_utility)
+
+    # Test the predictive function
+    X_test = torch.linspace(0, 10, 50).reshape(-1, 1)  # Test points
+    posterior_means = predictive_fn(
+        X_test).detach().numpy()  # Predicted posterior means
+
+    # Ground truth utilities
+    ground_truth_utilities = ground_truth_utility(X_test.numpy())
+
+    # Plot results
+    plt.figure(figsize=(10, 6))
+    plt.title("GP Posterior Predictive Mean (Utility Approximation)")
+    plt.plot(X_test.numpy(), posterior_means,
+             label="Posterior Predictive Mean", color="red")
+    plt.scatter(X_test.numpy(), ground_truth_utilities,
+                label="Ground Truth Utility", color="blue", alpha=0.5)
+    plt.xlabel("x")
+    plt.ylabel("Utility")
+    plt.legend()
+    plt.show()
+
+```
+:::
+
+::: {.callout-note title="code"}
+```{python ex3-q4-2}
+import torch
+from preference_gp import create_predictive_function
+
+# Feel free to play around with continuous, concave utility functions!
+def utility_1(x):
+    """
+    Utility function 1: 3 * log(x + 1)
+    Args:
+        x (torch.Tensor): Input tensor of allocations.
+    Returns:
+        torch.Tensor: Computed utility values.
+    """
+    return 3 * torch.log(x + 1)
+
+def utility_2(x):
+    """
+    Utility function 2: 5 * log(x + 2)
+    Args:
+        x (torch.Tensor): Input tensor of allocations.
+    Returns:
+        torch.Tensor: Computed utility values.
+    """
+    return 5 * torch.log(x + 2)
+
+def utility_3(x):
+    """
+    Utility function 3: 8 * log(x + 3)
+    Args:
+        x (torch.Tensor): Input tensor of allocations.
+    Returns:
+        torch.Tensor: Computed utility values.
+    """
+    return 8 * torch.log(x + 3)
+
+def project(x, B):
+    """
+    Projects the allocation vector `x` onto the feasible set {z | sum(z) = B, z >= 0}.
+    This ensures that the allocations respect the resource constraint.
+
+    Args:
+        x (torch.Tensor): Current allocation vector.
+        B (float): Total available resource.
+
+    Returns:
+        torch.Tensor: Projected allocation vector.
+    """
+    with torch.no_grad():
+        # Sort x in descending order
+        sorted_x, _ = torch.sort(x, descending=True)
+        
+        # Compute cumulative sum adjusted by B
+        cumulative_sum = torch.cumsum(sorted_x, dim=0) - B
+        
+        # Find the threshold (water-filling algorithm)
+        rho = torch.where(sorted_x - (cumulative_sum / torch.arange(1, len(x) + 1, dtype=torch.float32)) > 0)[0].max().item()
+        theta = cumulative_sum[int(rho)] / (rho + 1)
+        
+        # Compute the projected allocation
+        return torch.clamp(x - theta, min=0)
+
+def optimize_allocations(utilities, B, learning_rate, num_iterations):
+    """
+    Optimizes the allocation of resources to maximize the total utility.
+
+    Args:
+        utilities (list): List of utility functions or GP-based predictive functions.
+        B (float): Total available resource.
+        learning_rate (float): Step size for gradient ascent.
+        num_iterations (int): Number of optimization iterations.
+
+    Returns:
+        torch.Tensor: Final resource allocations.
+    """
+    # Initialize resource allocations equally
+    x = torch.tensor([1.0] * len(utilities), requires_grad=True)
+
+    # Optimization loop
+    for iteration in range(num_iterations):
+        # YOUR CODE HERE (~6 lines)
+        # 1. Compute total utility and backprop
+        # 2. Update x directly with x.grad
+        # 3. Project onto convex constraint set since we are using Projected Gradient Descent (PGD)
+        pass
+        # END OF YOUR CODE
+        
+        # Log progress every 10 iterations or at the last iteration
+        if iteration % 10 == 0 or iteration == num_iterations - 1:
+            print(f"Iteration {iteration}: Total Utility = {total_utility.item():.4f}, Allocations = {x.data.numpy()}")
+    
+    return x
+
+if __name__ == "__main__":
+    # Generate GP models for each utility
+    gp_1 = create_predictive_function(lambda x: utility_1(torch.tensor(x)).numpy())
+    gp_2 = create_predictive_function(lambda x: utility_2(torch.tensor(x)).numpy())
+    gp_3 = create_predictive_function(lambda x: utility_3(torch.tensor(x)).numpy())
+
+    # Combine utility GPs into a list for optimization
+    utilities = [gp_1, gp_2, gp_3]  # Use [utility_1, utility_2, utility_3] for exact utility functions
+
+    # Resource constraint and optimization settings
+    B = 10  # Total available resource
+    learning_rate = 0.1  # Gradient ascent step size
+    num_iterations = 2000  # Number of iterations
+
+    # Optimize allocations
+    final_allocations = optimize_allocations(utilities, B, learning_rate, num_iterations)
+
+    # Final results
+    print("\nFinal allocations:")
+    print(final_allocations.data.numpy())
+```
+:::

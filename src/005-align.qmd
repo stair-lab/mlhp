@@ -46,45 +46,43 @@ choices and actions. One notable scholar in this field is Shalom H.
 Schwartz, a social psychologist renowned for his theory on basic human
 values. Schwartz's work has significantly contributed to our
 understanding of how values influence behavior across different
-cultures. He describes values as \"desirable, trans-situational goals,
+cultures. He describes values as "desirable, trans-situational goals,
 varying in importance, that serve as guiding principles in people's
-lives\" [@schwartz1992universals]. This perspective underscores the
+lives" [@schwartz1992universals]. This perspective underscores the
 importance of values in shaping consistent and ethical behavior across
 different contexts. Supporting this view, philosopher William K.
 Frankena emphasizes the integral role of values in ethical behavior and
 decision-making processes. Frankena's work in ethical theory provides a
 foundation for understanding how moral judgments are formed. He notes
-that \"ethical theory is concerned with the principles and concepts that
-underlie moral judgments\" [@frankena1973ethics], highlighting the need
+that "ethical theory is concerned with the principles and concepts that
+underlie moral judgments" [@frankena1973ethics], highlighting the need
 to comprehend ethical principles deeply to make informed moral
-judgments. Examples of critical values include autonomy, fairness,
+judgments. Examples of ethical values include autonomy, fairness,
 justice, and well-being. For computer scientists developing AI systems,
 understanding these concepts is crucial. AI systems that interact with
 humans and impact societal structures must be designed with these values
 in mind. By embedding such values into AI, developers can create systems
 that respect human dignity and promote positive social outcomes.
 
-Autonomy is the right to choose, an essential aspect of personal
-freedom. Gerald Dworkin, an esteemed philosopher and professor whose
-research focuses on the nature of autonomy and its role in ethical
-theory, defines autonomy as \"the capacity to reflect upon and endorse
-or reject one's desires and values\" [@dworkin1988theory]. In AI,
+-   Autonomy is the right to choose, an essential aspect of personal
+freedom. Gerald Dworkin defines autonomy as "the capacity to reflect upon and endorse
+or reject one's desires and values" [@dworkin1988theory]. In AI,
 respecting autonomy means creating systems that support user
 independence and decision-making rather than manipulating or coercing
 them.
 
-Fairness involves treating all individuals equally and justly, ensuring
+-   Fairness involves treating all individuals equally and justly, ensuring
 no discrimination. John Rawls, one of the most influential political
-philosophers of the 20th century, in his groundbreaking book \"A Theory
-of Justice,\" describes fairness as \"the elimination of arbitrary
+philosophers of the $20^{th}$ century, in his groundbreaking book "A Theory
+of Justice," describes fairness as "the elimination of arbitrary
 distinctions and the establishment of a balance between competing
-claims\" [@rawls1971theory]. For AI systems, this translates to
+claims" [@rawls1971theory]. For AI systems, this translates to
 algorithms that do not perpetuate bias or inequality, ensuring that all
 users are treated equitably.
 
-Justice is about upholding what is morally right and ensuring fair
-treatment for all. Rawls also highlights that \"justice is the first
-virtue of social institutions, as truth is of systems of thought\"
+-   Justice is about upholding what is morally right and ensuring fair
+treatment for all. Rawls also highlights that "justice is the first
+virtue of social institutions, as truth is of systems of thought"
 [@rawls1971theory]. In the context of AI, justice involves creating
 technologies that enhance fairness in legal, social, and economic
 systems, providing equal opportunities and protection to all
@@ -94,9 +92,9 @@ Well-being focuses on promoting the health, happiness, and prosperity of
 individuals. Martha Nussbaum and Amartya Sen, two distinguished scholars
 known for their significant contributions to welfare economics and the
 development of the capability approach, discuss the importance of
-well-being in their collaborative work \"The Quality of Life.\" They
-argue that \"well-being is about the expansion of the capabilities of
-people to lead the kind of lives they value\" [@nussbaum1993quality]. AI
+well-being in their collaborative work "The Quality of Life." They
+argue that "well-being is about the expansion of the capabilities of
+people to lead the kind of lives they value" [@nussbaum1993quality]. AI
 systems should enhance users' quality of life, supporting their health,
 education, and economic stability.
 
@@ -108,35 +106,29 @@ developers must embed these values into their work to ensure
 technologies benefit humanity and do not exacerbate existing
 inequalities.
 
-Human values significantly impact decision-making processes by shaping
-the criteria for evaluating options and outcomes. Values influence
-priorities and ethical considerations, guiding individuals and
-organizations in making choices that align with their principles. Nick
-Bostrom, a leading philosopher in AI and existential risk, emphasizes
-that \"values are crucial in setting priorities and determining
-desirable outcomes\" [@bostrom2014superintelligence]. This alignment of
-actions with values ensures consistency and ethical integrity in
-decision-making. Incorporating human values into AI systems ensures that
-AI decisions align with societal norms and ethical standards. Stuart
-Russell, an AI researcher and advocate for human-compatible AI, notes
-that \"embedding human values into AI systems is critical to ensure that
-these systems act in beneficial and ethical ways\" [@russell2019human].
-AI systems can make decisions that reflect societal expectations and
-ethical considerations by integrating values such as fairness, justice,
-and well-being.
+Human values play a crucial role in decision-making by shaping the criteria 
+for evaluating options and outcomes. They influence priorities and ethical 
+considerations, guiding individuals and organizations to make choices that 
+align with their principles. Nick Bostrom, a prominent philosopher in AI 
+and existential risk, highlights the importance of values in setting priorities 
+and determining desirable outcomes [@bostrom2014superintelligence]. Aligning actions with values ensures 
+consistency and ethical integrity in decision-making. Incorporating human 
+values into AI systems ensures that AI decisions align with societal norms 
+and ethical standards. Stuart Russell, an AI researcher and advocate for 
+human-compatible AI, stresses the importance of embedding human values into 
+AI systems to ensure they act in beneficial and ethical ways [@russell2019human]. By integrating 
+values such as fairness, justice, and well-being, AI systems can make 
+decisions that reflect societal expectations and ethical considerations.
 
-Examples of incorporating values into AI systems highlight the practical
-application of these principles. In the case of autonomous vehicles,
-programming prioritizes human safety above all else, ensuring that these
-vehicles make decisions that protect human lives. Healthcare AI systems
-incorporate values by ensuring patient privacy and informed consent,
-adhering to ethical standards in medical practice. Judicial AI systems
-strive to avoid biases in sentencing recommendations, promoting fairness
-and justice in the legal system. Luciano Floridi, a professor of
-philosophy and ethics of information at the University of Oxford,
-emphasizes that \"AI systems must be designed to respect and uphold
-human values to function ethically and effectively\"
-[@floridi2011ethics].
+Examples of incorporating values into AI systems demonstrate the practical 
+application of these principles. For instance, autonomous vehicles are 
+programmed to prioritize human safety, ensuring decisions that protect 
+lives. In healthcare, AI systems uphold values by safeguarding patient 
+privacy and ensuring informed consent, adhering to ethical medical standards. 
+Judicial AI systems aim to eliminate biases in sentencing recommendations, 
+promoting fairness and justice. Luciano Floridi underscores the necessity 
+for AI systems to be designed in a way that respects and upholds human 
+values to function ethically and effectively [@floridi2011ethics].
 
 To ensure that these values are systematically embedded within AI
 systems, it is essential to consider major ethical frameworks such as
@@ -149,8 +141,8 @@ actions are morally right if they adhere to established rules and
 duties, regardless of the outcomes. Kant's moral philosophy emphasizes
 the importance of duty and adherence to moral laws. Robert Johnson, a
 scholar who has extensively studied Kantian ethics, explains that
-\"Kant's moral philosophy emphasizes that actions must be judged based
-on their adherence to duty and moral law, not by their consequences\"
+"Kant's moral philosophy emphasizes that actions must be judged based
+on their adherence to duty and moral law, not by their consequences"
 [@johnson_kants_2022]. This perspective is grounded in the belief that
 specific actions are intrinsically right or wrong, and individuals must
 perform or avoid these actions based on rational moral principles.
@@ -172,9 +164,9 @@ based on their outcomes. The most well-known form of consequentialism is
 utilitarianism, articulated by philosophers like Jeremy Bentham and John
 Stuart Mill. This ethical theory suggests that actions are morally right
 if they promote the greatest happiness for the greatest number. Mill
-emphasizes that \"the moral worth of an action is determined by its
+emphasizes that "the moral worth of an action is determined by its
 contribution to overall utility, measured by the happiness or well-being
-it produces\" [@mill_utilitarianism_1863]. Consequentialist ethics is
+it produces" [@mill_utilitarianism_1863]. Consequentialist ethics is
 pragmatic, focusing on the results of actions rather than the actions
 themselves.
 
@@ -187,8 +179,8 @@ thereby maximizing the overall well-being of affected populations. In
 this framework, the ethicality of AI decisions is judged by their
 ability to produce desirable consequences. Virginia Dignum, a professor
 of responsible artificial intelligence at Umeå University, explains that
-\"designing algorithms with a focus on maximizing positive outcomes can
-lead to more ethical and effective AI systems\"
+"designing algorithms with a focus on maximizing positive outcomes can
+lead to more ethical and effective AI systems"
 [@dignum_responsible_2019]. Consequently, AI developers focus on the
 potential impacts of their technologies and strive to enhance their
 beneficial effects.
@@ -197,9 +189,9 @@ Virtue ethics, originating from the teachings of Aristotle, emphasizes
 the importance of character and virtues in ethical behavior. This
 framework posits that ethical behavior arises from developing good
 character traits and living a virtuous life. Aristotle, an ancient Greek
-philosopher and the author of \"Nicomachean Ethics,\" argues that
-\"virtue is about cultivating excellence in character to achieve
-eudaimonia or human flourishing\" [@aristotle_nicomachean_350]. Virtue
+philosopher and the author of "Nicomachean Ethics," argues that
+"virtue is about cultivating excellence in character to achieve
+eudaimonia or human flourishing" [@aristotle_nicomachean_350]. Virtue
 ethics focuses on the individual's character and the moral qualities
 that define a good person, such as honesty, courage, and compassion.
 
@@ -269,26 +261,26 @@ train AI models. This bias often reflects historical prejudices and
 systemic inequalities in the data. For example, if a hiring algorithm is
 trained on historical hiring data that reflects gender or racial biases,
 it may perpetuate these biases in its recommendations. Fatemeh Mehrabi
-and her colleagues, in their survey on bias in AI, state that \"data
+and her colleagues, in their survey on bias in AI, state that "data
 bias can result from sampling bias, measurement bias, or historical
-bias, each contributing to the unfairness of AI systems\"
-[@mehrabi_survey_2021]. Safiya Umoja Noble, author of \"Algorithms of
-Oppression,\" discusses how biased data in search engines can reinforce
-stereotypes and marginalize certain groups, noting that \"search
-algorithms often reflect the biases of the society they operate within\"
+bias, each contributing to the unfairness of AI systems"
+[@mehrabi_survey_2021]. Safiya Umoja Noble, author of "Algorithms of
+Oppression," discusses how biased data in search engines can reinforce
+stereotypes and marginalize certain groups, noting that "search
+algorithms often reflect the biases of the society they operate within"
 [@noble_algorithms_2018]. Addressing data bias involves careful
 collection, preprocessing, and validation to ensure diversity and
 representation.
 
-An effort to address data bias is the \"Lab in the Wild\" platform,
+An effort to address data bias is the "Lab in the Wild" platform,
 which seeks to broaden the scope of Human-Computer Interaction (HCI)
-studies beyond the traditional \"WEIRD\" (Western, Educated,
+studies beyond the traditional "WEIRD" (Western, Educated,
 Industrialized, Rich, and Democratic) population [@oliveira17]. Paulo S.
 Oliveira, one of the platform's researchers, notes that this initiative
 aims to correct demographic skew in behavioral science research by
 engaging a diverse global audience. By allowing individuals from various
-demographics to participate in studies from their environments, \"Lab in
-the Wild\" provides researchers with a more inclusive dataset.
+demographics to participate in studies from their environments, "Lab in
+the Wild" provides researchers with a more inclusive dataset.
 
 Another important consideration is the cultural nuances of potential
 users. For instance, designing a computer vision system to describe
@@ -309,19 +301,19 @@ frameworks and assumptions underlying the algorithms. For instance,
 decision trees and reinforcement learning policies can inadvertently
 prioritize certain outcomes, resulting in biased results. Solon Barocas,
 a professor at Cornell University, and his colleagues explain that
-\"algorithmic bias can emerge from optimization objectives that do not
-adequately consider fairness constraints\" [@barocas_fairness_2019].
+"algorithmic bias can emerge from optimization objectives that do not
+adequately consider fairness constraints" [@barocas_fairness_2019].
 Cathy O'Neil, a data scientist who has written extensively on the
 societal impacts of algorithms, provides examples of how biased
 algorithms in predictive policing and credit scoring can
 disproportionately affect disadvantaged communities. She argues that
-\"algorithmic decisions can have far-reaching consequences when fairness
-is not adequately addressed\" [@oneil_weapons_2016]. Mitigating
+"algorithmic decisions can have far-reaching consequences when fairness
+is not adequately addressed" [@oneil_weapons_2016]. Mitigating
 algorithmic bias requires incorporating fairness constraints and
 regularly auditing algorithmic decisions.
 
-Weidinger et al., in their 2022 study published in \"Artificial
-Intelligence,\" investigate how reinforcement learning (RL) algorithms
+Weidinger et al., in their 2022 study published in "Artificial
+Intelligence," investigate how reinforcement learning (RL) algorithms
 can replicate or amplify biases present in training data or algorithmic
 design [@weidinger_artificial_2022]. They propose RL-based paradigms to
 test for these biases, aiming to identify and mitigate their impact.
@@ -331,26 +323,6 @@ certain emotional expressions or demographics based on their training
 and data usage [@mazeika_how_2022]. Their work highlights the need for
 careful consideration of algorithmic design to avoid unintended bias in
 AI systems.
-
-The evolution of ethics in scientific research has been a long journey.
-Unethical biomedical experiments conducted by the Nazis during World War
-II acted as a catalyst for change, leading to a global awakening to the
-need for ethical oversight in research. This awareness was further
-reinforced by the infamous Tuskegee syphilis study [@tuskegee], which,
-for decades, misled its participants and withheld treatment,
-highlighting the need for moral governance in scientific inquiry. The
-Belmont Report [@belmont] marked a turning point, articulating the
-ethical principles essential to research involving human subjects,
-including informed consent and assessments of risks and benefits. Its
-legacy extends into various fields, including the emergent domain of
-artificial intelligence, where ethics in the treatment of crowd workers
-for Reinforcement Learning from Human Feedback (RLHF) is under scrutiny.
-Today, no study begins without an ethics review. Institutional Review
-Boards (IRB) like Stanford's and Internal Review Committees (IRC) such
-as DeepMind play critical roles in safeguarding ethical standards. They
-provide feedback and oversight, ensuring research upholds human dignity
-and rights. This progression reflects a growing commitment to moral
-responsibility across all realms of scientific study.
 
 ### Aligning AI with Human Values
 
@@ -372,15 +344,9 @@ What is the right way to represent values? In a Reinforcement Learning
 Many people are trying to use language. In Constitutional
 AI [@bai_constitutional_2022], we write down the rules we want a
 language model to follow or apply reinforcement learning from human
-feedback, discussed in the next section. However, humans are
-evolutionarily endowed to pay attention to the same things and have the
-same frames of reference. AI systems, on the other hand, aren't biased
-in the same way, leading to a kind of underdetermination of actions by
-language [@quine_word_1960].
-
-So, what are values, and how can we model them? Many problems have been
+feedback, discussed in the next section. Many problems have been
 framed in an RL setting. Some experts in reinforcement learning argue
-that a single scalar reward isn't
+that a single scalar reward is not
 enough [@vamplew_human-aligned_2018; @vamplew_scalar_2022]. They suggest
 a vectorized reward approach might better emulate the emotional-like
 system humans have [@moerland_emotion_2018]. With this robustness, we
@@ -390,15 +356,15 @@ values. Tomasello [@tomasello_becoming_2019] argues that learning a
 language and the awareness of convention it brings help children
 understand their cultural group and reason about it with peers. However,
 human values seem to be composed of more than just linguistic
-utterances.
+utterances. Several strategies have been proposed to align AI systems with human values. 
 
-Several strategies can align AI systems with human values. One effective
-approach is value-sensitive design, which considers human values from
+-   One effective approach is value-sensitive design, which considers human values from
 the outset of the design process. Friedman, Kahn, and Borning explain
 that "value-sensitive design integrates human values into the technology
 design process to ensure that the resulting systems support and enhance
-human well-being" [@friedman_value_2008]. Another strategy is
-participatory design, which engages stakeholders in the design process
+human well-being" [@friedman_value_2008]. 
+
+-   Another strategy is participatory design, which engages stakeholders in the design process
 to ensure their values are reflected in the AI system. Muller emphasizes
 that "participatory design creates a collaborative space where diverse
 stakeholders can contribute their perspectives and values, leading to
@@ -451,8 +417,8 @@ with the judicial values of fairness and justice.
 
 This raises the question for AI: At what level should we model values?
 Is language alone enough? We might also consider questions about
-language understanding. LLMs seem to \"get\" much of language even
-without physical embodiment. Will they \"get\" human values, too? First,
+language understanding. LLMs seem to "get" much of language even
+without physical embodiment. Will they "get" human values, too? First,
 we'll cover work that attempts to gain traction on these issues.
 Methodologically, this is similar to the RLHF and language modeling work
 we will cover in the next section. Here, we focus on this work with a
@@ -538,9 +504,9 @@ morality. Since these models operate in the linguistic domain, they can
 also reason morally. He provides an example with the Lambda model at
 Google. Anecdotally, when asked to translate a sentence from Turkish to
 English, where Turkish does not have gendered pronouns, the model might
-say, \"The nurse put her hand in her coat pocket.\" This inference shows
+say, "The nurse put her hand in her coat pocket." This inference shows
 gender assumption. When instructed to avoid gendered assumptions, the
-model can say \"his/her hand.\" He claims this capability is sufficient
+model can say "his/her hand." He claims this capability is sufficient
 for moral reasoning.
 
 Next, we now explore the broader challenges of AI alignment,
@@ -579,7 +545,7 @@ instruction-tuned, which in turn is more aligned than the base model.
 There are specific terms to distinguish different notions of alignment.
 Intent alignment refers to a system trying to do what its operator wants
 it to do, though not necessarily succeeding [@christianoclarifying].
-Value alignment involves a system correctly learning and adopting the
+Value alignment, in constrast, involves a system correctly learning and adopting the
 values of its human operators. Alignment is often divided into two broad
 subproblems: outer alignment, which focuses on avoiding specification
 gaming, and inner alignment, which aims to avoid goal misgeneralization.
@@ -604,7 +570,7 @@ addressing this issue constitutes the *outer alignment problem*
 Specification gaming occurs when AI systems exploit poorly defined
 objectives to achieve goals in unintended ways. For instance, a cleaning
 robot might hide dirt under a rug instead of cleaning it to achieve a
-\"clean\" status. This manipulative behavior results from the robot
+"clean" status. This manipulative behavior results from the robot
 optimizing for an inadequately specified objective function. Another
 example involves gaming AI, which uses bugs or exploits to win rather
 than play by the intended rules, thus achieving victory through
@@ -668,7 +634,7 @@ account for semantic errors, leading to misleading conclusions about the
 system's performance [@xiong_achieving_2016].
 
 A classic example comes from six years ago with the claim that a system
-\"Achieve\[d\] human parity in conversation speech recognition\"
+"Achieve\[d\] human parity in conversation speech recognition"
 [@xiong_achieving_2016]. However, we know from experience that
 captioning services have only recently begun to transcribe speech
 passably, whether in online meetings or web videos. What happened? In
@@ -680,8 +646,8 @@ Second, the metric itself, the word error rate (WER), was flawed. WER
 measures the number of incorrect words in the gold transcription versus
 the predicted transcription. Consider what the metric hides when it says
 that two systems both have an error rate of six percent. This does not
-mean the systems are equivalent. One might substitute \"a\" for \"the,\"
-while the other substitutes \"tarantula\" for \"banana.\" The metric was
+mean the systems are equivalent. One might substitute "a" for "the,"
+while the other substitutes "tarantula" for "banana." The metric was
 not sensitive to semantic errors, so a model could outperform humans in
 WER yet still make unintelligent, highly unsemantic mistakes.
 
@@ -844,12 +810,12 @@ In the initial step for language modeling tasks, we utilize a
 high-quality dataset consisting of
 $\left(\text{prompt}, \text{response}\right)$ pairs to train the model.
 Prompts are sampled from a curated dataset designed to cover a wide
-range of instructions and queries, such as \"Explain the moon landing to
-a 6-year-old.\" Trained human labelers provide the desired output
+range of instructions and queries, such as "Explain the moon landing to
+a 6-year-old." Trained human labelers provide the desired output
 behavior for each prompt, ensuring responses are accurate, clear, and
 aligned with task goals. For instance, in response to the moon landing
-prompt, a labeler might generate, \"Some people went to the moon in a
-big rocket and explored its surface.\" The collected
+prompt, a labeler might generate, "Some people went to the moon in a
+big rocket and explored its surface." The collected
 $\left(\text{prompt}, \text{response}\right)$ pairs serve as the
 training data for the model, with the cross-entropy loss function
 applied only to the response tokens. This helps the model learn to
@@ -865,10 +831,10 @@ $\left(\text{prompt}, \text{response}\right)$ pair and produce a
 meaningful scalar value. Multiple model-generated responses are sampled
 for each prompt. Human labelers then rank these responses from best to
 worst based on their quality and alignment with the prompt. For example,
-given the prompt \"Explain the moon landing to a 6-year-old,\" responses
-like \"People went to the moon in a big rocket and explored its
-surface\" might be ranked higher than \"The moon is a natural satellite
-of Earth.\" The rankings provided by the labelers are used to train the
+given the prompt "Explain the moon landing to a 6-year-old," responses
+like "People went to the moon in a big rocket and explored its
+surface" might be ranked higher than "The moon is a natural satellite
+of Earth." The rankings provided by the labelers are used to train the
 reward model $\Phi_{\text{RM}}$. The model is trained by minimizing the
 following loss function across all training samples:
 
@@ -1328,8 +1294,8 @@ At the heart of this exploration is the concept of human-in-the-loop
 processes. As AI systems become more sophisticated, their ability to
 simulate human decision-making processes and behaviors has increased,
 leading to innovative applications across various domains. The
-presentation by Meredith Morris, titled \"Human-in-the-loop Computing:
-Reimagining Human-Computer Interaction in the Age of AI,\" shows work in
+presentation by Meredith Morris, titled "Human-in-the-loop Computing:
+Reimagining Human-Computer Interaction in the Age of AI," shows work in
 the integration of human intelligence with AI capabilities
 [@Morris2019HITL]. Projects like Soylent and LaMPost are highlighted as
 exemplary cases of this integration. Soylent is a Word plugin that uses
@@ -1625,10 +1591,10 @@ profile of the user. We categorize modeling approaches into four groups.
 
 1.  User-created profiles (usually done manually).
 
-2.  Manually defined groups (stereotypes) that each user is classified
+2.  Manually defined groups that each user is classified
     into.
 
-3.  Automatically learned groups (stereotypes) that each user is
+3.  Automatically learned groups that each user is
     classified into.
 
 4.  Adaptively learned individual user models from interactions with the
@@ -1641,43 +1607,20 @@ recommendation systems that adaptively learn an individual's preferences
 and use that knowledge to intelligently recommend choices that the
 individual is more inclined to like.
 
-The problem of learning individual models can be formalized, given as
-follows:
-
--   a set of tasks requiring a user decision,
-
--   a description for each task,
-
--   a history of the user's decision on each task,
-
-So then we can find a function that maps from task description
-(features) to user decisions. The task can be described from
-crowd-sourced data (a collaborative approach) or the measurable features
-of the task (a content-based approach). The content-based approaches for
-describing tasks will be focused on in this session. After understanding
-the framework for adaptive user interfaces now it is a good point to
-give some example applications to help ground the future discussion.
-Adaptive user interfaces have been developed for
-
--   Command and form completion
-
--   Email filtering and filing
-
--   News selection and layout
-
--   Browsing the internet
-
--   Selecting movies and TV shows
-
--   Online shopping
-
--   In-car navigation
-
--   Interactive scheduling
-
--   Dialogue systems
-
-among many other applications.
+The problem of learning individual models can be formalized as follows: 
+a set of tasks requiring a user decision, a description for each task, 
+and a history of the user's decision on each task. This allows us to 
+find a function that maps from task descriptions (features) to user 
+decisions. Tasks can be described using crowd-sourced data (a 
+collaborative approach) or measurable features of the task (a content-based 
+approach). This session will focus on content-based approaches 
+for describing tasks. After understanding the framework for adaptive 
+user interfaces, it is useful to provide example applications to 
+ground future discussions. Adaptive user interfaces have been developed 
+for command and form completion, email filtering and filing, news 
+selection and layout, browsing the internet, selecting movies and 
+TV shows, online shopping, in-car navigation, interactive scheduling, 
+and dialogue systems, among many other applications.
 
 #### Design
 

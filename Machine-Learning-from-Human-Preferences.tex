@@ -390,12 +390,12 @@
 \floatname{codelisting}{Listing}
 \newcommand*\listoflistings{\listof{codelisting}{List of Listings}}
 \usepackage{amsthm}
-\theoremstyle{definition}
-\newtheorem{definition}{Definition}[chapter]
-\theoremstyle{plain}
-\newtheorem{proposition}{Proposition}[chapter]
 \theoremstyle{plain}
 \newtheorem{theorem}{Theorem}[chapter]
+\theoremstyle{plain}
+\newtheorem{proposition}{Proposition}[chapter]
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}[chapter]
 \theoremstyle{remark}
 \AtBeginDocument{\renewcommand*{\proofname}{Proof}}
 \newtheorem*{remark}{Remark}
@@ -441,7 +441,7 @@
 
 \title{Machine Learning from Human Preferences}
 \author{Sang T. Truong \and Sanmi Koyejo}
-\date{2024-11-06}
+\date{2024-12-02}
 
 \begin{document}
 \newgeometry{}
@@ -465,20 +465,15 @@ Preferences\par}
     \setstretch{1.5}
     {\usekomafont{author} Sang T. Truong,  and~Sanmi Koyejo \par}
     \vfill
-    {\rmfamily\large The MIT Press\\Cambridge, Massachusetts\\London, England}
+    {\rmfamily\large Stanford University\\Stanford, CA}
   \end{center}
 \end{titlepage}
 
 \begin{titlepage}
   \vspace*{\fill}
   {\rmfamily\scriptsize
-    © 2025 Massachusetts Institute of Technology\par
-    All rights reserved. No part of this book may be used to train artificial intelligence systems or reproduced in any form by any electronic or mechanical means (including photocopying, recording, or information storage and retrieval) without permission in writing from the publisher.\par
-    The MIT Press would like to thank the anonymous peer reviewers who provided comments on drafts of this book. The generous work of academic experts is essential for establishing the authority and quality of our publications. We acknowledge with gratitude the contributions of these otherwise uncredited readers.\par
-    This book was set in ETbb and Source Sans Pro by \_\_\_\_\_\_\_. Printed and bound in the United States of America.\par
-    Library of Congress Cataloging-in-Publication Data is available.\par
-    ISBN: 978-0-262-55256-1\par
-    10 9 8 7 6 5 4 3 2 1\par
+    © 2025 Stanford University\par
+    All rights reserved.
   }
   \vspace*{\fill}
 \end{titlepage}
@@ -12241,6 +12236,1541 @@ Setting \(\epsilon=1 / T\) and running our POP-BO algorithm in Alg. 1,
   \[\left.R_T=\mathcal{O}\left(T^{3 / 4}(\log T)^{3 / 4} T^{\frac{d}{\nu}\left(\frac{1}{4}+\frac{d+1}{4+2(d+1)^d / \nu}\right.}\right)\right).\]
 \end{enumerate}
 
+\section{Exercises}\label{exercises-2}
+
+\subsection*{Question 1: Preferential Bayesian Optimization (30
+points)}\label{sec-question-1-preferential-bayesian-optimization-30-points}
+\addcontentsline{toc}{subsection}{Question 1: Preferential Bayesian
+Optimization (30 points)}
+
+\textbf{Preferential Bayesian Optimization (PBO)} is a variant of
+Bayesian Optimization (BO) designed to handle scenarios where feedback
+is provided in terms of preferences between alternatives rather than
+explicit numeric evaluations. Suppose you are optimizing an unknown
+function \(f\) over a space \(\mathcal{X}\), but instead of receiving
+function values, you only receive pairwise comparisons between different
+points in the input space. That is, given two points
+\(x_1, x_2 \in \mathcal{X}\), you receive feedback in the form of a
+preference: \(x_1 \succ x_2\) implies \(f(x_1) > f(x_2)\).
+
+The \textbf{Gaussian Process (GP)} framework is used to model \(f\), and
+the optimization is guided by this model. Let \(p(x_1 \succ x_2 | f)\)
+be the probability that \(x_1\) is preferred over \(x_2\), which can be
+modeled using a Bradley-Terry or Thurstone model based on the GP prior.
+
+Using the paper ``Preferential Bayesian Optimization''
+(\url{https://proceedings.mlr.press/v70/gonzalez17a/gonzalez17a.pdf}),
+answer the following:
+
+\begin{enumerate}
+\def\labelenumi{(\alph{enumi})}
+\item
+  \textbf{Modeling Preferences (6 points)}
+
+  \begin{enumerate}
+  \def\labelenumii{(\roman{enumii})}
+  \item
+    \textbf{Likelihood Derivation (Written, 2 points):} Given two points
+    \(x_1\) and \(x_2\) and their corresponding latent function values
+    \(f(x_1)\) and \(f(x_2)\), derive the likelihood of a preference
+    \(x_1 \succ x_2\) using the Bradley-Terry model. Your solution here.
+  \item
+    \textbf{Incorporating into GP (Written, 2 points):} Explain how this
+    likelihood can be incorporated into the GP framework to model
+    preferences probabilistically. Specifically, describe how the
+    covariance function of the GP affects the joint distribution of
+    preferences and discuss any assumptions made regarding the
+    smoothness or structure of \(f\).
+  \item
+    \textbf{Posterior Update (Written, 2 points):} Write out an
+    expression for the posterior mean and variance at new query points
+    by using the posterior predictive distribution based on previously
+    observed preferences (no need to simplify since it's intractable
+    analytically). Suggest an approach that can be used to approximate
+    the mean and variance.
+  \end{enumerate}
+\item
+  \textbf{Acquisition Function Adaptation (6 points)}
+
+  \begin{enumerate}
+  \def\labelenumii{(\roman{enumii})}
+  \item
+    \textbf{Expected Improvement (EI) for Preferences (Written, 2
+    points):} Explain how the Expected Improvement (EI) acquisition
+    function is adapted in the context of PBO to handle preferences
+    rather than absolute function values. Please read the paper for
+    this.
+  \item
+    \textbf{EI Computation for Pairwise Comparisons (Written, 2
+    points):} Derive the expression for EI when dealing with pairwise
+    comparisons. Show how the computation of EI differs from the
+    standard BO setting and discuss how uncertainty in the GP model is
+    used in this context.
+  \item
+    \textbf{Selection Strategy (Written, 2 points):} Describe how the
+    acquisition function uses the pairwise preference data to select the
+    next query point. Provide a rigorous justification for this
+    selection strategy in terms of maximizing expected information gain.
+  \end{enumerate}
+\item
+  \textbf{Exploration-Exploitation Balance in PBO (6 points)}
+
+  \begin{enumerate}
+  \def\labelenumii{(\roman{enumii})}
+  \item
+    \textbf{Exploration Mechanism (Written, 2 points):} Explain how
+    exploration is handled in the PBO framework. Describe how
+    uncertainty in the preference model (the GP posterior) influences
+    the selection of new points for evaluation.
+  \item
+    \textbf{Uncertainty Quantification (Written, 2 points):} Define how
+    the variance in the GP posterior represents uncertainty in the model
+    and show how this uncertainty is updated as new preferences are
+    observed.
+  \item
+    \textbf{Empirical Validation (Written, 2 points):} Design an
+    experiment to empirically validate the balance between exploration
+    and exploitation in PBO. Describe the setup, including the objective
+    function, the experimental conditions, and the evaluation metric for
+    measuring the quality of exploration-exploitation balance.
+  \end{enumerate}
+\item
+  \textbf{Scalability and Practical Considerations (6 points)}
+
+  \begin{enumerate}
+  \def\labelenumii{(\roman{enumii})}
+  \item
+    \textbf{Challenges in Preference Feedback (Written, 2 points):}
+    Discuss the challenges associated with preference feedback in
+    real-world applications, such as inconsistency in user preferences
+    and potential biases.
+  \item
+    \textbf{GP Scalability (Written, 2 points):} Explain how the
+    scalability of the GP model affects the performance of PBO,
+    especially as the number of observations increases. Include a
+    discussion on computational complexity and possible solutions.
+  \item
+    \textbf{Extensions for Large-Scale Problems (Written, 2 points):}
+    Propose potential extensions or modifications to improve the
+    applicability of PBO to large-scale optimization problems. For
+    example, discuss the feasibility of sparse GPs or other
+    approximation techniques and evaluate their potential impact on PBO
+    performance.
+  \end{enumerate}
+\item
+  \textbf{Empirical Experimentation (6 points)}
+
+  \begin{enumerate}
+  \def\labelenumii{(\roman{enumii})}
+  \item
+    \textbf{Copeland Score (Coding, 2 points):} Implement
+    \texttt{compute\_max\_copeland\_score} in\\
+    \texttt{pbo/forrester\_duel.py}.
+  \item
+    \textbf{Copeland Acquisition (Coding, 4 points):} Implement
+    \texttt{copeland\_acquisition}. Run \texttt{forrester\_duel.py} and
+    briefly discuss any patterns you observe in the chosen duels (black
+    Xs on the heatmap).
+  \end{enumerate}
+\end{enumerate}
+
+\begin{tcolorbox}[colframe=.grey, title=\faCode \enspace Code]
+
+\begin{Shaded}
+\begin{Highlighting}[numbers=left,,]
+\ImportTok{import}\NormalTok{ numpy }\ImportTok{as}\NormalTok{ np}
+\ImportTok{from}\NormalTok{ sklearn.gaussian\_process }\ImportTok{import}\NormalTok{ GaussianProcessClassifier}
+\ImportTok{from}\NormalTok{ sklearn.gaussian\_process.kernels }\ImportTok{import}\NormalTok{ RBF, ConstantKernel }\ImportTok{as}\NormalTok{ C}
+\ImportTok{import}\NormalTok{ matplotlib.pyplot }\ImportTok{as}\NormalTok{ plt}
+\ImportTok{from}\NormalTok{ tqdm }\ImportTok{import}\NormalTok{ tqdm}
+
+\CommentTok{\# Define the Forrester function}
+\KeywordTok{def}\NormalTok{ forrester\_function(x):}
+    \CommentTok{"""}
+\CommentTok{    Evaluates the Forrester function at the given input.}
+\CommentTok{    }
+\CommentTok{    Args:}
+\CommentTok{    {-} x (float or numpy.ndarray): Input value(s) in the range [0, 1].}
+\CommentTok{    }
+\CommentTok{    Returns:}
+\CommentTok{    {-} float or numpy.ndarray: Evaluated Forrester function value(s).}
+\CommentTok{    """}
+    \ControlFlowTok{return}\NormalTok{ (}\DecValTok{6} \OperatorTok{*}\NormalTok{ x }\OperatorTok{{-}} \DecValTok{2}\NormalTok{)}\OperatorTok{**}\DecValTok{2} \OperatorTok{*}\NormalTok{ np.sin(}\DecValTok{12} \OperatorTok{*}\NormalTok{ x }\OperatorTok{{-}} \DecValTok{4}\NormalTok{)}
+
+\CommentTok{\# Sigmoid function for probabilistic preferences}
+\KeywordTok{def}\NormalTok{ sigmoid(x):}
+    \CommentTok{"""}
+\CommentTok{    Computes the sigmoid function for the given input.}
+\CommentTok{    }
+\CommentTok{    Args:}
+\CommentTok{    {-} x (float or numpy.ndarray): Input value(s).}
+\CommentTok{    }
+\CommentTok{    Returns:}
+\CommentTok{    {-} float or numpy.ndarray: Sigmoid{-}transformed value(s).}
+\CommentTok{    """}
+    \ControlFlowTok{return} \DecValTok{1} \OperatorTok{/}\NormalTok{ (}\DecValTok{1} \OperatorTok{+}\NormalTok{ np.exp(}\OperatorTok{{-}}\NormalTok{x))}
+
+\CommentTok{\# Simulate duel outcome probabilistically}
+\KeywordTok{def}\NormalTok{ simulate\_duel\_outcome(x, x\_prime):}
+    \CommentTok{"""}
+\CommentTok{    Simulates the outcome of a duel between two candidates based on probabilistic preferences.}
+\CommentTok{    }
+\CommentTok{    Args:}
+\CommentTok{    {-} x (float): First candidate\textquotesingle{}s input value.}
+\CommentTok{    {-} x\_prime (float): Second candidate\textquotesingle{}s input value.}
+\CommentTok{    }
+\CommentTok{    Returns:}
+\CommentTok{    {-} int: 1 if x wins, 0 otherwise.}
+\CommentTok{    """}
+\NormalTok{    prob }\OperatorTok{=}\NormalTok{ sigmoid(forrester\_function(x\_prime) }\OperatorTok{{-}}\NormalTok{ forrester\_function(x))  }\CommentTok{\# Probability x beats x\textquotesingle{}}
+    \ControlFlowTok{return}\NormalTok{ np.random.choice([}\DecValTok{1}\NormalTok{, }\DecValTok{0}\NormalTok{], p}\OperatorTok{=}\NormalTok{[prob, }\DecValTok{1} \OperatorTok{{-}}\NormalTok{ prob])}
+
+\CommentTok{\# Compute the Soft Copeland score for all candidates (vectorized)}
+\KeywordTok{def}\NormalTok{ compute\_max\_copeland\_score(candidates, gp, landmarks):}
+    \CommentTok{"""}
+\CommentTok{    Computes the maximum Copeland score for given candidates using predicted win probabilities.}
+\CommentTok{    }
+\CommentTok{    Args:}
+\CommentTok{    {-} candidates (numpy.ndarray): Array of candidate points.}
+\CommentTok{    {-} gp (GaussianProcessClassifier): Trained Gaussian process classifier for preference modeling.}
+\CommentTok{    {-} landmarks (numpy.ndarray): Array of landmark points used for Monte Carlo approximation.}
+\CommentTok{    }
+\CommentTok{    Returns:}
+\CommentTok{    {-} tuple: Maximum Copeland score and the best candidate.}
+\CommentTok{    """}
+    \CommentTok{\# YOUR CODE HERE (\textasciitilde{}6 lines)}
+        \CommentTok{\# 1. Generate all pairs between candidates and landmarks.}
+        \CommentTok{\# 2. Get win probabilities and average}
+        \CommentTok{\# 3. Return appropriate maximum and best candidate.}
+    \ControlFlowTok{pass} 
+    \CommentTok{\# }\RegionMarkerTok{END}\CommentTok{ OF YOUR CODE}
+
+\CommentTok{\# Acquisition function with GP retraining and maximum Copeland score for each outcome}
+\KeywordTok{def}\NormalTok{ copeland\_acquisition(x, x\_prime, x\_candidates, gp, train\_X, train\_y, landmarks, max\_copeland\_score):}
+    \CommentTok{"""}
+\CommentTok{    Computes the acquisition value for a candidate pair by simulating outcomes and retraining the GP.}
+\CommentTok{    }
+\CommentTok{    Args:}
+\CommentTok{    {-} x (float): First value of duel.}
+\CommentTok{    {-} x\_prime (float): Second value of duel.}
+\CommentTok{    {-} x\_candidates (numpy.ndarray): Array of candidate points to evaluate soft Copeland on.}
+\CommentTok{    {-} gp (GaussianProcessClassifier): Trained Gaussian process classifier for preference modeling.}
+\CommentTok{    {-} train\_X (numpy.ndarray): Current training input pairs.}
+\CommentTok{    {-} train\_y (numpy.ndarray): Current training labels.}
+\CommentTok{    {-} landmarks (numpy.ndarray): Array of landmark points used for Monte Carlo approximation.}
+\CommentTok{    {-} max\_copeland\_score (float): Maximum copeland score prior to acquiring any new pair}
+\CommentTok{    }
+\CommentTok{    Returns:}
+\CommentTok{    {-} float: Acquisition value for the given pair (x, x\_prime).}
+\CommentTok{    """}
+    \CommentTok{\# YOUR CODE HERE (\textasciitilde{}14{-}16 lines)}
+        \CommentTok{\# 1. Predict dueling probabilities}
+        \CommentTok{\# 2. Simulate adding (x, x\textquotesingle{}) with y=1 (x beats x\textquotesingle{}) and fit GP }
+        \CommentTok{\# 3. Simulate adding (x, x\textquotesingle{}) with y=0 (x\textquotesingle{} beats x) and fit GP }
+        \CommentTok{\# 4. Compute expected improvement in max Copeland score}
+        \CommentTok{\# 5. Return weighted acquisition value}
+    \ControlFlowTok{pass}
+    \CommentTok{\# }\RegionMarkerTok{END}\CommentTok{ OF YOUR CODE}
+
+\ControlFlowTok{if} \VariableTok{\_\_name\_\_} \OperatorTok{==} \StringTok{"\_\_main\_\_"}\NormalTok{:}
+    \CommentTok{\# Initialization}
+\NormalTok{    np.random.seed(}\DecValTok{42}\NormalTok{)}
+\NormalTok{    kernel }\OperatorTok{=}\NormalTok{ C(}\FloatTok{28.0}\NormalTok{, constant\_value\_bounds}\OperatorTok{=}\StringTok{\textquotesingle{}fixed\textquotesingle{}}\NormalTok{) }\OperatorTok{*}\NormalTok{ RBF(length\_scale}\OperatorTok{=}\FloatTok{0.15}\NormalTok{, length\_scale\_bounds}\OperatorTok{=}\StringTok{\textquotesingle{}fixed\textquotesingle{}}\NormalTok{)}
+\NormalTok{    gp }\OperatorTok{=}\NormalTok{ GaussianProcessClassifier(kernel}\OperatorTok{=}\NormalTok{kernel)}
+
+    \CommentTok{\# Generate initial training data (random pairs)}
+\NormalTok{    train\_X }\OperatorTok{=}\NormalTok{ np.array([[}\DecValTok{0}\NormalTok{, }\DecValTok{0}\NormalTok{], [}\DecValTok{0}\NormalTok{, }\DecValTok{0}\NormalTok{]]) }\CommentTok{\#np.random.uniform(0, 1, (10, 2))  \# 20 random dueling pairs [x, x\textquotesingle{}]}
+\NormalTok{    train\_y }\OperatorTok{=}\NormalTok{ np.array([simulate\_duel\_outcome(pair[}\DecValTok{0}\NormalTok{], pair[}\DecValTok{1}\NormalTok{]) }\ControlFlowTok{for}\NormalTok{ pair }\KeywordTok{in}\NormalTok{ train\_X])}
+
+    \CommentTok{\# Fixed landmark points and their function values}
+\NormalTok{    landmarks }\OperatorTok{=}\NormalTok{ np.linspace(}\DecValTok{0}\NormalTok{, }\DecValTok{1}\NormalTok{, }\DecValTok{30}\NormalTok{)  }\CommentTok{\# 10 fixed landmarks}
+
+    \CommentTok{\# Generate candidate pairs for optimization}
+\NormalTok{    x\_candidates }\OperatorTok{=}\NormalTok{ np.linspace(}\DecValTok{0}\NormalTok{, }\DecValTok{1}\NormalTok{, }\DecValTok{30}\NormalTok{)  }\CommentTok{\# Reduced grid for efficiency}
+\NormalTok{    X, X\_prime }\OperatorTok{=}\NormalTok{ np.meshgrid(x\_candidates, x\_candidates)}
+\NormalTok{    candidate\_pairs }\OperatorTok{=}\NormalTok{ np.c\_[X.ravel(), X\_prime.ravel()]}
+
+    \CommentTok{\# Optimization loop}
+\NormalTok{    n\_iterations }\OperatorTok{=} \DecValTok{20}
+    \ControlFlowTok{for}\NormalTok{ iteration }\KeywordTok{in} \BuiltInTok{range}\NormalTok{(n\_iterations):}
+        \CommentTok{\# Retrain the GP with current training data}
+\NormalTok{        gp.fit(train\_X, train\_y)}
+
+        \CommentTok{\# Compute global maximum Copeland score}
+\NormalTok{        max\_copeland\_score, condorcet\_winner }\OperatorTok{=}\NormalTok{ compute\_max\_copeland\_score(x\_candidates, gp, landmarks)}
+        \BuiltInTok{print}\NormalTok{(}\SpecialStringTok{f"Condorcet winner iteration }\SpecialCharTok{\{}\NormalTok{iteration}\SpecialCharTok{\}}\SpecialStringTok{: }\SpecialCharTok{\{}\NormalTok{condorcet\_winner}\SpecialCharTok{\}}\SpecialStringTok{ with soft{-}Copeland score }\SpecialCharTok{\{}\NormalTok{max\_copeland\_score}\SpecialCharTok{\}}\SpecialStringTok{"}\NormalTok{)}
+
+        \CommentTok{\# Evaluate acquisition values for all candidate pairs}
+\NormalTok{        acquisition\_values }\OperatorTok{=}\NormalTok{ np.zeros(}\BuiltInTok{len}\NormalTok{(candidate\_pairs))}
+        \ControlFlowTok{for}\NormalTok{ idx, (x, x\_prime) }\KeywordTok{in}\NormalTok{ tqdm(}\BuiltInTok{enumerate}\NormalTok{(candidate\_pairs), total}\OperatorTok{=}\BuiltInTok{len}\NormalTok{(candidate\_pairs)):}
+\NormalTok{            acquisition\_values[idx] }\OperatorTok{=}\NormalTok{ copeland\_acquisition(}
+\NormalTok{                x, x\_prime, x\_candidates, gp, train\_X, train\_y, landmarks, max\_copeland\_score}
+\NormalTok{            )}
+
+        \CommentTok{\# Select the pair with the highest acquisition value}
+\NormalTok{        best\_idx }\OperatorTok{=}\NormalTok{ np.argmax(acquisition\_values)}
+\NormalTok{        next\_x, next\_x\_prime }\OperatorTok{=}\NormalTok{ candidate\_pairs[best\_idx]}
+
+        \CommentTok{\# Simulate the actual outcome of the duel}
+\NormalTok{        outcome }\OperatorTok{=}\NormalTok{ simulate\_duel\_outcome(next\_x, next\_x\_prime)}
+
+        \CommentTok{\# Update training data with the new duel outcome}
+\NormalTok{        train\_X }\OperatorTok{=}\NormalTok{ np.vstack([train\_X, [next\_x, next\_x\_prime]])}
+\NormalTok{        train\_y }\OperatorTok{=}\NormalTok{ np.append(train\_y, outcome)}
+
+    \CommentTok{\# Generate heatmaps}
+\NormalTok{    x }\OperatorTok{=}\NormalTok{ np.linspace(}\DecValTok{0}\NormalTok{, }\DecValTok{1}\NormalTok{, }\DecValTok{100}\NormalTok{)}
+\NormalTok{    X, X\_prime }\OperatorTok{=}\NormalTok{ np.meshgrid(x, x)}
+\NormalTok{    pairs }\OperatorTok{=}\NormalTok{ np.c\_[X.ravel(), X\_prime.ravel()]}
+
+    \CommentTok{\# Ground Truth Preference Probabilities}
+\NormalTok{    gt\_preferences }\OperatorTok{=}\NormalTok{ np.array([}
+\NormalTok{        sigmoid(forrester\_function(x\_prime) }\OperatorTok{{-}}\NormalTok{ forrester\_function(x))}
+        \ControlFlowTok{for}\NormalTok{ x, x\_prime }\KeywordTok{in}\NormalTok{ pairs}
+\NormalTok{    ]).reshape(X.shape)}
+
+    \CommentTok{\# GP{-}Predicted Preferences}
+\NormalTok{    gp\_predictions }\OperatorTok{=}\NormalTok{ gp.predict\_proba(pairs)[:, }\DecValTok{1}\NormalTok{].reshape(X.shape)}
+
+    \CommentTok{\# Plot Ground Truth Preference Heatmap}
+\NormalTok{    plt.figure(figsize}\OperatorTok{=}\NormalTok{(}\DecValTok{12}\NormalTok{, }\DecValTok{6}\NormalTok{))}
+\NormalTok{    plt.subplot(}\DecValTok{1}\NormalTok{, }\DecValTok{2}\NormalTok{, }\DecValTok{1}\NormalTok{)}
+\NormalTok{    plt.contourf(X, X\_prime, gt\_preferences, levels}\OperatorTok{=}\DecValTok{50}\NormalTok{, cmap}\OperatorTok{=}\StringTok{\textquotesingle{}jet\textquotesingle{}}\NormalTok{)}
+\NormalTok{    plt.colorbar(label}\OperatorTok{=}\StringTok{"Ground Truth Preference Probability"}\NormalTok{)}
+\NormalTok{    plt.title(}\StringTok{"Ground Truth Preference Heatmap"}\NormalTok{)}
+\NormalTok{    plt.xlabel(}\StringTok{"x"}\NormalTok{)}
+\NormalTok{    plt.ylabel(}\StringTok{"x\textquotesingle{}"}\NormalTok{)}
+
+    \BuiltInTok{print}\NormalTok{(}\SpecialStringTok{f\textquotesingle{}Chosen duels: }\SpecialCharTok{\{}\NormalTok{train\_X[}\OperatorTok{{-}}\NormalTok{n\_iterations:]}\SpecialCharTok{\}}\SpecialStringTok{\textquotesingle{}}\NormalTok{)}
+
+    \CommentTok{\# Plot GP{-}Predicted Preference Heatmap}
+\NormalTok{    plt.subplot(}\DecValTok{1}\NormalTok{, }\DecValTok{2}\NormalTok{, }\DecValTok{2}\NormalTok{)}
+\NormalTok{    plt.contourf(X, X\_prime, gp\_predictions, levels}\OperatorTok{=}\DecValTok{50}\NormalTok{, cmap}\OperatorTok{=}\StringTok{\textquotesingle{}jet\textquotesingle{}}\NormalTok{)}
+\NormalTok{    plt.colorbar(label}\OperatorTok{=}\StringTok{"GP{-}Predicted Preference Probability"}\NormalTok{)}
+\NormalTok{    plt.scatter(train\_X[}\OperatorTok{{-}}\NormalTok{n\_iterations:, }\DecValTok{0}\NormalTok{], train\_X[}\OperatorTok{{-}}\NormalTok{n\_iterations:, }\DecValTok{1}\NormalTok{], c}\OperatorTok{=}\StringTok{\textquotesingle{}black\textquotesingle{}}\NormalTok{, label}\OperatorTok{=}\StringTok{"Last Iterations"}\NormalTok{, s}\OperatorTok{=}\DecValTok{30}\NormalTok{, marker}\OperatorTok{=}\StringTok{\textquotesingle{}x\textquotesingle{}}\NormalTok{)}
+\NormalTok{    plt.title(}\StringTok{"GP{-}Predicted Preference Heatmap"}\NormalTok{)}
+\NormalTok{    plt.xlabel(}\StringTok{"x"}\NormalTok{)}
+\NormalTok{    plt.ylabel(}\StringTok{"x\textquotesingle{}"}\NormalTok{)}
+
+\NormalTok{    plt.tight\_layout()}
+\NormalTok{    plt.show()}
+\end{Highlighting}
+\end{Shaded}
+
+\end{tcolorbox}
+
+\subsection*{Question 2: Linear Dueling Bandit (30
+points)}\label{sec-question-2-linear-dueling-bandit-30-points}
+\addcontentsline{toc}{subsection}{Question 2: Linear Dueling Bandit (30
+points)}
+
+In the linear dueling bandit problem, feedback is provided through
+pairwise comparisons between actions, rather than direct rewards.
+Consider a finite set of \(K\) actions, each represented by a feature
+vector \(x_1, x_2, \dots, x_K \in \mathbb{R}^d\). Let the unknown
+preference scores be \(f(x_i) = \theta^\top x_i\) and
+\(f(x_j) = \theta^\top x_j\), where \(\theta \in \mathbb{R}^d\) is an
+unknown parameter vector. The goal is to identify the best action by
+iteratively comparing pairs of actions while minimizing cumulative
+regret. Using qEUBO from \url{https://arxiv.org/pdf/2303.15746},
+complete the following:
+
+\begin{enumerate}
+\def\labelenumi{(\alph{enumi})}
+\item
+  \textbf{Acquisition Functions for Regret Minimization (Written, 10
+  points)}: Write out the expression for the acquisition function
+  Expected Improvement discussed in Q1 and qEUBO in the context of the
+  linear dueling bandit. Discuss conditions under which each acquisition
+  function could outperform the others in minimizing cumulative regret.
+\item
+  \textbf{Experimental Evaluation of Acquisition Functions (Written +
+  Coding, 10 points)}: Benchmark the performance of the two acquisition
+  functions experimentally.
+
+  \begin{enumerate}
+  \def\labelenumii{(\roman{enumii})}
+  \item
+    Finish implementing the acquisition functions in a linear dueling
+    bandit simulation with \(K = 10\) and \(d = 5\), using synthetic
+    data by completing the function \texttt{calculate\_regret\_from\_gp}
+    in \texttt{linear\_dueling/run.py}.
+  \item
+    Measure and compare cumulative regret over \(T = 200\) rounds for
+    each acquisition function.
+  \item
+    Report and analyze the empirical regret curves, discussing any
+    notable performance differences.
+  \end{enumerate}
+\item
+  \textbf{Effect of Dimensionality on Regret (Written + Coding, 10
+  points)}: Analyze how increasing feature dimensionality impacts
+  regret.
+
+  \begin{enumerate}
+  \def\labelenumii{(\roman{enumii})}
+  \item
+    Experimentally evaluate the regret for different values of \(d\)
+    (e.g., \(d = 5, 10, 20\)) while keeping \(K\) constant.
+  \item
+    Plot the regret against \(d\) and explain any observed trends.
+  \end{enumerate}
+\end{enumerate}
+
+\begin{tcolorbox}[colframe=.grey, title=\faCode \enspace Code]
+
+\begin{Shaded}
+\begin{Highlighting}[numbers=left,,]
+\ImportTok{from}\NormalTok{ \_\_future\_\_ }\ImportTok{import}\NormalTok{ annotations}
+
+\ImportTok{from}\NormalTok{ typing }\ImportTok{import}\NormalTok{ Optional}
+\ImportTok{import}\NormalTok{ itertools}
+
+\ImportTok{import}\NormalTok{ torch}
+\ImportTok{import}\NormalTok{ matplotlib.pyplot }\ImportTok{as}\NormalTok{ plt}
+\ImportTok{from}\NormalTok{ torch }\ImportTok{import}\NormalTok{ Tensor}
+\ImportTok{from}\NormalTok{ tqdm }\ImportTok{import}\NormalTok{ tqdm}
+\ImportTok{from}\NormalTok{ botorch.acquisition.preference }\ImportTok{import}\NormalTok{ qExpectedUtilityOfBestOption}
+\ImportTok{from}\NormalTok{ botorch.acquisition.logei }\ImportTok{import}\NormalTok{ qLogExpectedImprovement}
+\ImportTok{from}\NormalTok{ botorch.fit }\ImportTok{import}\NormalTok{ fit\_gpytorch\_mll}
+\ImportTok{from}\NormalTok{ botorch.models.gpytorch }\ImportTok{import}\NormalTok{ GPyTorchModel}
+\ImportTok{from}\NormalTok{ botorch.utils.sampling }\ImportTok{import}\NormalTok{ draw\_sobol\_samples}
+\ImportTok{from}\NormalTok{ botorch.sampling }\ImportTok{import}\NormalTok{ SobolQMCNormalSampler}
+\ImportTok{from}\NormalTok{ botorch.posteriors.gpytorch }\ImportTok{import}\NormalTok{ GPyTorchPosterior}
+\ImportTok{from}\NormalTok{ gpytorch.distributions }\ImportTok{import}\NormalTok{ base\_distributions}
+\ImportTok{from}\NormalTok{ gpytorch.likelihoods }\ImportTok{import}\NormalTok{ Likelihood}
+\ImportTok{from}\NormalTok{ gpytorch.distributions }\ImportTok{import}\NormalTok{ MultivariateNormal}
+\ImportTok{from}\NormalTok{ gpytorch.kernels }\ImportTok{import}\NormalTok{ Kernel, RBFKernel, ScaleKernel}
+\ImportTok{from}\NormalTok{ gpytorch.mlls.variational\_elbo }\ImportTok{import}\NormalTok{ VariationalELBO}
+\ImportTok{from}\NormalTok{ gpytorch.means }\ImportTok{import}\NormalTok{ ConstantMean}
+\ImportTok{from}\NormalTok{ gpytorch.models }\ImportTok{import}\NormalTok{ ApproximateGP}
+\ImportTok{from}\NormalTok{ gpytorch.priors.torch\_priors }\ImportTok{import}\NormalTok{ GammaPrior}
+\ImportTok{from}\NormalTok{ gpytorch.variational }\ImportTok{import}\NormalTok{ (}
+\NormalTok{    CholeskyVariationalDistribution,}
+\NormalTok{    UnwhitenedVariationalStrategy,}
+\NormalTok{    VariationalStrategy,}
+\NormalTok{)}
+
+
+\KeywordTok{class}\NormalTok{ PreferentialSoftmaxLikelihood(Likelihood):}
+    \CommentTok{r"""}
+\CommentTok{    Implements the softmax likelihood used for GP{-}based preference learning.}
+
+\CommentTok{    .. math::}
+\CommentTok{        p(\textbackslash{}mathbf y \textbackslash{}mid \textbackslash{}mathbf f) = }\CharTok{\textbackslash{}t}\CommentTok{ext\{Softmax\} \textbackslash{}left( \textbackslash{}mathbf f }\CharTok{\textbackslash{}r}\CommentTok{ight)}
+
+\CommentTok{    :param int num\_alternatives: Number of alternatives (i.e., q).}
+\CommentTok{    """}
+
+    \KeywordTok{def} \FunctionTok{\_\_init\_\_}\NormalTok{(}\VariableTok{self}\NormalTok{, num\_alternatives):}
+        \BuiltInTok{super}\NormalTok{().}\FunctionTok{\_\_init\_\_}\NormalTok{()}
+        \VariableTok{self}\NormalTok{.num\_alternatives }\OperatorTok{=}\NormalTok{ num\_alternatives}
+        \VariableTok{self}\NormalTok{.noise }\OperatorTok{=}\NormalTok{ torch.tensor(}\FloatTok{1e{-}4}\NormalTok{)  }\CommentTok{\# This is only used to draw RFFs{-}based}
+        \CommentTok{\# samples. We set it close to zero because we want noise{-}free samples}
+        \VariableTok{self}\NormalTok{.sampler }\OperatorTok{=}\NormalTok{ SobolQMCNormalSampler(}
+\NormalTok{            sample\_shape}\OperatorTok{=}\NormalTok{torch.Size([}\DecValTok{512}\NormalTok{]))  }\CommentTok{\# This allows for}
+        \CommentTok{\# SAA{-}based optimization of the ELBO}
+
+    \KeywordTok{def}\NormalTok{ \_draw\_likelihood\_samples(}
+        \VariableTok{self}\NormalTok{, function\_dist, }\OperatorTok{*}\NormalTok{args, sample\_shape}\OperatorTok{=}\VariableTok{None}\NormalTok{, }\OperatorTok{**}\NormalTok{kwargs}
+\NormalTok{    ):}
+\NormalTok{        function\_samples }\OperatorTok{=} \VariableTok{self}\NormalTok{.sampler(}
+\NormalTok{            GPyTorchPosterior(function\_dist)).squeeze(}\OperatorTok{{-}}\DecValTok{1}\NormalTok{)}
+        \ControlFlowTok{return} \VariableTok{self}\NormalTok{.forward(function\_samples, }\OperatorTok{*}\NormalTok{args, }\OperatorTok{**}\NormalTok{kwargs)}
+
+    \KeywordTok{def}\NormalTok{ forward(}\VariableTok{self}\NormalTok{, function\_samples, }\OperatorTok{*}\NormalTok{params, }\OperatorTok{**}\NormalTok{kwargs):}
+\NormalTok{        function\_samples }\OperatorTok{=}\NormalTok{ function\_samples.reshape(}
+\NormalTok{            function\_samples.shape[:}\OperatorTok{{-}}\DecValTok{1}\NormalTok{]}
+            \OperatorTok{+}\NormalTok{ torch.Size(}
+\NormalTok{                (}
+                    \BuiltInTok{int}\NormalTok{(function\_samples.shape[}\OperatorTok{{-}}\DecValTok{1}\NormalTok{] }\OperatorTok{/} \VariableTok{self}\NormalTok{.num\_alternatives),}
+                    \VariableTok{self}\NormalTok{.num\_alternatives,}
+\NormalTok{                )}
+\NormalTok{            )}
+\NormalTok{        )  }\CommentTok{\# Reshape samples as if they came from a multi{-}output model (with \textasciigrave{}q\textasciigrave{} outputs)}
+\NormalTok{        num\_alternatives }\OperatorTok{=}\NormalTok{ function\_samples.shape[}\OperatorTok{{-}}\DecValTok{1}\NormalTok{]}
+
+        \ControlFlowTok{if}\NormalTok{ num\_alternatives }\OperatorTok{!=} \VariableTok{self}\NormalTok{.num\_alternatives:}
+            \ControlFlowTok{raise} \PreprocessorTok{RuntimeError}\NormalTok{(}\StringTok{"There should be }\SpecialCharTok{\%d}\StringTok{ points"} \OperatorTok{\%}
+                               \VariableTok{self}\NormalTok{.num\_alternatives)}
+
+\NormalTok{        res }\OperatorTok{=}\NormalTok{ base\_distributions.Categorical(}
+\NormalTok{            logits}\OperatorTok{=}\NormalTok{function\_samples)  }\CommentTok{\# Passing the}
+        \CommentTok{\# function values as logits recovers the softmax likelihood}
+        \ControlFlowTok{return}\NormalTok{ res}
+
+
+\KeywordTok{class}\NormalTok{ VariationalPreferentialGP(GPyTorchModel, ApproximateGP):}
+    \KeywordTok{def} \FunctionTok{\_\_init\_\_}\NormalTok{(}
+        \VariableTok{self}\NormalTok{,}
+\NormalTok{        queries: Tensor,}
+\NormalTok{        responses: Tensor,}
+\NormalTok{        use\_withening: }\BuiltInTok{bool} \OperatorTok{=} \VariableTok{True}\NormalTok{,}
+\NormalTok{        covar\_module: Optional[Kernel] }\OperatorTok{=} \VariableTok{None}\NormalTok{,}
+\NormalTok{    ) }\OperatorTok{{-}\textgreater{}} \VariableTok{None}\NormalTok{:}
+        \CommentTok{r"""}
+\CommentTok{        Args:}
+\CommentTok{            queries: A \textasciigrave{}n x q x d\textasciigrave{} tensor of training inputs. Each of the \textasciigrave{}n\textasciigrave{} queries is constituted}
+\CommentTok{                by \textasciigrave{}q\textasciigrave{} \textasciigrave{}d\textasciigrave{}{-}dimensional decision vectors.}
+\CommentTok{            responses: A \textasciigrave{}n x 1\textasciigrave{} tensor of training outputs. Each of the \textasciigrave{}n\textasciigrave{} responses is an integer}
+\CommentTok{                between 0 and \textasciigrave{}q{-}1\textasciigrave{} indicating the decision vector selected by the user.}
+\CommentTok{            use\_withening: If true, use withening to enhance variational inference.}
+\CommentTok{            covar\_module: The module computing the covariance matrix.}
+\CommentTok{        """}
+        \VariableTok{self}\NormalTok{.queries }\OperatorTok{=}\NormalTok{ queries}
+        \VariableTok{self}\NormalTok{.responses }\OperatorTok{=}\NormalTok{ responses}
+        \VariableTok{self}\NormalTok{.input\_dim }\OperatorTok{=}\NormalTok{ queries.shape[}\OperatorTok{{-}}\DecValTok{1}\NormalTok{]}
+        \VariableTok{self}\NormalTok{.q }\OperatorTok{=}\NormalTok{ queries.shape[}\OperatorTok{{-}}\DecValTok{2}\NormalTok{]}
+        \VariableTok{self}\NormalTok{.num\_data }\OperatorTok{=}\NormalTok{ queries.shape[}\OperatorTok{{-}}\DecValTok{3}\NormalTok{]}
+\NormalTok{        train\_x }\OperatorTok{=}\NormalTok{ queries.reshape(}
+\NormalTok{            queries.shape[}\DecValTok{0}\NormalTok{] }\OperatorTok{*}\NormalTok{ queries.shape[}\DecValTok{1}\NormalTok{], queries.shape[}\DecValTok{2}\NormalTok{]}
+\NormalTok{        )  }\CommentTok{\# Reshape queries in the form of "standard training inputs"}
+\NormalTok{        train\_y }\OperatorTok{=}\NormalTok{ responses.squeeze(}\OperatorTok{{-}}\DecValTok{1}\NormalTok{)  }\CommentTok{\# Squeeze out output dimension}
+\NormalTok{        bounds }\OperatorTok{=}\NormalTok{ torch.tensor(}
+\NormalTok{            [[}\DecValTok{0}\NormalTok{, }\DecValTok{1}\NormalTok{] }\ControlFlowTok{for}\NormalTok{ \_ }\KeywordTok{in} \BuiltInTok{range}\NormalTok{(}\VariableTok{self}\NormalTok{.input\_dim)], dtype}\OperatorTok{=}\NormalTok{torch.double}
+\NormalTok{        ).T  }\CommentTok{\# This assumes the input space has been normalized beforehand}
+        \CommentTok{\# Construct variational distribution and strategy}
+        \ControlFlowTok{if}\NormalTok{ use\_withening:}
+\NormalTok{            inducing\_points }\OperatorTok{=}\NormalTok{ draw\_sobol\_samples(}
+\NormalTok{                bounds}\OperatorTok{=}\NormalTok{bounds,}
+\NormalTok{                n}\OperatorTok{=}\DecValTok{2} \OperatorTok{*} \VariableTok{self}\NormalTok{.input\_dim,}
+\NormalTok{                q}\OperatorTok{=}\DecValTok{1}\NormalTok{,}
+\NormalTok{                seed}\OperatorTok{=}\DecValTok{0}\NormalTok{,}
+\NormalTok{            ).squeeze(}\DecValTok{1}\NormalTok{)}
+\NormalTok{            inducing\_points }\OperatorTok{=}\NormalTok{ torch.cat([inducing\_points, train\_x], dim}\OperatorTok{=}\DecValTok{0}\NormalTok{)}
+\NormalTok{            variational\_distribution }\OperatorTok{=}\NormalTok{ CholeskyVariationalDistribution(}
+\NormalTok{                inducing\_points.size(}\OperatorTok{{-}}\DecValTok{2}\NormalTok{)}
+\NormalTok{            )}
+\NormalTok{            variational\_strategy }\OperatorTok{=}\NormalTok{ VariationalStrategy(}
+                \VariableTok{self}\NormalTok{,}
+\NormalTok{                inducing\_points,}
+\NormalTok{                variational\_distribution,}
+\NormalTok{                learn\_inducing\_locations}\OperatorTok{=}\VariableTok{False}\NormalTok{,}
+\NormalTok{            )}
+        \ControlFlowTok{else}\NormalTok{:}
+\NormalTok{            inducing\_points }\OperatorTok{=}\NormalTok{ train\_x}
+\NormalTok{            variational\_distribution }\OperatorTok{=}\NormalTok{ CholeskyVariationalDistribution(}
+\NormalTok{                inducing\_points.size(}\OperatorTok{{-}}\DecValTok{2}\NormalTok{)}
+\NormalTok{            )}
+\NormalTok{            variational\_strategy }\OperatorTok{=}\NormalTok{ UnwhitenedVariationalStrategy(}
+                \VariableTok{self}\NormalTok{,}
+\NormalTok{                inducing\_points,}
+\NormalTok{                variational\_distribution,}
+\NormalTok{                learn\_inducing\_locations}\OperatorTok{=}\VariableTok{False}\NormalTok{,}
+\NormalTok{            )}
+        \BuiltInTok{super}\NormalTok{().}\FunctionTok{\_\_init\_\_}\NormalTok{(variational\_strategy)}
+        \VariableTok{self}\NormalTok{.likelihood }\OperatorTok{=}\NormalTok{ PreferentialSoftmaxLikelihood(}
+\NormalTok{            num\_alternatives}\OperatorTok{=}\VariableTok{self}\NormalTok{.q)}
+        \VariableTok{self}\NormalTok{.mean\_module }\OperatorTok{=}\NormalTok{ ConstantMean()}
+\NormalTok{        scales }\OperatorTok{=}\NormalTok{ bounds[}\DecValTok{1}\NormalTok{, :] }\OperatorTok{{-}}\NormalTok{ bounds[}\DecValTok{0}\NormalTok{, :]}
+
+        \ControlFlowTok{if}\NormalTok{ covar\_module }\KeywordTok{is} \VariableTok{None}\NormalTok{:}
+            \VariableTok{self}\NormalTok{.covar\_module }\OperatorTok{=}\NormalTok{ ScaleKernel(}
+\NormalTok{                RBFKernel(}
+\NormalTok{                    ard\_num\_dims}\OperatorTok{=}\VariableTok{self}\NormalTok{.input\_dim,}
+\NormalTok{                    lengthscale\_prior}\OperatorTok{=}\NormalTok{GammaPrior(}\FloatTok{3.0}\NormalTok{, }\FloatTok{6.0} \OperatorTok{/}\NormalTok{ scales),}
+\NormalTok{                ),}
+\NormalTok{                outputscale\_prior}\OperatorTok{=}\NormalTok{GammaPrior(}\FloatTok{2.0}\NormalTok{, }\FloatTok{0.15}\NormalTok{),}
+\NormalTok{            )}
+        \ControlFlowTok{else}\NormalTok{:}
+            \VariableTok{self}\NormalTok{.covar\_module }\OperatorTok{=}\NormalTok{ covar\_module}
+        \VariableTok{self}\NormalTok{.\_num\_outputs }\OperatorTok{=} \DecValTok{1}
+        \VariableTok{self}\NormalTok{.train\_inputs }\OperatorTok{=}\NormalTok{ (train\_x,)}
+        \VariableTok{self}\NormalTok{.train\_targets }\OperatorTok{=}\NormalTok{ train\_y}
+
+    \KeywordTok{def}\NormalTok{ forward(}\VariableTok{self}\NormalTok{, X: Tensor) }\OperatorTok{{-}\textgreater{}}\NormalTok{ MultivariateNormal:}
+\NormalTok{        mean\_X }\OperatorTok{=} \VariableTok{self}\NormalTok{.mean\_module(X)}
+\NormalTok{        covar\_X }\OperatorTok{=} \VariableTok{self}\NormalTok{.covar\_module(X)}
+        \ControlFlowTok{return}\NormalTok{ MultivariateNormal(mean\_X, covar\_X)}
+
+    \AttributeTok{@property}
+    \KeywordTok{def}\NormalTok{ num\_outputs(}\VariableTok{self}\NormalTok{) }\OperatorTok{{-}\textgreater{}} \BuiltInTok{int}\NormalTok{:}
+        \CommentTok{r"""The number of outputs of the model."""}
+        \ControlFlowTok{return} \DecValTok{1}
+
+
+\CommentTok{\# Objective function for pairwise comparisons}
+\KeywordTok{def}\NormalTok{ f(x):}
+    \CommentTok{"""}
+\CommentTok{    Computes the preference score for a given action.}
+
+\CommentTok{    Args:}
+\CommentTok{        x (torch.Tensor): A feature vector of dimension \textasciigrave{}d\textasciigrave{}.}
+
+\CommentTok{    Returns:}
+\CommentTok{        torch.Tensor: The computed preference score.}
+\CommentTok{    """}
+    \ControlFlowTok{return}\NormalTok{ x }\OperatorTok{@}\NormalTok{ theta\_true}
+
+\CommentTok{\# Simulate pairwise comparisons}
+
+
+\KeywordTok{def}\NormalTok{ simulate\_comparison(x1, x2):}
+    \CommentTok{"""}
+\CommentTok{    Simulates a pairwise comparison between two actions based on their preference scores.}
+
+\CommentTok{    Args:}
+\CommentTok{        x1 (torch.Tensor): Feature vector of the first action.}
+\CommentTok{        x2 (torch.Tensor): Feature vector of the second action.}
+
+\CommentTok{    Returns:}
+\CommentTok{        torch.Tensor: The feature vector of the preferred action.}
+\CommentTok{    """}
+\NormalTok{    prob\_x1 }\OperatorTok{=}\NormalTok{ torch.sigmoid(f(x1) }\OperatorTok{{-}}\NormalTok{ f(x2))}
+    \ControlFlowTok{return}\NormalTok{ x1 }\ControlFlowTok{if}\NormalTok{ torch.rand(}\DecValTok{1}\NormalTok{).item() }\OperatorTok{\textless{}}\NormalTok{ prob\_x1 }\ControlFlowTok{else}\NormalTok{ x2}
+
+\CommentTok{\# Function to fit a Variational GP model}
+
+
+\KeywordTok{def}\NormalTok{ fit\_variational\_gp(train\_X, train\_Y):}
+    \CommentTok{"""}
+\CommentTok{    Fits a Variational Gaussian Process (GP) model to the given training data.}
+
+\CommentTok{    Args:}
+\CommentTok{        train\_X (torch.Tensor): Training feature pairs of shape [n, 2, d].}
+\CommentTok{        train\_Y (torch.Tensor): Training preferences of shape [n, 1].}
+
+\CommentTok{    Returns:}
+\CommentTok{        VariationalPreferentialGP: A fitted GP model.}
+\CommentTok{    """}
+\NormalTok{    queries }\OperatorTok{=}\NormalTok{ train\_X.reshape(train\_X.shape[}\DecValTok{0}\NormalTok{], }\DecValTok{2}\NormalTok{, d)}
+\NormalTok{    responses }\OperatorTok{=}\NormalTok{ train\_Y}
+    \ControlFlowTok{return}\NormalTok{ fit\_model(queries, responses)}
+
+
+\KeywordTok{def}\NormalTok{ fit\_model(queries, responses):}
+    \CommentTok{"""}
+\CommentTok{    Internal helper to train a VariationalPreferentialGP.}
+
+\CommentTok{    Args:}
+\CommentTok{        queries (torch.Tensor): Training feature pairs.}
+\CommentTok{        responses (torch.Tensor): Training responses (preferences).}
+
+\CommentTok{    Returns:}
+\CommentTok{        VariationalPreferentialGP: Trained GP model.}
+\CommentTok{    """}
+\NormalTok{    model }\OperatorTok{=}\NormalTok{ VariationalPreferentialGP(queries, responses)}
+\NormalTok{    model.train()}
+\NormalTok{    model.likelihood.train()}
+\NormalTok{    mll }\OperatorTok{=}\NormalTok{ VariationalELBO(}
+\NormalTok{        likelihood}\OperatorTok{=}\NormalTok{model.likelihood,}
+\NormalTok{        model}\OperatorTok{=}\NormalTok{model,}
+\NormalTok{        num\_data}\OperatorTok{=}\DecValTok{2} \OperatorTok{*}\NormalTok{ model.num\_data,}
+\NormalTok{    )}
+\NormalTok{    fit\_gpytorch\_mll(mll)}
+\NormalTok{    model.}\BuiltInTok{eval}\NormalTok{()}
+\NormalTok{    model.likelihood.}\BuiltInTok{eval}\NormalTok{()}
+    \ControlFlowTok{return}\NormalTok{ model}
+
+\CommentTok{\# Acquisition function definition}
+
+
+\KeywordTok{def}\NormalTok{ get\_acquisition\_functions(gp):}
+    \CommentTok{"""}
+\CommentTok{    Returns acquisition functions (qLogEI and qEUBO) for a given GP model.}
+
+\CommentTok{    Args:}
+\CommentTok{        gp (VariationalPreferentialGP): The fitted GP model.}
+
+\CommentTok{    Returns:}
+\CommentTok{        tuple: qLogExpectedImprovement and qExpectedUtilityOfBestOption acquisition functions.}
+\CommentTok{    """}
+    \ControlFlowTok{with}\NormalTok{ torch.no\_grad():}
+\NormalTok{        posterior }\OperatorTok{=}\NormalTok{ gp.posterior(gp.train\_inputs[}\DecValTok{0}\NormalTok{])}
+\NormalTok{        best\_f }\OperatorTok{=}\NormalTok{ posterior.mean.squeeze(}\OperatorTok{{-}}\DecValTok{1}\NormalTok{).}\BuiltInTok{max}\NormalTok{()}
+
+\NormalTok{    qLogEI }\OperatorTok{=}\NormalTok{ qLogExpectedImprovement(model}\OperatorTok{=}\NormalTok{gp, best\_f}\OperatorTok{=}\NormalTok{best\_f)}
+\NormalTok{    qEUBO }\OperatorTok{=}\NormalTok{ qExpectedUtilityOfBestOption(pref\_model}\OperatorTok{=}\NormalTok{gp)}
+    \ControlFlowTok{return}\NormalTok{ qLogEI, qEUBO}
+
+\CommentTok{\# Evaluate acquisition function on pairs}
+
+
+\KeywordTok{def}\NormalTok{ evaluate\_acquisition\_on\_pairs(acq\_function, arms):}
+    \CommentTok{"""}
+\CommentTok{    Computes acquisition values for all possible pairs of arms.}
+
+\CommentTok{    Args:}
+\CommentTok{        acq\_function: The acquisition function to evaluate.}
+\CommentTok{        arms (torch.Tensor): All available arms (feature vectors).}
+
+\CommentTok{    Returns:}
+\CommentTok{        tuple: A list of pairs and their corresponding acquisition values.}
+\CommentTok{    """}
+\NormalTok{    pairs }\OperatorTok{=} \BuiltInTok{list}\NormalTok{(itertools.combinations(arms, }\DecValTok{2}\NormalTok{))}
+\NormalTok{    pair\_values }\OperatorTok{=}\NormalTok{ []}
+    \ControlFlowTok{with}\NormalTok{ torch.no\_grad():}
+        \ControlFlowTok{for}\NormalTok{ x1, x2 }\KeywordTok{in}\NormalTok{ pairs:}
+\NormalTok{            pair }\OperatorTok{=}\NormalTok{ torch.stack([x1, x2]).unsqueeze(}\DecValTok{0}\NormalTok{)}
+\NormalTok{            pair\_values.append(acq\_function(pair))}
+    \ControlFlowTok{return}\NormalTok{ pairs, torch.tensor(pair\_values)}
+
+\CommentTok{\# Regret calculation}
+
+
+\KeywordTok{def}\NormalTok{ calculate\_regret\_from\_gp(gp, actions):}
+    \CommentTok{"""}
+\CommentTok{    Computes the regret for the current GP model.}
+
+\CommentTok{    Args:}
+\CommentTok{        gp (VariationalPreferentialGP): The fitted GP model.}
+\CommentTok{        actions (torch.Tensor): Feature vectors of arms.}
+
+\CommentTok{    Returns:}
+\CommentTok{        torch.Tensor: The calculated regret.}
+\CommentTok{    """}
+    \CommentTok{\# YOUR CODE HERE (\textasciitilde{}6 lines)}
+    \CommentTok{\# Compare the ground truth optimal arm to the GP\textquotesingle{}s believed best arm}
+    \CommentTok{\# Hint: To find GP believed best arm in expectation, use gp.posterior which returns with a mean property.}
+    \ControlFlowTok{pass}
+    \CommentTok{\# }\RegionMarkerTok{END}\CommentTok{ OF YOUR CODE}
+
+
+\ControlFlowTok{if} \VariableTok{\_\_name\_\_} \OperatorTok{==} \StringTok{"\_\_main\_\_"}\NormalTok{:}
+    \CommentTok{\# Set default tensor precision}
+\NormalTok{    torch.set\_default\_dtype(torch.double)}
+
+    \CommentTok{\# Problem settings}
+\NormalTok{    torch.manual\_seed(}\DecValTok{55}\NormalTok{)}
+\NormalTok{    K }\OperatorTok{=} \DecValTok{30}  \CommentTok{\# Number of arms (discrete choices)}
+\NormalTok{    d }\OperatorTok{=} \DecValTok{2}   \CommentTok{\# Dimensionality of feature vectors}
+\NormalTok{    T }\OperatorTok{=} \DecValTok{100}  \CommentTok{\# Number of rounds (iterations)}
+\NormalTok{    bounds }\OperatorTok{=}\NormalTok{ torch.tensor([[}\FloatTok{0.0}\NormalTok{] }\OperatorTok{*}\NormalTok{ d, [}\FloatTok{1.0}\NormalTok{] }\OperatorTok{*}\NormalTok{ d])  }\CommentTok{\# Bounds for action space}
+
+    \CommentTok{\# Generate random actions (feature vectors)}
+\NormalTok{    actions }\OperatorTok{=}\NormalTok{ torch.rand(K, d)}
+
+    \CommentTok{\# Ground{-}truth preference parameter (unknown to the model)}
+\NormalTok{    theta\_true }\OperatorTok{=}\NormalTok{ torch.ones(d)}
+
+    \CommentTok{\# Generate initial observations}
+\NormalTok{    n\_initial }\OperatorTok{=} \DecValTok{5}
+\NormalTok{    indices }\OperatorTok{=}\NormalTok{ torch.randint(}\DecValTok{0}\NormalTok{, K, (n\_initial, }\DecValTok{2}\NormalTok{))}
+\NormalTok{    train\_X\_logei }\OperatorTok{=}\NormalTok{ actions[indices]  }\CommentTok{\# Shape: [n\_initial, 2, d]}
+\NormalTok{    train\_X\_qeubo }\OperatorTok{=}\NormalTok{ train\_X\_logei.clone()}
+\NormalTok{    train\_X\_random }\OperatorTok{=}\NormalTok{ train\_X\_logei.clone()}
+\NormalTok{    train\_Y\_logei }\OperatorTok{=}\NormalTok{ torch.tensor([[}\FloatTok{0.0} \ControlFlowTok{if}\NormalTok{ simulate\_comparison(x1, x2).equal(x1) }\ControlFlowTok{else} \FloatTok{1.0}\NormalTok{]}
+                                  \ControlFlowTok{for}\NormalTok{ x1, x2 }\KeywordTok{in}\NormalTok{ train\_X\_logei])}
+\NormalTok{    train\_Y\_qeubo }\OperatorTok{=}\NormalTok{ train\_Y\_logei.clone()}
+\NormalTok{    train\_Y\_random }\OperatorTok{=}\NormalTok{ train\_Y\_logei.clone()}
+
+    \CommentTok{\# Optimization loop}
+\NormalTok{    cumulative\_regret\_logei }\OperatorTok{=}\NormalTok{ []}
+\NormalTok{    cumulative\_regret\_qeubo }\OperatorTok{=}\NormalTok{ []}
+\NormalTok{    cumulative\_regret\_random }\OperatorTok{=}\NormalTok{ []}
+
+    \ControlFlowTok{for}\NormalTok{ t }\KeywordTok{in}\NormalTok{ tqdm(}\BuiltInTok{range}\NormalTok{(T)):}
+        \CommentTok{\# Fit GP models}
+\NormalTok{        gp\_logei }\OperatorTok{=}\NormalTok{ fit\_variational\_gp(train\_X\_logei, train\_Y\_logei)}
+\NormalTok{        gp\_qeubo }\OperatorTok{=}\NormalTok{ fit\_variational\_gp(train\_X\_qeubo, train\_Y\_qeubo)}
+\NormalTok{        gp\_random }\OperatorTok{=}\NormalTok{ fit\_variational\_gp(train\_X\_random, train\_Y\_random)}
+
+        \CommentTok{\# Define acquisition functions}
+\NormalTok{        qLogEI, \_ }\OperatorTok{=}\NormalTok{ get\_acquisition\_functions(gp\_logei)}
+\NormalTok{        \_, qEUBO }\OperatorTok{=}\NormalTok{ get\_acquisition\_functions(gp\_qeubo)}
+
+        \CommentTok{\# Evaluate acquisition functions}
+\NormalTok{        pairs\_logei, acq\_values\_logei }\OperatorTok{=}\NormalTok{ evaluate\_acquisition\_on\_pairs(}
+\NormalTok{            qLogEI, actions)}
+\NormalTok{        pairs\_qeubo, acq\_values\_qeubo }\OperatorTok{=}\NormalTok{ evaluate\_acquisition\_on\_pairs(}
+\NormalTok{            qEUBO, actions)}
+
+        \CommentTok{\# Select pairs based on acquisition values}
+\NormalTok{        best\_pair\_idx\_logei }\OperatorTok{=}\NormalTok{ torch.argmax(acq\_values\_logei)}
+\NormalTok{        best\_pair\_idx\_qeubo }\OperatorTok{=}\NormalTok{ torch.argmax(acq\_values\_qeubo)}
+\NormalTok{        x1\_logei, x2\_logei }\OperatorTok{=}\NormalTok{ pairs\_logei[best\_pair\_idx\_logei]}
+\NormalTok{        x1\_qeubo, x2\_qeubo }\OperatorTok{=}\NormalTok{ pairs\_qeubo[best\_pair\_idx\_qeubo]}
+
+        \CommentTok{\# Random pair selection}
+\NormalTok{        random\_indices }\OperatorTok{=}\NormalTok{ torch.randint(}\DecValTok{0}\NormalTok{, K, (}\DecValTok{2}\NormalTok{,))}
+\NormalTok{        x1\_random }\OperatorTok{=}\NormalTok{ actions[random\_indices[}\DecValTok{0}\NormalTok{]]}
+\NormalTok{        x2\_random }\OperatorTok{=}\NormalTok{ actions[random\_indices[}\DecValTok{1}\NormalTok{]]}
+
+        \CommentTok{\# Simulate comparisons}
+\NormalTok{        selected\_logei }\OperatorTok{=}\NormalTok{ simulate\_comparison(x1\_logei, x2\_logei)}
+\NormalTok{        selected\_qeubo }\OperatorTok{=}\NormalTok{ simulate\_comparison(x1\_qeubo, x2\_qeubo)}
+\NormalTok{        selected\_random }\OperatorTok{=}\NormalTok{ simulate\_comparison(x1\_random, x2\_random)}
+
+        \CommentTok{\# Update training data}
+\NormalTok{        train\_X\_logei }\OperatorTok{=}\NormalTok{ torch.cat(}
+\NormalTok{            [train\_X\_logei, torch.stack([x1\_logei, x2\_logei]).unsqueeze(}\DecValTok{0}\NormalTok{)])}
+\NormalTok{        train\_Y\_logei }\OperatorTok{=}\NormalTok{ torch.cat([train\_Y\_logei, torch.tensor(}
+\NormalTok{            [[}\FloatTok{0.0} \ControlFlowTok{if}\NormalTok{ selected\_logei.equal(x1\_logei) }\ControlFlowTok{else} \FloatTok{1.0}\NormalTok{]])])}
+\NormalTok{        train\_X\_qeubo }\OperatorTok{=}\NormalTok{ torch.cat(}
+\NormalTok{            [train\_X\_qeubo, torch.stack([x1\_qeubo, x2\_qeubo]).unsqueeze(}\DecValTok{0}\NormalTok{)])}
+\NormalTok{        train\_Y\_qeubo }\OperatorTok{=}\NormalTok{ torch.cat([train\_Y\_qeubo, torch.tensor(}
+\NormalTok{            [[}\FloatTok{0.0} \ControlFlowTok{if}\NormalTok{ selected\_qeubo.equal(x1\_qeubo) }\ControlFlowTok{else} \FloatTok{1.0}\NormalTok{]])])}
+\NormalTok{        train\_X\_random }\OperatorTok{=}\NormalTok{ torch.cat(}
+\NormalTok{            [train\_X\_random, torch.stack([x1\_random, x2\_random]).unsqueeze(}\DecValTok{0}\NormalTok{)])}
+\NormalTok{        train\_Y\_random }\OperatorTok{=}\NormalTok{ torch.cat([train\_Y\_random, torch.tensor(}
+\NormalTok{            [[}\FloatTok{0.0} \ControlFlowTok{if}\NormalTok{ selected\_random.equal(x1\_random) }\ControlFlowTok{else} \FloatTok{1.0}\NormalTok{]])])}
+
+        \CommentTok{\# Calculate regrets}
+\NormalTok{        regret\_logei }\OperatorTok{=}\NormalTok{ calculate\_regret\_from\_gp(gp\_logei, actions)}
+\NormalTok{        regret\_qeubo }\OperatorTok{=}\NormalTok{ calculate\_regret\_from\_gp(gp\_qeubo, actions)}
+\NormalTok{        regret\_random }\OperatorTok{=}\NormalTok{ calculate\_regret\_from\_gp(gp\_random, actions)}
+
+        \BuiltInTok{print}\NormalTok{(}\SpecialStringTok{f\textquotesingle{}Regret LogEI: }\SpecialCharTok{\{}\NormalTok{regret\_logei}\SpecialCharTok{\}}\SpecialStringTok{\textquotesingle{}}\NormalTok{)}
+        \BuiltInTok{print}\NormalTok{(}\SpecialStringTok{f\textquotesingle{}Regret qEUBO: }\SpecialCharTok{\{}\NormalTok{regret\_qeubo}\SpecialCharTok{\}}\SpecialStringTok{\textquotesingle{}}\NormalTok{)}
+        \BuiltInTok{print}\NormalTok{(}\SpecialStringTok{f\textquotesingle{}Regret Random: }\SpecialCharTok{\{}\NormalTok{regret\_random}\SpecialCharTok{\}}\SpecialStringTok{\textquotesingle{}}\NormalTok{)}
+
+\NormalTok{        cumulative\_regret\_logei.append(regret\_logei)}
+\NormalTok{        cumulative\_regret\_qeubo.append(regret\_qeubo)}
+\NormalTok{        cumulative\_regret\_random.append(regret\_random)}
+
+    \CommentTok{\# Plot cumulative regret}
+\NormalTok{    plt.plot(torch.cumsum(torch.tensor(}
+\NormalTok{        cumulative\_regret\_logei), dim}\OperatorTok{=}\DecValTok{0}\NormalTok{), label}\OperatorTok{=}\StringTok{\textquotesingle{}qLogEI\textquotesingle{}}\NormalTok{)}
+\NormalTok{    plt.plot(torch.cumsum(torch.tensor(}
+\NormalTok{        cumulative\_regret\_qeubo), dim}\OperatorTok{=}\DecValTok{0}\NormalTok{), label}\OperatorTok{=}\StringTok{\textquotesingle{}qEUBO\textquotesingle{}}\NormalTok{)}
+\NormalTok{    plt.plot(torch.cumsum(torch.tensor(}
+\NormalTok{        cumulative\_regret\_random), dim}\OperatorTok{=}\DecValTok{0}\NormalTok{), label}\OperatorTok{=}\StringTok{\textquotesingle{}Random\textquotesingle{}}\NormalTok{)}
+\NormalTok{    plt.xlabel(}\StringTok{\textquotesingle{}Round\textquotesingle{}}\NormalTok{)}
+\NormalTok{    plt.ylabel(}\StringTok{\textquotesingle{}Cumulative Regret\textquotesingle{}}\NormalTok{)}
+\NormalTok{    plt.legend()}
+\NormalTok{    plt.title(}\StringTok{\textquotesingle{}Comparison of qLogEI, qEUBO, and Random Sampling\textquotesingle{}}\NormalTok{)}
+\NormalTok{    plt.show()}
+\end{Highlighting}
+\end{Shaded}
+
+\end{tcolorbox}
+
+\subsection*{Question 3: Multi-Objective Thompson Sampling in Linear
+Contextual Bandits (30
+points)}\label{sec-question-3-multi-objective-thompson-sampling-in-linear-contextual-bandits-30-points}
+\addcontentsline{toc}{subsection}{Question 3: Multi-Objective Thompson
+Sampling in Linear Contextual Bandits (30 points)}
+
+Thompson Sampling (TS) is commonly used for reward maximization in
+multi-armed bandit problems, optimizing for the expected reward across
+actions. However, in many real-world scenarios, other objectives, such
+as the interpretability or reusability of learned parameters, are
+equally valuable. This is particularly relevant when modeling unknown
+reward functions with parameters that might offer insights or inform
+future experiments. A purely reward-focused Thompson Sampling approach
+may result in increased false positive rates due to aggressive
+exploitation, whereas a pure exploration approach---such as those used
+in active learning---might better suit the goal of parameter learning.
+
+Assume a multi-objective setting where the goal is to not only maximize
+the cumulative reward but also to accurately learn the parameters of the
+reward function itself in a linear contextual bandit setting. Let each
+arm be represented by a feature vector \(x \in \mathbb{R}^d\), with
+rewards generated by an unknown linear model
+\(r = \theta^\top x + \epsilon\), where
+\(\epsilon \sim \mathcal{N}(0, \sigma^2)\). Given these considerations,
+answer the following:
+
+\begin{enumerate}
+\def\labelenumi{(\alph{enumi})}
+\item
+  \textbf{Theoretical Analysis of Multi-Objective Thompson Sampling (8
+  points)}
+
+  \begin{enumerate}
+  \def\labelenumii{(\roman{enumii})}
+  \item
+    \textbf{(Written, 3 points).} Define a cumulative regret objective
+    that balances maximizing the expected reward and minimizing the
+    parameter estimation error \(\|\theta - \hat{\theta}\|_2\). Explain
+    how this multi-objective regret differs from the single-objective
+    regret typically used in linear bandits.
+  \item
+    \textbf{(Written, 3 points).} Derive the expected regret bounds for
+    Thompson Sampling in the single-objective case and describe the
+    additional challenges posed when extending these bounds to the
+    multi-objective case.
+  \item
+    \textbf{(Written, 2 points).} Suppose you were to use a pure
+    exploration approach for parameter estimation. Provide an upper
+    bound for the parameter error \(\|\theta - \hat{\theta}\|_2\) over
+    \(T\) rounds.
+  \end{enumerate}
+\item
+  \textbf{Acquisition Strategies for Multi-Objective Optimization (8
+  points)}
+
+  \begin{enumerate}
+  \def\labelenumii{(\roman{enumii})}
+  \item
+    \textbf{(Written, 3 points).} Explain how to adapt the Upper
+    Confidence Bound (UCB) acquisition function to balance exploration
+    and exploitation for parameter learning alongside reward
+    maximization. Discuss the effect of tuning parameters on
+    exploration.
+  \item
+    \textbf{(Written + Coding, 3 points).} Implement a Thompson Sampling
+    acquisition strategy that alternates between reward maximization and
+    parameter-focused exploration using a multi-objective UCB. Implement
+    the \texttt{select\_arm} function of
+    \texttt{multi\_obj\_thompson/bandit.py}.
+  \item
+    \textbf{(Written, 2 points).} Describe the impact of this
+    alternating acquisition strategy on false positive rates and regret
+    in comparison to standard Thompson Sampling.
+  \end{enumerate}
+\item
+  \textbf{Posterior Distribution Analysis (8 points)}
+
+  \begin{enumerate}
+  \def\labelenumii{(\roman{enumii})}
+  \item
+    \textbf{(Written, 2 points).} Given a prior distribution for
+    \(\theta\) and observed rewards, derive the posterior distribution
+    of \(\theta\) at each time step in the context of multi-objective
+    Thompson Sampling. Explain any assumptions needed for computational
+    tractability.
+  \item
+    \textbf{(Coding, 4 points).} Implement a Bayesian update for the
+    posterior of \(\theta\) following each observation. Do this in
+    \texttt{update}.
+  \item
+    \textbf{(Written, 2 points).} Explain how this posterior update
+    accommodates both exploration for parameter estimation and
+    exploitation for reward maximization.
+  \end{enumerate}
+\item
+  \textbf{Empirical Evaluation (6 points)}
+
+  \begin{enumerate}
+  \def\labelenumii{(\roman{enumii})}
+  \item
+    \textbf{(Coding, 3 points).} Design and conduct an experiment
+    comparing standard Thompson Sampling, pure exploration, and your
+    multi-objective TS algorithm. Run this experiment on a synthetic
+    dataset with \(d = 5\) features and \(K = 10\) arms by executing
+    \texttt{run.py}.
+  \item
+    \textbf{(Written, 3 points).} Report and interpret the results by
+    comparing the cumulative reward and parameter estimation error
+    across methods. Provide insights on the trade-offs observed and any
+    patterns in the rate of regret reduction.
+  \end{enumerate}
+\end{enumerate}
+
+\begin{tcolorbox}[colframe=.grey, title=\faCode \enspace Code]
+
+\begin{Shaded}
+\begin{Highlighting}[numbers=left,,]
+\ImportTok{import}\NormalTok{ numpy }\ImportTok{as}\NormalTok{ np}
+\ImportTok{import}\NormalTok{ matplotlib.pyplot }\ImportTok{as}\NormalTok{ plt}
+
+\KeywordTok{class}\NormalTok{ MultiObjectiveThompsonSamplingBandit:}
+    \CommentTok{"""}
+\CommentTok{    A class that implements a multi{-}objective Thompson sampling bandit.}
+
+\CommentTok{    Attributes:}
+\CommentTok{    {-} d (int): Dimension of the feature vector x.}
+\CommentTok{    {-} lambda\_prior (float): Regularization parameter for the prior covariance matrix.}
+\CommentTok{    {-} sigma\_noise (float): Standard deviation of the noise in rewards.}
+\CommentTok{    {-} mu (np.array): Prior mean of theta (initialized as a zero vector).}
+\CommentTok{    {-} Sigma (np.array): Prior covariance of theta (initialized as a scaled identity matrix).}
+\CommentTok{    """}
+
+    \KeywordTok{def} \FunctionTok{\_\_init\_\_}\NormalTok{(}\VariableTok{self}\NormalTok{, d, lambda\_prior}\OperatorTok{=}\FloatTok{1.0}\NormalTok{, sigma\_noise}\OperatorTok{=}\FloatTok{1.0}\NormalTok{):}
+        \CommentTok{"""}
+\CommentTok{        Initializes the bandit with a prior on theta and noise variance.}
+
+\CommentTok{        Parameters:}
+\CommentTok{        {-} d (int): Dimension of the feature vector x.}
+\CommentTok{        {-} lambda\_prior (float): Regularization parameter for the prior covariance matrix.}
+\CommentTok{        {-} sigma\_noise (float): Standard deviation of the noise in rewards.}
+\CommentTok{        """}
+        \VariableTok{self}\NormalTok{.d }\OperatorTok{=}\NormalTok{ d}
+        \VariableTok{self}\NormalTok{.lambda\_prior }\OperatorTok{=}\NormalTok{ lambda\_prior}
+        \VariableTok{self}\NormalTok{.sigma\_noise }\OperatorTok{=}\NormalTok{ sigma\_noise}
+
+        \CommentTok{\# Initialize prior mean and covariance matrix}
+        \VariableTok{self}\NormalTok{.mu }\OperatorTok{=}\NormalTok{ np.zeros(d)  }\CommentTok{\# Prior mean of theta}
+        \VariableTok{self}\NormalTok{.Sigma }\OperatorTok{=}\NormalTok{ lambda\_prior }\OperatorTok{*}\NormalTok{ np.eye(d)  }\CommentTok{\# Prior covariance of theta}
+
+    \KeywordTok{def}\NormalTok{ select\_arm(}\VariableTok{self}\NormalTok{, arms, mode):}
+        \CommentTok{"""}
+\CommentTok{        Selects an arm (action) based on the specified mode.}
+
+\CommentTok{        Parameters:}
+\CommentTok{        {-} arms (np.array): A 2D NumPy array of shape (K, d) representing the feature vectors of K arms.}
+\CommentTok{        {-} mode (str): Selection mode, either \textquotesingle{}exploit\textquotesingle{} (reward maximization) or \textquotesingle{}explore\textquotesingle{} (focus on reducing uncertainty in theta).}
+
+\CommentTok{        Returns:}
+\CommentTok{        {-} selected\_arm (np.array): The feature vector of the selected arm.}
+\CommentTok{        {-} arm\_index (int): The index of the selected arm.}
+\CommentTok{        """}
+        \CommentTok{\# Sample a belief for theta from the current posterior}
+\NormalTok{        theta\_sample }\OperatorTok{=}\NormalTok{ np.random.multivariate\_normal(}\VariableTok{self}\NormalTok{.mu, }\VariableTok{self}\NormalTok{.Sigma)}
+
+        \CommentTok{\# Generate reward noise for the arms}
+\NormalTok{        reward\_noise }\OperatorTok{=}\NormalTok{ np.random.normal(}\DecValTok{0}\NormalTok{, }\VariableTok{self}\NormalTok{.sigma\_noise, size}\OperatorTok{=}\BuiltInTok{len}\NormalTok{(arms))}
+
+        \ControlFlowTok{if}\NormalTok{ mode }\OperatorTok{==} \StringTok{\textquotesingle{}exploit\textquotesingle{}}\NormalTok{:}
+            \CommentTok{\# YOUR CODE HERE (\textasciitilde{}2 lines)}
+                \CommentTok{\# 1. Compute expected rewards with noise}
+                \CommentTok{\# 2. Select the arm with the highest expected reward}
+                \ControlFlowTok{pass} 
+            \CommentTok{\# }\RegionMarkerTok{END}\CommentTok{ OF YOUR CODE}
+        \ControlFlowTok{elif}\NormalTok{ mode }\OperatorTok{==} \StringTok{\textquotesingle{}explore\textquotesingle{}}\NormalTok{:}
+            \CommentTok{\# Compute posterior covariance norms to evaluate exploration potential for each arm}
+\NormalTok{            posterior\_cov\_norms }\OperatorTok{=}\NormalTok{ []}
+            \ControlFlowTok{for}\NormalTok{ x }\KeywordTok{in}\NormalTok{ arms:}
+\NormalTok{                x }\OperatorTok{=}\NormalTok{ x.reshape(}\OperatorTok{{-}}\DecValTok{1}\NormalTok{, }\DecValTok{1}\NormalTok{)  }\CommentTok{\# Reshape to column vector}
+
+                \CommentTok{\# Find posterior covariance hypothetically and get its norm}
+                \CommentTok{\# YOUR CODE HERE (\textasciitilde{}4 lines)}
+                \ControlFlowTok{pass}
+                \CommentTok{\# }\RegionMarkerTok{END}\CommentTok{ OF YOUR CODE}
+
+\NormalTok{                posterior\_cov\_norms.append(norm)}
+
+            \CommentTok{\# Select the arm that minimizes the posterior covariance norm}
+\NormalTok{            arm\_index }\OperatorTok{=}\NormalTok{ np.argmin(posterior\_cov\_norms)}
+
+        \ControlFlowTok{else}\NormalTok{:}
+            \ControlFlowTok{raise} \PreprocessorTok{ValueError}\NormalTok{(}\StringTok{"Mode must be either \textquotesingle{}exploit\textquotesingle{} or \textquotesingle{}explore\textquotesingle{}."}\NormalTok{)}
+
+        \ControlFlowTok{return}\NormalTok{ arms[arm\_index], arm\_index, posterior\_cov\_norms }\ControlFlowTok{if}\NormalTok{ mode }\OperatorTok{==} \StringTok{\textquotesingle{}explore\textquotesingle{}} \ControlFlowTok{else} \VariableTok{None}
+
+    \KeywordTok{def}\NormalTok{ update(}\VariableTok{self}\NormalTok{, x\_t, r\_t):}
+        \CommentTok{"""}
+\CommentTok{        Updates the posterior distribution of theta given a new observation.}
+
+\CommentTok{        Parameters:}
+\CommentTok{        {-} x\_t (np.array): Feature vector of the selected arm at time t.}
+\CommentTok{        {-} r\_t (float): Observed reward at time t.}
+\CommentTok{        """}
+\NormalTok{        x\_t }\OperatorTok{=}\NormalTok{ x\_t.reshape(}\OperatorTok{{-}}\DecValTok{1}\NormalTok{, }\DecValTok{1}\NormalTok{)  }\CommentTok{\# Reshape to column vector}
+
+        \CommentTok{\# YOUR CODE HERE (\textasciitilde{}4 lines)}
+        \CommentTok{\# Obtain mu\_new and Sigma\_new of theta posterior. This requires doing some math!}
+        \ControlFlowTok{pass}
+        \CommentTok{\# }\RegionMarkerTok{END}\CommentTok{ OF YOUR CODE}
+
+        \CommentTok{\# Update internal state}
+        \VariableTok{self}\NormalTok{.mu }\OperatorTok{=}\NormalTok{ mu\_new.flatten()}
+        \VariableTok{self}\NormalTok{.Sigma }\OperatorTok{=}\NormalTok{ Sigma\_new}
+
+\ControlFlowTok{if} \VariableTok{\_\_name\_\_} \OperatorTok{==} \StringTok{\textquotesingle{}\_\_main\_\_\textquotesingle{}}\NormalTok{:}
+    \CommentTok{\# Number of features (dimension) and arms}
+\NormalTok{    d }\OperatorTok{=} \DecValTok{5}  \CommentTok{\# Feature dimension}
+\NormalTok{    K }\OperatorTok{=} \DecValTok{10}  \CommentTok{\# Number of arms}
+
+    \CommentTok{\# Generate random arms (feature vectors)}
+\NormalTok{    np.random.seed(}\DecValTok{42}\NormalTok{)}
+\NormalTok{    arms }\OperatorTok{=}\NormalTok{ np.random.randn(K, d)}
+
+    \CommentTok{\# True theta (unknown to the bandit)}
+\NormalTok{    theta\_true }\OperatorTok{=}\NormalTok{ np.random.randn(d)}
+
+    \CommentTok{\# Initialize the bandit}
+\NormalTok{    bandit }\OperatorTok{=}\NormalTok{ MultiObjectiveThompsonSamplingBandit(d)}
+
+    \CommentTok{\# Number of rounds}
+\NormalTok{    T }\OperatorTok{=} \DecValTok{1000}
+
+    \CommentTok{\# Lists to store results}
+\NormalTok{    regrets }\OperatorTok{=}\NormalTok{ []  }\CommentTok{\# Store the regret at each round}
+\NormalTok{    theta\_errors }\OperatorTok{=}\NormalTok{ []  }\CommentTok{\# Store the error between estimated and true theta}
+
+    \CommentTok{\# Simulation loop}
+    \ControlFlowTok{for}\NormalTok{ t }\KeywordTok{in} \BuiltInTok{range}\NormalTok{(T):}
+        \CommentTok{\# Alternate between \textquotesingle{}exploit\textquotesingle{} and \textquotesingle{}explore\textquotesingle{} modes}
+\NormalTok{        mode }\OperatorTok{=} \StringTok{\textquotesingle{}exploit\textquotesingle{}} \ControlFlowTok{if}\NormalTok{ t }\OperatorTok{\%} \DecValTok{2} \OperatorTok{==} \DecValTok{0} \ControlFlowTok{else} \StringTok{\textquotesingle{}explore\textquotesingle{}}
+
+        \CommentTok{\# Select an arm based on the current mode}
+\NormalTok{        x\_t, arm\_index, \_ }\OperatorTok{=}\NormalTok{ bandit.select\_arm(arms, mode}\OperatorTok{=}\NormalTok{mode)}
+
+        \CommentTok{\# Observe the reward with noise}
+\NormalTok{        r\_t }\OperatorTok{=}\NormalTok{ theta\_true }\OperatorTok{@}\NormalTok{ x\_t }\OperatorTok{+}\NormalTok{ np.random.normal(}\DecValTok{0}\NormalTok{, bandit.sigma\_noise)}
+
+        \CommentTok{\# Update the bandit with the new observation}
+\NormalTok{        bandit.update(x\_t, r\_t)}
+
+        \CommentTok{\# Compute regret (difference between optimal reward and received reward)}
+\NormalTok{        optimal\_reward }\OperatorTok{=}\NormalTok{ np.}\BuiltInTok{max}\NormalTok{(arms }\OperatorTok{@}\NormalTok{ theta\_true)  }\CommentTok{\# Best possible reward}
+\NormalTok{        regret }\OperatorTok{=}\NormalTok{ optimal\_reward }\OperatorTok{{-}}\NormalTok{ (theta\_true }\OperatorTok{@}\NormalTok{ x\_t)  }\CommentTok{\# Regret for this round}
+\NormalTok{        regrets.append(regret)}
+
+        \CommentTok{\# Compute parameter estimation error (distance between true and estimated theta)}
+\NormalTok{        theta\_error }\OperatorTok{=}\NormalTok{ np.linalg.norm(theta\_true }\OperatorTok{{-}}\NormalTok{ bandit.mu)}
+\NormalTok{        theta\_errors.append(theta\_error)}
+
+    \CommentTok{\# Final estimates after all rounds}
+\NormalTok{    mu\_estimate, Sigma\_estimate }\OperatorTok{=}\NormalTok{ bandit.mu, bandit.Sigma}
+
+    \CommentTok{\# Print results}
+    \BuiltInTok{print}\NormalTok{(}\StringTok{"Estimated theta:"}\NormalTok{, mu\_estimate)}
+    \BuiltInTok{print}\NormalTok{(}\StringTok{"True theta:"}\NormalTok{, theta\_true)}
+    \BuiltInTok{print}\NormalTok{(}\StringTok{"Cumulative regret:"}\NormalTok{, np.}\BuiltInTok{sum}\NormalTok{(regrets))}
+    \BuiltInTok{print}\NormalTok{(}\StringTok{"Final covariance norm:"}\NormalTok{, np.linalg.norm(Sigma\_estimate))}
+
+    \CommentTok{\# Visualization of results}
+
+    \CommentTok{\# Plot cumulative regret over time}
+\NormalTok{    plt.figure()}
+\NormalTok{    plt.plot(np.cumsum(regrets))}
+\NormalTok{    plt.title(}\StringTok{\textquotesingle{}Cumulative Regret over Time\textquotesingle{}}\NormalTok{)}
+\NormalTok{    plt.xlabel(}\StringTok{\textquotesingle{}Rounds\textquotesingle{}}\NormalTok{)}
+\NormalTok{    plt.ylabel(}\StringTok{\textquotesingle{}Cumulative Regret\textquotesingle{}}\NormalTok{)}
+\NormalTok{    plt.show()}
+
+    \CommentTok{\# Plot estimation error over time}
+\NormalTok{    plt.figure()}
+\NormalTok{    plt.plot(theta\_errors)}
+\NormalTok{    plt.title(}\StringTok{\textquotesingle{}Theta Estimation Error over Time\textquotesingle{}}\NormalTok{)}
+\NormalTok{    plt.xlabel(}\StringTok{\textquotesingle{}Rounds\textquotesingle{}}\NormalTok{)}
+\NormalTok{    plt.ylabel(}\StringTok{\textquotesingle{}Estimation Error (L2 Norm)\textquotesingle{}}\NormalTok{)}
+\NormalTok{    plt.show()}
+\end{Highlighting}
+\end{Shaded}
+
+\end{tcolorbox}
+
+\subsection*{Question 4: Mechanism Design in Preference Learning (30
+points)}\label{sec-question-4-mechanism-design-in-preference-learning-30-points}
+\addcontentsline{toc}{subsection}{Question 4: Mechanism Design in
+Preference Learning (30 points)}
+
+In mechanism design, a central challenge is optimizing resource
+allocation while accounting for user preferences, which may be private
+and complex. This problem can be addressed using learning techniques to
+infer user preferences, thereby enabling the designer to make informed
+pricing and allocation decisions. Consider a scenario where a designer
+allocates a divisible resource \(B\) among \(N\) players, each with a
+private, continuous, concave utility function \(U_i(x_i)\) over their
+allocated share \(x_i\), where \(x = [x_1, x_2, \dots, x_N]\) denotes
+the allocation vector. The designer aims to maximize social welfare
+while ensuring full resource utilization.
+
+\begin{enumerate}
+\def\labelenumi{(\alph{enumi})}
+\item
+  \textbf{Modeling User Preferences (7 points)}:
+
+  \begin{enumerate}
+  \def\labelenumii{(\roman{enumii})}
+  \item
+    \textbf{(Written, 1 point)} Provide a realistic scenario in which we
+    estimate a utility function through eliciting preferences in the
+    context of the mechanism.
+  \item
+    \textbf{(Written, 3 point)} Explain how elliptical slice sampling
+    can be used with a GP in order to estimate a utility function
+    through preferences.
+  \item
+    \textbf{(Written, 3 point)} How can the elliptical slice posterior
+    samples be used to obtain the mean of the posterior predictive for
+    test points? (Hint: Read page \(44\) of
+    \url{https://gaussianprocess.org/gpml/chapters/RW.pdf}.)
+  \end{enumerate}
+\item
+  \textbf{Optimization with Learned Preferences (10 points)}:
+
+  \begin{enumerate}
+  \def\labelenumii{(\roman{enumii})}
+  \item
+    \textbf{(Written, 3 point)} Formulate the designer's optimization
+    problem, maximizing social welfare \(\sum_{i=1}^N U_i(x_i)\) subject
+    to the constraint \(\sum_{i=1}^N x_i \leq B\).
+  \item
+    \textbf{(Written, 4 point)} Using the Lagrange multiplier method,
+    derive the conditions that must be met for optimal allocation and
+    pricing.
+  \item
+    \textbf{(Written, 3 point)} As an alternative approach to Lagrange
+    multipliers, explain how projected gradient descent (PGD) can be
+    used to solve the designer's optimization problem.
+  \end{enumerate}
+\item
+  \textbf{Benchmarking Learning and Allocation Efficiency (13 points)}:
+
+  \begin{enumerate}
+  \def\labelenumii{(\roman{enumii})}
+  \item
+    \textbf{(Coding, 3 point)} Implement \texttt{preference\_loglik} in
+    the file \texttt{gp\_mechanism/preference\_gp.py}.
+  \item
+    \textbf{(Coding, 3 point)} Implement \texttt{predictive\_function}.
+  \item
+    \textbf{(Coding, 3 point)} Implement \texttt{optimize\_allocations}
+    inside \texttt{gp\_mechanism/run.py}.
+  \item
+    \textbf{(Written, 4 point)} Compare GP-approximated utility
+    allocations through PGD, exact utility allocations through PGD, and
+    the optimal Lagrange-based allocation done by hand with each other
+    for your choice of utility functions \(U_i\). Make sure your
+    utilities are continuous and concave.
+  \end{enumerate}
+\end{enumerate}
+
+\begin{tcolorbox}[colframe=.grey, title=\faCode \enspace Code]
+
+\begin{Shaded}
+\begin{Highlighting}[numbers=left,,]
+\ImportTok{from}\NormalTok{ typing }\ImportTok{import}\NormalTok{ Callable}
+
+\ImportTok{import}\NormalTok{ numpy }\ImportTok{as}\NormalTok{ np}
+\ImportTok{import}\NormalTok{ matplotlib.pyplot }\ImportTok{as}\NormalTok{ plt}
+\ImportTok{import}\NormalTok{ torch  }\CommentTok{\# Import PyTorch}
+\ImportTok{from}\NormalTok{ tqdm }\ImportTok{import}\NormalTok{ tqdm}
+
+
+\KeywordTok{class}\NormalTok{ EllipticalSliceSampler:}
+    \KeywordTok{def} \FunctionTok{\_\_init\_\_}\NormalTok{(}\VariableTok{self}\NormalTok{,}
+\NormalTok{                 prior\_cov: np.ndarray,}
+\NormalTok{                 loglik: Callable):}
+        \CommentTok{"""}
+\CommentTok{        Initializes the Elliptical Slice Sampler.}
+
+\CommentTok{        Args:}
+\CommentTok{        {-} prior\_cov (np.ndarray): Prior covariance matrix.}
+\CommentTok{        {-} loglik (Callable): Log{-}likelihood function.}
+\CommentTok{        """}
+        \VariableTok{self}\NormalTok{.prior\_cov }\OperatorTok{=}\NormalTok{ prior\_cov}
+        \VariableTok{self}\NormalTok{.loglik }\OperatorTok{=}\NormalTok{ loglik}
+
+        \VariableTok{self}\NormalTok{.\_n }\OperatorTok{=}\NormalTok{ prior\_cov.shape[}\DecValTok{0}\NormalTok{]  }\CommentTok{\# Dimensionality of the space}
+        \CommentTok{\# Cache Cholesky decomposition}
+        \VariableTok{self}\NormalTok{.\_chol }\OperatorTok{=}\NormalTok{ np.linalg.cholesky(prior\_cov)}
+
+        \CommentTok{\# Initialize state and cache previous states}
+        \VariableTok{self}\NormalTok{.\_state\_f }\OperatorTok{=} \VariableTok{self}\NormalTok{.\_chol }\OperatorTok{@}\NormalTok{ np.random.randn(}\VariableTok{self}\NormalTok{.\_n)}
+
+    \KeywordTok{def}\NormalTok{ \_indiv\_sample(}\VariableTok{self}\NormalTok{):}
+        \CommentTok{"""}
+\CommentTok{        Main algorithm for generating an individual sample using Elliptical Slice Sampling.}
+\CommentTok{        """}
+\NormalTok{        f }\OperatorTok{=} \VariableTok{self}\NormalTok{.\_state\_f  }\CommentTok{\# Previous state}
+        \CommentTok{\# Sample from prior for the ellipse}
+\NormalTok{        nu }\OperatorTok{=} \VariableTok{self}\NormalTok{.\_chol }\OperatorTok{@}\NormalTok{ np.random.randn(}\VariableTok{self}\NormalTok{.\_n)}
+\NormalTok{        log\_y }\OperatorTok{=} \VariableTok{self}\NormalTok{.loglik(f) }\OperatorTok{+}\NormalTok{ np.log(np.random.uniform()}
+\NormalTok{                                        )  }\CommentTok{\# Log{-}likelihood threshold}
+
+\NormalTok{        theta }\OperatorTok{=}\NormalTok{ np.random.uniform(}\FloatTok{0.}\NormalTok{, }\DecValTok{2} \OperatorTok{*}\NormalTok{ np.pi)  }\CommentTok{\# Initial proposal angle}
+\NormalTok{        theta\_min, theta\_max }\OperatorTok{=}\NormalTok{ theta }\OperatorTok{{-}} \DecValTok{2} \OperatorTok{*}\NormalTok{ np.pi, theta  }\CommentTok{\# Define bracketing interval}
+
+        \CommentTok{\# Main loop: Accept sample if it meets log{-}likelihood threshold; otherwise, shrink the bracket.}
+        \ControlFlowTok{while} \VariableTok{True}\NormalTok{:}
+            \CommentTok{\# YOUR CODE HERE (\textasciitilde{}10 lines)}
+            \CommentTok{\# Generate a new sample point based on the current angle.}
+\NormalTok{            f\_prime }\OperatorTok{=}\NormalTok{ f }\OperatorTok{*}\NormalTok{ np.cos(theta) }\OperatorTok{+}\NormalTok{ nu }\OperatorTok{*}\NormalTok{ np.sin(theta)}
+
+            \CommentTok{\# Check if the proposed point meets the acceptance criterion.}
+            \ControlFlowTok{if} \VariableTok{self}\NormalTok{.loglik(f\_prime) }\OperatorTok{\textgreater{}}\NormalTok{ log\_y:  }\CommentTok{\# Accept the sample}
+                \VariableTok{self}\NormalTok{.\_state\_f }\OperatorTok{=}\NormalTok{ f\_prime}
+                \ControlFlowTok{return}
+
+            \ControlFlowTok{else}\NormalTok{:  }\CommentTok{\# If not accepted, adjust the bracket and select a new angle.}
+                \ControlFlowTok{if}\NormalTok{ theta }\OperatorTok{\textless{}} \DecValTok{0}\NormalTok{:}
+\NormalTok{                    theta\_min }\OperatorTok{=}\NormalTok{ theta}
+                \ControlFlowTok{else}\NormalTok{:}
+\NormalTok{                    theta\_max }\OperatorTok{=}\NormalTok{ theta}
+\NormalTok{                theta }\OperatorTok{=}\NormalTok{ np.random.uniform(theta\_min, theta\_max)}
+            \CommentTok{\# }\RegionMarkerTok{END}\CommentTok{ OF YOUR CODE}
+
+    \KeywordTok{def}\NormalTok{ sample(}\VariableTok{self}\NormalTok{,}
+\NormalTok{               n\_samples: }\BuiltInTok{int}\NormalTok{,}
+\NormalTok{               n\_burn: }\BuiltInTok{int} \OperatorTok{=} \DecValTok{500}\NormalTok{) }\OperatorTok{{-}\textgreater{}}\NormalTok{ np.ndarray:}
+        \CommentTok{"""}
+\CommentTok{        Generates samples using Elliptical Slice Sampling.}
+
+\CommentTok{        Args:}
+\CommentTok{        {-} n\_samples (int): Total number of samples to return.}
+\CommentTok{        {-} n\_burn (int): Number of initial samples to discard (burn{-}in).}
+
+\CommentTok{        Returns:}
+\CommentTok{        {-} np.ndarray: Array of samples after burn{-}in.}
+\CommentTok{        """}
+\NormalTok{        samples }\OperatorTok{=}\NormalTok{ []}
+        \ControlFlowTok{for}\NormalTok{ i }\KeywordTok{in}\NormalTok{ tqdm(}\BuiltInTok{range}\NormalTok{(n\_samples), desc}\OperatorTok{=}\StringTok{"Sampling"}\NormalTok{):}
+            \VariableTok{self}\NormalTok{.\_indiv\_sample()}
+            \ControlFlowTok{if}\NormalTok{ i }\OperatorTok{\textgreater{}}\NormalTok{ n\_burn:}
+                \CommentTok{\# Store sample post burn{-}in}
+\NormalTok{                samples.append(}\VariableTok{self}\NormalTok{.\_state\_f.copy())}
+
+        \ControlFlowTok{return}\NormalTok{ np.stack(samples)}
+
+
+\KeywordTok{def}\NormalTok{ squared\_exponential\_cov\_torch(X1, X2, length\_scale}\OperatorTok{=}\FloatTok{1.0}\NormalTok{, variance}\OperatorTok{=}\FloatTok{1.0}\NormalTok{):}
+    \CommentTok{"""}
+\CommentTok{    Squared Exponential (RBF) Covariance Function using PyTorch tensors.}
+
+\CommentTok{    Args:}
+\CommentTok{        X1 (torch.Tensor): First set of input points.}
+\CommentTok{        X2 (torch.Tensor): Second set of input points.}
+\CommentTok{        length\_scale (float): Length scale of the kernel.}
+\CommentTok{        variance (float): Variance (amplitude) of the kernel.}
+
+\CommentTok{    Returns:}
+\CommentTok{        torch.Tensor: Covariance matrix between X1 and X2.}
+\CommentTok{    """}
+\NormalTok{    X1 }\OperatorTok{=}\NormalTok{ X1.reshape(}\OperatorTok{{-}}\DecValTok{1}\NormalTok{, }\DecValTok{1}\NormalTok{)}
+\NormalTok{    X2 }\OperatorTok{=}\NormalTok{ X2.reshape(}\OperatorTok{{-}}\DecValTok{1}\NormalTok{, }\DecValTok{1}\NormalTok{)}
+\NormalTok{    dists }\OperatorTok{=}\NormalTok{ torch.}\BuiltInTok{sum}\NormalTok{(X1}\OperatorTok{**}\DecValTok{2}\NormalTok{, dim}\OperatorTok{=}\DecValTok{1}\NormalTok{).reshape(}\OperatorTok{{-}}\DecValTok{1}\NormalTok{, }\DecValTok{1}\NormalTok{) }\OperatorTok{+} \OperatorTok{\textbackslash{}}
+\NormalTok{        torch.}\BuiltInTok{sum}\NormalTok{(X2}\OperatorTok{**}\DecValTok{2}\NormalTok{, dim}\OperatorTok{=}\DecValTok{1}\NormalTok{) }\OperatorTok{{-}} \DecValTok{2} \OperatorTok{*}\NormalTok{ torch.mm(X1, X2.T)}
+    \ControlFlowTok{return}\NormalTok{ variance }\OperatorTok{*}\NormalTok{ torch.exp(}\OperatorTok{{-}}\FloatTok{0.5} \OperatorTok{*}\NormalTok{ dists }\OperatorTok{/}\NormalTok{ length\_scale}\OperatorTok{**}\DecValTok{2}\NormalTok{)}
+
+
+\KeywordTok{def}\NormalTok{ generate\_preferences(x\_pairs, utility\_fn):}
+    \CommentTok{"""}
+\CommentTok{    Generates preference labels based on the Bradley{-}Terry model.}
+
+\CommentTok{    Args:}
+\CommentTok{        x\_pairs (np.array): Array of preference pairs, shape [n\_pairs, 2].}
+\CommentTok{        utility\_fn (function): Ground truth utility function.}
+
+\CommentTok{    Returns:}
+\CommentTok{        np.array: Preference labels (1 if the first item in the pair is preferred, 0 otherwise).}
+\CommentTok{    """}
+\NormalTok{    preference\_labels }\OperatorTok{=}\NormalTok{ []}
+    \ControlFlowTok{for}\NormalTok{ x1, x2 }\KeywordTok{in}\NormalTok{ x\_pairs:}
+\NormalTok{        u1, u2 }\OperatorTok{=}\NormalTok{ utility\_fn(x1), utility\_fn(x2)}
+\NormalTok{        prob }\OperatorTok{=}\NormalTok{ np.exp(u1) }\OperatorTok{/}\NormalTok{ (np.exp(u1) }\OperatorTok{+}\NormalTok{ np.exp(u2))}
+\NormalTok{        preference\_labels.append(}\DecValTok{1} \ControlFlowTok{if}\NormalTok{ np.random.rand() }\OperatorTok{\textless{}}\NormalTok{ prob }\ControlFlowTok{else} \DecValTok{0}\NormalTok{)}
+    \ControlFlowTok{return}\NormalTok{ np.array(preference\_labels)}
+
+
+\KeywordTok{def}\NormalTok{ create\_predictive\_function(ground\_truth\_utility, num\_pairs}\OperatorTok{=}\DecValTok{3000}\NormalTok{, n\_samples}\OperatorTok{=}\DecValTok{100}\NormalTok{, n\_burn}\OperatorTok{=}\DecValTok{50}\NormalTok{, length\_scale}\OperatorTok{=}\FloatTok{2.0}\NormalTok{, variance}\OperatorTok{=}\FloatTok{0.5}\NormalTok{):}
+    \CommentTok{"""}
+\CommentTok{    Creates a predictive function to compute the posterior predictive mean of a Gaussian Process.}
+
+\CommentTok{    Args:}
+\CommentTok{        ground\_truth\_utility (function): The ground truth utility function for generating preferences.}
+\CommentTok{        num\_pairs (int): Number of random preference pairs to generate.}
+\CommentTok{        n\_samples (int): Number of samples for Elliptical Slice Sampling.}
+\CommentTok{        n\_burn (int): Number of burn{-}in samples for Elliptical Slice Sampling.}
+\CommentTok{        length\_scale (float): Length scale for the Squared Exponential Kernel.}
+\CommentTok{        variance (float): Variance (amplitude) of the Squared Exponential Kernel.}
+
+\CommentTok{    Returns:}
+\CommentTok{        function: A predictive function that computes the posterior predictive mean.}
+\CommentTok{    """}
+    \CommentTok{\# Generate random preference pairs}
+\NormalTok{    np.random.seed(}\DecValTok{42}\NormalTok{)}
+\NormalTok{    x\_pairs }\OperatorTok{=}\NormalTok{ np.random.uniform(}\DecValTok{0}\NormalTok{, }\DecValTok{10}\NormalTok{, size}\OperatorTok{=}\NormalTok{(num\_pairs, }\DecValTok{2}\NormalTok{))}
+\NormalTok{    X\_flat }\OperatorTok{=}\NormalTok{ x\_pairs.flatten()}
+
+    \CommentTok{\# Generate preference labels}
+\NormalTok{    preference\_labels }\OperatorTok{=}\NormalTok{ generate\_preferences(x\_pairs, ground\_truth\_utility)}
+
+    \CommentTok{\# Convert X\_flat to PyTorch tensor}
+\NormalTok{    X\_flat\_torch }\OperatorTok{=}\NormalTok{ torch.tensor(X\_flat, dtype}\OperatorTok{=}\NormalTok{torch.float32)}
+
+    \CommentTok{\# GP Prior (using PyTorch)}
+\NormalTok{    K\_torch }\OperatorTok{=}\NormalTok{ squared\_exponential\_cov\_torch(}
+\NormalTok{        X\_flat\_torch, X\_flat\_torch, length\_scale}\OperatorTok{=}\NormalTok{length\_scale, variance}\OperatorTok{=}\NormalTok{variance)}
+    \CommentTok{\# Add jitter for numerical stability}
+\NormalTok{    K\_torch }\OperatorTok{+=} \FloatTok{1e{-}2} \OperatorTok{*}\NormalTok{ torch.eye(}\BuiltInTok{len}\NormalTok{(X\_flat\_torch))}
+\NormalTok{    prior\_cov }\OperatorTok{=}\NormalTok{ K\_torch.numpy()  }\CommentTok{\# Convert back to numpy for the sampler}
+
+    \CommentTok{\# Log{-}likelihood function}
+    \KeywordTok{def}\NormalTok{ preference\_loglik(f):}
+        \CommentTok{"""}
+\CommentTok{        Computes the log{-}likelihood of the preferences under the Bradley{-}Terry model.}
+
+\CommentTok{        Args:}
+\CommentTok{            f (np.array): Latent utility values.}
+
+\CommentTok{        Returns:}
+\CommentTok{            float: Log{-}likelihood of the given latent utilities.}
+\CommentTok{        """}
+\NormalTok{        log\_likelihood }\OperatorTok{=} \FloatTok{0.0}
+        \ControlFlowTok{for}\NormalTok{ (x1, x2), label }\KeywordTok{in} \BuiltInTok{zip}\NormalTok{(x\_pairs, preference\_labels):}
+\NormalTok{            idx1 }\OperatorTok{=}\NormalTok{ np.where(X\_flat }\OperatorTok{==}\NormalTok{ x1)[}\DecValTok{0}\NormalTok{][}\DecValTok{0}\NormalTok{]}
+\NormalTok{            idx2 }\OperatorTok{=}\NormalTok{ np.where(X\_flat }\OperatorTok{==}\NormalTok{ x2)[}\DecValTok{0}\NormalTok{][}\DecValTok{0}\NormalTok{]}
+\NormalTok{            f1, f2 }\OperatorTok{=}\NormalTok{ f[idx1], f[idx2]}
+
+            \CommentTok{\# YOUR CODE HERE (\textasciitilde{}4 lines)}
+            \CommentTok{\# Add datapoint log likelihood using Bradley{-}Terry model}
+            \ControlFlowTok{pass}
+            \CommentTok{\# }\RegionMarkerTok{END}\CommentTok{ OF YOUR CODE}
+        \ControlFlowTok{return}\NormalTok{ log\_likelihood}
+
+    \CommentTok{\# Elliptical Slice Sampling}
+\NormalTok{    sampler }\OperatorTok{=}\NormalTok{ EllipticalSliceSampler(}
+\NormalTok{        prior\_cov}\OperatorTok{=}\NormalTok{prior\_cov, loglik}\OperatorTok{=}\NormalTok{preference\_loglik)}
+\NormalTok{    posterior\_samples }\OperatorTok{=}\NormalTok{ sampler.sample(n\_samples}\OperatorTok{=}\NormalTok{n\_samples, n\_burn}\OperatorTok{=}\NormalTok{n\_burn)}
+\NormalTok{    posterior\_mean }\OperatorTok{=}\NormalTok{ np.mean(posterior\_samples, axis}\OperatorTok{=}\DecValTok{0}\NormalTok{)}
+
+    \CommentTok{\# Convert posterior\_mean to PyTorch tensor}
+\NormalTok{    posterior\_mean\_torch }\OperatorTok{=}\NormalTok{ torch.tensor(posterior\_mean, dtype}\OperatorTok{=}\NormalTok{torch.float32)}
+
+    \CommentTok{\# Compute K\_inv using PyTorch}
+\NormalTok{    K\_inv\_torch }\OperatorTok{=}\NormalTok{ torch.inverse(K\_torch)}
+
+    \CommentTok{\# Define the predictive function}
+    \KeywordTok{def}\NormalTok{ predictive\_function(x):}
+        \CommentTok{"""}
+\CommentTok{        Predicts the utility for new input points.}
+
+\CommentTok{        Args:}
+\CommentTok{            x (torch.Tensor): Input points to predict utilities for.}
+
+\CommentTok{        Returns:}
+\CommentTok{            torch.Tensor: Predicted expected utilities.}
+\CommentTok{        """}
+        \ControlFlowTok{if} \KeywordTok{not}\NormalTok{ torch.is\_tensor(x):}
+            \ControlFlowTok{raise} \PreprocessorTok{ValueError}\NormalTok{(}\StringTok{\textquotesingle{}Predictive function must take in torch.tensor\textquotesingle{}}\NormalTok{)}
+\NormalTok{        x }\OperatorTok{=}\NormalTok{ x.reshape(}\OperatorTok{{-}}\DecValTok{1}\NormalTok{, }\DecValTok{1}\NormalTok{)}
+\NormalTok{        X\_flat\_torch\_reshaped }\OperatorTok{=}\NormalTok{ X\_flat\_torch.reshape(}\OperatorTok{{-}}\DecValTok{1}\NormalTok{, }\DecValTok{1}\NormalTok{)}
+
+        \CommentTok{\# YOUR CODE HERE (\textasciitilde{}2 lines)}
+        \CommentTok{\# Implement equation (3.21) on page 44 of https://gaussianprocess.org/gpml/chapters/RW.pdf}
+        \ControlFlowTok{pass}
+        \CommentTok{\# }\RegionMarkerTok{END}\CommentTok{ OF YOUR CODE}
+
+    \ControlFlowTok{return}\NormalTok{ predictive\_function}
+
+
+\ControlFlowTok{if} \VariableTok{\_\_name\_\_} \OperatorTok{==} \StringTok{"\_\_main\_\_"}\NormalTok{:}
+    \CommentTok{\# Ground truth utility function}
+    \KeywordTok{def}\NormalTok{ ground\_truth\_utility(x): }\ControlFlowTok{return}\NormalTok{ np.sin(x)}
+
+    \CommentTok{\# Create the predictive function}
+\NormalTok{    predictive\_fn }\OperatorTok{=}\NormalTok{ create\_predictive\_function(ground\_truth\_utility)}
+
+    \CommentTok{\# Test the predictive function}
+\NormalTok{    X\_test }\OperatorTok{=}\NormalTok{ torch.linspace(}\DecValTok{0}\NormalTok{, }\DecValTok{10}\NormalTok{, }\DecValTok{50}\NormalTok{).reshape(}\OperatorTok{{-}}\DecValTok{1}\NormalTok{, }\DecValTok{1}\NormalTok{)  }\CommentTok{\# Test points}
+\NormalTok{    posterior\_means }\OperatorTok{=}\NormalTok{ predictive\_fn(}
+\NormalTok{        X\_test).detach().numpy()  }\CommentTok{\# Predicted posterior means}
+
+    \CommentTok{\# Ground truth utilities}
+\NormalTok{    ground\_truth\_utilities }\OperatorTok{=}\NormalTok{ ground\_truth\_utility(X\_test.numpy())}
+
+    \CommentTok{\# Plot results}
+\NormalTok{    plt.figure(figsize}\OperatorTok{=}\NormalTok{(}\DecValTok{10}\NormalTok{, }\DecValTok{6}\NormalTok{))}
+\NormalTok{    plt.title(}\StringTok{"GP Posterior Predictive Mean (Utility Approximation)"}\NormalTok{)}
+\NormalTok{    plt.plot(X\_test.numpy(), posterior\_means,}
+\NormalTok{             label}\OperatorTok{=}\StringTok{"Posterior Predictive Mean"}\NormalTok{, color}\OperatorTok{=}\StringTok{"red"}\NormalTok{)}
+\NormalTok{    plt.scatter(X\_test.numpy(), ground\_truth\_utilities,}
+\NormalTok{                label}\OperatorTok{=}\StringTok{"Ground Truth Utility"}\NormalTok{, color}\OperatorTok{=}\StringTok{"blue"}\NormalTok{, alpha}\OperatorTok{=}\FloatTok{0.5}\NormalTok{)}
+\NormalTok{    plt.xlabel(}\StringTok{"x"}\NormalTok{)}
+\NormalTok{    plt.ylabel(}\StringTok{"Utility"}\NormalTok{)}
+\NormalTok{    plt.legend()}
+\NormalTok{    plt.show()}
+\end{Highlighting}
+\end{Shaded}
+
+\end{tcolorbox}
+
+\begin{tcolorbox}[colframe=.grey, title=\faCode \enspace Code]
+
+\begin{Shaded}
+\begin{Highlighting}[numbers=left,,]
+\ImportTok{import}\NormalTok{ torch}
+\ImportTok{from}\NormalTok{ preference\_gp }\ImportTok{import}\NormalTok{ create\_predictive\_function}
+
+\CommentTok{\# Feel free to play around with continuous, concave utility functions!}
+\KeywordTok{def}\NormalTok{ utility\_1(x):}
+    \CommentTok{"""}
+\CommentTok{    Utility function 1: 3 * log(x + 1)}
+\CommentTok{    Args:}
+\CommentTok{        x (torch.Tensor): Input tensor of allocations.}
+\CommentTok{    Returns:}
+\CommentTok{        torch.Tensor: Computed utility values.}
+\CommentTok{    """}
+    \ControlFlowTok{return} \DecValTok{3} \OperatorTok{*}\NormalTok{ torch.log(x }\OperatorTok{+} \DecValTok{1}\NormalTok{)}
+
+\KeywordTok{def}\NormalTok{ utility\_2(x):}
+    \CommentTok{"""}
+\CommentTok{    Utility function 2: 5 * log(x + 2)}
+\CommentTok{    Args:}
+\CommentTok{        x (torch.Tensor): Input tensor of allocations.}
+\CommentTok{    Returns:}
+\CommentTok{        torch.Tensor: Computed utility values.}
+\CommentTok{    """}
+    \ControlFlowTok{return} \DecValTok{5} \OperatorTok{*}\NormalTok{ torch.log(x }\OperatorTok{+} \DecValTok{2}\NormalTok{)}
+
+\KeywordTok{def}\NormalTok{ utility\_3(x):}
+    \CommentTok{"""}
+\CommentTok{    Utility function 3: 8 * log(x + 3)}
+\CommentTok{    Args:}
+\CommentTok{        x (torch.Tensor): Input tensor of allocations.}
+\CommentTok{    Returns:}
+\CommentTok{        torch.Tensor: Computed utility values.}
+\CommentTok{    """}
+    \ControlFlowTok{return} \DecValTok{8} \OperatorTok{*}\NormalTok{ torch.log(x }\OperatorTok{+} \DecValTok{3}\NormalTok{)}
+
+\KeywordTok{def}\NormalTok{ project(x, B):}
+    \CommentTok{"""}
+\CommentTok{    Projects the allocation vector \textasciigrave{}x\textasciigrave{} onto the feasible set \{z | sum(z) = B, z \textgreater{}= 0\}.}
+\CommentTok{    This ensures that the allocations respect the resource constraint.}
+
+\CommentTok{    Args:}
+\CommentTok{        x (torch.Tensor): Current allocation vector.}
+\CommentTok{        B (float): Total available resource.}
+
+\CommentTok{    Returns:}
+\CommentTok{        torch.Tensor: Projected allocation vector.}
+\CommentTok{    """}
+    \ControlFlowTok{with}\NormalTok{ torch.no\_grad():}
+        \CommentTok{\# Sort x in descending order}
+\NormalTok{        sorted\_x, \_ }\OperatorTok{=}\NormalTok{ torch.sort(x, descending}\OperatorTok{=}\VariableTok{True}\NormalTok{)}
+        
+        \CommentTok{\# Compute cumulative sum adjusted by B}
+\NormalTok{        cumulative\_sum }\OperatorTok{=}\NormalTok{ torch.cumsum(sorted\_x, dim}\OperatorTok{=}\DecValTok{0}\NormalTok{) }\OperatorTok{{-}}\NormalTok{ B}
+        
+        \CommentTok{\# Find the threshold (water{-}filling algorithm)}
+\NormalTok{        rho }\OperatorTok{=}\NormalTok{ torch.where(sorted\_x }\OperatorTok{{-}}\NormalTok{ (cumulative\_sum }\OperatorTok{/}\NormalTok{ torch.arange(}\DecValTok{1}\NormalTok{, }\BuiltInTok{len}\NormalTok{(x) }\OperatorTok{+} \DecValTok{1}\NormalTok{, dtype}\OperatorTok{=}\NormalTok{torch.float32)) }\OperatorTok{\textgreater{}} \DecValTok{0}\NormalTok{)[}\DecValTok{0}\NormalTok{].}\BuiltInTok{max}\NormalTok{().item()}
+\NormalTok{        theta }\OperatorTok{=}\NormalTok{ cumulative\_sum[}\BuiltInTok{int}\NormalTok{(rho)] }\OperatorTok{/}\NormalTok{ (rho }\OperatorTok{+} \DecValTok{1}\NormalTok{)}
+        
+        \CommentTok{\# Compute the projected allocation}
+        \ControlFlowTok{return}\NormalTok{ torch.clamp(x }\OperatorTok{{-}}\NormalTok{ theta, }\BuiltInTok{min}\OperatorTok{=}\DecValTok{0}\NormalTok{)}
+
+\KeywordTok{def}\NormalTok{ optimize\_allocations(utilities, B, learning\_rate, num\_iterations):}
+    \CommentTok{"""}
+\CommentTok{    Optimizes the allocation of resources to maximize the total utility.}
+
+\CommentTok{    Args:}
+\CommentTok{        utilities (list): List of utility functions or GP{-}based predictive functions.}
+\CommentTok{        B (float): Total available resource.}
+\CommentTok{        learning\_rate (float): Step size for gradient ascent.}
+\CommentTok{        num\_iterations (int): Number of optimization iterations.}
+
+\CommentTok{    Returns:}
+\CommentTok{        torch.Tensor: Final resource allocations.}
+\CommentTok{    """}
+    \CommentTok{\# Initialize resource allocations equally}
+\NormalTok{    x }\OperatorTok{=}\NormalTok{ torch.tensor([}\FloatTok{1.0}\NormalTok{] }\OperatorTok{*} \BuiltInTok{len}\NormalTok{(utilities), requires\_grad}\OperatorTok{=}\VariableTok{True}\NormalTok{)}
+
+    \CommentTok{\# Optimization loop}
+    \ControlFlowTok{for}\NormalTok{ iteration }\KeywordTok{in} \BuiltInTok{range}\NormalTok{(num\_iterations):}
+        \CommentTok{\# YOUR CODE HERE (\textasciitilde{}6 lines)}
+        \CommentTok{\# 1. Compute total utility and backprop}
+        \CommentTok{\# 2. Update x directly with x.grad}
+        \CommentTok{\# 3. Project onto convex constraint set since we are using Projected Gradient Descent (PGD)}
+        \ControlFlowTok{pass}
+        \CommentTok{\# }\RegionMarkerTok{END}\CommentTok{ OF YOUR CODE}
+        
+        \CommentTok{\# Log progress every 10 iterations or at the last iteration}
+        \ControlFlowTok{if}\NormalTok{ iteration }\OperatorTok{\%} \DecValTok{10} \OperatorTok{==} \DecValTok{0} \KeywordTok{or}\NormalTok{ iteration }\OperatorTok{==}\NormalTok{ num\_iterations }\OperatorTok{{-}} \DecValTok{1}\NormalTok{:}
+            \BuiltInTok{print}\NormalTok{(}\SpecialStringTok{f"Iteration }\SpecialCharTok{\{}\NormalTok{iteration}\SpecialCharTok{\}}\SpecialStringTok{: Total Utility = }\SpecialCharTok{\{}\NormalTok{total\_utility}\SpecialCharTok{.}\NormalTok{item()}\SpecialCharTok{:.4f\}}\SpecialStringTok{, Allocations = }\SpecialCharTok{\{}\NormalTok{x}\SpecialCharTok{.}\NormalTok{data}\SpecialCharTok{.}\NormalTok{numpy()}\SpecialCharTok{\}}\SpecialStringTok{"}\NormalTok{)}
+    
+    \ControlFlowTok{return}\NormalTok{ x}
+
+\ControlFlowTok{if} \VariableTok{\_\_name\_\_} \OperatorTok{==} \StringTok{"\_\_main\_\_"}\NormalTok{:}
+    \CommentTok{\# Generate GP models for each utility}
+\NormalTok{    gp\_1 }\OperatorTok{=}\NormalTok{ create\_predictive\_function(}\KeywordTok{lambda}\NormalTok{ x: utility\_1(torch.tensor(x)).numpy())}
+\NormalTok{    gp\_2 }\OperatorTok{=}\NormalTok{ create\_predictive\_function(}\KeywordTok{lambda}\NormalTok{ x: utility\_2(torch.tensor(x)).numpy())}
+\NormalTok{    gp\_3 }\OperatorTok{=}\NormalTok{ create\_predictive\_function(}\KeywordTok{lambda}\NormalTok{ x: utility\_3(torch.tensor(x)).numpy())}
+
+    \CommentTok{\# Combine utility GPs into a list for optimization}
+\NormalTok{    utilities }\OperatorTok{=}\NormalTok{ [gp\_1, gp\_2, gp\_3]  }\CommentTok{\# Use [utility\_1, utility\_2, utility\_3] for exact utility functions}
+
+    \CommentTok{\# Resource constraint and optimization settings}
+\NormalTok{    B }\OperatorTok{=} \DecValTok{10}  \CommentTok{\# Total available resource}
+\NormalTok{    learning\_rate }\OperatorTok{=} \FloatTok{0.1}  \CommentTok{\# Gradient ascent step size}
+\NormalTok{    num\_iterations }\OperatorTok{=} \DecValTok{2000}  \CommentTok{\# Number of iterations}
+
+    \CommentTok{\# Optimize allocations}
+\NormalTok{    final\_allocations }\OperatorTok{=}\NormalTok{ optimize\_allocations(utilities, B, learning\_rate, num\_iterations)}
+
+    \CommentTok{\# Final results}
+    \BuiltInTok{print}\NormalTok{(}\StringTok{"}\CharTok{\textbackslash{}n}\StringTok{Final allocations:"}\NormalTok{)}
+    \BuiltInTok{print}\NormalTok{(final\_allocations.data.numpy())}
+\end{Highlighting}
+\end{Shaded}
+
+\end{tcolorbox}
+
 \section*{References}\label{bibliography-4}
 \addcontentsline{toc}{section}{References}
 
@@ -12447,58 +13977,60 @@ choices and actions. One notable scholar in this field is Shalom H.
 Schwartz, a social psychologist renowned for his theory on basic human
 values. Schwartz's work has significantly contributed to our
 understanding of how values influence behavior across different
-cultures. He describes values as "desirable, trans-situational goals,
+cultures. He describes values as ``desirable, trans-situational goals,
 varying in importance, that serve as guiding principles in people's
-lives" (\citeproc{ref-schwartz1992universals}{Schwartz 1992}). This
+lives'' (\citeproc{ref-schwartz1992universals}{Schwartz 1992}). This
 perspective underscores the importance of values in shaping consistent
 and ethical behavior across different contexts. Supporting this view,
 philosopher William K. Frankena emphasizes the integral role of values
 in ethical behavior and decision-making processes. Frankena's work in
 ethical theory provides a foundation for understanding how moral
-judgments are formed. He notes that "ethical theory is concerned with
-the principles and concepts that underlie moral judgments"
+judgments are formed. He notes that ``ethical theory is concerned with
+the principles and concepts that underlie moral judgments''
 (\citeproc{ref-frankena1973ethics}{Frankena 1973}), highlighting the
 need to comprehend ethical principles deeply to make informed moral
-judgments. Examples of critical values include autonomy, fairness,
+judgments. Examples of ethical values include autonomy, fairness,
 justice, and well-being. For computer scientists developing AI systems,
 understanding these concepts is crucial. AI systems that interact with
 humans and impact societal structures must be designed with these values
 in mind. By embedding such values into AI, developers can create systems
 that respect human dignity and promote positive social outcomes.
 
-Autonomy is the right to choose, an essential aspect of personal
-freedom. Gerald Dworkin, an esteemed philosopher and professor whose
-research focuses on the nature of autonomy and its role in ethical
-theory, defines autonomy as "the capacity to reflect upon and endorse or
-reject one's desires and values"
-(\citeproc{ref-dworkin1988theory}{Dworkin 1988}). In AI, respecting
-autonomy means creating systems that support user independence and
-decision-making rather than manipulating or coercing them.
-
-Fairness involves treating all individuals equally and justly, ensuring
-no discrimination. John Rawls, one of the most influential political
-philosophers of the 20th century, in his groundbreaking book "A Theory
-of Justice," describes fairness as "the elimination of arbitrary
-distinctions and the establishment of a balance between competing
-claims" (\citeproc{ref-rawls1971theory}{Rawls 1971}). For AI systems,
-this translates to algorithms that do not perpetuate bias or inequality,
-ensuring that all users are treated equitably.
-
-Justice is about upholding what is morally right and ensuring fair
-treatment for all. Rawls also highlights that "justice is the first
-virtue of social institutions, as truth is of systems of thought"
-(\citeproc{ref-rawls1971theory}{Rawls 1971}). In the context of AI,
-justice involves creating technologies that enhance fairness in legal,
-social, and economic systems, providing equal opportunities and
-protection to all individuals.
+\begin{itemize}
+\item
+  Autonomy is the right to choose, an essential aspect of personal
+  freedom. Gerald Dworkin defines autonomy as ``the capacity to reflect
+  upon and endorse or reject one's desires and values''
+  (\citeproc{ref-dworkin1988theory}{Dworkin 1988}). In AI, respecting
+  autonomy means creating systems that support user independence and
+  decision-making rather than manipulating or coercing them.
+\item
+  Fairness involves treating all individuals equally and justly,
+  ensuring no discrimination. John Rawls, one of the most influential
+  political philosophers of the \(20^{th}\) century, in his
+  groundbreaking book ``A Theory of Justice,'' describes fairness as
+  ``the elimination of arbitrary distinctions and the establishment of a
+  balance between competing claims''
+  (\citeproc{ref-rawls1971theory}{Rawls 1971}). For AI systems, this
+  translates to algorithms that do not perpetuate bias or inequality,
+  ensuring that all users are treated equitably.
+\item
+  Justice is about upholding what is morally right and ensuring fair
+  treatment for all. Rawls also highlights that ``justice is the first
+  virtue of social institutions, as truth is of systems of thought''
+  (\citeproc{ref-rawls1971theory}{Rawls 1971}). In the context of AI,
+  justice involves creating technologies that enhance fairness in legal,
+  social, and economic systems, providing equal opportunities and
+  protection to all individuals.
+\end{itemize}
 
 Well-being focuses on promoting the health, happiness, and prosperity of
 individuals. Martha Nussbaum and Amartya Sen, two distinguished scholars
 known for their significant contributions to welfare economics and the
 development of the capability approach, discuss the importance of
-well-being in their collaborative work "The Quality of Life." They argue
-that "well-being is about the expansion of the capabilities of people to
-lead the kind of lives they value"
+well-being in their collaborative work ``The Quality of Life.'' They
+argue that ``well-being is about the expansion of the capabilities of
+people to lead the kind of lives they value''
 (\citeproc{ref-nussbaum1993quality}{Nussbaum and Sen 1993}). AI systems
 should enhance users' quality of life, supporting their health,
 education, and economic stability.
@@ -12511,36 +14043,33 @@ developers must embed these values into their work to ensure
 technologies benefit humanity and do not exacerbate existing
 inequalities.
 
-Human values significantly impact decision-making processes by shaping
-the criteria for evaluating options and outcomes. Values influence
-priorities and ethical considerations, guiding individuals and
-organizations in making choices that align with their principles. Nick
-Bostrom, a leading philosopher in AI and existential risk, emphasizes
-that "values are crucial in setting priorities and determining desirable
-outcomes" (\citeproc{ref-bostrom2014superintelligence}{Bostrom 2014}).
-This alignment of actions with values ensures consistency and ethical
-integrity in decision-making. Incorporating human values into AI systems
-ensures that AI decisions align with societal norms and ethical
-standards. Stuart Russell, an AI researcher and advocate for
-human-compatible AI, notes that "embedding human values into AI systems
-is critical to ensure that these systems act in beneficial and ethical
-ways" (\citeproc{ref-russell2019human}{Russell 2019}). AI systems can
-make decisions that reflect societal expectations and ethical
-considerations by integrating values such as fairness, justice, and
-well-being.
+Human values play a crucial role in decision-making by shaping the
+criteria for evaluating options and outcomes. They influence priorities
+and ethical considerations, guiding individuals and organizations to
+make choices that align with their principles. Nick Bostrom, a prominent
+philosopher in AI and existential risk, highlights the importance of
+values in setting priorities and determining desirable outcomes
+(\citeproc{ref-bostrom2014superintelligence}{Bostrom 2014}). Aligning
+actions with values ensures consistency and ethical integrity in
+decision-making. Incorporating human values into AI systems ensures that
+AI decisions align with societal norms and ethical standards. Stuart
+Russell, an AI researcher and advocate for human-compatible AI, stresses
+the importance of embedding human values into AI systems to ensure they
+act in beneficial and ethical ways
+(\citeproc{ref-russell2019human}{Russell 2019}). By integrating values
+such as fairness, justice, and well-being, AI systems can make decisions
+that reflect societal expectations and ethical considerations.
 
-Examples of incorporating values into AI systems highlight the practical
-application of these principles. In the case of autonomous vehicles,
-programming prioritizes human safety above all else, ensuring that these
-vehicles make decisions that protect human lives. Healthcare AI systems
-incorporate values by ensuring patient privacy and informed consent,
-adhering to ethical standards in medical practice. Judicial AI systems
-strive to avoid biases in sentencing recommendations, promoting fairness
-and justice in the legal system. Luciano Floridi, a professor of
-philosophy and ethics of information at the University of Oxford,
-emphasizes that "AI systems must be designed to respect and uphold human
-values to function ethically and effectively"
-(\citeproc{ref-floridi2011ethics}{Floridi 2011}).
+Examples of incorporating values into AI systems demonstrate the
+practical application of these principles. For instance, autonomous
+vehicles are programmed to prioritize human safety, ensuring decisions
+that protect lives. In healthcare, AI systems uphold values by
+safeguarding patient privacy and ensuring informed consent, adhering to
+ethical medical standards. Judicial AI systems aim to eliminate biases
+in sentencing recommendations, promoting fairness and justice. Luciano
+Floridi underscores the necessity for AI systems to be designed in a way
+that respects and upholds human values to function ethically and
+effectively (\citeproc{ref-floridi2011ethics}{Floridi 2011}).
 
 To ensure that these values are systematically embedded within AI
 systems, it is essential to consider major ethical frameworks such as
@@ -12553,8 +14082,8 @@ actions are morally right if they adhere to established rules and
 duties, regardless of the outcomes. Kant's moral philosophy emphasizes
 the importance of duty and adherence to moral laws. Robert Johnson, a
 scholar who has extensively studied Kantian ethics, explains that
-"Kant's moral philosophy emphasizes that actions must be judged based on
-their adherence to duty and moral law, not by their consequences"
+``Kant's moral philosophy emphasizes that actions must be judged based
+on their adherence to duty and moral law, not by their consequences''
 (\citeproc{ref-johnson_kants_2022}{Johnson and Cureton 2022}). This
 perspective is grounded in the belief that specific actions are
 intrinsically right or wrong, and individuals must perform or avoid
@@ -12578,9 +14107,9 @@ based on their outcomes. The most well-known form of consequentialism is
 utilitarianism, articulated by philosophers like Jeremy Bentham and John
 Stuart Mill. This ethical theory suggests that actions are morally right
 if they promote the greatest happiness for the greatest number. Mill
-emphasizes that "the moral worth of an action is determined by its
+emphasizes that ``the moral worth of an action is determined by its
 contribution to overall utility, measured by the happiness or well-being
-it produces" (\citeproc{ref-mill_utilitarianism_1863}{Mill 1863}).
+it produces'' (\citeproc{ref-mill_utilitarianism_1863}{Mill 1863}).
 Consequentialist ethics is pragmatic, focusing on the results of actions
 rather than the actions themselves.
 
@@ -12593,22 +14122,22 @@ thereby maximizing the overall well-being of affected populations. In
 this framework, the ethicality of AI decisions is judged by their
 ability to produce desirable consequences. Virginia Dignum, a professor
 of responsible artificial intelligence at Umeå University, explains that
-"designing algorithms with a focus on maximizing positive outcomes can
-lead to more ethical and effective AI systems"
-(\citeproc{ref-dignum_responsible_2019}{\textbf{dignum\_responsible\_2019?}}).
-Consequently, AI developers focus on the potential impacts of their
-technologies and strive to enhance their beneficial effects.
+``designing algorithms with a focus on maximizing positive outcomes can
+lead to more ethical and effective AI systems''
+(\citeproc{ref-dignum_responsible_2019}{Dignum 2019}). Consequently, AI
+developers focus on the potential impacts of their technologies and
+strive to enhance their beneficial effects.
 
 Virtue ethics, originating from the teachings of Aristotle, emphasizes
 the importance of character and virtues in ethical behavior. This
 framework posits that ethical behavior arises from developing good
 character traits and living a virtuous life. Aristotle, an ancient Greek
-philosopher and the author of "Nicomachean Ethics," argues that "virtue
-is about cultivating excellence in character to achieve eudaimonia or
-human flourishing" (\citeproc{ref-aristotle_nicomachean_350}{Aristotle
-350 B.C.E.}). Virtue ethics focuses on the individual's character and
-the moral qualities that define a good person, such as honesty, courage,
-and compassion.
+philosopher and the author of ``Nicomachean Ethics,'' argues that
+``virtue is about cultivating excellence in character to achieve
+eudaimonia or human flourishing''
+(\citeproc{ref-aristotle_nicomachean_350}{Aristotle 350 B.C.E.}). Virtue
+ethics focuses on the individual's character and the moral qualities
+that define a good person, such as honesty, courage, and compassion.
 
 Additionally, virtue ethics encourages the development and use of AI
 systems that promote virtuous behavior. This involves fostering
@@ -12677,27 +14206,28 @@ train AI models. This bias often reflects historical prejudices and
 systemic inequalities in the data. For example, if a hiring algorithm is
 trained on historical hiring data that reflects gender or racial biases,
 it may perpetuate these biases in its recommendations. Fatemeh Mehrabi
-and her colleagues, in their survey on bias in AI, state that "data bias
-can result from sampling bias, measurement bias, or historical bias,
-each contributing to the unfairness of AI systems"
+and her colleagues, in their survey on bias in AI, state that ``data
+bias can result from sampling bias, measurement bias, or historical
+bias, each contributing to the unfairness of AI systems''
 (\citeproc{ref-mehrabi_survey_2021}{Mehrabi et al. 2021}). Safiya Umoja
-Noble, author of "Algorithms of Oppression," discusses how biased data
+Noble, author of ``Algorithms of Oppression,'' discusses how biased data
 in search engines can reinforce stereotypes and marginalize certain
-groups, noting that "search algorithms often reflect the biases of the
-society they operate within" (\citeproc{ref-noble_algorithms_2018}{Noble
-2018}). Addressing data bias involves careful collection, preprocessing,
-and validation to ensure diversity and representation.
+groups, noting that ``search algorithms often reflect the biases of the
+society they operate within''
+(\citeproc{ref-noble_algorithms_2018}{Noble 2018}). Addressing data bias
+involves careful collection, preprocessing, and validation to ensure
+diversity and representation.
 
-An effort to address data bias is the "Lab in the Wild" platform, which
-seeks to broaden the scope of Human-Computer Interaction (HCI) studies
-beyond the traditional "WEIRD" (Western, Educated, Industrialized, Rich,
-and Democratic) population
+An effort to address data bias is the ``Lab in the Wild'' platform,
+which seeks to broaden the scope of Human-Computer Interaction (HCI)
+studies beyond the traditional ``WEIRD'' (Western, Educated,
+Industrialized, Rich, and Democratic) population
 (\citeproc{ref-oliveira17}{\textbf{oliveira17?}}). Paulo S. Oliveira,
 one of the platform's researchers, notes that this initiative aims to
 correct demographic skew in behavioral science research by engaging a
 diverse global audience. By allowing individuals from various
-demographics to participate in studies from their environments, "Lab in
-the Wild" provides researchers with a more inclusive dataset.
+demographics to participate in studies from their environments, ``Lab in
+the Wild'' provides researchers with a more inclusive dataset.
 
 Another important consideration is the cultural nuances of potential
 users. For instance, designing a computer vision system to describe
@@ -12718,20 +14248,20 @@ frameworks and assumptions underlying the algorithms. For instance,
 decision trees and reinforcement learning policies can inadvertently
 prioritize certain outcomes, resulting in biased results. Solon Barocas,
 a professor at Cornell University, and his colleagues explain that
-"algorithmic bias can emerge from optimization objectives that do not
-adequately consider fairness constraints"
+``algorithmic bias can emerge from optimization objectives that do not
+adequately consider fairness constraints''
 (\citeproc{ref-barocas_fairness_2019}{Barocas, Hardt, and Narayanan
 2019}). Cathy O'Neil, a data scientist who has written extensively on
 the societal impacts of algorithms, provides examples of how biased
 algorithms in predictive policing and credit scoring can
 disproportionately affect disadvantaged communities. She argues that
-"algorithmic decisions can have far-reaching consequences when fairness
-is not adequately addressed" (\citeproc{ref-oneil_weapons_2016}{O'Neil
+``algorithmic decisions can have far-reaching consequences when fairness
+is not adequately addressed'' (\citeproc{ref-oneil_weapons_2016}{O'Neil
 2016}). Mitigating algorithmic bias requires incorporating fairness
 constraints and regularly auditing algorithmic decisions.
 
-Weidinger et al., in their 2022 study published in "Artificial
-Intelligence," investigate how reinforcement learning (RL) algorithms
+Weidinger et al., in their 2022 study published in ``Artificial
+Intelligence,'' investigate how reinforcement learning (RL) algorithms
 can replicate or amplify biases present in training data or algorithmic
 design (\citeproc{ref-weidinger_artificial_2022}{Weidinger, Reinecke,
 and Haas 2022}). They propose RL-based paradigms to test for these
@@ -12742,29 +14272,6 @@ expressions or demographics based on their training and data usage
 (\citeproc{ref-mazeika_how_2022}{Mazeika et al. 2022}). Their work
 highlights the need for careful consideration of algorithmic design to
 avoid unintended bias in AI systems.
-
-The evolution of ethics in scientific research has been a long journey.
-Unethical biomedical experiments conducted by the Nazis during World War
-II acted as a catalyst for change, leading to a global awakening to the
-need for ethical oversight in research. This awareness was further
-reinforced by the infamous Tuskegee syphilis study
-(\citeproc{ref-tuskegee}{Centers for Disease Control and Prevention
-2023}), which, for decades, misled its participants and withheld
-treatment, highlighting the need for moral governance in scientific
-inquiry. The Belmont Report (\citeproc{ref-belmont}{The National
-Commission for the Protection of Human Subjects of Biomedical and
-Behavioral Research 1979}) marked a turning point, articulating the
-ethical principles essential to research involving human subjects,
-including informed consent and assessments of risks and benefits. Its
-legacy extends into various fields, including the emergent domain of
-artificial intelligence, where ethics in the treatment of crowd workers
-for Reinforcement Learning from Human Feedback (RLHF) is under scrutiny.
-Today, no study begins without an ethics review. Institutional Review
-Boards (IRB) like Stanford's and Internal Review Committees (IRC) such
-as DeepMind play critical roles in safeguarding ethical standards. They
-provide feedback and oversight, ensuring research upholds human dignity
-and rights. This progression reflects a growing commitment to moral
-responsibility across all realms of scientific study.
 
 \subsection{Aligning AI with Human
 Values}\label{aligning-ai-with-human-values}
@@ -12788,15 +14295,9 @@ What is the right way to represent values? In a Reinforcement Learning
 Many people are trying to use language. In Constitutional AI
 (\citeproc{ref-bai_constitutional_2022}{Bai et al. 2022}), we write down
 the rules we want a language model to follow or apply reinforcement
-learning from human feedback, discussed in the next section. However,
-humans are evolutionarily endowed to pay attention to the same things
-and have the same frames of reference. AI systems, on the other hand,
-aren't biased in the same way, leading to a kind of underdetermination
-of actions by language (\citeproc{ref-quine_word_1960}{Quine 1960}).
-
-So, what are values, and how can we model them? Many problems have been
-framed in an RL setting. Some experts in reinforcement learning argue
-that a single scalar reward isn't enough
+learning from human feedback, discussed in the next section. Many
+problems have been framed in an RL setting. Some experts in
+reinforcement learning argue that a single scalar reward is not enough
 (\citeproc{ref-vamplew_human-aligned_2018}{Vamplew et al. 2018},
 \citeproc{ref-vamplew_scalar_2022}{2022}). They suggest a vectorized
 reward approach might better emulate the emotional-like system humans
@@ -12808,25 +14309,31 @@ Language does play a crucial role in human values. Tomasello
 learning a language and the awareness of convention it brings help
 children understand their cultural group and reason about it with peers.
 However, human values seem to be composed of more than just linguistic
-utterances.
+utterances. Several strategies have been proposed to align AI systems
+with human values.
 
-Several strategies can align AI systems with human values. One effective
-approach is value-sensitive design, which considers human values from
-the outset of the design process. Friedman, Kahn, and Borning explain
-that ``value-sensitive design integrates human values into the
-technology design process to ensure that the resulting systems support
-and enhance human well-being''
-(\citeproc{ref-friedman_value_2008}{Friedman, Kahn, and Borning 2008}).
-Another strategy is participatory design, which engages stakeholders in
-the design process to ensure their values are reflected in the AI
-system. Muller emphasizes that ``participatory design creates a
-collaborative space where diverse stakeholders can contribute their
-perspectives and values, leading to more inclusive and ethical AI
-systems'' (\citeproc{ref-muller_participatory_2003}{Muller 2003}).
-Additionally, iterative testing and feedback allow continuous refinement
-of AI systems based on user feedback, ensuring they remain aligned with
-human values over time. Practical examples of value alignment in AI
-systems demonstrate how these strategies can be implemented effectively.
+\begin{itemize}
+\item
+  One effective approach is value-sensitive design, which considers
+  human values from the outset of the design process. Friedman, Kahn,
+  and Borning explain that ``value-sensitive design integrates human
+  values into the technology design process to ensure that the resulting
+  systems support and enhance human well-being''
+  (\citeproc{ref-friedman_value_2008}{Friedman, Kahn, and Borning
+  2008}).
+\item
+  Another strategy is participatory design, which engages stakeholders
+  in the design process to ensure their values are reflected in the AI
+  system. Muller emphasizes that ``participatory design creates a
+  collaborative space where diverse stakeholders can contribute their
+  perspectives and values, leading to more inclusive and ethical AI
+  systems'' (\citeproc{ref-muller_participatory_2003}{Muller 2003}).
+  Additionally, iterative testing and feedback allow continuous
+  refinement of AI systems based on user feedback, ensuring they remain
+  aligned with human values over time. Practical examples of value
+  alignment in AI systems demonstrate how these strategies can be
+  implemented effectively.
+\end{itemize}
 
 In autonomous vehicles, ensuring safety and ethical decision-making in
 critical scenarios is paramount. These vehicles must make real-time
@@ -12874,9 +14381,9 @@ and justice.
 
 This raises the question for AI: At what level should we model values?
 Is language alone enough? We might also consider questions about
-language understanding. LLMs seem to "get" much of language even without
-physical embodiment. Will they "get" human values, too? First, we'll
-cover work that attempts to gain traction on these issues.
+language understanding. LLMs seem to ``get'' much of language even
+without physical embodiment. Will they ``get'' human values, too? First,
+we'll cover work that attempts to gain traction on these issues.
 Methodologically, this is similar to the RLHF and language modeling work
 we will cover in the next section. Here, we focus on this work with a
 somewhat different aim. In some of the earliest work to address values
@@ -12946,22 +14453,22 @@ hallucinations like other LLMs but otherwise performant? Or does it
 suggest an underlying lack of capacity?
 
 Delphi operationalizes the ETHICS dataset and adds a couple of others
-(\citeproc{ref-sap_socialIQA_2019}{\textbf{sap\_socialIQA\_2019?}}).
-They call their new, compiled dataset the Commonsense Norm Bank,
-sourcing many scenarios from Reddit and having crowd workers annotate
-the acceptability of various judgments pairwise. This allows the model
-to perform various morally relevant tasks. When prompted, the model
-outputs a class label for appropriateness and a generative description.
-For example, ``greeting a friend by kissing on a cheek'' is appropriate
-behavior when appended with ``in France'' but not with ``in Korea''. The
-model captures actual cultural norms. Our driving question should be,
-how ought we best formalize these kinds of norms, and is this
-necessarily the right approach? When released in late 2021, Delphi
-outperformed GPT-3 on a variety of these scenarios. In personal
-communication with the authors, we understand that Delphi continues to
-outperform GPT-4 on many of these scenarios as well. \footnote{GPT-4 is
-  good at coming up with longer-rendered answers about why some things
-  are appropriate or not.}
+(\citeproc{ref-sap_socialIQA_2019}{Sap et al. 2019}). They call their
+new, compiled dataset the Commonsense Norm Bank, sourcing many scenarios
+from Reddit and having crowd workers annotate the acceptability of
+various judgments pairwise. This allows the model to perform various
+morally relevant tasks. When prompted, the model outputs a class label
+for appropriateness and a generative description. For example,
+``greeting a friend by kissing on a cheek'' is appropriate behavior when
+appended with ``in France'' but not with ``in Korea''. The model
+captures actual cultural norms. Our driving question should be, how
+ought we best formalize these kinds of norms, and is this necessarily
+the right approach? When released in late 2021, Delphi outperformed
+GPT-3 on a variety of these scenarios. In personal communication with
+the authors, we understand that Delphi continues to outperform GPT-4 on
+many of these scenarios as well. \footnote{GPT-4 is good at coming up
+  with longer-rendered answers about why some things are appropriate or
+  not.}
 
 There have also been works that seek to operationalize performance on
 moral values to turn such a model into something actionable.
@@ -13000,10 +14507,10 @@ encompasses all of morality. Since these models operate in the
 linguistic domain, they can also reason morally. He provides an example
 with the Lambda model at Google. Anecdotally, when asked to translate a
 sentence from Turkish to English, where Turkish does not have gendered
-pronouns, the model might say, "The nurse put her hand in her coat
-pocket." This inference shows gender assumption. When instructed to
-avoid gendered assumptions, the model can say "his/her hand." He claims
-this capability is sufficient for moral reasoning.
+pronouns, the model might say, ``The nurse put her hand in her coat
+pocket.'' This inference shows gender assumption. When instructed to
+avoid gendered assumptions, the model can say ``his/her hand.'' He
+claims this capability is sufficient for moral reasoning.
 
 Next, we now explore the broader challenges of AI alignment,
 particularly focusing on AI alignment problems and the critical
@@ -13049,14 +14556,15 @@ There are specific terms to distinguish different notions of alignment.
 Intent alignment refers to a system trying to do what its operator wants
 it to do, though not necessarily succeeding
 (\citeproc{ref-christianoclarifying}{P. Christiano 2018}). Value
-alignment involves a system correctly learning and adopting the values
-of its human operators. Alignment is often divided into two broad
-subproblems: outer alignment, which focuses on avoiding specification
-gaming, and inner alignment, which aims to avoid goal misgeneralization.
-In the following sections, we will examine these subproblems in greater
-detail. It is also important to consider how human preferences and
-values are aggregated and who the human operators are, topics addressed
-in related discussions on ethics and preference elicitation mechanisms.
+alignment, in constrast, involves a system correctly learning and
+adopting the values of its human operators. Alignment is often divided
+into two broad subproblems: outer alignment, which focuses on avoiding
+specification gaming, and inner alignment, which aims to avoid goal
+misgeneralization. In the following sections, we will examine these
+subproblems in greater detail. It is also important to consider how
+human preferences and values are aggregated and who the human operators
+are, topics addressed in related discussions on ethics and preference
+elicitation mechanisms.
 
 \subsubsection{Outer Alignment: Avoiding Specification
 Gaming}\label{outer-alignment-avoiding-specification-gaming}
@@ -13075,7 +14583,7 @@ and addressing this issue constitutes the \emph{outer alignment problem}
 Specification gaming occurs when AI systems exploit poorly defined
 objectives to achieve goals in unintended ways. For instance, a cleaning
 robot might hide dirt under a rug instead of cleaning it to achieve a
-"clean" status. This manipulative behavior results from the robot
+``clean'' status. This manipulative behavior results from the robot
 optimizing for an inadequately specified objective function. Another
 example involves gaming AI, which uses bugs or exploits to win rather
 than play by the intended rules, thus achieving victory through
@@ -13144,7 +14652,7 @@ conclusions about the system's performance
 (\citeproc{ref-xiong_achieving_2016}{Xiong et al. 2016}).
 
 A classic example comes from six years ago with the claim that a system
-"Achieve{[}d{]} human parity in conversation speech recognition"
+``Achieve{[}d{]} human parity in conversation speech recognition''
 (\citeproc{ref-xiong_achieving_2016}{Xiong et al. 2016}). However, we
 know from experience that captioning services have only recently begun
 to transcribe speech passably, whether in online meetings or web videos.
@@ -13157,10 +14665,10 @@ professional captioners. Second, the metric itself, the word error rate
 gold transcription versus the predicted transcription. Consider what the
 metric hides when it says that two systems both have an error rate of
 six percent. This does not mean the systems are equivalent. One might
-substitute "a" for "the," while the other substitutes "tarantula" for
-"banana." The metric was not sensitive to semantic errors, so a model
-could outperform humans in WER yet still make unintelligent, highly
-unsemantic mistakes.
+substitute ``a'' for ``the,'' while the other substitutes ``tarantula''
+for ``banana.'' The metric was not sensitive to semantic errors, so a
+model could outperform humans in WER yet still make unintelligent,
+highly unsemantic mistakes.
 
 \subsubsection{Inner Alignment: Preventing Goal
 Misgeneralization}\label{inner-alignment-preventing-goal-misgeneralization}
@@ -13350,12 +14858,12 @@ In the initial step for language modeling tasks, we utilize a
 high-quality dataset consisting of
 \(\left(\text{prompt}, \text{response}\right)\) pairs to train the
 model. Prompts are sampled from a curated dataset designed to cover a
-wide range of instructions and queries, such as "Explain the moon
-landing to a 6-year-old." Trained human labelers provide the desired
+wide range of instructions and queries, such as ``Explain the moon
+landing to a 6-year-old.'' Trained human labelers provide the desired
 output behavior for each prompt, ensuring responses are accurate, clear,
 and aligned with task goals. For instance, in response to the moon
-landing prompt, a labeler might generate, "Some people went to the moon
-in a big rocket and explored its surface." The collected
+landing prompt, a labeler might generate, ``Some people went to the moon
+in a big rocket and explored its surface.'' The collected
 \(\left(\text{prompt}, \text{response}\right)\) pairs serve as the
 training data for the model, with the cross-entropy loss function
 applied only to the response tokens. This helps the model learn to
@@ -13371,12 +14879,12 @@ In this step, we train a reward model to score any
 meaningful scalar value. Multiple model-generated responses are sampled
 for each prompt. Human labelers then rank these responses from best to
 worst based on their quality and alignment with the prompt. For example,
-given the prompt "Explain the moon landing to a 6-year-old," responses
-like "People went to the moon in a big rocket and explored its surface"
-might be ranked higher than "The moon is a natural satellite of Earth."
-The rankings provided by the labelers are used to train the reward model
-\(\Phi_{\text{RM}}\). The model is trained by minimizing the following
-loss function across all training samples:
+given the prompt ``Explain the moon landing to a 6-year-old,'' responses
+like ``People went to the moon in a big rocket and explored its
+surface'' might be ranked higher than ``The moon is a natural satellite
+of Earth.'' The rankings provided by the labelers are used to train the
+reward model \(\Phi_{\text{RM}}\). The model is trained by minimizing
+the following loss function across all training samples:
 
 \[\mathbb{L}(\Phi_{RM}) = -\mathbb{E}_{(x,y_e,i\rightarrow D_{RL})}[\log(\sigma(\Phi_{RM}(x, y_i)) - \Phi_{RM}(x, y_{1-i}))]\]
 
@@ -13881,8 +15389,8 @@ At the heart of this exploration is the concept of human-in-the-loop
 processes. As AI systems become more sophisticated, their ability to
 simulate human decision-making processes and behaviors has increased,
 leading to innovative applications across various domains. The
-presentation by Meredith Morris, titled "Human-in-the-loop Computing:
-Reimagining Human-Computer Interaction in the Age of AI," shows work in
+presentation by Meredith Morris, titled ``Human-in-the-loop Computing:
+Reimagining Human-Computer Interaction in the Age of AI,'' shows work in
 the integration of human intelligence with AI capabilities
 (\citeproc{ref-Morris2019HITL}{Morris 2019}). Projects like Soylent and
 LaMPost are highlighted as exemplary cases of this integration. Soylent
@@ -14204,11 +15712,9 @@ profile of the user. We categorize modeling approaches into four groups.
 \item
   User-created profiles (usually done manually).
 \item
-  Manually defined groups (stereotypes) that each user is classified
-  into.
+  Manually defined groups that each user is classified into.
 \item
-  Automatically learned groups (stereotypes) that each user is
-  classified into.
+  Automatically learned groups that each user is classified into.
 \item
   Adaptively learned individual user models from interactions with the
   recommendation system.
@@ -14221,49 +15727,20 @@ recommendation systems that adaptively learn an individual's preferences
 and use that knowledge to intelligently recommend choices that the
 individual is more inclined to like.
 
-The problem of learning individual models can be formalized, given as
-follows:
-
-\begin{itemize}
-\item
-  a set of tasks requiring a user decision,
-\item
-  a description for each task,
-\item
-  a history of the user's decision on each task,
-\end{itemize}
-
-So then we can find a function that maps from task description
-(features) to user decisions. The task can be described from
-crowd-sourced data (a collaborative approach) or the measurable features
-of the task (a content-based approach). The content-based approaches for
-describing tasks will be focused on in this session. After understanding
-the framework for adaptive user interfaces now it is a good point to
-give some example applications to help ground the future discussion.
-Adaptive user interfaces have been developed for
-
-\begin{itemize}
-\item
-  Command and form completion
-\item
-  Email filtering and filing
-\item
-  News selection and layout
-\item
-  Browsing the internet
-\item
-  Selecting movies and TV shows
-\item
-  Online shopping
-\item
-  In-car navigation
-\item
-  Interactive scheduling
-\item
-  Dialogue systems
-\end{itemize}
-
-among many other applications.
+The problem of learning individual models can be formalized as follows:
+a set of tasks requiring a user decision, a description for each task,
+and a history of the user's decision on each task. This allows us to
+find a function that maps from task descriptions (features) to user
+decisions. Tasks can be described using crowd-sourced data (a
+collaborative approach) or measurable features of the task (a
+content-based approach). This session will focus on content-based
+approaches for describing tasks. After understanding the framework for
+adaptive user interfaces, it is useful to provide example applications
+to ground future discussions. Adaptive user interfaces have been
+developed for command and form completion, email filtering and filing,
+news selection and layout, browsing the internet, selecting movies and
+TV shows, online shopping, in-car navigation, interactive scheduling,
+and dialogue systems, among many other applications.
 
 \subsubsection{Design}\label{design}
 
@@ -14973,11 +16450,6 @@ Brown, Daniel S, Jordan Schneider, Anca Dragan, and Scott Niekum. 2021.
 {``Value Alignment Verification.''} In \emph{International Conference on
 Machine Learning}, 1105--15. PMLR.
 
-\bibitem[\citeproctext]{ref-tuskegee}
-Centers for Disease Control and Prevention. 2023. {``The u.s. Public
-Health Service Untreated Syphilis Study at Tuskegee.''}
-\url{https://www.cdc.gov/tuskegee/index.html}.
-
 \bibitem[\citeproctext]{ref-spider}
 Chang, Shuaichen, Jun Wang, Mingwen Dong, Lin Pan, Henghui Zhu,
 Alexander Hanbo Li, Wuwei Lan, et al. 2023. {``Dr.spider: A Diagnostic
@@ -15003,6 +16475,10 @@ Preferences.''} \emph{Advances in Neural Information Processing Systems}
 \bibitem[\citeproctext]{ref-clark2016faulty}
 Clark, Jack, and Dario Amodei. 2016. {``Faulty Reward Functions in the
 Wild.''} \emph{OpenAI Blog}.
+
+\bibitem[\citeproctext]{ref-dignum_responsible_2019}
+Dignum, Virginia. 2019. \emph{Responsible Artificial Intelligence: How
+to Develop and Use AI in a Responsible Way}. Vol. 2156. Springer.
 
 \bibitem[\citeproctext]{ref-dworkin1988theory}
 Dworkin, Gerald. 1988. \emph{The Theory and Practice of Autonomy}.
@@ -15208,10 +16684,6 @@ Project, LaMPort. 2017. {``LaMPost: Leveraging Crowdsourcing for Natural
 Language Processing.''} In \emph{Proceedings of the 2017 Conference on
 Empirical Methods in Natural Language Processing}. ACL.
 
-\bibitem[\citeproctext]{ref-quine_word_1960}
-Quine, Willard Van Orman. 1960. \emph{Word and Object}. MIT Press.
-\url{https://openlibrary.org/works/OL2910272W?edition=ia\%3Awordobject00quin}.
-
 \bibitem[\citeproctext]{ref-rawls1971theory}
 Rawls, John. 1971. \emph{A Theory of Justice}. Harvard University Press.
 
@@ -15227,6 +16699,11 @@ and the Problem of Control}. Viking.
 \bibitem[\citeproctext]{ref-sadigh2017active}
 Sadigh, Dorsa, Anca Dragan, Shankar Sastry, and Sanjit Seshia. 2017.
 {``Active Preference-Based Learning of Reward Functions.''}
+
+\bibitem[\citeproctext]{ref-sap_socialIQA_2019}
+Sap, Maarten, Hannah Rashkin, Derek Chen, Ronan LeBras, and Yejin Choi.
+2019. {``Socialiqa: Commonsense Reasoning about Social Interactions.''}
+\emph{arXiv Preprint arXiv:1904.09728}.
 
 \bibitem[\citeproctext]{ref-schwartz1992universals}
 Schwartz, Shalom H. 1992. {``Universals in the Content and Structure of
@@ -15251,13 +16728,6 @@ Ethical Judgments from Natural Language.''} In \emph{Proceedings of the
 2022 {Conference} of the {North} {American} {Chapter} of the
 {Association} for {Computational} {Linguistics}: {Human} {Language}
 {Technologies}}. Association for Computational Linguistics.
-
-\bibitem[\citeproctext]{ref-belmont}
-The National Commission for the Protection of Human Subjects of
-Biomedical and Behavioral Research. 1979. {``The Belmont Report: Ethical
-Principles and Guidelines for the Protection of Human Subjects of
-Research.''}
-\url{https://www.hhs.gov/ohrp/regulations-and-policy/belmont-report/index.html}.
 
 \bibitem[\citeproctext]{ref-tomasello_becoming_2019}
 Tomasello, Michael. 2019. \emph{Becoming Human: {A} Theory of Ontogeny}.
