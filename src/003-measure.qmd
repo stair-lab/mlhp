@@ -1582,8 +1582,9 @@ In the case of quasiconcave and quasiconvex search ranges, a slightly more sophi
 binary search must be used. To illustrate this, consider the two distributions in @fig-bsearch:
 
 ::: {#fig-bsearch layout-ncol=2}
-![First distribution](Figures/normaldistribution.png){#fig-normal-distribution width="45%"}
-![Second distribution](Figures/normaldistribution copy.png){#fig-normal-distribution-copy width="45%"}
+![First distribution](Figures/normaldistribution.png){#fig-normal-distribution width="100%"}
+
+![Second distribution](Figures/normaldistribution copy.png){#fig-normal-distribution-copy width="94%"}
 :::
 
 For both the symmetric and skewed distributions, if we were to divide the search range into two portions 
@@ -2072,7 +2073,7 @@ axis-aligned face of $\mathcal{D}$, denoted as $\mathcal{D}_{k_1, k_2}$.
 Note that this is strictly convex, since $\mathcal{D}$ itself is
 strictly convex, and it has the same geometry as the space of binary
 confusion matrices examined in the previous chapter. Therefore, we can
-construct an RBO classifier for $\psi \in \varphi_{DLPM}$, parameterized
+construct a Restricted Bayes Optimal (RBO) classifier for $\psi \in \varphi_{DLPM}$, parameterized
 by $\vec{a}$, as follows: 
 $$\begin{aligned}
 \bar{h}_{k_1, k_2}(\vec{x})= \left\{
