@@ -2,13 +2,13 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 
 <meta charset="utf-8">
-<meta name="generator" content="quarto-1.5.57">
+<meta name="generator" content="quarto-1.6.33">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="Sang T. Truong">
 <meta name="author" content="Sanmi Koyejo">
-<meta name="dcterms.date" content="2024-12-02">
+<meta name="dcterms.date" content="2025-03-07">
 
 <title>Machine Learning from Human Preferences</title>
 <style>
@@ -73,12 +73,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <script src="site_libs/quarto-html/tippy.umd.min.js"></script>
 <script src="site_libs/quarto-html/anchor.min.js"></script>
 <link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="site_libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
-<link href="site_libs/quarto-html/quarto-syntax-highlighting-dark.css" rel="prefetch" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting-07ba0ad10f5680c660e360ac31d2f3b6.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting-dark-8b864f0777c60eecff11d75b6b2e1175.css" rel="prefetch" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
 <script src="site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="site_libs/bootstrap/bootstrap.min.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
-<link href="site_libs/bootstrap/bootstrap-dark.min.css" rel="prefetch" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<link href="site_libs/bootstrap/bootstrap-fa3d1c749edcb96cd5cb7d620f3e5237.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="site_libs/bootstrap/bootstrap-dark-6f24586c8b15e78d85e3983c622e3e8a.min.css" rel="prefetch" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
 <script src="site_libs/quarto-contrib/pseudocode-2.4.1/pseudocode.min.js"></script>
 <link href="site_libs/quarto-contrib/pseudocode-2.4.1/pseudocode.min.css" rel="stylesheet">
 <script id="quarto-search-options" type="application/json">{
@@ -244,7 +244,7 @@ MathJax = {
     <div>
     <div class="quarto-title-meta-heading">Updated</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">December 2, 2024</p>
+      <p class="date">March 7, 2025</p>
     </div>
   </div>
   
@@ -258,65 +258,52 @@ MathJax = {
 
 <section id="ch-introduction" class="level1" data-number="1">
 <h1 data-number="1"><span class="header-section-number">1</span> Introduction</h1>
-<iframe src="https://web.stanford.edu/class/cs329h/slides/1.introduction/#/" style="width:90%; height:500px;">
+<iframe src="https://web.stanford.edu/class/cs329h/slides/1.introduction/#/" style="width:50%; height:250px;">
 </iframe>
 <p><a href="https://web.stanford.edu/class/cs329h/slides/1.introduction/#/" class="btn btn-outline-primary" role="button">Fullscreen Slide</a></p>
-<p>Machine learning is increasingly integrated into many aspects of our lives through various applications, such as healthcare, education, and scientific discovery. A key challenge in developing trustworthy intelligent agents that benefit humanity is ensuring they align with human values. Learning from human preferences offers a promising approach to accomplishing this goal. This book presents the fundamental foundations and practical applications of machine learning from human preferences. It also covers topics from related fields, such as economics, psychology, and human-computer interaction. The goal is to equip readers with the concepts and tools required to build artificial intelligence systems aligned with human values.</p>
-<p>This book explores the challenge of defining goals and preferences in traditional machine-learning approaches by introducing the paradigm of learning from human preference. This paradigm uses human feedback to guide the learning process and overcome the limitations of manually specified goal functions.</p>
-<p>Human feedback – whether from individuals’ preferences, judgments, ratings, or other responses – plays a pivotal role in guiding AI agents through their learning journeys across various tasks and domains. The following three examples show the importance of human feedback to different AI agents. First, human feedback could guide AI agents in creating appealing and diverse content by assessing the quality, originality, and relevance of the content. Second, human feedback could also ensure that AI agents align with human needs and values by rectifying potential biases, errors, and harm caused by agents. Third, human feedback could help AI agents learn better policies in complex environments, such as those with sparse or noisy rewards, by encouraging agents to explore and learn in those environments.</p>
-<p>This book covers various topics, from the statistical foundations and strategies for interactively querying humans to applications for eliciting information to improve learning. In more detail, we focus on the three most important aspects.</p>
+<p>Machine learning is increasingly shaping various aspects of our lives, from education and healthcare to scientific discovery. A key challenge in developing trustworthy intelligent systems is ensuring they align with human preferences. Learning from human feedback offers a promising solution to this challenge. This book introduces the foundations and practical applications of machine learning from human preferences. It explores how traditional machine learning struggles with defining goals and preferences and presents preference-based learning as an alternative that incorporates human feedback to guide the learning process. Additionally, it draws insights from related fields such as economics, psychology, and human-computer interaction. By the end of this book, readers will be equipped with the key concepts and tools needed to design systems that effectively align with human preferences.</p>
+<p>The book is intended for researchers, practitioners, and students who are interested in intergrating machine learning with human-centered application. We assume some basic knowledge of probability and statistics, but provides sufficient background and references for the readers to follow the main ideas and results. The book also provides code examples and datasets for a few topics. The field of machine learning from human preference is a vibrant and growing area of research and practice, with many open challenges and opportunities. We hope that this book will inspire readers to further explore and advance this exciting field. The book is divided into 4 chapters:</p>
 <ul>
-<li><p>The role of the human-in-the-loop for improving learning systems: We review the relevant foundations in microeconomics, psychology, marketing, statistics, and other disciplines and explore their applications to various domains, such as language, robotics, logistics, and more. We adopt the machine learning perspective for modeling, estimating, and evaluating human-in-the-loop learning processes.</p></li>
-<li><p>The characteristics and challenges of human questions: We examine the issues of bias, correctness, noisiness, rationality, and other factors that affect the quality and reliability of human responses. We also consider the differences and similarities between individual and group responses and how they influence our approach to human-in-the-loop learning.</p></li>
-<li><p>The ethical implications of human-in-the-loop learning: We discuss the potential benefits and risks of learning from human preferences, opinions, and behaviors and how to address them responsibly and fairly. We also raise questions about the selection, representation, and protection of human participants and the possible consequences of exploiting or manipulating human responses.</p></li>
+<li><p><strong>Chapter 1</strong> lays the foundation for probabilistic modeling of human preferences. It covers key model assumptions, such as Luce’s axiom of choice and Boltzmann rationality, along with interaction models like pairwise and rank-order comparisons. The chapter also explores game-theoretic perspectives on preference learning and examines human biases in reward models, their impact on reward inference, and strategies to leverage both rational and irrational behavior. Additionally, it discusses challenges in learning multimodal rewards and meta-reward learning, including techniques for learning from demonstrations and rewards in complex environments.</p></li>
+<li><p><strong>Chapter 2</strong> focused on a process where the end goal is to elicit the utility function. Since human is involved in the data collection, we concentrate on active learning methods that estimate the most preference information with the least amount of human query. Various strategies are explored, including reducing the learner’s variance, exploiting ambiguity and domain knowledge in ranking, with examples from robotics and machine learning systems.</p></li>
+<li><p><strong>Chapter 3</strong> focuses on process where preference is a signal guiding decision. We discuss dueling bandits, an algorithm for decision making from pairwise preferences, as well as reinforcement learning from human feedback (RLHF) to align language models. Moreover, addressing the challenges of modeling uncertainty in reward models emerges as a crucial area for improvement. We also discuss decision making setting beyond a single reward frameworks to accommodate the oversight of diverse objectives. Embracing multi-objective is pivotal to representing the multifaceted goals of varied stakeholders within AI systems.</p></li>
+<li><p><strong>Chapter 4</strong> analyzes principles from human-computer interaction (HCI) for systems that learn from humans, like cognitive constraints and user experience. We discuss ethical issues that arise in interaction models and approaches for designing preference elicitation systems considering fairness, privacy, and other socio-technical factors. We tackle challenges around aligning learned models with values from diverse expert and non-expert stakeholders. Ethical considerations in learning from human preference are addressed. We discuss the potential benefits and risks of learning from human preferences and how to address them responsibly and fairly. We also raise questions about the selection and protection of human participants and the possible consequences of exploiting or manipulating human responses.</p></li>
 </ul>
-<p>Besides the above aspects, we also touch upon some other relevant topics, such as:</p>
-<ul>
-<li><p>General Artificial Intelligence: Most machine learning or AI models/algorithms involve learning from humans, as the ultimate goal is often to imitate human intelligence. Therefore, humans are the primary source of data and feedback for ML/AI systems.</p></li>
-<li><p>General Machine Learning: Humans define all the steps of the ML/AI process, such as selecting the problem, data sources, model architectures, optimization methods, and evaluation metrics. Therefore, humans are the main decision-makers and stakeholders for ML/AI systems.</p></li>
-<li><p>Expert knowledge for defining model architectures: In some cases, humans can provide valuable domain knowledge and prior information for designing and refining model architectures, especially for graphical models and causal inference. We may present a few examples, but this is not our main focus.</p></li>
-<li><p>Human-Computer Interaction (HCI): The interface and elicitation process matters for the quality and efficiency of human-in-the-loop learning. Therefore, HCI principles and techniques can help to improve the user experience and engagement of human participants.</p></li>
-</ul>
-<p>Returning to human feedback, their integration can occur at various stages of the learning process, spanning from data collection and labeling to model selection, training, and evaluation. Incorporating these feedbacks enables fine-tuning the model to align with their hidden insights. The utilization of human feedback is crucial due to its ability to offer valuable signals that are challenging to acquire or delineate through other means, such as data or predefined cost functions. There are many ways to update models based on human feedback, depending on the type and level of feedback and the objective and structure of the model. A general taxonomy of feedback-update interactions can be divided into six categories:</p>
-<ul>
-<li><p>Observation-level &amp; Active data collection &amp; Asking humans for feedback on specific features, such as collecting expert labels on features.</p></li>
-<li><p>Observation-level &amp; Constraint elicitation &amp; Inferring optimization constraints from insights extracted from feedback.</p></li>
-<li><p>Observation-level &amp; Feature modification &amp; Adding, removing, or preprocessing features of training/finetuning datasets.</p></li>
-<li><p>Domain-level &amp; Dataset modification &amp; Generating synthetic data that satisfy certain constraints specified by human feedback, such as fairness or weak supervision.</p></li>
-<li><p>Domain-level &amp; Constraint specification &amp; Modifying the loss function for optimizing the model based on human feedback, such as imposing fairness, interpretability, or resource constraints.</p></li>
-<li><p>Domain-level &amp; Model editing &amp; Changing the rules or weights of the model based on human feedback, such as incorporating domain knowledge or preferences.</p></li>
-</ul>
-<p>These ways of updating models based on human feedback can help to improve the performance, behavior, and alignment of the models with human values and goals. However, they pose challenges and risks, such as communication barriers, feedback quality, and ethical issues. Therefore, designing and evaluating the feedback-update interactions carefully and responsibly is important.</p>
-<p>Starting with an introduction to human preferences models and various approaches to modeling and understanding human preferences, the book then delves into interaction models that enable machines to learn from human preferences and feedback, including techniques such as paired comparison data analysis and game-theoretic perspectives on preference learning. Understanding human biases and incorporating them into reward models is explored in the chapter on human biases and reward models. The impact of human biases on reward inference and approaches to leverage both rational and irrational human behavior are discussed. Metric elicitation techniques are then introduced, which allow machines to learn performance metrics from pairwise comparisons and other forms of human feedback.</p>
-<p>Active learning strategies are covered in the chapter on active learning, which enables machines to actively query humans for feedback and preferences to improve the learning process. The book also explores the design and development of adaptive user interfaces that personalize services based on user preferences, as well as the role of bandit algorithms and probabilistic methods in learning from human preferences.</p>
-<p>Challenges and techniques involved in learning multimodal rewards and meta-reward learning are discussed, including approaches to learning from demonstrations and rewards in complex environments. Human-Computer Interaction (HCI) considerations in learning from humans are explored, emphasizing user-centered design principles. The alignment of goals and preferences among expert and non-expert stakeholders and the challenges and techniques involved are addressed.</p>
-<p>Ensuring truthfulness and fairness in eliciting human preferences is crucial, and the book discusses mechanism design principles and techniques to incentivize truthful feedback from humans. The integration of human computing techniques in learning from human preference is also explored, highlighting the use of human intelligence to solve complex problems and improve machine learning algorithms.</p>
-<p>The application of inverse reinforcement learning in robotics focuses on how machines can infer human preferences and reward functions from observed behavior. Ethical considerations in learning from human preference are addressed, emphasizing the importance of incorporating ethical principles in designing and deploying machine learning systems. Finally, the book explores reinforcement learning from human feedback for language models, highlighting techniques for incorporating human feedback in training language models.</p>
-<p>The book aims to provide a comprehensive overview of machine learning from human preference. By leveraging human feedback and preferences, the aim is to develop more intelligent and reliable machine-learning systems that align with human values and preferences. The book is divided into 16 chapters:</p>
-<ul>
-<li><p><strong>Chapter 1</strong> is an introductory chapter providing an overview of the field and motivations and outlines what will be covered.</p></li>
-<li><p><strong>Chapter 2</strong> provides an integrated framework for understanding human preference modeling, interaction models, and the impact of human biases on decision-making. It begins by exploring the motivations and applications of human preference modeling, using examples from health coaching, social media, and shopping. The chapter then discusses various rationality assumptions and traditional models such as Luce’s axiom of choice and Boltzmann Rationality, highlighting their roles in capturing the probabilistic nature of human choices. It also addresses advanced interaction models using pairwise and rank-order sampling techniques to analyze and predict preferences, alongside a case study on the LESS model for handling duplicates in decision-making scenarios. Finally, it delves into the ethical and practical challenges of collecting and utilizing human feedback to ensure robust and well-calibrated reward models.</p></li>
-<li><p><strong>Chapter 5</strong> introduces a framework for eliciting multi-class performance metrics from an oracle through pairwise comparisons of confusion matrices. It describes eliciting linear metrics that consider only the diagonal elements of confusion matrices, representing correct predictions. Such metrics are known as Diagonal Linear Performance Metrics (DLPMs). The chapter outlines an algorithm for eliciting DLPMs by finding the Bayes optimal confusion matrix that maximizes a DLPM through binary searches of the space of possible confusion matrices.</p></li>
-<li><p><strong>Chapter 6</strong> discusses different methods for active learning, with a focus on selecting training examples that maximize improvement to the learner’s performance. It describes how active learning aims to strategically query new data points by estimating how their addition would hypothetically impact the model if trained on them. Various strategies are explored, including reducing the learner’s variance, exploiting ambiguity and domain knowledge in ranking and comparisons, and balancing exploration versus exploitation. Computational methods are presented and analyzed empirically on applications like robotics to demonstrate how active learning can enhance models using significantly less labeled data.</p></li>
-<li><p><strong>Chapter 7</strong> discusses adaptive user interfaces, which aim to provide personalized experiences by learning individual user preferences from interactions. It presents the design of adaptive interfaces as involving modeling users, collecting user traces, learning models from the data, and applying the models to adapt recommendations. The applications of adaptive interfaces mentioned include route advisors, destination selection assistants, and scheduling tools, with the goal of improving systems through intelligent personalization.</p></li>
-<li><p><strong>Chapter 8</strong> discusses different bandit algorithms and their applications. It introduces the multi-armed bandit problem and explores strategies like epsilon-greedy and UCB to balance exploration and exploitation. Two important extensions are examined more thoroughly: contextual bandits, which incorporate context into decisions, and dueling bandits, which learn from pairwise preferences instead of explicit rewards. A wide range of domains are also presented where bandit methods, such as healthcare, recommendations, and dialogue systems, have proved useful.</p></li>
-<li><p><strong>Chapter 9</strong> examines modeling human rewards that have complex, multi-modal structures and techniques for meta-learning reward functions.</p></li>
-<li><p><strong>Chapter 10</strong> analyzes important human-computer interaction considerations for systems that learn from humans, like cognitive constraints and user experience.</p></li>
-<li><p><strong>Chapter 11</strong> tackles challenges around aligning learned models with values from diverse expert and non-expert stakeholders. Issues of truthfulness and the notion of agreement are discussed.</p></li>
-<li><p><strong>Chapter 12</strong> focuses on mechanism design theory and how it can be applied to develop protocols and systems for truthfully learning preferences at scale.</p></li>
-<li><p><strong>Chapter 13</strong> looks at how human computation frameworks can enable large-scale preference elicitation by crowd-sourcing tasks to many individuals.</p></li>
-<li><p><strong>Chapter 14</strong> presents applications of inverse reinforcement learning using human feedback for robotics, such as learning helicopter control policies from demonstrations.</p></li>
-<li><p><strong>Chapter 15</strong> discusses ethical issues that arise in interaction models and approaches for designing preference elicitation systems considering fairness, privacy, and other socio-technical factors.</p></li>
-<li><p><strong>Chapter 16</strong> covers reinforcement learning techniques that can leverage human feedback to guide language models, for example, by providing feedback on the generated text.</p></li>
-</ul>
-<p>Machine learning from human feedback, especially reinforcement learning from human feedback (RLHF), stands as a promising avenue for training AI systems through human input. However, it confronts several intricate challenges and its efficacy encounters notable limitations stemming from the intricacies of human feedback and the complexity of aligning AI with human values.</p>
-<p>The acquisition of representative and unbiased feedback from humans presents a formidable hurdle, rooted in inherent limitations of human evaluators. Human fallibility and the incapacity to assess ML/AI model’s output accurately hinder the quality and reliability of feedback. Moreover, there exists an inherent tradeoff between the efficiency and richness of feedback. While extensive, detailed feedback such as prolonged conversations promises deeper insights, its acquisition proves arduous and resource-intensive.</p>
-<p>Within the domain of RLHF, the construction of a comprehensive reward model poses significant difficulties. Capturing the intricacies of complex and context-dependent human values and preferences within a singular reward function stands as a formidable challenge. The inherent inconsistency in modeling human behavior further complicates this endeavor. Consequently, reward models are susceptible to misgeneralization, resulting in imperfect proxies that pave the way for "reward hacking". Agents may veer towards optimizing these flawed proxies rather than pursuing the genuine objectives intended by human feedback.</p>
-<p>The optimization of policies within RLHF presents its own set of challenges. Effectively fine-tuning policies through RL techniques encounters obstacles, notably susceptibility to adversarial exploitations. Furthermore, even if training rewards are accurately derived, policies may exhibit poor performance upon deployment due to discrepancies between the training and deployment distributions. Agents might prioritize maximizing their influence or power, diverging from the intended goals outlined by the feedback.</p>
-<p>In the realm of joint training, where reward models and policies undergo simultaneous refinement, intricate issues surface. The amalgamation of these components can induce detrimental distributional shifts as errors accumulate throughout the training process. Balancing training efficiency while circumventing overfitting proves to be a complex undertaking. Policies exploring areas where the reward model exhibits inaccuracies further complicate the delicate balance between efficient learning and avoiding overfitting. These challenges underscore the intricate landscape of RLHF, necessitating nuanced strategies and innovative approaches to surmount the complexities inherent in aligning AI systems with human feedback effectively.</p>
-<p>Looking forward, future developments in RLHF necessitate a nuanced approach. Enhancements in human feedback processes, potentially leveraging AI assistance, fine-grained annotations, and demonstrative techniques, hold promise in ameliorating feedback quality. Moreover, addressing the challenges of modeling uncertainty and handling discrepancies in reward models emerges as a crucial area for improvement. Integrating RLHF with complementary techniques, such as formal verification and interpretability, offers avenues to bolster its effectiveness. Moreover, a pivotal direction lies in broadening the scope of RLHF beyond singular reward frameworks to accommodate the oversight of diverse stakeholder objectives. Embracing multi-objective oversight is pivotal to authentically representing the multifaceted goals of varied stakeholders within AI systems. Simultaneously, ensuring public transparency concerning technical intricacies fosters a better understanding of strengths, limitations, and the developmental trajectory of RLHF.</p>
-<p>However, it is imperative to underscore that RLHF should not be perceived as a comprehensive solution but rather as a facet within a comprehensive "defense in depth" strategy integrating multiple safety measures. The progress of RLHF and broader advancements in AI alignment demand persistent efforts to navigate fundamental choices and challenges inherent in aligning AI systems with human values and goals.</p>
-<p>The book is intended for researchers, practitioners, and students who are interested in the intersection of machine learning, human-computer interaction, and artificial intelligence. The book assumes some basic knowledge of probability, statistics, and machine learning, but provides sufficient background and references for the readers to follow the main ideas and results. The book also provides code examples and datasets for some of the methods and applications discussed in the book. The field of machine learning from human preference is a vibrant and growing area of research and practice, with many open challenges and opportunities. We hope that this book will inspire and inform the readers to further explore and advance this exciting and important field.</p>
+<p>This book covers various topics, from the statistical foundations and strategies for interactively querying humans to applications for eliciting preference. We review the relevant foundations in microeconomics, psychology, marketing, statistics, and other disciplines and explore their applications to various domains, such as language, robotics, logistics, and more. We adopt the machine learning perspective for modeling, estimating, and evaluating the learning processes.</p>
+<!-- 
+
+Ensuring truthfulness and fairness in eliciting human preferences is crucial, and the book discusses mechanism design principles and techniques to incentivize truthful feedback from humans. The integration of human computing techniques in learning from human preference is also explored, highlighting the use of human intelligence to solve complex problems and improve machine learning algorithms.
+
+**Chapter 7** discusses adaptive user interfaces, which aim to provide personalized experiences by learning individual user preferences from interactions. It presents the design of adaptive interfaces as involving modeling users, collecting user traces, learning models from the data, and applying the models to adapt recommendations. The applications of adaptive interfaces mentioned include route advisors, destination selection assistants, and scheduling tools, with the goal of improving systems through intelligent personalization.
+
+-   **Chapter 1** is an introductory chapter providing an overview of the field and motivations and outlines what will be covered.
+
+-   **Chapter 12** focuses on mechanism design theory and how it can be applied to develop protocols and systems for truthfully learning preferences at scale.
+
+-   **Chapter 13** looks at how human computation frameworks can enable large-scale preference elicitation by crowd-sourcing tasks to many individuals.
+
+-   **Chapter 14** presents applications of inverse reinforcement learning using human feedback for robotics, such as learning helicopter control policies from demonstrations.
+
+Human feedback -- whether from individuals' preferences, judgments, ratings, or other responses -- plays a pivotal role in guiding AI systems
+through their learning across various tasks. The following three examples show the importance of human feedback to different systems. First, human feedback could guide AI agents in creating appealing and diverse content by assessing the quality, originality, and relevance of the content. Second, human feedback could also ensure that AI agents align with human needs and values by rectifying potential biases, errors, and harm caused by agents. Third, human feedback could help AI agents learn better policies in complex environments, such as those with sparse or noisy rewards, by encouraging agents to explore and learn in those environments.
+
+Returning to human feedback, their integration can occur at various stages of the learning process, spanning from data collection and labeling to model selection, training, and evaluation. Incorporating these feedbacks enables fine-tuning the model to align with their hidden insights. The utilization of human feedback is crucial due to its ability to offer valuable signals that are challenging to acquire or delineate through other means, such as data or predefined cost functions. There are many ways to update models based on human feedback, depending on the type and level of feedback and the objective and structure of the model. A general taxonomy of feedback-update interactions can be divided into six categories:
+
+-   Observation-level & Active data collection & Asking humans for feedback on specific features, such as collecting expert labels on features.
+
+-   Observation-level & Constraint elicitation & Inferring optimization constraints from insights extracted from feedback.
+
+-   Observation-level & Feature modification & Adding, removing, or preprocessing features of training/finetuning datasets.
+
+-   Domain-level & Dataset modification & Generating synthetic data that satisfy certain constraints specified by human feedback, such as fairness or weak supervision.
+
+-   Domain-level & Constraint specification & Modifying the loss function for optimizing the model based on human feedback, such as imposing fairness, interpretability, or resource constraints.
+
+-   Domain-level & Model editing & Changing the rules or weights of the model based on human feedback, such as incorporating domain knowledge or preferences.
+
+These ways of updating models based on human feedback can help to improve the performance, behavior, and alignment of the models with human values and goals. However, they pose challenges and risks, such as communication barriers, feedback quality, and ethical issues. Therefore, designing and evaluating the feedback-update interactions carefully and responsibly is important.
+
+-->
 
 
 <!-- -->
@@ -953,362 +940,60 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
 <span id="cb1-3"><a href="#cb1-3"></a></span>
 <span id="cb1-4"><a href="#cb1-4"></a>&lt;iframe</span>
 <span id="cb1-5"><a href="#cb1-5"></a>  src="https://web.stanford.edu/class/cs329h/slides/1.introduction/#/"</span>
-<span id="cb1-6"><a href="#cb1-6"></a>  style="width:90%; height:500px;"</span>
+<span id="cb1-6"><a href="#cb1-6"></a>  style="width:50%; height:250px;"</span>
 <span id="cb1-7"><a href="#cb1-7"></a>&gt;&lt;/iframe&gt;</span>
 <span id="cb1-8"><a href="#cb1-8"></a><span class="co">[</span><span class="ot">Fullscreen Slide</span><span class="co">](https://web.stanford.edu/class/cs329h/slides/1.introduction/#/)</span>{.btn .btn-outline-primary .btn role="button"}</span>
 <span id="cb1-9"><a href="#cb1-9"></a></span>
 <span id="cb1-10"><a href="#cb1-10"></a>:::</span>
 <span id="cb1-11"><a href="#cb1-11"></a></span>
-<span id="cb1-12"><a href="#cb1-12"></a>Machine learning is increasingly integrated into many aspects of our</span>
-<span id="cb1-13"><a href="#cb1-13"></a>lives through various applications, such as healthcare, education, and</span>
-<span id="cb1-14"><a href="#cb1-14"></a>scientific discovery. A key challenge in developing trustworthy</span>
-<span id="cb1-15"><a href="#cb1-15"></a>intelligent agents that benefit humanity is ensuring they align with</span>
-<span id="cb1-16"><a href="#cb1-16"></a>human values. Learning from human preferences offers a promising</span>
-<span id="cb1-17"><a href="#cb1-17"></a>approach to accomplishing this goal. This book presents the fundamental</span>
-<span id="cb1-18"><a href="#cb1-18"></a>foundations and practical applications of machine learning from human</span>
-<span id="cb1-19"><a href="#cb1-19"></a>preferences. It also covers topics from related fields, such as</span>
-<span id="cb1-20"><a href="#cb1-20"></a>economics, psychology, and human-computer interaction. The goal is to</span>
-<span id="cb1-21"><a href="#cb1-21"></a>equip readers with the concepts and tools required to build artificial</span>
-<span id="cb1-22"><a href="#cb1-22"></a>intelligence systems aligned with human values.</span>
+<span id="cb1-12"><a href="#cb1-12"></a>Machine learning is increasingly shaping various aspects of our lives, from education and healthcare to scientific discovery. A key challenge in developing trustworthy intelligent systems is ensuring they align with human preferences. Learning from human feedback offers a promising solution to this challenge. This book introduces the foundations and practical applications of machine learning from human preferences. It explores how traditional machine learning struggles with defining goals and preferences and presents preference-based learning as an alternative that incorporates human feedback to guide the learning process. Additionally, it draws insights from related fields such as economics, psychology, and human-computer interaction. By the end of this book, readers will be equipped with the key concepts and tools needed to design systems that effectively align with human preferences. </span>
+<span id="cb1-13"><a href="#cb1-13"></a></span>
+<span id="cb1-14"><a href="#cb1-14"></a>The book is intended for researchers, practitioners, and students who are interested in intergrating machine learning with human-centered application. We assume some basic knowledge of probability and statistics, but provides sufficient background and references for the readers to follow the main ideas and results. The book also provides code examples and datasets for a few topics. The field of machine learning from human preference is a vibrant and growing area of research and practice, with many open challenges and opportunities. We hope that this book will inspire readers to further explore and advance this exciting field. The book is divided into 4 chapters:</span>
+<span id="cb1-15"><a href="#cb1-15"></a></span>
+<span id="cb1-16"><a href="#cb1-16"></a><span class="ss">-   </span>**Chapter 1** lays the foundation for probabilistic modeling of human preferences. It covers key model assumptions, such as Luce's axiom of choice and Boltzmann rationality, along with interaction models like pairwise and rank-order comparisons. The chapter also explores game-theoretic perspectives on preference learning and examines human biases in reward models, their impact on reward inference, and strategies to leverage both rational and irrational behavior. Additionally, it discusses challenges in learning multimodal rewards and meta-reward learning, including techniques for learning from demonstrations and rewards in complex environments.</span>
+<span id="cb1-17"><a href="#cb1-17"></a></span>
+<span id="cb1-18"><a href="#cb1-18"></a><span class="ss">-   </span>**Chapter 2** focused on a process where the end goal is to elicit the utility function. Since human is involved in the data collection, we concentrate on active learning methods that estimate the most preference information with the least amount of human query. Various strategies are explored, including reducing the learner's variance, exploiting ambiguity and domain knowledge in ranking, with examples from robotics and machine learning systems.</span>
+<span id="cb1-19"><a href="#cb1-19"></a></span>
+<span id="cb1-20"><a href="#cb1-20"></a><span class="ss">-   </span>**Chapter 3** focuses on process where preference is a signal guiding decision. We discuss dueling bandits, an algorithm for decision making from pairwise preferences, as well as reinforcement learning from human feedback (RLHF) to align language models. Moreover, addressing the challenges of modeling uncertainty in reward models emerges as a crucial area for improvement. We also discuss decision making setting beyond a single reward frameworks to accommodate the oversight of diverse objectives. Embracing multi-objective is pivotal to representing the multifaceted goals of varied stakeholders within AI systems.</span>
+<span id="cb1-21"><a href="#cb1-21"></a></span>
+<span id="cb1-22"><a href="#cb1-22"></a><span class="ss">-   </span>**Chapter 4** analyzes principles from human-computer interaction (HCI) for systems that learn from humans, like cognitive constraints and user experience. We discuss ethical issues that arise in interaction models and approaches for designing preference elicitation systems considering fairness, privacy, and other socio-technical factors. We tackle challenges around aligning learned models with values from diverse expert and non-expert stakeholders. Ethical considerations in learning from human preference are addressed. We discuss the potential benefits and risks of learning from human preferences and how to address them responsibly and fairly. We also raise questions about the selection and protection of human participants and the possible consequences of exploiting or manipulating human responses.</span>
 <span id="cb1-23"><a href="#cb1-23"></a></span>
-<span id="cb1-24"><a href="#cb1-24"></a>This book explores the challenge of defining goals and preferences in</span>
-<span id="cb1-25"><a href="#cb1-25"></a>traditional machine-learning approaches by introducing the paradigm of</span>
-<span id="cb1-26"><a href="#cb1-26"></a>learning from human preference. This paradigm uses human feedback to</span>
-<span id="cb1-27"><a href="#cb1-27"></a>guide the learning process and overcome the limitations of manually</span>
-<span id="cb1-28"><a href="#cb1-28"></a>specified goal functions.</span>
+<span id="cb1-24"><a href="#cb1-24"></a>This book covers various topics, from the statistical foundations and strategies for interactively querying humans to applications for eliciting preference. We review the relevant foundations in microeconomics, psychology, marketing, statistics, and other disciplines and explore their applications to various domains, such as language, robotics, logistics, and more. We adopt the machine learning perspective for modeling, estimating, and evaluating the learning processes.</span>
+<span id="cb1-25"><a href="#cb1-25"></a></span>
+<span id="cb1-26"><a href="#cb1-26"></a><span class="co">&lt;!-- </span></span>
+<span id="cb1-27"><a href="#cb1-27"></a></span>
+<span id="cb1-28"><a href="#cb1-28"></a><span class="co">Ensuring truthfulness and fairness in eliciting human preferences is crucial, and the book discusses mechanism design principles and techniques to incentivize truthful feedback from humans. The integration of human computing techniques in learning from human preference is also explored, highlighting the use of human intelligence to solve complex problems and improve machine learning algorithms.</span></span>
 <span id="cb1-29"><a href="#cb1-29"></a></span>
-<span id="cb1-30"><a href="#cb1-30"></a>Human feedback -- whether from individuals' preferences, judgments,</span>
-<span id="cb1-31"><a href="#cb1-31"></a>ratings, or other responses -- plays a pivotal role in guiding AI agents</span>
-<span id="cb1-32"><a href="#cb1-32"></a>through their learning journeys across various tasks and domains. The</span>
-<span id="cb1-33"><a href="#cb1-33"></a>following three examples show the importance of human feedback to</span>
-<span id="cb1-34"><a href="#cb1-34"></a>different AI agents. First, human feedback could guide AI agents in</span>
-<span id="cb1-35"><a href="#cb1-35"></a>creating appealing and diverse content by assessing the quality,</span>
-<span id="cb1-36"><a href="#cb1-36"></a>originality, and relevance of the content. Second, human feedback could</span>
-<span id="cb1-37"><a href="#cb1-37"></a>also ensure that AI agents align with human needs and values by</span>
-<span id="cb1-38"><a href="#cb1-38"></a>rectifying potential biases, errors, and harm caused by agents. Third,</span>
-<span id="cb1-39"><a href="#cb1-39"></a>human feedback could help AI agents learn better policies in complex</span>
-<span id="cb1-40"><a href="#cb1-40"></a>environments, such as those with sparse or noisy rewards, by encouraging</span>
-<span id="cb1-41"><a href="#cb1-41"></a>agents to explore and learn in those environments.</span>
+<span id="cb1-30"><a href="#cb1-30"></a><span class="co">**Chapter 7** discusses adaptive user interfaces, which aim to provide personalized experiences by learning individual user preferences from interactions. It presents the design of adaptive interfaces as involving modeling users, collecting user traces, learning models from the data, and applying the models to adapt recommendations. The applications of adaptive interfaces mentioned include route advisors, destination selection assistants, and scheduling tools, with the goal of improving systems through intelligent personalization.</span></span>
+<span id="cb1-31"><a href="#cb1-31"></a></span>
+<span id="cb1-32"><a href="#cb1-32"></a><span class="co">-   **Chapter 1** is an introductory chapter providing an overview of the field and motivations and outlines what will be covered.</span></span>
+<span id="cb1-33"><a href="#cb1-33"></a></span>
+<span id="cb1-34"><a href="#cb1-34"></a><span class="co">-   **Chapter 12** focuses on mechanism design theory and how it can be applied to develop protocols and systems for truthfully learning preferences at scale.</span></span>
+<span id="cb1-35"><a href="#cb1-35"></a></span>
+<span id="cb1-36"><a href="#cb1-36"></a><span class="co">-   **Chapter 13** looks at how human computation frameworks can enable large-scale preference elicitation by crowd-sourcing tasks to many individuals.</span></span>
+<span id="cb1-37"><a href="#cb1-37"></a></span>
+<span id="cb1-38"><a href="#cb1-38"></a><span class="co">-   **Chapter 14** presents applications of inverse reinforcement learning using human feedback for robotics, such as learning helicopter control policies from demonstrations.</span></span>
+<span id="cb1-39"><a href="#cb1-39"></a></span>
+<span id="cb1-40"><a href="#cb1-40"></a><span class="co">Human feedback -- whether from individuals' preferences, judgments, ratings, or other responses -- plays a pivotal role in guiding AI systems</span></span>
+<span id="cb1-41"><a href="#cb1-41"></a><span class="co">through their learning across various tasks. The following three examples show the importance of human feedback to different systems. First, human feedback could guide AI agents in creating appealing and diverse content by assessing the quality, originality, and relevance of the content. Second, human feedback could also ensure that AI agents align with human needs and values by rectifying potential biases, errors, and harm caused by agents. Third, human feedback could help AI agents learn better policies in complex environments, such as those with sparse or noisy rewards, by encouraging agents to explore and learn in those environments.</span></span>
 <span id="cb1-42"><a href="#cb1-42"></a></span>
-<span id="cb1-43"><a href="#cb1-43"></a>This book covers various topics, from the statistical foundations and</span>
-<span id="cb1-44"><a href="#cb1-44"></a>strategies for interactively querying humans to applications for</span>
-<span id="cb1-45"><a href="#cb1-45"></a>eliciting information to improve learning. In more detail, we focus on</span>
-<span id="cb1-46"><a href="#cb1-46"></a>the three most important aspects.</span>
-<span id="cb1-47"><a href="#cb1-47"></a></span>
-<span id="cb1-48"><a href="#cb1-48"></a><span class="ss">-   </span>The role of the human-in-the-loop for improving learning systems: We</span>
-<span id="cb1-49"><a href="#cb1-49"></a>    review the relevant foundations in microeconomics, psychology,</span>
-<span id="cb1-50"><a href="#cb1-50"></a>    marketing, statistics, and other disciplines and explore their</span>
-<span id="cb1-51"><a href="#cb1-51"></a>    applications to various domains, such as language, robotics,</span>
-<span id="cb1-52"><a href="#cb1-52"></a>    logistics, and more. We adopt the machine learning perspective for</span>
-<span id="cb1-53"><a href="#cb1-53"></a>    modeling, estimating, and evaluating human-in-the-loop learning</span>
-<span id="cb1-54"><a href="#cb1-54"></a>    processes.</span>
-<span id="cb1-55"><a href="#cb1-55"></a></span>
-<span id="cb1-56"><a href="#cb1-56"></a><span class="ss">-   </span>The characteristics and challenges of human questions: We examine</span>
-<span id="cb1-57"><a href="#cb1-57"></a>    the issues of bias, correctness, noisiness, rationality, and other</span>
-<span id="cb1-58"><a href="#cb1-58"></a>    factors that affect the quality and reliability of human responses.</span>
-<span id="cb1-59"><a href="#cb1-59"></a>    We also consider the differences and similarities between individual</span>
-<span id="cb1-60"><a href="#cb1-60"></a>    and group responses and how they influence our approach to</span>
-<span id="cb1-61"><a href="#cb1-61"></a>    human-in-the-loop learning.</span>
-<span id="cb1-62"><a href="#cb1-62"></a></span>
-<span id="cb1-63"><a href="#cb1-63"></a><span class="ss">-   </span>The ethical implications of human-in-the-loop learning: We discuss</span>
-<span id="cb1-64"><a href="#cb1-64"></a>    the potential benefits and risks of learning from human preferences,</span>
-<span id="cb1-65"><a href="#cb1-65"></a>    opinions, and behaviors and how to address them responsibly and</span>
-<span id="cb1-66"><a href="#cb1-66"></a>    fairly. We also raise questions about the selection, representation,</span>
-<span id="cb1-67"><a href="#cb1-67"></a>    and protection of human participants and the possible consequences</span>
-<span id="cb1-68"><a href="#cb1-68"></a>    of exploiting or manipulating human responses.</span>
-<span id="cb1-69"><a href="#cb1-69"></a></span>
-<span id="cb1-70"><a href="#cb1-70"></a>Besides the above aspects, we also touch upon some other relevant</span>
-<span id="cb1-71"><a href="#cb1-71"></a>topics, such as:</span>
-<span id="cb1-72"><a href="#cb1-72"></a></span>
-<span id="cb1-73"><a href="#cb1-73"></a><span class="ss">-   </span>General Artificial Intelligence: Most machine learning or AI</span>
-<span id="cb1-74"><a href="#cb1-74"></a>    models/algorithms involve learning from humans, as the ultimate goal</span>
-<span id="cb1-75"><a href="#cb1-75"></a>    is often to imitate human intelligence. Therefore, humans are the</span>
-<span id="cb1-76"><a href="#cb1-76"></a>    primary source of data and feedback for ML/AI systems.</span>
-<span id="cb1-77"><a href="#cb1-77"></a></span>
-<span id="cb1-78"><a href="#cb1-78"></a><span class="ss">-   </span>General Machine Learning: Humans define all the steps of the ML/AI</span>
-<span id="cb1-79"><a href="#cb1-79"></a>    process, such as selecting the problem, data sources, model</span>
-<span id="cb1-80"><a href="#cb1-80"></a>    architectures, optimization methods, and evaluation metrics.</span>
-<span id="cb1-81"><a href="#cb1-81"></a>    Therefore, humans are the main decision-makers and stakeholders for</span>
-<span id="cb1-82"><a href="#cb1-82"></a>    ML/AI systems.</span>
-<span id="cb1-83"><a href="#cb1-83"></a></span>
-<span id="cb1-84"><a href="#cb1-84"></a><span class="ss">-   </span>Expert knowledge for defining model architectures: In some cases,</span>
-<span id="cb1-85"><a href="#cb1-85"></a>    humans can provide valuable domain knowledge and prior information</span>
-<span id="cb1-86"><a href="#cb1-86"></a>    for designing and refining model architectures, especially for</span>
-<span id="cb1-87"><a href="#cb1-87"></a>    graphical models and causal inference. We may present a few</span>
-<span id="cb1-88"><a href="#cb1-88"></a>    examples, but this is not our main focus.</span>
-<span id="cb1-89"><a href="#cb1-89"></a></span>
-<span id="cb1-90"><a href="#cb1-90"></a><span class="ss">-   </span>Human-Computer Interaction (HCI): The interface and elicitation</span>
-<span id="cb1-91"><a href="#cb1-91"></a>    process matters for the quality and efficiency of human-in-the-loop</span>
-<span id="cb1-92"><a href="#cb1-92"></a>    learning. Therefore, HCI principles and techniques can help to</span>
-<span id="cb1-93"><a href="#cb1-93"></a>    improve the user experience and engagement of human participants.</span>
-<span id="cb1-94"><a href="#cb1-94"></a></span>
-<span id="cb1-95"><a href="#cb1-95"></a>Returning to human feedback, their integration can occur at various</span>
-<span id="cb1-96"><a href="#cb1-96"></a>stages of the learning process, spanning from data collection and</span>
-<span id="cb1-97"><a href="#cb1-97"></a>labeling to model selection, training, and evaluation. Incorporating</span>
-<span id="cb1-98"><a href="#cb1-98"></a>these feedbacks enables fine-tuning the model to align with their hidden</span>
-<span id="cb1-99"><a href="#cb1-99"></a>insights. The utilization of human feedback is crucial due to its</span>
-<span id="cb1-100"><a href="#cb1-100"></a>ability to offer valuable signals that are challenging to acquire or</span>
-<span id="cb1-101"><a href="#cb1-101"></a>delineate through other means, such as data or predefined cost</span>
-<span id="cb1-102"><a href="#cb1-102"></a>functions. There are many ways to update models based on human feedback,</span>
-<span id="cb1-103"><a href="#cb1-103"></a>depending on the type and level of feedback and the objective and</span>
-<span id="cb1-104"><a href="#cb1-104"></a>structure of the model. A general taxonomy of feedback-update</span>
-<span id="cb1-105"><a href="#cb1-105"></a>interactions can be divided into six categories:</span>
-<span id="cb1-106"><a href="#cb1-106"></a></span>
-<span id="cb1-107"><a href="#cb1-107"></a><span class="ss">-   </span>Observation-level &amp; Active data collection &amp; Asking humans for</span>
-<span id="cb1-108"><a href="#cb1-108"></a>    feedback on specific features, such as collecting expert labels on</span>
-<span id="cb1-109"><a href="#cb1-109"></a>    features.</span>
-<span id="cb1-110"><a href="#cb1-110"></a></span>
-<span id="cb1-111"><a href="#cb1-111"></a><span class="ss">-   </span>Observation-level &amp; Constraint elicitation &amp; Inferring optimization</span>
-<span id="cb1-112"><a href="#cb1-112"></a>    constraints from insights extracted from feedback.</span>
-<span id="cb1-113"><a href="#cb1-113"></a></span>
-<span id="cb1-114"><a href="#cb1-114"></a><span class="ss">-   </span>Observation-level &amp; Feature modification &amp; Adding, removing, or</span>
-<span id="cb1-115"><a href="#cb1-115"></a>    preprocessing features of training/finetuning datasets.</span>
-<span id="cb1-116"><a href="#cb1-116"></a></span>
-<span id="cb1-117"><a href="#cb1-117"></a><span class="ss">-   </span>Domain-level &amp; Dataset modification &amp; Generating synthetic data that</span>
-<span id="cb1-118"><a href="#cb1-118"></a>    satisfy certain constraints specified by human feedback, such as</span>
-<span id="cb1-119"><a href="#cb1-119"></a>    fairness or weak supervision.</span>
-<span id="cb1-120"><a href="#cb1-120"></a></span>
-<span id="cb1-121"><a href="#cb1-121"></a><span class="ss">-   </span>Domain-level &amp; Constraint specification &amp; Modifying the loss</span>
-<span id="cb1-122"><a href="#cb1-122"></a>    function for optimizing the model based on human feedback, such as</span>
-<span id="cb1-123"><a href="#cb1-123"></a>    imposing fairness, interpretability, or resource constraints.</span>
-<span id="cb1-124"><a href="#cb1-124"></a></span>
-<span id="cb1-125"><a href="#cb1-125"></a><span class="ss">-   </span>Domain-level &amp; Model editing &amp; Changing the rules or weights of the</span>
-<span id="cb1-126"><a href="#cb1-126"></a>    model based on human feedback, such as incorporating domain</span>
-<span id="cb1-127"><a href="#cb1-127"></a>    knowledge or preferences.</span>
-<span id="cb1-128"><a href="#cb1-128"></a></span>
-<span id="cb1-129"><a href="#cb1-129"></a>These ways of updating models based on human feedback can help to</span>
-<span id="cb1-130"><a href="#cb1-130"></a>improve the performance, behavior, and alignment of the models with</span>
-<span id="cb1-131"><a href="#cb1-131"></a>human values and goals. However, they pose challenges and risks, such as</span>
-<span id="cb1-132"><a href="#cb1-132"></a>communication barriers, feedback quality, and ethical issues. Therefore,</span>
-<span id="cb1-133"><a href="#cb1-133"></a>designing and evaluating the feedback-update interactions carefully and</span>
-<span id="cb1-134"><a href="#cb1-134"></a>responsibly is important.</span>
-<span id="cb1-135"><a href="#cb1-135"></a></span>
-<span id="cb1-136"><a href="#cb1-136"></a>Starting with an introduction to human preferences models and various</span>
-<span id="cb1-137"><a href="#cb1-137"></a>approaches to modeling and understanding human preferences, the book</span>
-<span id="cb1-138"><a href="#cb1-138"></a>then delves into interaction models that enable machines to learn from</span>
-<span id="cb1-139"><a href="#cb1-139"></a>human preferences and feedback, including techniques such as paired</span>
-<span id="cb1-140"><a href="#cb1-140"></a>comparison data analysis and game-theoretic perspectives on preference</span>
-<span id="cb1-141"><a href="#cb1-141"></a>learning. Understanding human biases and incorporating them into reward</span>
-<span id="cb1-142"><a href="#cb1-142"></a>models is explored in the chapter on human biases and reward models. The</span>
-<span id="cb1-143"><a href="#cb1-143"></a>impact of human biases on reward inference and approaches to leverage</span>
-<span id="cb1-144"><a href="#cb1-144"></a>both rational and irrational human behavior are discussed. Metric</span>
-<span id="cb1-145"><a href="#cb1-145"></a>elicitation techniques are then introduced, which allow machines to</span>
-<span id="cb1-146"><a href="#cb1-146"></a>learn performance metrics from pairwise comparisons and other forms of</span>
-<span id="cb1-147"><a href="#cb1-147"></a>human feedback.</span>
-<span id="cb1-148"><a href="#cb1-148"></a></span>
-<span id="cb1-149"><a href="#cb1-149"></a>Active learning strategies are covered in the chapter on active</span>
-<span id="cb1-150"><a href="#cb1-150"></a>learning, which enables machines to actively query humans for feedback</span>
-<span id="cb1-151"><a href="#cb1-151"></a>and preferences to improve the learning process. The book also explores</span>
-<span id="cb1-152"><a href="#cb1-152"></a>the design and development of adaptive user interfaces that personalize</span>
-<span id="cb1-153"><a href="#cb1-153"></a>services based on user preferences, as well as the role of bandit</span>
-<span id="cb1-154"><a href="#cb1-154"></a>algorithms and probabilistic methods in learning from human preferences.</span>
-<span id="cb1-155"><a href="#cb1-155"></a></span>
-<span id="cb1-156"><a href="#cb1-156"></a>Challenges and techniques involved in learning multimodal rewards and</span>
-<span id="cb1-157"><a href="#cb1-157"></a>meta-reward learning are discussed, including approaches to learning</span>
-<span id="cb1-158"><a href="#cb1-158"></a>from demonstrations and rewards in complex environments. Human-Computer</span>
-<span id="cb1-159"><a href="#cb1-159"></a>Interaction (HCI) considerations in learning from humans are explored,</span>
-<span id="cb1-160"><a href="#cb1-160"></a>emphasizing user-centered design principles. The alignment of goals and</span>
-<span id="cb1-161"><a href="#cb1-161"></a>preferences among expert and non-expert stakeholders and the challenges</span>
-<span id="cb1-162"><a href="#cb1-162"></a>and techniques involved are addressed.</span>
-<span id="cb1-163"><a href="#cb1-163"></a></span>
-<span id="cb1-164"><a href="#cb1-164"></a>Ensuring truthfulness and fairness in eliciting human preferences is</span>
-<span id="cb1-165"><a href="#cb1-165"></a>crucial, and the book discusses mechanism design principles and</span>
-<span id="cb1-166"><a href="#cb1-166"></a>techniques to incentivize truthful feedback from humans. The integration</span>
-<span id="cb1-167"><a href="#cb1-167"></a>of human computing techniques in learning from human preference is also</span>
-<span id="cb1-168"><a href="#cb1-168"></a>explored, highlighting the use of human intelligence to solve complex</span>
-<span id="cb1-169"><a href="#cb1-169"></a>problems and improve machine learning algorithms.</span>
-<span id="cb1-170"><a href="#cb1-170"></a></span>
-<span id="cb1-171"><a href="#cb1-171"></a>The application of inverse reinforcement learning in robotics focuses on</span>
-<span id="cb1-172"><a href="#cb1-172"></a>how machines can infer human preferences and reward functions from</span>
-<span id="cb1-173"><a href="#cb1-173"></a>observed behavior. Ethical considerations in learning from human</span>
-<span id="cb1-174"><a href="#cb1-174"></a>preference are addressed, emphasizing the importance of incorporating</span>
-<span id="cb1-175"><a href="#cb1-175"></a>ethical principles in designing and deploying machine learning systems.</span>
-<span id="cb1-176"><a href="#cb1-176"></a>Finally, the book explores reinforcement learning from human feedback</span>
-<span id="cb1-177"><a href="#cb1-177"></a>for language models, highlighting techniques for incorporating human</span>
-<span id="cb1-178"><a href="#cb1-178"></a>feedback in training language models.</span>
-<span id="cb1-179"><a href="#cb1-179"></a></span>
-<span id="cb1-180"><a href="#cb1-180"></a>The book aims to provide a comprehensive overview of machine learning</span>
-<span id="cb1-181"><a href="#cb1-181"></a>from human preference. By leveraging human feedback and preferences, the</span>
-<span id="cb1-182"><a href="#cb1-182"></a>aim is to develop more intelligent and reliable machine-learning systems</span>
-<span id="cb1-183"><a href="#cb1-183"></a>that align with human values and preferences. The book is divided into</span>
-<span id="cb1-184"><a href="#cb1-184"></a>16 chapters:</span>
-<span id="cb1-185"><a href="#cb1-185"></a></span>
-<span id="cb1-186"><a href="#cb1-186"></a><span class="ss">-   </span>**Chapter 1** is an introductory chapter providing an overview of</span>
-<span id="cb1-187"><a href="#cb1-187"></a>    the field and motivations and outlines what will be covered.</span>
-<span id="cb1-188"><a href="#cb1-188"></a></span>
-<span id="cb1-189"><a href="#cb1-189"></a><span class="ss">-   </span>**Chapter 2** provides an integrated framework for understanding</span>
-<span id="cb1-190"><a href="#cb1-190"></a>    human preference modeling, interaction models, and the impact of</span>
-<span id="cb1-191"><a href="#cb1-191"></a>    human biases on decision-making. It begins by exploring the</span>
-<span id="cb1-192"><a href="#cb1-192"></a>    motivations and applications of human preference modeling, using</span>
-<span id="cb1-193"><a href="#cb1-193"></a>    examples from health coaching, social media, and shopping. The</span>
-<span id="cb1-194"><a href="#cb1-194"></a>    chapter then discusses various rationality assumptions and</span>
-<span id="cb1-195"><a href="#cb1-195"></a>    traditional models such as Luce's axiom of choice and Boltzmann</span>
-<span id="cb1-196"><a href="#cb1-196"></a>    Rationality, highlighting their roles in capturing the probabilistic</span>
-<span id="cb1-197"><a href="#cb1-197"></a>    nature of human choices. It also addresses advanced interaction</span>
-<span id="cb1-198"><a href="#cb1-198"></a>    models using pairwise and rank-order sampling techniques to analyze</span>
-<span id="cb1-199"><a href="#cb1-199"></a>    and predict preferences, alongside a case study on the LESS model</span>
-<span id="cb1-200"><a href="#cb1-200"></a>    for handling duplicates in decision-making scenarios. Finally, it</span>
-<span id="cb1-201"><a href="#cb1-201"></a>    delves into the ethical and practical challenges of collecting and</span>
-<span id="cb1-202"><a href="#cb1-202"></a>    utilizing human feedback to ensure robust and well-calibrated reward</span>
-<span id="cb1-203"><a href="#cb1-203"></a>    models.</span>
-<span id="cb1-204"><a href="#cb1-204"></a></span>
-<span id="cb1-205"><a href="#cb1-205"></a><span class="ss">-   </span>**Chapter 5** introduces a framework for eliciting multi-class</span>
-<span id="cb1-206"><a href="#cb1-206"></a>    performance metrics from an oracle through pairwise comparisons of</span>
-<span id="cb1-207"><a href="#cb1-207"></a>    confusion matrices. It describes eliciting linear metrics that</span>
-<span id="cb1-208"><a href="#cb1-208"></a>    consider only the diagonal elements of confusion matrices,</span>
-<span id="cb1-209"><a href="#cb1-209"></a>    representing correct predictions. Such metrics are known as Diagonal</span>
-<span id="cb1-210"><a href="#cb1-210"></a>    Linear Performance Metrics (DLPMs). The chapter outlines an</span>
-<span id="cb1-211"><a href="#cb1-211"></a>    algorithm for eliciting DLPMs by finding the Bayes optimal confusion</span>
-<span id="cb1-212"><a href="#cb1-212"></a>    matrix that maximizes a DLPM through binary searches of the space of</span>
-<span id="cb1-213"><a href="#cb1-213"></a>    possible confusion matrices.</span>
-<span id="cb1-214"><a href="#cb1-214"></a></span>
-<span id="cb1-215"><a href="#cb1-215"></a><span class="ss">-   </span>**Chapter 6** discusses different methods for active learning, with</span>
-<span id="cb1-216"><a href="#cb1-216"></a>    a focus on selecting training examples that maximize improvement to</span>
-<span id="cb1-217"><a href="#cb1-217"></a>    the learner's performance. It describes how active learning aims to</span>
-<span id="cb1-218"><a href="#cb1-218"></a>    strategically query new data points by estimating how their addition</span>
-<span id="cb1-219"><a href="#cb1-219"></a>    would hypothetically impact the model if trained on them. Various</span>
-<span id="cb1-220"><a href="#cb1-220"></a>    strategies are explored, including reducing the learner's variance,</span>
-<span id="cb1-221"><a href="#cb1-221"></a>    exploiting ambiguity and domain knowledge in ranking and</span>
-<span id="cb1-222"><a href="#cb1-222"></a>    comparisons, and balancing exploration versus exploitation.</span>
-<span id="cb1-223"><a href="#cb1-223"></a>    Computational methods are presented and analyzed empirically on</span>
-<span id="cb1-224"><a href="#cb1-224"></a>    applications like robotics to demonstrate how active learning can</span>
-<span id="cb1-225"><a href="#cb1-225"></a>    enhance models using significantly less labeled data.</span>
-<span id="cb1-226"><a href="#cb1-226"></a></span>
-<span id="cb1-227"><a href="#cb1-227"></a><span class="ss">-   </span>**Chapter 7** discusses adaptive user interfaces, which aim to</span>
-<span id="cb1-228"><a href="#cb1-228"></a>    provide personalized experiences by learning individual user</span>
-<span id="cb1-229"><a href="#cb1-229"></a>    preferences from interactions. It presents the design of adaptive</span>
-<span id="cb1-230"><a href="#cb1-230"></a>    interfaces as involving modeling users, collecting user traces,</span>
-<span id="cb1-231"><a href="#cb1-231"></a>    learning models from the data, and applying the models to adapt</span>
-<span id="cb1-232"><a href="#cb1-232"></a>    recommendations. The applications of adaptive interfaces mentioned</span>
-<span id="cb1-233"><a href="#cb1-233"></a>    include route advisors, destination selection assistants, and</span>
-<span id="cb1-234"><a href="#cb1-234"></a>    scheduling tools, with the goal of improving systems through</span>
-<span id="cb1-235"><a href="#cb1-235"></a>    intelligent personalization.</span>
-<span id="cb1-236"><a href="#cb1-236"></a></span>
-<span id="cb1-237"><a href="#cb1-237"></a><span class="ss">-   </span>**Chapter 8** discusses different bandit algorithms and their</span>
-<span id="cb1-238"><a href="#cb1-238"></a>    applications. It introduces the multi-armed bandit problem and</span>
-<span id="cb1-239"><a href="#cb1-239"></a>    explores strategies like epsilon-greedy and UCB to balance</span>
-<span id="cb1-240"><a href="#cb1-240"></a>    exploration and exploitation. Two important extensions are examined</span>
-<span id="cb1-241"><a href="#cb1-241"></a>    more thoroughly: contextual bandits, which incorporate context into</span>
-<span id="cb1-242"><a href="#cb1-242"></a>    decisions, and dueling bandits, which learn from pairwise</span>
-<span id="cb1-243"><a href="#cb1-243"></a>    preferences instead of explicit rewards. A wide range of domains are</span>
-<span id="cb1-244"><a href="#cb1-244"></a>    also presented where bandit methods, such as healthcare,</span>
-<span id="cb1-245"><a href="#cb1-245"></a>    recommendations, and dialogue systems, have proved useful.</span>
-<span id="cb1-246"><a href="#cb1-246"></a></span>
-<span id="cb1-247"><a href="#cb1-247"></a><span class="ss">-   </span>**Chapter 9** examines modeling human rewards that have complex,</span>
-<span id="cb1-248"><a href="#cb1-248"></a>    multi-modal structures and techniques for meta-learning reward</span>
-<span id="cb1-249"><a href="#cb1-249"></a>    functions.</span>
-<span id="cb1-250"><a href="#cb1-250"></a></span>
-<span id="cb1-251"><a href="#cb1-251"></a><span class="ss">-   </span>**Chapter 10** analyzes important human-computer interaction</span>
-<span id="cb1-252"><a href="#cb1-252"></a>    considerations for systems that learn from humans, like cognitive</span>
-<span id="cb1-253"><a href="#cb1-253"></a>    constraints and user experience.</span>
-<span id="cb1-254"><a href="#cb1-254"></a></span>
-<span id="cb1-255"><a href="#cb1-255"></a><span class="ss">-   </span>**Chapter 11** tackles challenges around aligning learned models</span>
-<span id="cb1-256"><a href="#cb1-256"></a>    with values from diverse expert and non-expert stakeholders. Issues</span>
-<span id="cb1-257"><a href="#cb1-257"></a>    of truthfulness and the notion of agreement are discussed.</span>
-<span id="cb1-258"><a href="#cb1-258"></a></span>
-<span id="cb1-259"><a href="#cb1-259"></a><span class="ss">-   </span>**Chapter 12** focuses on mechanism design theory and how it can be</span>
-<span id="cb1-260"><a href="#cb1-260"></a>    applied to develop protocols and systems for truthfully learning</span>
-<span id="cb1-261"><a href="#cb1-261"></a>    preferences at scale.</span>
-<span id="cb1-262"><a href="#cb1-262"></a></span>
-<span id="cb1-263"><a href="#cb1-263"></a><span class="ss">-   </span>**Chapter 13** looks at how human computation frameworks can enable</span>
-<span id="cb1-264"><a href="#cb1-264"></a>    large-scale preference elicitation by crowd-sourcing tasks to many</span>
-<span id="cb1-265"><a href="#cb1-265"></a>    individuals.</span>
-<span id="cb1-266"><a href="#cb1-266"></a></span>
-<span id="cb1-267"><a href="#cb1-267"></a><span class="ss">-   </span>**Chapter 14** presents applications of inverse reinforcement</span>
-<span id="cb1-268"><a href="#cb1-268"></a>    learning using human feedback for robotics, such as learning</span>
-<span id="cb1-269"><a href="#cb1-269"></a>    helicopter control policies from demonstrations.</span>
-<span id="cb1-270"><a href="#cb1-270"></a></span>
-<span id="cb1-271"><a href="#cb1-271"></a><span class="ss">-   </span>**Chapter 15** discusses ethical issues that arise in interaction</span>
-<span id="cb1-272"><a href="#cb1-272"></a>    models and approaches for designing preference elicitation systems</span>
-<span id="cb1-273"><a href="#cb1-273"></a>    considering fairness, privacy, and other socio-technical factors.</span>
-<span id="cb1-274"><a href="#cb1-274"></a></span>
-<span id="cb1-275"><a href="#cb1-275"></a><span class="ss">-   </span>**Chapter 16** covers reinforcement learning techniques that can</span>
-<span id="cb1-276"><a href="#cb1-276"></a>    leverage human feedback to guide language models, for example, by</span>
-<span id="cb1-277"><a href="#cb1-277"></a>    providing feedback on the generated text.</span>
-<span id="cb1-278"><a href="#cb1-278"></a></span>
-<span id="cb1-279"><a href="#cb1-279"></a>Machine learning from human feedback, especially reinforcement learning</span>
-<span id="cb1-280"><a href="#cb1-280"></a>from human feedback (RLHF), stands as a promising avenue for training AI</span>
-<span id="cb1-281"><a href="#cb1-281"></a>systems through human input. However, it confronts several intricate</span>
-<span id="cb1-282"><a href="#cb1-282"></a>challenges and its efficacy encounters notable limitations stemming from</span>
-<span id="cb1-283"><a href="#cb1-283"></a>the intricacies of human feedback and the complexity of aligning AI with</span>
-<span id="cb1-284"><a href="#cb1-284"></a>human values.</span>
-<span id="cb1-285"><a href="#cb1-285"></a></span>
-<span id="cb1-286"><a href="#cb1-286"></a>The acquisition of representative and unbiased feedback from humans</span>
-<span id="cb1-287"><a href="#cb1-287"></a>presents a formidable hurdle, rooted in inherent limitations of human</span>
-<span id="cb1-288"><a href="#cb1-288"></a>evaluators. Human fallibility and the incapacity to assess ML/AI model's</span>
-<span id="cb1-289"><a href="#cb1-289"></a>output accurately hinder the quality and reliability of feedback.</span>
-<span id="cb1-290"><a href="#cb1-290"></a>Moreover, there exists an inherent tradeoff between the efficiency and</span>
-<span id="cb1-291"><a href="#cb1-291"></a>richness of feedback. While extensive, detailed feedback such as</span>
-<span id="cb1-292"><a href="#cb1-292"></a>prolonged conversations promises deeper insights, its acquisition proves</span>
-<span id="cb1-293"><a href="#cb1-293"></a>arduous and resource-intensive.</span>
-<span id="cb1-294"><a href="#cb1-294"></a></span>
-<span id="cb1-295"><a href="#cb1-295"></a>Within the domain of RLHF, the construction of a comprehensive reward</span>
-<span id="cb1-296"><a href="#cb1-296"></a>model poses significant difficulties. Capturing the intricacies of</span>
-<span id="cb1-297"><a href="#cb1-297"></a>complex and context-dependent human values and preferences within a</span>
-<span id="cb1-298"><a href="#cb1-298"></a>singular reward function stands as a formidable challenge. The inherent</span>
-<span id="cb1-299"><a href="#cb1-299"></a>inconsistency in modeling human behavior further complicates this</span>
-<span id="cb1-300"><a href="#cb1-300"></a>endeavor. Consequently, reward models are susceptible to</span>
-<span id="cb1-301"><a href="#cb1-301"></a>misgeneralization, resulting in imperfect proxies that pave the way for</span>
-<span id="cb1-302"><a href="#cb1-302"></a>\"reward hacking\". Agents may veer towards optimizing these flawed</span>
-<span id="cb1-303"><a href="#cb1-303"></a>proxies rather than pursuing the genuine objectives intended by human</span>
-<span id="cb1-304"><a href="#cb1-304"></a>feedback.</span>
-<span id="cb1-305"><a href="#cb1-305"></a></span>
-<span id="cb1-306"><a href="#cb1-306"></a>The optimization of policies within RLHF presents its own set of</span>
-<span id="cb1-307"><a href="#cb1-307"></a>challenges. Effectively fine-tuning policies through RL techniques</span>
-<span id="cb1-308"><a href="#cb1-308"></a>encounters obstacles, notably susceptibility to adversarial</span>
-<span id="cb1-309"><a href="#cb1-309"></a>exploitations. Furthermore, even if training rewards are accurately</span>
-<span id="cb1-310"><a href="#cb1-310"></a>derived, policies may exhibit poor performance upon deployment due to</span>
-<span id="cb1-311"><a href="#cb1-311"></a>discrepancies between the training and deployment distributions. Agents</span>
-<span id="cb1-312"><a href="#cb1-312"></a>might prioritize maximizing their influence or power, diverging from the</span>
-<span id="cb1-313"><a href="#cb1-313"></a>intended goals outlined by the feedback.</span>
-<span id="cb1-314"><a href="#cb1-314"></a></span>
-<span id="cb1-315"><a href="#cb1-315"></a>In the realm of joint training, where reward models and policies undergo</span>
-<span id="cb1-316"><a href="#cb1-316"></a>simultaneous refinement, intricate issues surface. The amalgamation of</span>
-<span id="cb1-317"><a href="#cb1-317"></a>these components can induce detrimental distributional shifts as errors</span>
-<span id="cb1-318"><a href="#cb1-318"></a>accumulate throughout the training process. Balancing training</span>
-<span id="cb1-319"><a href="#cb1-319"></a>efficiency while circumventing overfitting proves to be a complex</span>
-<span id="cb1-320"><a href="#cb1-320"></a>undertaking. Policies exploring areas where the reward model exhibits</span>
-<span id="cb1-321"><a href="#cb1-321"></a>inaccuracies further complicate the delicate balance between efficient</span>
-<span id="cb1-322"><a href="#cb1-322"></a>learning and avoiding overfitting. These challenges underscore the</span>
-<span id="cb1-323"><a href="#cb1-323"></a>intricate landscape of RLHF, necessitating nuanced strategies and</span>
-<span id="cb1-324"><a href="#cb1-324"></a>innovative approaches to surmount the complexities inherent in aligning</span>
-<span id="cb1-325"><a href="#cb1-325"></a>AI systems with human feedback effectively.</span>
-<span id="cb1-326"><a href="#cb1-326"></a></span>
-<span id="cb1-327"><a href="#cb1-327"></a>Looking forward, future developments in RLHF necessitate a nuanced</span>
-<span id="cb1-328"><a href="#cb1-328"></a>approach. Enhancements in human feedback processes, potentially</span>
-<span id="cb1-329"><a href="#cb1-329"></a>leveraging AI assistance, fine-grained annotations, and demonstrative</span>
-<span id="cb1-330"><a href="#cb1-330"></a>techniques, hold promise in ameliorating feedback quality. Moreover,</span>
-<span id="cb1-331"><a href="#cb1-331"></a>addressing the challenges of modeling uncertainty and handling</span>
-<span id="cb1-332"><a href="#cb1-332"></a>discrepancies in reward models emerges as a crucial area for</span>
-<span id="cb1-333"><a href="#cb1-333"></a>improvement. Integrating RLHF with complementary techniques, such as</span>
-<span id="cb1-334"><a href="#cb1-334"></a>formal verification and interpretability, offers avenues to bolster its</span>
-<span id="cb1-335"><a href="#cb1-335"></a>effectiveness. Moreover, a pivotal direction lies in broadening the</span>
-<span id="cb1-336"><a href="#cb1-336"></a>scope of RLHF beyond singular reward frameworks to accommodate the</span>
-<span id="cb1-337"><a href="#cb1-337"></a>oversight of diverse stakeholder objectives. Embracing multi-objective</span>
-<span id="cb1-338"><a href="#cb1-338"></a>oversight is pivotal to authentically representing the multifaceted</span>
-<span id="cb1-339"><a href="#cb1-339"></a>goals of varied stakeholders within AI systems. Simultaneously, ensuring</span>
-<span id="cb1-340"><a href="#cb1-340"></a>public transparency concerning technical intricacies fosters a better</span>
-<span id="cb1-341"><a href="#cb1-341"></a>understanding of strengths, limitations, and the developmental</span>
-<span id="cb1-342"><a href="#cb1-342"></a>trajectory of RLHF.</span>
-<span id="cb1-343"><a href="#cb1-343"></a></span>
-<span id="cb1-344"><a href="#cb1-344"></a>However, it is imperative to underscore that RLHF should not be</span>
-<span id="cb1-345"><a href="#cb1-345"></a>perceived as a comprehensive solution but rather as a facet within a</span>
-<span id="cb1-346"><a href="#cb1-346"></a>comprehensive \"defense in depth\" strategy integrating multiple safety</span>
-<span id="cb1-347"><a href="#cb1-347"></a>measures. The progress of RLHF and broader advancements in AI alignment</span>
-<span id="cb1-348"><a href="#cb1-348"></a>demand persistent efforts to navigate fundamental choices and challenges</span>
-<span id="cb1-349"><a href="#cb1-349"></a>inherent in aligning AI systems with human values and goals.</span>
-<span id="cb1-350"><a href="#cb1-350"></a></span>
-<span id="cb1-351"><a href="#cb1-351"></a>The book is intended for researchers, practitioners, and students who</span>
-<span id="cb1-352"><a href="#cb1-352"></a>are interested in the intersection of machine learning, human-computer</span>
-<span id="cb1-353"><a href="#cb1-353"></a>interaction, and artificial intelligence. The book assumes some basic</span>
-<span id="cb1-354"><a href="#cb1-354"></a>knowledge of probability, statistics, and machine learning, but provides</span>
-<span id="cb1-355"><a href="#cb1-355"></a>sufficient background and references for the readers to follow the main</span>
-<span id="cb1-356"><a href="#cb1-356"></a>ideas and results. The book also provides code examples and datasets for</span>
-<span id="cb1-357"><a href="#cb1-357"></a>some of the methods and applications discussed in the book. The field of</span>
-<span id="cb1-358"><a href="#cb1-358"></a>machine learning from human preference is a vibrant and growing area of</span>
-<span id="cb1-359"><a href="#cb1-359"></a>research and practice, with many open challenges and opportunities. We</span>
-<span id="cb1-360"><a href="#cb1-360"></a>hope that this book will inspire and inform the readers to further</span>
-<span id="cb1-361"><a href="#cb1-361"></a>explore and advance this exciting and important field.</span></code><button title="Copy to Clipboard" class="code-copy-button" data-in-quarto-modal=""><i class="bi"></i></button></pre></div>
+<span id="cb1-43"><a href="#cb1-43"></a><span class="co">Returning to human feedback, their integration can occur at various stages of the learning process, spanning from data collection and labeling to model selection, training, and evaluation. Incorporating these feedbacks enables fine-tuning the model to align with their hidden insights. The utilization of human feedback is crucial due to its ability to offer valuable signals that are challenging to acquire or delineate through other means, such as data or predefined cost functions. There are many ways to update models based on human feedback, depending on the type and level of feedback and the objective and structure of the model. A general taxonomy of feedback-update interactions can be divided into six categories:</span></span>
+<span id="cb1-44"><a href="#cb1-44"></a></span>
+<span id="cb1-45"><a href="#cb1-45"></a><span class="co">-   Observation-level &amp; Active data collection &amp; Asking humans for feedback on specific features, such as collecting expert labels on features.</span></span>
+<span id="cb1-46"><a href="#cb1-46"></a></span>
+<span id="cb1-47"><a href="#cb1-47"></a><span class="co">-   Observation-level &amp; Constraint elicitation &amp; Inferring optimization constraints from insights extracted from feedback.</span></span>
+<span id="cb1-48"><a href="#cb1-48"></a></span>
+<span id="cb1-49"><a href="#cb1-49"></a><span class="co">-   Observation-level &amp; Feature modification &amp; Adding, removing, or preprocessing features of training/finetuning datasets.</span></span>
+<span id="cb1-50"><a href="#cb1-50"></a></span>
+<span id="cb1-51"><a href="#cb1-51"></a><span class="co">-   Domain-level &amp; Dataset modification &amp; Generating synthetic data that satisfy certain constraints specified by human feedback, such as fairness or weak supervision.</span></span>
+<span id="cb1-52"><a href="#cb1-52"></a></span>
+<span id="cb1-53"><a href="#cb1-53"></a><span class="co">-   Domain-level &amp; Constraint specification &amp; Modifying the loss function for optimizing the model based on human feedback, such as imposing fairness, interpretability, or resource constraints.</span></span>
+<span id="cb1-54"><a href="#cb1-54"></a></span>
+<span id="cb1-55"><a href="#cb1-55"></a><span class="co">-   Domain-level &amp; Model editing &amp; Changing the rules or weights of the model based on human feedback, such as incorporating domain knowledge or preferences.</span></span>
+<span id="cb1-56"><a href="#cb1-56"></a></span>
+<span id="cb1-57"><a href="#cb1-57"></a><span class="co">These ways of updating models based on human feedback can help to improve the performance, behavior, and alignment of the models with human values and goals. However, they pose challenges and risks, such as communication barriers, feedback quality, and ethical issues. Therefore, designing and evaluating the feedback-update interactions carefully and responsibly is important.</span></span>
+<span id="cb1-58"><a href="#cb1-58"></a></span>
+<span id="cb1-59"><a href="#cb1-59"></a><span class="co">--&gt;</span></span></code><button title="Copy to Clipboard" class="code-copy-button" data-in-quarto-modal=""><i class="bi"></i></button></pre></div>
 </div></div></div></div></div>
 </div> <!-- /content -->
     <footer class="footer"><div class="nav-footer"><div class="nav-footer-center"><div class="toc-actions d-sm-block d-md-none"><ul><li><a href="https://github.com/sangttruong/mlhp/blob/main/index.qmd" class="toc-action"><i class="bi bi-github"></i>View source</a></li><li><a href="https://github.com/sangttruong/mlhp/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></div></div></footer><script type="text/javascript">
