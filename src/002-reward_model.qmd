@@ -1,4 +1,4 @@
-# Human Decision Making and Choice Models {#ch-human-decision-making-choice-models}
+# Models of Preferences and Decisions {#ch-human-decision-making-choice-models}
 
 ::: {.content-visible when-format="html"}
 
@@ -17,9 +17,7 @@
 
 ## Introduction
 
-Human preference modeling aims to capture humans' decision making processes in a probabilistic framework. Many problems would benefit from a quantitative perspective, enabling an understanding of how humans engage with the world.
-
-In this chapter, we will explore how one can model human preferences, including different formulations of such models, how one can optimize these models given data, and considerations one should understand to create such systems. We describe these assumptions in @sec-foundations.
+Human preference modeling aims to capture humans' decision making processes in a probabilistic framework. Many problems would benefit from a quantitative perspective, enabling an understanding of how humans engage with the world. In this chapter, we will explore how one can model human preferences, including different formulations of such models, how one can optimize these models given data, and considerations one should understand to create such systems. We describe these assumptions in @sec-foundations.
 
 ## Foundations of Preference Models {#sec-foundations}
 
@@ -27,38 +25,27 @@ In this chapter, we will explore how one can model human preferences, including 
 An alternative framework we will explore is ranking, in which we can model an ordering of given choices from most to least desirable. It is possible that there is an infinite set of options; in this case, our model will have to reason about a discretized set of options and may fail to capture the full space of possibilities a human would choose from in the real world.
 -->
 
-### Axiom 1: Preference models model choice {#axiom-1-preference-models-model-choice .unnumbered}
+### Axiom 1: Construction of Choices Set {#axiom-1-preference-models-model-choice .unnumbered}
 
-Human preference models model the preferred choice or choices amongst a set of options. For example, this could be modeling which meal from a set of options a person will most likely choose. Human preference models must enumerate an action space, or the set of all possible choices included in a human decision. As such, we must ensure that the choices we enumerate capture the entire domain (collectively exhaustive) but are indeed distinct (mutually exclusive) choices. A person either chooses to eat chicken or fish. A discrete set of choices is a constraint we canonically impose to ensure we can tractably model preferences and aptly estimate the parameters of preference models. This is usually sufficiently expressive to create a powerful human preference model. We assume that if a new option is added to the choice set, the relative probabilities of choosing between the original options remain unchanged. This is known as Independence of Irrelevant Alternatives (IIA) property from Luce's axiom of choices [@Luce1977].
+Human preference models model the preferred choices amongst a set of options. For example, this could be modeling which meal from a set of options a person will most likely choose. Preference models must enumerate the set of all possible choices included in a human decision. As such, we must ensure that the choices we enumerate capture the entire domain (collectively exhaustive) but are distinct (mutually exclusive) choices. A discrete set of choices is a constraint we canonically impose to ensure we can tractably model preferences and aptly estimate the parameters of preference models. We assume that if a new option is added to the choice set, the relative probabilities of choosing between the original options remain unchanged. This is known as Independence of Irrelevant Alternatives (IIA) property from Luce's axiom of choices [@Luce1977].
 
-### Axiom 2: Preference captures decision-making {#axiom-2-preference-captures-decision-making .unnumbered}
-Human preferences are classified into two categories: revealed preferences and stated preferences.
+### Axiom 2: Preference Centers around Utility {#axiom-3-preference-centers-around-utility .unnumbered}
 
-Revealed preferences are those one can observe retroactively from existing data. The implicit decision-making knowledge can be captured via learnable parameters and their usage in models which represent relationships between input decision attributes that may have little human interpretability, but enable powerful models of human preference. For health coaching, we may have information about which foods an individual has chosen previously in different contexts, allowing us to build a model from their decisions. Such data may be easier to acquire and can reflect real-world outcomes (since they are, at least theoretically, inherently based on human preferences). However, if we fail to capture sufficient context in such data, human preference models may not sufficiently capture human preferences.
-
-Stated preferences are those individuals explicitly indicate in potentially experimental conditions. The explicit knowledge may be leveraged by including inductive biases during modeling (for example, the context used in a model) which are reasonable assumptions for how a human would consider a set of options.This may include controlled experiments or studies. This may be harder to obtain and somewhat biased, as they can be hypothetical or only accurately reflect a piece of the overall context of a decision. However, they enable greater control of the decision-making process.
+Human preference models are centered around the notion of utility, a scalar quantity representing the benefit or value an individual attains from selecting a given choice. We assume that the underlying utility mechanism of a human preference model captures the final decision output from a human. We use the notation $U_i$ as the utility corresponding to choice $i$. The utility of a choice $i$ is a stochastic function $H_i$ of the choice's attributes $z_i$: $U_i = H_i(z_i) + \epsilon_i$, where $\epsilon_i$ is an unobserved factor for choice $i$ following a specified distribution, such as a standard normal distribution. The attributes representing a choice $z_i$ are crucial in defining the human preference model, as they provide the context for capturing human behavior when choice $i$ is made. Only the relative difference in utility matters. As such, the scale of the utilities is irrelevant within a given set of human preference data for a given individual. The scale of utilities is important when comparing across datasets or across different humans; since utility may be defined differently in various datasets or different human. A common practice to address this consideration is to standardize the utilities in each dataset based on its variance in the observed data.
 
 ### Axiom 3: Rationality {#human-rationality .unnumbered}
 
-Modeling decision-making must also take into account the human rational and irrational behaviour. Rationality assumption provides a framework for predicting and modeling human behavior by outlining the principles that guide decision-making processes [@keisler2003common]. These assumptions provide the foundation for developing models that can simulate and analyze how individuals interact with one another and their environment. By incorporating different types of rationality, researchers can create more accurate and realistic models that reflect the complexities of human decision-making. This comprehensive approach enhances the predictive power of models and improves the understanding of human behavior in economic and social contexts [@miljkovic2005rational; @simon1972theories].
+Modeling decision-making must also take into account rationality. Rationality assumption provides a framework for predicting and modeling human behavior by outlining the principles that guide decision-making processes [@keisler2003common]. By incorporating different types of rationality, researchers can create more accurate and realistic models that reflect the complexities of human decision-making [@miljkovic2005rational; @simon1972theories]. Perfect rationality posits that individuals make decisions that maximize their utility, assuming they have complete information and the cognitive ability to process this information to make optimal choices [@miljkovic2005rational]. Numerous studies have shown that this assumption frequently fails to describe actual human behavior, as individuals do not always act in ways that maximize their utility due to various constraints and biases [@miljkovic2005rational]. Bounded rationality acknowledges that individuals operate within the limits of their information and cognitive capabilities. Decisions are made using heuristics rather than through exhaustive analysis, reflecting the practical constraints of real-world decision-making [@simon1972theories]. Bounded rationality acknowledges that decisions are influenced by noise, resulting in probabilistic choice behavior: while individuals aim to maximize their utility, random factors can lead to deviations from perfectly rational choices [@miljkovic2005rational].
 
-Perfect rationality posits that individuals always make decisions that maximize their utility. It assumes that individuals have completeinformation and the cognitive ability to process this information to make optimal choices [@miljkovic2005rational]. This assumption is often used in economic models to predict how rational agents would behave under ideal conditions. However, numerous studies have shown that this assumption frequently fails to describe actual human behavior, as individuals do not always act in ways that maximize their utility due to various constraints and biases [@miljkovic2005rational]. 
-
-Bounded rationality, on the other hand, acknowledges that individuals operate within the limits of their information and cognitive capabilities. Decisions are made using heuristics or rules of thumb rather than through exhaustive analysis, reflecting the practical constraints of real-world decision-making [@simon1972theories]. This concept, introduced by Herbert Simon, recognizes the limitations of human cognitive processing and the impact of these limitations on decision-making. Simon's theory suggests that instead of optimizing, individuals satisfy, seeking solutions or decisions that are "good enough" under the circumstances [@simon1972theories]. Bounded rationality acknowledges that decisions are influenced by noise, resulting in probabilistic choice behavior. This means that while individuals aim to maximize their utility, random factors can lead to deviations from perfectly rational choices [@miljkovic2005rational].
-
-Boltzmann rationality provide a probabilistic framework for modeling bounded rational behavior. It addresses the likelihood of a human selecting an option $o$ from a set $O$. Desirability is represented by a value function $v : O \rightarrow \mathbb{R}^+$, with the selection probability calculated as $P(o) = \frac{v(o)}{\sum_{o' \in O} v(o')}$. Assuming there is an underlying reward for each option $R(o) \in \mathbb{R}$ such that $v(o) = e^{R(o)}$, we get $P(o) = \frac{e^{R(o)}}{\sum_{\bar{o} \in \mathcal{O}} e^{R(\bar{o})}}$. Essentially, "A human will act out a trajectory with a probability proportional to the exponentiated return they receive for the trajectory." When choices involve trajectories $\xi \in \Xi$ (sequences of actions), the reward $R$ is typically a function of a feature vector $\phi : \Xi \rightarrow \mathbb{R}^k$, and the probability density is given by $p(\xi) = \frac{e^{R(\phi(\xi))}}{\int_{\Xi} e^{R(\phi(\bar{\xi}))} d\bar{\xi}}$.
+Bounded rationality can be operationalized through Boltzmann rationalit. It addresses the likelihood of a human selecting an option $o$ from a set $O$. Desirability is represented by a value function $v : O \rightarrow \mathbb{R}^+$, with the selection probability calculated as $P(o) = \frac{v(o)}{\sum_{o' \in O} v(o')}$. Assuming there is an underlying reward for each option $R(o) \in \mathbb{R}$ such that $v(o) = e^{R(o)}$, we get $P(o) = \frac{e^{R(o)}}{\sum_{\bar{o} \in \mathcal{O}} e^{R(\bar{o})}}$. Essentially, "A human will act out a trajectory with a probability proportional to the exponentiated return they receive for the trajectory." When choices involve trajectories $\xi \in \Xi$ (sequences of actions), the reward $R$ is typically a function of a feature vector $\phi : \Xi \rightarrow \mathbb{R}^k$, and the probability density is given by $p(\xi) = \frac{e^{R(\phi(\xi))}}{\int_{\Xi} e^{R(\phi(\bar{\xi}))} d\bar{\xi}}$.
 
 Boltzmann rationality has the "duplicates problem," where there is no concept of similar actions (e.g., choosing between using a car or a train for transportation, with no particular preference). The probability of making the decision is 50% for either option. However, if we now have 100 cars, under Boltzmann, we would have a 99% probability of choosing a car, which is unrealistic. To address this issue, various extensions have been proposed. One such extension is the attribute rule, which interprets options as bundles of attributes. In this rule, attributes $X$ are associated with options, and they have desirability values $w(x)$. An attribute intensity function $s(x, o)$ indicates the degree to which an attribute is expressed in an option. The probability of choosing option $o$ is
 
 $$P(o) = \sum_{x \in \mathcal{X}_o} \frac{w(x)}{\sum_{\bar{x} \in \mathcal{X}_o} w(\bar{x})} \cdot \frac{s(x, o)}{\sum_{\tilde{o} \in \mathcal{O}} s(x, \bar{o})}$$
 
-This equation describes a two-step process where an attribute $x \in X_O$ is first chosen according to a Boltzmann-like rule and then an option $o \in O$ with that attribute is selected using another Boltzmann-like rule. This approach handles duplicates gracefully by effectively creating a two-layer hierarchy in choosing an option.
+This equation describes a two-step process where an attribute $x \in X_O$ is first chosen according to a Boltzmann-like rule and then an option $o \in O$ with that attribute is selected using another Boltzmann-like rule. This approach handles duplicates gracefully by effectively creating a two-layer hierarchy in choosing an option. Boltzmann rationality finds practical applications in various fields, particularly in reinforcement learning, where it models decision-making in uncertain environments. It also applies to trajectory selection, where the probability of a sequence of actions (trajectory) is proportional to the exponential return. These applications enhance the accuracy of models that interact with or predict human behavior, making Boltzmann Rationality a vital component of the models of interaction.
 
-Boltzmann rationality finds practical applications in various fields, particularly in reinforcement learning, where it models decision-making in uncertain environments. It also applies to trajectory selection, where the probability of a sequence of actions (trajectory) is proportional to the exponential return. These applications enhance the accuracy of models that interact with or predict human behavior, making Boltzmann Rationality a vital component of the models of interaction.
-
-We next explore a case study to deepen our understanding of rationality: Limiting Errors due to Similar Selection (LESS) [@2001.04465]. LESS takes inspiration from the attribute rule and extends it to continuous trajectories [@2001.04465]. The key insight is that instead of creating "attributes", which group together similar discrete options, it introduces a similarity metric on the space of continuous actions, thereby creating similar groupings on trajectories.
-
-The LESS similarity metric could be defined in trajectory space, where the trajectory is some theoretical notion of all states and actions one passes through over time. However, it is instead defined on the measured feature vector $\phi(\xi)$ associated with the agent's trajectory $\xi$. In practice, one can never measure the exact trajectory with perfect fidelity. The feature vector will almost necessarily map in a one-to-many fashion with trajectories. Formally,
+We next explore a case study to deepen our understanding of rationality: Limiting Errors due to Similar Selection (LESS) [@2001.04465]. LESS takes inspiration from the attribute rule and extends it to continuous trajectories [@2001.04465]. The key insight is that instead of creating "attributes", which group together similar discrete options, it introduces a similarity metric on the space of continuous actions, thereby creating similar groupings on trajectories. The LESS similarity metric could be defined in trajectory space, where the trajectory is some theoretical notion of all states and actions one passes through over time. However, it is instead defined on the measured feature vector $\phi(\xi)$ associated with the agent's trajectory $\xi$. In practice, one can never measure the exact trajectory with perfect fidelity. The feature vector will almost necessarily map in a one-to-many fashion with trajectories. Formally,
 let $\phi \in \Phi$ be the set of all possible feature vectors $\xi \in \Xi$ the set of all trajectories. The set of feature vectors belonging to a set of trajectories $\Xi' \subseteq \Xi$ is $\Phi_{\Xi'}$. We begin with equation (4) and substitute our similarity metric on feature vectors of trajectories.
 
 $$\begin{aligned}
@@ -67,7 +54,7 @@ $$\begin{aligned}
 
 The probability of choosing trajectory $\xi$ is proportional to the exponentiated reward for the agent's measured trajectory $\phi(\xi)$, normalized by the sum of all rewards over all possible measured trajectories. The second half of the product is a normalization factor based on how similar the current trajectory is to other trajectories in feature space. We can define the similarity function as an indicator function, where $s(x, \xi) = 1$ only if $x = \phi(\xi)$. That means that multiple trajectories with the same feature vector will effectively be considered a single option. Thus, we achieve the "bundling" of trajectories, in the same way that the attribute rule bundled options under different attributes.
 
-However, setting the similarity metric as an indicator function isn't sufficiently flexible. We want a proper metric that acts more as a continuous distance over the feature space. We instead define $s$ to be a *soft similarity metric* $s : \Phi \times \Xi \rightarrow \mathbb{R}^+$. It has the following properties:
+However, setting the similarity metric as an indicator function isn't sufficiently flexible. We want a proper metric that acts more as a continuous distance over the feature space. We instead define $s$ to be a soft similarity metric $s : \Phi \times \Xi \rightarrow \mathbb{R}^+$ with the following properties:
 
 1.  $s(\phi(\xi), \xi) = \max_{x \in \phi, \bar{\xi} \in \Xi} s(x, \hat{\xi}) \forall (\xi \in \Xi)$
 
@@ -81,311 +68,58 @@ $$p(\hat{\xi}) = \frac{\frac{e^{R(\phi(\xi))}}{\int_{\Xi} s(\phi(\xi), \bar{\xi}
 
 Under this formulation, the likelihood of selecting a trajectory is inversely proportional to its feature-space similarity with other trajectories. This de-weights similar trajectories, which is the desired effect for our LESS model of human decision-making. This means, though, that the "trajectory bundle" of similar trajectories still has a reasonable probability of being chosen.
 
-### Axiom 4: Preference centers around utility {#axiom-3-preference-centers-around-utility .unnumbered}
+### Axiom 4: Preference captures decision-making {#axiom-2-preference-captures-decision-making .unnumbered}
+Human preferences are classified into two categories: revealed preferences and stated preferences.
 
-Human preference models are centered around the notion of utility, which can mean a reward one attains after expressing one's preference over options.[^1] In health coaching, the utility, as a function of the health choices users make, may be satiety, latent promotion of overall health, or even a quantitative extension of life. We assume that the underlying utility mechanism of a human preference model captures the final decision output from a human. Utility can be interpreted as a scalar quantity representing the benefit or value an individual attains from selecting a given choice. Each choice has an associated utility. Human preference models capture both the utility of a choice (e.g. we model the utility value as a function of attributes of a given choice) and how the utilities interact to make a decision.[^2] We use the notation $U_i$ as the utility corresponding to choice $i$.
+Revealed preferences are those one can observe retroactively from existing data. The implicit decision-making knowledge can be captured via learnable parameters and their usage in models which represent relationships between input decision attributes that may have little human interpretability, but enable powerful models of human preference. For health coaching, we may have information about which foods an individual has chosen previously in different contexts, allowing us to build a model from their decisions. Such data may be easier to acquire and can reflect real-world outcomes (since they are, at least theoretically, inherently based on human preferences). However, if we fail to capture sufficient context in such data, human preference models may not sufficiently capture human preferences.
 
-The utility of a choice is a stochastic function of the choice's attributes. We will henceforth define utility as $U_i = H_i(z_i)$ where $z_i$ is a variable describing the attributes of choice $i$ and $H_i$ is the stochastic function defining this choice's utility. For example, we can use a 1-D linear stochastic function to define $H_i$: $U_i = H_i(z_i) = \beta z_i + \epsilon_i$, where $\beta$ is a parameter of the model and $\epsilon_i$ is an unobserved factor for choice $i$. We assume that $\epsilon_i$ is a random variable following a specified distribution, such as a standard normal distribution. The attributes we use to represent a choice (a single scalar value $z_i$ in this example) is a critical design decision in defining the human preference model. These attributes define the context our model has in representing the human behavior we wish to capture, when choice $i$ is made. The preferred choice is that whose corresponding utility is the largest. Given that we model utility as the underlying benefit or value a human derives from choosing a given option, intuitively, we expect a human to choose the option with the largest utility.
+Stated preferences are those individuals explicitly indicate in potentially experimental conditions. The explicit knowledge may be leveraged by including inductive biases during modeling (for example, the context used in a model) which are reasonable assumptions for how a human would consider a set of options.This may include controlled experiments or studies. This may be harder to obtain and somewhat biased, as they can be hypothetical or only accurately reflect a piece of the overall context of a decision. However, they enable greater control of the decision-making process.
 
-Given the previously defined characteristics of utility, we observe that only the relative difference in utility matters. Even if $U_1 = 0.001$ and $U_2 = 0.0005$, the model indicates the same outcome: a user prefers option $1$. As such, even the scale of the utilities is irrelevant within a given set of human preference data for a given individual. For example, we can scale the value of $\beta$ without changing the overall outcome so long as we do not change the sign. The scale of utilities *is* important when comparing human preferences across datasets, or comparing the same model across different humans; since utility may be defined differently in various datasets, perhaps their exact values are not aligned in a manner which allows one to robustly compare preferences between them. A common practice to address this consideration is to standardize the utilities in each dataset based on its variance in the observed data. Furthermore, a human preference model may generate different scales of utilities across different humans (based on the inputs and representation of the human). In this case, one can standardize the utilities for each individual based on the observed variance for that human. As we can see, the relativity of utility can be both powerful (enabling us to create flexible models and efficiently optimize them) and limiting (requiring us to perform mitigations when translating models across datasets or individuals. Still, we find the notion of utility necessary to model human preferences as it provides a quantitative value we can use to model human decisions.
+## Methods for Collecting Preference Data {#sec-collect}
 
-## Models of Individual Choices {#sec-models}
+Next, we explore various mechanisms by which humans can express their preferences, including pairwise sampling, rank-order sampling, rating-scale sampling, best-worst scaling, and multiple-choice samples. In *pairwise sampling*, participants compare two options to determine which is preferred. One of the major advantage of this method is low cognitive demand for rater. Its disavantage is the limited amount of information content elicited by a sample. Next, we will see that we can trading cognitive demand for rater to elicit more nuance preference information. For example, *Rank-order sampling* captures human preferences by having participants rank items from most to least preferred. Used in voting, market research, and psychology, it provides rich preference data but is more complex and cognitively demanding than pairwise comparisons, especially for large item sets. Participants may also rank inconsistently [@ragain2019]. 
 
-After exploring motivations for preference learning and the framework we
-use to characterize human preferences to enable modeling, we now expand
-on the common probabilistic methods used to model human preference
-tasks. We will instantiate these models for our real-world health
-coaching application throughout as a pedagogical example. Specifically,
-we can define the following domain for meal choices:
-$z_i, \beta \in \mathbb{Z}^3$, where $z_i$ defines the representation of a
-meal option with the three dimensions representing the carbohydrate,
-protein, and lipid macronutrient content of the meal, respectively, all
-measured in grams. $\beta$ is a parameter of the model. This simple
-representation will allow us to consider how different probabilistic
-frameworks for human preferences can model a user's meal preferences.
-The information representation we instantiate here can accommodate
-scalar and high-dimensional vectors. While we use a mixture of integer
-and real-valued vectors in this simple example, we refer the reader to
-code in the practicum section for an example where vectors are all
-real-valued. If we let $z = [20, 15, 3]$ and $\beta = [0.2, 1, -3]$.
-This corresponds to a meal with 20g carbohydrates, 15g protein, and 3g
-lipids. In the following sections, we discover how to learn the
-parameter $\beta$ and how to predict $y$ for this meal, which indicates
-whether the user chooses it or refuses it.
+*Rating-scale sampling*, such as the Likert scale, is a method in which participants rate items on a fixed-point scale (e.g., 1 to 5, "Strongly Disagree" to "Strongly Agree") to measure levels of preference towards items [@harpe2015]. Participants can also mark a point on a continuous rating scale to indicate their preference or attitude. Commonly used in surveys, product reviews, and psychological assessments, this method provides a more nuanced measure than discrete scales. Rating-scale sampling is simple for participants to understand and use, provides rich data on the intensity of preferences, and is flexible enough for various measurements (e.g., agreement, satisfaction) [@harpe2015]. However, rating-scale sampling methods also have limitations. Ratings can be influenced by personal biases and interpretations of scales, leading to subjectivity. There is a central tendency bias, where participants may avoid extreme ratings, resulting in clustering responses around the middle. Different participants might interpret scale points differently, and fixed-point scales may not capture the full nuance of participants' preferences or attitudes [@harpe2015].
 
-### Data Collection
+*Best-worst scaling* (BWS) is a powerful method for understanding preferences and the relative importance of different items. In BWS, participants are presented with items and asked to identify the most and least preferred options. The primary objective of BWS is to discern the relative importance or preference of items within a set, making it widely applicable in various fields such as market research, health economics, and social sciences [@campbell2015]. A key method within BWS is MaxDiff Analysis, which involves presenting participants with items and asking them to select the best and worst options. For instance, in a product development context, MaxDiff Analysis can help determine the most and least important features according to consumer preferences [@campbell2015]. BWS provides rich data on the relative importance of items, helps clarify preferences, reduces biases found in traditional rating scales, and results in utility scores that are easy to interpret. However, BWS also has limitations, including potential scale interpretation differences among participants, and design challenges to avoid biases, such as the order effect or the context in which items are presented.
 
-##### Pairwise Sampling {#pairwise-sampling .unnumbered}
+*Multiple-choice sampling* models are widely used in various fields, such as voting systems, surveys, and market research, to understand the preferred choice among a set of alternatives. These models involve participants selecting one option from a set of alternatives. Multiple-choice sampling is simple for participants to understand and reflect on realistic decision-making scenarios where individuals choose one option from many. It is beneficial in complex choice scenarios, such as modes of transportation, where choices are not independent [@bolt2009]. Multiple-choice sampling often relies on simplistic assumptions such as the independence of irrelevant alternatives (IIA), which may not always hold true. This method may also fail to capture the variation in preferences among different individuals, as it typically records only the most preferred choice without accounting for the relative importance of other options.
 
-In pairwise sampling, participants compare two options simultaneously to
-determine which is preferred. The goal is to understand relative
-preferences between pairs of items. This method is frequently used in
-preference and choice studies to gather detailed preference data. Two
-key models used in pairwise sampling are the Thurstonian and
-Bradley-Terry models [@cattelan2012]. The Thurstonian model assumes each
-item $i$ has a true score $u_i$ following a normal distribution. The
-difference $d_{ij} = u_i - u_j$ is also normally distributed. The
-probability that item $i$ is preferred over item $j$ is given by
-$P(i \succ j) = \Phi \left( \frac{u_i - u_j}{\sqrt{2\sigma^2}} \right)$,
-where $\Phi$ is the cumulative normal distribution function. The
-denominator $\sqrt{2\sigma^2}$ is the standard deviation of the
-difference $d_{ij} = u_i - u_j$ when $u_i$ and $u_j$ are normally
-distributed with variance $\sigma^2$[@cattelan2012]. The Bradley-Terry
-model defines the probability of preference based on latent scores
-$\beta_i$ and $\beta_j$. The probability that item $i$ is preferred over
-item $j$ is
-$P(i \succ j) = \frac{e^{\beta_i}}{e^{\beta_i} + e^{\beta_j}}$. This
-model is used to estimate relative strengths or preferences based on
-latent scores. [@cattelan2012].
+## Models of Choices {#sec-models}
 
-##### Rank-Order Sampling {#rank-order-sampling .unnumbered}
+#### Binary Choice Model {#binary-choice-model .unnumbered}
 
-Rank-order sampling methods enable analysis of human preferences by
-asking participants to rank a set of items from most to least preferred.
-This approach is widely used in voting systems, market research, and
-psychological studies to understand the overall preference ordering
-among a set of items. Rank-order sampling offers comprehensive
-preference data, capturing detailed information about the relative
-ranking of multiple items. This richness makes them suitable for various
-applications, including market research, voting systems, sports
-competitions, and recommender systems. However, these models can be more
-complex and time-consuming for participants compared to pairwise
-comparisons, and they impose a higher cognitive load, especially with
-large sets of items. Additionally, participants may show inconsistencies
-when ranking many items [@ragain2019].
+Binary Choice Model is centered around one specific user option. The model predicts, for that option, after observing user choices in the past, whether that option will be chosen or not. Specifically, if we are looking at a certain choice, we use binary variable $y \in \{0, 1\}$ to represent whether that choice will be picked or not by the user in the next phase of selection. We denote $P = \mathbb{P}(y = 1)$. We can use a linear model represented by the parameter $\beta$ we have already defined. Since utility is a stochastic function of the choice attributes, we will represent our utility as $U = \beta^\top z + \epsilon$. We can formally model $y$ as a function of the utility of the positive choice: $y = \mathbb{I}[U>0]$. We explore two cases based on the choice of distribution for the unobserved random variable $\epsilon$. If $\epsilon \sim \text{Logistic}$, then $\mathbb{P}(\epsilon < a) = \frac{1}{1 + \exp^{-a}}$. The probability $P$ can be modeled as:
+$$
+P = \mathbb{P}(U > 0) = \mathbb{P}(\beta^\top z + \epsilon > 0) = \mathbb{P}( \epsilon > -\beta^\top z) = 1 - \mathbb{P}( \epsilon < -\beta^\top z) = 1 - \frac{1}{1 + \exp^{\beta^\top z}} = \frac{1}{1 + \exp^{-\beta^\top z}}
+$$
 
-##### Rating-Scale Sampling {#rating-scale-sampling .unnumbered}
-
-Rating-scale sampling is a method in which participants rate items on a
-numerical scale to measure the intensity of preference or attitude
-towards items. These models are commonly used in surveys, product
-reviews, and psychological assessments to gather detailed information on
-how participants feel about various subjects. The Likert scale is a
-widely used rating-scale model. In this approach, participants rate
-items on a fixed-point scale, typically ranging from 1 to 5 or 1 to 7,
-to measure levels of agreement or satisfaction. For instance, a Likert
-scale might ask participants to rate their agreement with statements
-such as "Strongly Disagree" to "Strongly Agree" [@harpe2015]. This
-method is prevalent in survey research, customer satisfaction studies,
-and attitude measurement. Another key model is the continuous rating
-scale, where participants mark a point on a continuous line to indicate
-their preference or attitude. This provides a more nuanced measure
-compared to discrete scales. For example, participants might indicate
-their satisfaction on a line ranging from "Very Unsatisfied" to "Very
-Satisfied" [@harpe2015]. This model is used in detailed feedback
-mechanisms, user experience studies, and fine-grained preference
-measurements.
-
-Rating-scale sampling offers several advantages. They are simple for
-participants to understand and use, provide rich data on the intensity
-of preferences, and are flexible enough for various types of
-measurements (e.g., agreement, satisfaction). Moreover, the data
-collected can be easily analyzed using standard statistical methods
-[@harpe2015].
-
-Applications include data collection on opinions, attitudes, and
-behaviors; in product reviews to measure customer satisfaction and
-product quality; in psychological assessments to evaluate mental states,
-personality traits, and attitudes; and in user experience studies to
-understand user satisfaction and usability of products [@harpe2015].
-However, rating-scale sampling methods also have limitations. Ratings
-can be influenced by personal biases and interpretations of scales,
-leading to subjectivity. There is a central tendency bias, where
-participants may avoid extreme ratings, resulting in a clustering of
-responses around the middle. Different participants might interpret
-scale points differently, and fixed-point scales may not capture the
-full nuance of participants' preferences or attitudes [@harpe2015].
-
-##### Best-Worst Scaling {#best-worst-scaling .unnumbered}
-
-Best-Worst Scaling (BWS) is a powerful method for understanding
-preferences and the relative importance of different items. In BWS,
-participants are presented with a set of items and are asked to identify
-the most and least preferred options. This method helps to gather
-detailed preference data, providing more nuanced insights than
-traditional ranking or rating systems. The primary objective of BWS is
-to discern the relative importance or preference of items within a set,
-making it widely applicable in various fields such as market research,
-health economics, and social sciences [@campbell2015].
-
-A key method within BWS is MaxDiff Analysis, which involves presenting
-participants with sets of items and asking them to select the best and
-worst options. This approach yields richer data by identifying extremes
-in preferences, offering a clearer picture of the relative importance of
-each item. For instance, in a product development context, MaxDiff
-Analysis can help identify the most and least important features
-according to consumer preferences [@campbell2015].
-
-The advantages of Best-Worst Scaling are significant. It provides rich
-data on the relative importance of items, helps clarify preferences,
-reduces biases found in traditional rating scales, and results in
-utility scores that are easy to interpret. BWS is particularly useful in
-market research for understanding consumer preferences, in health
-economics for evaluating patient treatment preferences, in social
-sciences for studying the importance of social issues, and in product
-development for identifying key features driving consumer choices
-[@campbell2015].
-
-However, BWS also has limitations, including increased complexity and
-cognitive load for participants compared to simpler rating scales,
-potential scale interpretation differences among participants, and
-design challenges to avoid biases. Additionally, differences in how
-participants interpret the scale can introduce variability, and the
-design of BWS studies requires careful consideration to avoid biases,
-such as the order effect or the context in which items are presented.
-
-##### Multiple-Choice Sampling {#multiple-choice-sampling .unnumbered}
-
-Multiple-choice sampling models are widely used in various fields such
-as voting systems, surveys, and market research to understand the
-preferred choice among a set of alternatives. These models involve
-participants selecting one option from a set of alternatives, providing
-insights into the most favored options.
-
-Multiple-choice sampling methods offer several advantages. They are
-simple for participants to understand and reflect on realistic
-decision-making scenarios where individuals choose one option from many.
-These models are versatile and can be applied in various applications,
-from voting to market research, providing clear preferences directly
-from the participants' choices. It is particularly useful in complex
-choice scenarios such as mode of transportation, where choices are not
-independent [@bolt2009].
-
-However, multiple-choice sampling also has limitations. It often relies
-on simplistic assumptions such as the independence of irrelevant
-alternatives (IIA), which may not always hold true. Additionally, these
-models can place a cognitive load on participants, especially if the
-number of choices is large, leading to decision fatigue. This method may
-also fail to capture the variation in preferences among different
-individuals, as it typically records only the most preferred choice
-without accounting for the relative importance of other options.
-
-### Data Interpretation
-
-##### Binary Choice Model {#binary-choice-model .unnumbered}
-
-is centered around one specific user option. The model predicts, for
-that option, after observing user choices in the past, whether that
-option will be chosen or not. Specifically, if we are looking at a
-certain choice, we use binary variable $y \in \{0, 1\}$ to represent
-whether that choice will be picked or not by the user in the next phase
-of selection. Since $\mathbb{P}(y = 0) = 1 - \mathbb{P}(y = 1)$, we only need to
-model $\mathbb{P}(y = 1)$ which we will denote as $P$.
-
-We can use a linear model represented by the parameter $\beta$ we have
-already defined. Since utility is a stochastic function of the choice
-attributes, we will represent our utility as
-$U = \beta^\top z + \epsilon$. We can formally model $y$ as a function
-of the utility of the positive choice: $y = \mathbb{I}[U>0]$.
-
-We explore two cases based on the choice of distribution for the
-unobserved random variable $\epsilon$. If
-$\epsilon \sim \text{Logistic}$, then
-$\mathbb{P}(\epsilon < a) = \frac{1}{1 + \exp^{-a}}$. The probability $P$ can
-be modeled as: $$\begin{aligned}
-    P & = \mathbb{P}(U > 0) = \mathbb{P}(\beta^\top z + \epsilon > 0) = \mathbb{P}( \epsilon > -\beta^\top z) = 1 - \mathbb{P}( \epsilon < -\beta^\top z) = 1 - \frac{1}{1 + \exp^{\beta^\top z}} \\
-    & = \frac{1 + \exp^{\beta^\top z}}{1 + \exp^{\beta^\top z}} - \frac{1}{1 + \exp^{\beta^\top z}} = \frac{\exp^{\beta^\top z}}{1 + \exp^{\beta^\top z}} = \frac{1}{1 + \exp^{-\beta^\top z}}
-\end{aligned}$$
-
-In the health coaching example, using this logistic model, we can
-compute the probability that an individual would choose this meal over
-no meal: $P = \frac{1}{1 + \exp^{-(4 + 15 - 9)}} = 0.99995$. Therefore,
-the model predicts a high probability that the user would choose the
-meal over the no-meal option.
-
-On the other hand, if $\epsilon \sim \mathcal{N}(0, 1)$, then
-$\mathbb{P}(\epsilon < a) = \Phi(a)$, where $\Phi(a)$ is the cumulative
-distribution function of the standard normal distribution. The
-probability $P$ is modeled as:
+On the other hand, if $\epsilon \sim \mathcal{N}(0, 1)$, then $\mathbb{P}(\epsilon < a) = \Phi(a)$, where $\Phi(a)$ is the cumulative distribution function of the standard normal distribution. The probability $P$ is modeled as:
 
 $$P = \mathbb{P}(U > 0) = \mathbb{P}(\beta^\top z + \epsilon > 0) = \mathbb{P}( \epsilon > -\beta^\top z) = \mathbb{P}( \epsilon < \beta^\top z) = \Phi(\beta^\top z)$$
 
-In the same health coaching example, we can compute the probability that
-an individual would choose this meal over no meal:
-$\Phi(4 + 15 - 9) = 1$. This model also predicts that the user will most
-likely take the meal!
+#### Bradley-Terry Model {#bradley-terry-model .unnumbered}
 
-##### Bradley-Terry Model {#bradley-terry-model .unnumbered}
+The Bradley-Terry (BT) model introduces a framework to model the utility of choice over all others given their attribute vectors [@bradley-terry-model]. In the BT model, we have a discrete set of $J$ choices $i \in \{1, 2, \dots, J\}$, each with an attribute representation $z_i \in \mathbb{Z}^n$ (where $n$ is the dimensionality of the representation). Each choice can also have its unique random noise variable representing the unobserved factor, although we can also choose to have all choices' unobserved factors follow the same distribution (e.g. independent and identically distributed, or IID). We keep the assumption from previous sections that the utility $U_i$ of choice $i$ is also a linear stochastic function where the noise is sampled from the specified distribution: $U_i = \beta^\top z_i + \epsilon_i$. The noise is represented as an extreme value distribution, although we can choose alternatives such as a multivariate Gaussian distribution: $\epsilon \sim \mathcal{N}(0, \Sigma)$. If $\Sigma$ is not a diagonal matrix, we effectively model correlations in the noise across choices, enabling us to avoid the iid assumption if necessary. In the case of the extreme value distribution, we model the probability of a user preferring choice $i$, which we denote as $P_i$ as $P_i = \exp(\beta^\top z_i)/Z$ where $Z = \sum_{j = 1}^{J} \exp(\beta^\top z_j)$.
 
-The Bradley-Terry (BT) model introduces a framework to model the utility
-of choice *over all others* (a multipronged prediction of overall
-choices, not just a binary prediction over one choice), given their
-attribute vectors [@bradley-terry-model]. Given information about all
-available operations, this is a general yet powerful method for modeling
-human preferences. The core idea in this model is to compare utilities
-of all items at once to model the probability of a user's actions and,
-therefore, their preferences. In the BT model, we have a discrete set of
-$J$ choices $i \in \{1, 2, \dots, J\}$, each with an attribute
-representation $z_i \in \mathbb{Z}^n$ (where $n$ is the dimensionality of the
-representation). Each choice can also have its unique random noise
-variable representing the unobserved factor, although we can also choose
-to have all choices' unobserved factors follow the same distribution
-(e.g. independent and identically distributed, or iid).
+#### Ordered Preferences Model {#ordered-preferences-model .unnumbered}
 
-We keep the assumption from previous sections that the utility $U_i$ of
-choice $i$ is also a linear stochastic function where the noise is
-sampled from the specified distribution:
-$U_i = \beta^\top z_i + \epsilon_i$. The noise is represented as an
-extreme value distribution, although we can choose alternatives such as
-a multivariate Gaussian distribution: $\epsilon \sim \mathcal{N}(0, \Sigma)$. If
-$\Sigma$ is not a diagonal matrix, we effectively model correlations in
-the noise across choices, enabling us to avoid the iid assumption if
-necessary. In the case of the extreme value distribution, we model the
-probability of a user preferring choice $i$, which we denote as $P_i$ as
-$P_i = \exp(\beta^\top z_i)/Z$ where
-$Z = \sum_{j = 1}^{J} \exp(\beta^\top z_j)$.
+In all previous examples, we have assumed that we have no information on any explicit ordering of the available options a human can choose from: all choices were treated as independent by the model. The model aims to capture how an individual chooses between them. However, in many cases, we may introduce an inductive bias based on information about the options. For example, in a study for stated preferences, a user may be able to choose from intricately dependent options such as very poor, poor, fair, good, and great. In this case, it can be useful to include this bias in our model to represent a human's decision-making process better. For such cases, instead of comparing choices against alternatives, we can focus on a single example and use additional parameters to define classification criteria based on the utility determined by the model. Formally, let us suppose we have a single example with attributes $z_i$, and wish to know which of $J$ predefined options an individual will choose from. We can define $J - 1$ parameters, which act as thresholds on the utility computed by $U_i = H(z_i)$ to classify the predicted choice between these options. For example, if there are 3 predefined options, we can define parameters $a, b \in \mathbb{R}$ such that
 
-We revisit the health coaching example. Denote two choices, where
-$z_1 = [20, 15, 3]$ is the choice from the previous example. Still, we
-now have a second choice $z_2 = [60, 20, 7]$ (which seems to be a very
-carbohydrate-heavy meal and potentially a larger meal overall). We will
-also assume we choose an extreme value distribution to model the
-unobserved factors, which are sampled i.i.d. Then, we have
-$\beta^\top z_1 = 10$ and
-$\beta^\top z_2 = 11 \Rightarrow P_1 = \frac{1}{1 + \exp(1)} = 0.2689$.
-Since there are only two choices, the probabilities $P_1$ and $P_2$ must
-sum to $1$. Therefore, we can calculate $P_2$ as
-$P_2 = 1 - P_1 = 1 - 0.2689 \approx 0.7311$. Our model predicts that
-choice 2 is more favorable between these two options.
+$$
+y_i =
+\begin{cases} 
+    1 & U < a \\
+    2 & a \le U < b \\
+    3 & \text{else}
+\end{cases}
+$$
 
-##### Ordered Preferences Model {#ordered-preferences-model .unnumbered}
-
-In all previous examples, we have assumed that we have no information on
-any explicit ordering of the available options a human can choose from:
-all choices were treated as independent by the model. The model aims to
-capture how an individual chooses between them. However, in many cases,
-we may introduce an inductive bias based on information about the
-options. For example, in a study for stated preferences, a user may be
-able to choose from intricately dependent options such as very poor,
-poor, fair, good, and great. In this case, it can be useful to include
-this bias in our model to represent a human's decision-making process
-better. For such cases, instead of comparing choices against
-alternatives, we can focus on a single example and use additional
-parameters to define classification criteria based on the utility
-determined by the model. Formally, let us suppose we have a single
-example with attributes $z_i$, and wish to know which of $J$ predefined
-options an individual will choose from. We can define $J - 1$
-parameters, which act as thresholds on the utility computed by
-$U_i = H(z_i)$ to classify the predicted choice between these options.
-For example, if there are 3 predefined options, we can define parameters
-$a, b \in \mathbb{R}$ such that $$y_i = \begin{cases} 
-      1 & U < a \\
-      2 & a \le U < b \\
-      3 & \text{else}
-   \end{cases}$$
-
-**1. Logistic Distribution**
-
-From a probabilistic perspective, we can use our cumulative
-distributions as before to model the probability that a person will
-choose a given option. Continuing with our linear utility function
-$U_i = \beta^\top z_i + \epsilon_i$, we can start with the setting that
-we assume unobserved factors follow a logistic distribution and focus on
+When the noise follow a logistic distribution, we can use our cumulative distributions as before to model the probability that a person will choose a given option. Continuing with our linear utility function $U_i = \beta^\top z_i + \epsilon_i$, we can start with the setting that we assume unobserved factors follow a logistic distribution and focus on
 the first case:
 $$\mathbb{P}(y_i = 1) = \mathbb{P}(U < a) = \mathbb{P}(\beta^\top z + \epsilon < a )  = \mathbb{P}( \epsilon < a - \beta^\top z)  = \frac{1}{1 + \exp(\beta^\top z - a)}$$
 
-Extending this method to the second case, where we estimate the
-probability of the utility falling within a specific interval:
+Extending this method to the second case, where we estimate the probability of the utility falling within a specific interval:
 $$\begin{aligned}
     \mathbb{P}(y_i = 2) & = \mathbb{P}(a \le U < b) = \mathbb{P}(a - \beta^\top z \le \epsilon < b - \beta^\top z) = \frac{1}{1 + \exp(\beta^\top z - b)}  - (1 - \mathbb{P}( \epsilon < a - \beta^\top z) ) \\
     & = \frac{1}{1 + \exp(\beta^\top z - b)}  - (1 - \frac{1}{1 + \exp(\beta^\top z - a)}  ) = \frac{1}{1 + \exp(\beta^\top z - b)}  - \frac{1}{1 + \exp(a - \beta^\top z)}  ) \\
@@ -395,108 +129,32 @@ The final case follows the form of the inverse of the first case:
 
 $$\mathbb{P}(y_i = 3) = \mathbb{P}(U > b) = \mathbb{P}(\beta^\top z + \epsilon > b ) = \mathbb{P}( \epsilon > b - \beta^\top z) = 1 - \mathbb{P}( \epsilon < b - \beta^\top z) = \frac{1}{1 + \exp(\beta^\top z - b)}$$
 
-**2. Normal Distribution**
-
-In the case of modeling unobserved factors with a standard normal
-distribution, we have: $$\begin{split}
+In the case of modeling unobserved factors with a standard normal distribution, we have:
+$$
+\begin{split}
     \mathbb{P}(y_i = 1) & = \mathbb{P}(U < a) = \mathbb{P}(\beta^\top z + \epsilon < a ) = \mathbb{P}( \epsilon < a - \beta^\top z) = \Phi(a - \beta^\top z) \\
     \mathbb{P}(y_i = 2) & = \mathbb{P}(a \le U < b) 
     = \mathbb{P}(a - \beta^\top z \le \epsilon < b - \beta^\top z) = \Phi(b - \beta^\top z) - \Phi(a - \beta^\top z) \\
     \mathbb{P}(y_i = 3) & = \mathbb{P}(U > b) 
     = 1 - \Phi(b - \beta^\top z) 
-\end{split}$$
+\end{split}
+$$
 
-In our health coaching example, the derivation above yields three exact
-expressions for computing the probability of choosing each of our meals.
-Each computation involves the normal cumulative distribution function as
-seen for the binary choice model with standard normal for $\epsilon$
-after parameters $a$ and $b$ are learned @sec-learning.
+#### Plackett-Luce Model {#plackett-luce-model .unnumbered}
 
-##### Plackett-Luce Model {#plackett-luce-model .unnumbered}
+We can model an open-ended ranking of the available options with the Plackett-Luce (PL) Model, in which we jointly model the full sequence of choice ordering [@plackett_luce]. The general form models the joint distribution as the product of conditional probabilities, where each is conditioned on the preceding ranking terms. Given an ordering of $J$ choices $\{Y_1, Y_2, \dots, Y_J\}$ where $Y_1$ is the first selection, $Y_2$ is the second, and so on, we decompose the joint probability into its respective conditionals. To compute the conditional probabilities, we can use the same method as the BT model, using a softmax to produce valid conditional distributions for each element of the sequence:
 
-In other cases, we may need an even more general framework combining
-elements of the BT model and ordered preferences. Specifically, we can
-model an open-ended ranking of the available options in a similar
-probabilistic framework. To do so, we can leverage the Plackett-Luce
-(PL) Model, in which we jointly model the full sequence of choice
-ordering. [@plackett_luce]
+$$
+\mathbb{P}(Y_1, Y_2, \dots, Y_J) = \mathbb{P}(Y_1) \cdot \mathbb{P}(Y_2 | Y_1) \cdot \dots \cdot \mathbb{P}(Y_J | Y_1, Y_2, \dots Y_{J - 1}) = \prod_{i = 1}^J \frac{\exp(\beta^\top z_i)}{\sum_{j \ge i} \exp(\beta^\top z_j)}
+$$
 
-The general form models the joint distribution as the product of
-conditional probabilities, where each is conditioned on the preceding
-ranking terms. Given an ordering of $J$ choices
-$\{Y_1, Y_2, \dots, Y_J\}$ where $Y_1$ is the first selection, $Y_2$ is
-the second, and so on, we decompose the joint probability into its
-respective conditionals. To compute the conditional probabilities, we
-can use the same method as the BT model, using a softmax to produce
-valid conditional distributions for each element of the sequence:
-$$\mathbb{P}(Y_1, Y_2, \dots, Y_J) = \mathbb{P}(Y_1) \cdot \mathbb{P}(Y_2 | Y_1) \cdot \dots \cdot \mathbb{P}(Y_J | Y_1, Y_2, \dots Y_{J - 1}) = \prod_{i = 1}^J \frac{\exp(\beta^\top z_i)}{\sum_{j \ge i} \exp(\beta^\top z_j)}$$
+An interesting property of the PL Model is that in the naive case of only ordering a single choice, it is equivalent to the pairwise preference formulation of the BT model.
 
-An interesting property of the PL Model is that in the naive case of
-only ordering a single choice, it is equivalent to the pairwise
-preference formulation of the BT model.
+#### Ideal Point Model {#ideal-point-model .unnumbered}
 
-**Exercise (Health coaching example)**: In our application, if we have
-$3$ choices (burrito (B), fries (F), rice bowl (R)), we can let
-$Y_1, Y_2, Y_3$ be variables to which we assign meals in a one-to-one
-manner to establish a ranking.
+The Ideal Point Model uses distance functions to compute utility for individual-choice pairs [@huber1976ideal]. Given vector representation $z_i$ of choice $i$ and a vector $\textbf{v}_n$ representing an individual $n$, we can use a distance function to model a stochastic utility function with the unobserved factors following a specified distribution: $U_{n, i} = \texttt{dist}(z_i, \textbf{v}_n) + \epsilon_{n, i}$. We assume human preferences follow the choice with maximum utility: $y_{n, i} = \mathbb{I}[U_{n, i} > U_{n, j} \ \forall i \ne j]$. The intuition is that vectors exist in a shared $n$-dimensional space, and as such we can use geometry to match choices whose representations are closest to that of a given individual. This model can often result in faster learning compared to non-geometric approaches [@ideal_point; @tatli2022distancepreferences] when equipped with a distance metric. Certain distance metrics, such as Euclidian distance or inner product, can easily be biased by the scale of vectors. A distance measure such as cosine similarity, which compensates for scale by normalizing the inner product of two vectors by the product of their magnitudes, can mitigate this bias yet may discard valuable information encoded by the length of the vectors. Beyond the distance metric alone, this model places a strong inductive bias that the individual and choice representations all share a common embedding space. In some contexts, this can be a robust bias to add to the model [@idealpoints], but it is a key factor one must take into account before employing such a model, and is a key design choice for modeling.
 
-1.  One of the possible ranking assignments is $Y_1=B, Y_2=F, Y_3=R$.
-    How many assignments are there in all, and what are they explicitly?
-
-2.  What would one expect the sign to be, out of $\{\leq, \geq, =\}$ in
-    the following expression? (Hint: healthier meals should be placed
-    earlier in the ranking.)
-    $$\mathbb{P}(Y_1=F, Y_2=R, Y_3=B) \ \ \_\_\ \ \mathbb{P}(Y_1=R, Y_2=B, Y_3=F)$$
-
-##### Ideal Point Model {#ideal-point-model .unnumbered}
-
-An observation one can make is that we have strictly used linear
-functions to represent the utility. However, in the case of vector
-representations of choice attributes and the individual, one can exploit
-vector geometry to compute this utility value. The Ideal Point Model
-does this by using distance functions to compute utility for
-individual-choice pairs [@huber1976ideal]. Formally, with our vector
-representation $z_i$ of choice $i$ and a vector $\textbf{v}_n$
-representing an individual $n$, we can use a distance function to model
-a stochastic utility function, keeping the notion of unobserved factors
-following a specified distribution:
-$U_{n, i} = \texttt{dist}(z_i, \textbf{v}_n) + \epsilon_{n, i}$. We
-continue with our framework of a human's preference following the choice
-corresponding to the maximum utility:
-$y_{n, i} = \mathbb{I}[U_{n, i} > U_{n, j}\ \forall i \ne j]$. The
-intuition supporting this type of model is that vectors exist in a
-shared $n$-dimensional space, and as such we can use geometry to match
-choices whose representations are closest to that of a given individual.
-
-An observation with this model type is that it can often result in
-faster learning compared to non-geometric approaches
-[@ideal_point; @tatli2022distancepreferences]. However, it carries the
-added burden of having to specify a distance metric. Certain distance
-metrics, such as Euclidian distance or inner product, can easily be
-biased by the scale of vectors. A distance measure such as cosine
-similarity, which compensates for scale by normalizing the inner product
-of two vectors by the product of their magnitudes, can mitigate this
-bias yet may discard valuable information encoded by the length of the
-vectors. Beyond the distance metric alone, this model places a strong
-inductive bias that the individual and choice representations all share
-a common embedding space. In some contexts, this can be a robust bias to
-add to the model [@idealpoints], but it is a key factor one must take
-into account before employing such a model, and is a key design choice
-for modeling.
-
-**Health coaching example**: vector representations may indeed be useful
-as an individual's representation can capture the macronutrient
-proportions and volumes they wish to consume, enabling a distance metric
-such as inner product to be a powerful tool. This model also starts
-capturing user properties (e.g. a user may be more into working out,
-another into lowering anxiety and another into gaining weight) and
-implicitly the commonalities between user characteristics start being
-captured, akin to a recommendation system [@recommender_systems].
-However, in other domains and formulations, where perhaps user profiles
-are not as explicit, this may certainly hinder performance and make
-learning human preferences difficult.
-
-## Parameter Learning {#sec-learning}
+## Parameterization and Learning of Utility Functions {#sec-learning}
 
 With an understanding of the various techniques we can use to model
 human preferences, we can now create robust models which utilize context
@@ -1572,6 +1230,8 @@ building a health coaching system that can provide meal recommendations aligned 
     therefore, purchase.
 
 <!--
+Two key models used in pairwise sampling are the Thurstonian and Bradley-Terry models [@cattelan2012]. The Thurstonian model assumes each item $i$ has a true score $u_i$ following a normal distribution. The difference $d_{ij} = u_i - u_j$ is also normally distributed. The probability that item $i$ is preferred over item $j$ is given by $P(i \succ j) = \Phi \left( \frac{u_i - u_j}{\sqrt{2\sigma^2}} \right)$, where $\Phi$ is the cumulative normal distribution function. The denominator $\sqrt{2\sigma^2}$ is the standard deviation of the difference $d_{ij} = u_i - u_j$ when $u_i$ and $u_j$ are normally distributed with variance $\sigma^2$[@cattelan2012]. The Bradley-Terry model defines the probability of preference based on latent scores $\beta_i$ and $\beta_j$. The probability that item $i$ is preferred over item $j$ is $P(i \succ j) = \frac{e^{\beta_i}}{e^{\beta_i} + e^{\beta_j}}$. This model is used to estimate relative strengths or preferences based on latent scores. [@cattelan2012].
+
 ::: {#tbl-philosophy}
   -----------------------------------------------------------------------
   Application                         Human Preference

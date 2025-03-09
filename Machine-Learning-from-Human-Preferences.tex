@@ -120,15 +120,17 @@
 \makesavenoteenv{longtable}
 \usepackage{graphicx}
 \makeatletter
-\def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
-\def\maxheight{\ifdim\Gin@nat@height>\textheight\textheight\else\Gin@nat@height\fi}
-\makeatother
-% Scale images if necessary, so that they will not overflow the page
-% margins by default, and it is still possible to overwrite the defaults
-% using explicit options in \includegraphics[width, height, ...]{}
-\setkeys{Gin}{width=\maxwidth,height=\maxheight,keepaspectratio}
+\newsavebox\pandoc@box
+\newcommand*\pandocbounded[1]{% scales image to fit in text height/width
+  \sbox\pandoc@box{#1}%
+  \Gscale@div\@tempa{\textheight}{\dimexpr\ht\pandoc@box+\dp\pandoc@box\relax}%
+  \Gscale@div\@tempb{\linewidth}{\wd\pandoc@box}%
+  \ifdim\@tempb\p@<\@tempa\p@\let\@tempa\@tempb\fi% select the smaller of both
+  \ifdim\@tempa\p@<\p@\scalebox{\@tempa}{\usebox\pandoc@box}%
+  \else\usebox{\pandoc@box}%
+  \fi%
+}
 % Set default figure placement to htbp
-\makeatletter
 \def\fps@figure{htbp}
 \makeatother
 % definitions for citeproc citations
@@ -390,12 +392,12 @@
 \floatname{codelisting}{Listing}
 \newcommand*\listoflistings{\listof{codelisting}{List of Listings}}
 \usepackage{amsthm}
-\theoremstyle{plain}
-\newtheorem{theorem}{Theorem}[chapter]
-\theoremstyle{plain}
-\newtheorem{proposition}{Proposition}[chapter]
 \theoremstyle{definition}
 \newtheorem{definition}{Definition}[chapter]
+\theoremstyle{plain}
+\newtheorem{proposition}{Proposition}[chapter]
+\theoremstyle{plain}
+\newtheorem{theorem}{Theorem}[chapter]
 \theoremstyle{remark}
 \AtBeginDocument{\renewcommand*{\proofname}{Proof}}
 \newtheorem*{remark}{Remark}
@@ -419,9 +421,6 @@
 \@ifpackageloaded{caption}{}{\usepackage{caption}}
 \makeatother
 
-\ifLuaTeX
-  \usepackage{selnolig}  % disable illegal ligatures
-\fi
 \usepackage{bookmark}
 
 \IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
@@ -441,7 +440,7 @@
 
 \title{Machine Learning from Human Preferences}
 \author{Sang T. Truong \and Sanmi Koyejo}
-\date{2024-12-02}
+\date{2025-03-09}
 
 \begin{document}
 \newgeometry{}
@@ -503,607 +502,180 @@ Preferences\par}
 
 \chapter{Introduction}\label{ch-introduction}
 
-Machine learning is increasingly integrated into many aspects of our
-lives through various applications, such as healthcare, education, and
-scientific discovery. A key challenge in developing trustworthy
-intelligent agents that benefit humanity is ensuring they align with
-human values. Learning from human preferences offers a promising
-approach to accomplishing this goal. This book presents the fundamental
-foundations and practical applications of machine learning from human
-preferences. It also covers topics from related fields, such as
-economics, psychology, and human-computer interaction. The goal is to
-equip readers with the concepts and tools required to build artificial
-intelligence systems aligned with human values.
+Machine learning is increasingly shaping various aspects of our lives,
+from education and healthcare to scientific discovery. A key challenge
+in developing trustworthy intelligent systems is ensuring they align
+with human preferences. Learning from human feedback offers a promising
+solution to this challenge. This book introduces the foundations and
+practical applications of machine learning from human preferences. It
+explores how traditional machine learning struggles with defining goals
+and preferences and presents preference-based learning as an alternative
+that incorporates human feedback to guide the learning process, drawing
+insights from related fields such as economics, psychology, and
+human-computer interaction. By the end of this book, readers will be
+equipped with the key concepts and tools needed to design systems that
+effectively align with human preferences.
 
-This book explores the challenge of defining goals and preferences in
-traditional machine-learning approaches by introducing the paradigm of
-learning from human preference. This paradigm uses human feedback to
-guide the learning process and overcome the limitations of manually
-specified goal functions.
+The book is intended for researchers, practitioners, and students who
+are interested in intergrating machine learning with human-centered
+application. We assume some basic knowledge of probability and
+statistics, but provides sufficient background and references for the
+readers to follow the main ideas and results. The book also provides
+illustrative program examples and datasets. The field of machine
+learning from human preference is a vibrant and growing area of research
+and practice with many open challenges and opportunities, and we hope
+that this book will inspire readers to further explore and advance this
+exciting field. The book is divided into 4 chapters:
 
-Human feedback -- whether from individuals' preferences, judgments,
-ratings, or other responses -- plays a pivotal role in guiding AI agents
-through their learning journeys across various tasks and domains. The
-following three examples show the importance of human feedback to
-different AI agents. First, human feedback could guide AI agents in
-creating appealing and diverse content by assessing the quality,
-originality, and relevance of the content. Second, human feedback could
-also ensure that AI agents align with human needs and values by
-rectifying potential biases, errors, and harm caused by agents. Third,
-human feedback could help AI agents learn better policies in complex
-environments, such as those with sparse or noisy rewards, by encouraging
-agents to explore and learn in those environments.
+\begin{itemize}
+\item
+  \textbf{Chapter 1} lays the foundation for probabilistic modeling of
+  human preferences. It covers key model assumptions, such as Luce's
+  axiom of choice and Boltzmann rationality, along with interaction
+  models like pairwise and rank-order comparisons. The chapter also
+  explores game-theoretic perspectives on preference learning and
+  examines human biases in reward models, their impact on reward
+  inference, and strategies to leverage both rational and irrational
+  behavior. Additionally, it discusses challenges in learning multimodal
+  rewards and meta-reward learning, including techniques for learning
+  from demonstrations and rewards in complex environments.
+\item
+  \textbf{Chapter 2} focused on a process where the end goal is to
+  elicit the utility function. Since human is involved in the data
+  collection, we concentrate on active learning methods that elicit the
+  most preference information with a minimal amount of human query.
+  Various strategies are explored, including reducing the learner's
+  variance, exploiting ambiguity and domain knowledge in ranking, with
+  examples from robotics and machine learning systems.
+\item
+  \textbf{Chapter 3} focuses on process where preference is a signal
+  guiding decision. We discuss dueling bandits, an algorithm for
+  decision making from pairwise preferences, as well as reinforcement
+  learning from human feedback (RLHF) to align language models.
+  Moreover, addressing the challenges of modeling uncertainty in reward
+  models emerges as a crucial area for improvement. We also discuss
+  decision making setting beyond a single reward frameworks to
+  accommodate the oversight of diverse objectives. Embracing
+  multi-objective is pivotal to representing the multifaceted goals of
+  varied stakeholders within AI systems.
+\item
+  \textbf{Chapter 4} analyzes principles from human-computer interaction
+  (HCI) for systems that learn from humans, like cognitive constraints
+  and user experience. We discuss ethical issues that arise in
+  interaction models and approaches for designing preference elicitation
+  systems considering fairness, privacy, and other socio-technical
+  factors. We tackle challenges around aligning learned models with
+  values from diverse expert and non-expert stakeholders. Ethical
+  considerations in learning from human preference are addressed. We
+  discuss the potential benefits and risks of learning from human
+  preferences and how to address them responsibly and fairly. We also
+  raise questions about the selection and protection of human
+  participants and the possible consequences of exploiting or
+  manipulating human responses.
+\end{itemize}
 
 This book covers various topics, from the statistical foundations and
 strategies for interactively querying humans to applications for
-eliciting information to improve learning. In more detail, we focus on
-the three most important aspects.
-
-\begin{itemize}
-\item
-  The role of the human-in-the-loop for improving learning systems: We
-  review the relevant foundations in microeconomics, psychology,
-  marketing, statistics, and other disciplines and explore their
-  applications to various domains, such as language, robotics,
-  logistics, and more. We adopt the machine learning perspective for
-  modeling, estimating, and evaluating human-in-the-loop learning
-  processes.
-\item
-  The characteristics and challenges of human questions: We examine the
-  issues of bias, correctness, noisiness, rationality, and other factors
-  that affect the quality and reliability of human responses. We also
-  consider the differences and similarities between individual and group
-  responses and how they influence our approach to human-in-the-loop
-  learning.
-\item
-  The ethical implications of human-in-the-loop learning: We discuss the
-  potential benefits and risks of learning from human preferences,
-  opinions, and behaviors and how to address them responsibly and
-  fairly. We also raise questions about the selection, representation,
-  and protection of human participants and the possible consequences of
-  exploiting or manipulating human responses.
-\end{itemize}
-
-Besides the above aspects, we also touch upon some other relevant
-topics, such as:
-
-\begin{itemize}
-\item
-  General Artificial Intelligence: Most machine learning or AI
-  models/algorithms involve learning from humans, as the ultimate goal
-  is often to imitate human intelligence. Therefore, humans are the
-  primary source of data and feedback for ML/AI systems.
-\item
-  General Machine Learning: Humans define all the steps of the ML/AI
-  process, such as selecting the problem, data sources, model
-  architectures, optimization methods, and evaluation metrics.
-  Therefore, humans are the main decision-makers and stakeholders for
-  ML/AI systems.
-\item
-  Expert knowledge for defining model architectures: In some cases,
-  humans can provide valuable domain knowledge and prior information for
-  designing and refining model architectures, especially for graphical
-  models and causal inference. We may present a few examples, but this
-  is not our main focus.
-\item
-  Human-Computer Interaction (HCI): The interface and elicitation
-  process matters for the quality and efficiency of human-in-the-loop
-  learning. Therefore, HCI principles and techniques can help to improve
-  the user experience and engagement of human participants.
-\end{itemize}
-
-Returning to human feedback, their integration can occur at various
-stages of the learning process, spanning from data collection and
-labeling to model selection, training, and evaluation. Incorporating
-these feedbacks enables fine-tuning the model to align with their hidden
-insights. The utilization of human feedback is crucial due to its
-ability to offer valuable signals that are challenging to acquire or
-delineate through other means, such as data or predefined cost
-functions. There are many ways to update models based on human feedback,
-depending on the type and level of feedback and the objective and
-structure of the model. A general taxonomy of feedback-update
-interactions can be divided into six categories:
-
-\begin{itemize}
-\item
-  Observation-level \& Active data collection \& Asking humans for
-  feedback on specific features, such as collecting expert labels on
-  features.
-\item
-  Observation-level \& Constraint elicitation \& Inferring optimization
-  constraints from insights extracted from feedback.
-\item
-  Observation-level \& Feature modification \& Adding, removing, or
-  preprocessing features of training/finetuning datasets.
-\item
-  Domain-level \& Dataset modification \& Generating synthetic data that
-  satisfy certain constraints specified by human feedback, such as
-  fairness or weak supervision.
-\item
-  Domain-level \& Constraint specification \& Modifying the loss
-  function for optimizing the model based on human feedback, such as
-  imposing fairness, interpretability, or resource constraints.
-\item
-  Domain-level \& Model editing \& Changing the rules or weights of the
-  model based on human feedback, such as incorporating domain knowledge
-  or preferences.
-\end{itemize}
-
-These ways of updating models based on human feedback can help to
-improve the performance, behavior, and alignment of the models with
-human values and goals. However, they pose challenges and risks, such as
-communication barriers, feedback quality, and ethical issues. Therefore,
-designing and evaluating the feedback-update interactions carefully and
-responsibly is important.
-
-Starting with an introduction to human preferences models and various
-approaches to modeling and understanding human preferences, the book
-then delves into interaction models that enable machines to learn from
-human preferences and feedback, including techniques such as paired
-comparison data analysis and game-theoretic perspectives on preference
-learning. Understanding human biases and incorporating them into reward
-models is explored in the chapter on human biases and reward models. The
-impact of human biases on reward inference and approaches to leverage
-both rational and irrational human behavior are discussed. Metric
-elicitation techniques are then introduced, which allow machines to
-learn performance metrics from pairwise comparisons and other forms of
-human feedback.
-
-Active learning strategies are covered in the chapter on active
-learning, which enables machines to actively query humans for feedback
-and preferences to improve the learning process. The book also explores
-the design and development of adaptive user interfaces that personalize
-services based on user preferences, as well as the role of bandit
-algorithms and probabilistic methods in learning from human preferences.
-
-Challenges and techniques involved in learning multimodal rewards and
-meta-reward learning are discussed, including approaches to learning
-from demonstrations and rewards in complex environments. Human-Computer
-Interaction (HCI) considerations in learning from humans are explored,
-emphasizing user-centered design principles. The alignment of goals and
-preferences among expert and non-expert stakeholders and the challenges
-and techniques involved are addressed.
-
-Ensuring truthfulness and fairness in eliciting human preferences is
-crucial, and the book discusses mechanism design principles and
-techniques to incentivize truthful feedback from humans. The integration
-of human computing techniques in learning from human preference is also
-explored, highlighting the use of human intelligence to solve complex
-problems and improve machine learning algorithms.
-
-The application of inverse reinforcement learning in robotics focuses on
-how machines can infer human preferences and reward functions from
-observed behavior. Ethical considerations in learning from human
-preference are addressed, emphasizing the importance of incorporating
-ethical principles in designing and deploying machine learning systems.
-Finally, the book explores reinforcement learning from human feedback
-for language models, highlighting techniques for incorporating human
-feedback in training language models.
-
-The book aims to provide a comprehensive overview of machine learning
-from human preference. By leveraging human feedback and preferences, the
-aim is to develop more intelligent and reliable machine-learning systems
-that align with human values and preferences. The book is divided into
-16 chapters:
-
-\begin{itemize}
-\item
-  \textbf{Chapter 1} is an introductory chapter providing an overview of
-  the field and motivations and outlines what will be covered.
-\item
-  \textbf{Chapter 2} provides an integrated framework for understanding
-  human preference modeling, interaction models, and the impact of human
-  biases on decision-making. It begins by exploring the motivations and
-  applications of human preference modeling, using examples from health
-  coaching, social media, and shopping. The chapter then discusses
-  various rationality assumptions and traditional models such as Luce's
-  axiom of choice and Boltzmann Rationality, highlighting their roles in
-  capturing the probabilistic nature of human choices. It also addresses
-  advanced interaction models using pairwise and rank-order sampling
-  techniques to analyze and predict preferences, alongside a case study
-  on the LESS model for handling duplicates in decision-making
-  scenarios. Finally, it delves into the ethical and practical
-  challenges of collecting and utilizing human feedback to ensure robust
-  and well-calibrated reward models.
-\item
-  \textbf{Chapter 5} introduces a framework for eliciting multi-class
-  performance metrics from an oracle through pairwise comparisons of
-  confusion matrices. It describes eliciting linear metrics that
-  consider only the diagonal elements of confusion matrices,
-  representing correct predictions. Such metrics are known as Diagonal
-  Linear Performance Metrics (DLPMs). The chapter outlines an algorithm
-  for eliciting DLPMs by finding the Bayes optimal confusion matrix that
-  maximizes a DLPM through binary searches of the space of possible
-  confusion matrices.
-\item
-  \textbf{Chapter 6} discusses different methods for active learning,
-  with a focus on selecting training examples that maximize improvement
-  to the learner's performance. It describes how active learning aims to
-  strategically query new data points by estimating how their addition
-  would hypothetically impact the model if trained on them. Various
-  strategies are explored, including reducing the learner's variance,
-  exploiting ambiguity and domain knowledge in ranking and comparisons,
-  and balancing exploration versus exploitation. Computational methods
-  are presented and analyzed empirically on applications like robotics
-  to demonstrate how active learning can enhance models using
-  significantly less labeled data.
-\item
-  \textbf{Chapter 7} discusses adaptive user interfaces, which aim to
-  provide personalized experiences by learning individual user
-  preferences from interactions. It presents the design of adaptive
-  interfaces as involving modeling users, collecting user traces,
-  learning models from the data, and applying the models to adapt
-  recommendations. The applications of adaptive interfaces mentioned
-  include route advisors, destination selection assistants, and
-  scheduling tools, with the goal of improving systems through
-  intelligent personalization.
-\item
-  \textbf{Chapter 8} discusses different bandit algorithms and their
-  applications. It introduces the multi-armed bandit problem and
-  explores strategies like epsilon-greedy and UCB to balance exploration
-  and exploitation. Two important extensions are examined more
-  thoroughly: contextual bandits, which incorporate context into
-  decisions, and dueling bandits, which learn from pairwise preferences
-  instead of explicit rewards. A wide range of domains are also
-  presented where bandit methods, such as healthcare, recommendations,
-  and dialogue systems, have proved useful.
-\item
-  \textbf{Chapter 9} examines modeling human rewards that have complex,
-  multi-modal structures and techniques for meta-learning reward
-  functions.
-\item
-  \textbf{Chapter 10} analyzes important human-computer interaction
-  considerations for systems that learn from humans, like cognitive
-  constraints and user experience.
-\item
-  \textbf{Chapter 11} tackles challenges around aligning learned models
-  with values from diverse expert and non-expert stakeholders. Issues of
-  truthfulness and the notion of agreement are discussed.
-\item
-  \textbf{Chapter 12} focuses on mechanism design theory and how it can
-  be applied to develop protocols and systems for truthfully learning
-  preferences at scale.
-\item
-  \textbf{Chapter 13} looks at how human computation frameworks can
-  enable large-scale preference elicitation by crowd-sourcing tasks to
-  many individuals.
-\item
-  \textbf{Chapter 14} presents applications of inverse reinforcement
-  learning using human feedback for robotics, such as learning
-  helicopter control policies from demonstrations.
-\item
-  \textbf{Chapter 15} discusses ethical issues that arise in interaction
-  models and approaches for designing preference elicitation systems
-  considering fairness, privacy, and other socio-technical factors.
-\item
-  \textbf{Chapter 16} covers reinforcement learning techniques that can
-  leverage human feedback to guide language models, for example, by
-  providing feedback on the generated text.
-\end{itemize}
-
-Machine learning from human feedback, especially reinforcement learning
-from human feedback (RLHF), stands as a promising avenue for training AI
-systems through human input. However, it confronts several intricate
-challenges and its efficacy encounters notable limitations stemming from
-the intricacies of human feedback and the complexity of aligning AI with
-human values.
-
-The acquisition of representative and unbiased feedback from humans
-presents a formidable hurdle, rooted in inherent limitations of human
-evaluators. Human fallibility and the incapacity to assess ML/AI model's
-output accurately hinder the quality and reliability of feedback.
-Moreover, there exists an inherent tradeoff between the efficiency and
-richness of feedback. While extensive, detailed feedback such as
-prolonged conversations promises deeper insights, its acquisition proves
-arduous and resource-intensive.
-
-Within the domain of RLHF, the construction of a comprehensive reward
-model poses significant difficulties. Capturing the intricacies of
-complex and context-dependent human values and preferences within a
-singular reward function stands as a formidable challenge. The inherent
-inconsistency in modeling human behavior further complicates this
-endeavor. Consequently, reward models are susceptible to
-misgeneralization, resulting in imperfect proxies that pave the way for
-"reward hacking". Agents may veer towards optimizing these flawed
-proxies rather than pursuing the genuine objectives intended by human
-feedback.
-
-The optimization of policies within RLHF presents its own set of
-challenges. Effectively fine-tuning policies through RL techniques
-encounters obstacles, notably susceptibility to adversarial
-exploitations. Furthermore, even if training rewards are accurately
-derived, policies may exhibit poor performance upon deployment due to
-discrepancies between the training and deployment distributions. Agents
-might prioritize maximizing their influence or power, diverging from the
-intended goals outlined by the feedback.
-
-In the realm of joint training, where reward models and policies undergo
-simultaneous refinement, intricate issues surface. The amalgamation of
-these components can induce detrimental distributional shifts as errors
-accumulate throughout the training process. Balancing training
-efficiency while circumventing overfitting proves to be a complex
-undertaking. Policies exploring areas where the reward model exhibits
-inaccuracies further complicate the delicate balance between efficient
-learning and avoiding overfitting. These challenges underscore the
-intricate landscape of RLHF, necessitating nuanced strategies and
-innovative approaches to surmount the complexities inherent in aligning
-AI systems with human feedback effectively.
-
-Looking forward, future developments in RLHF necessitate a nuanced
-approach. Enhancements in human feedback processes, potentially
-leveraging AI assistance, fine-grained annotations, and demonstrative
-techniques, hold promise in ameliorating feedback quality. Moreover,
-addressing the challenges of modeling uncertainty and handling
-discrepancies in reward models emerges as a crucial area for
-improvement. Integrating RLHF with complementary techniques, such as
-formal verification and interpretability, offers avenues to bolster its
-effectiveness. Moreover, a pivotal direction lies in broadening the
-scope of RLHF beyond singular reward frameworks to accommodate the
-oversight of diverse stakeholder objectives. Embracing multi-objective
-oversight is pivotal to authentically representing the multifaceted
-goals of varied stakeholders within AI systems. Simultaneously, ensuring
-public transparency concerning technical intricacies fosters a better
-understanding of strengths, limitations, and the developmental
-trajectory of RLHF.
-
-However, it is imperative to underscore that RLHF should not be
-perceived as a comprehensive solution but rather as a facet within a
-comprehensive "defense in depth" strategy integrating multiple safety
-measures. The progress of RLHF and broader advancements in AI alignment
-demand persistent efforts to navigate fundamental choices and challenges
-inherent in aligning AI systems with human values and goals.
-
-The book is intended for researchers, practitioners, and students who
-are interested in the intersection of machine learning, human-computer
-interaction, and artificial intelligence. The book assumes some basic
-knowledge of probability, statistics, and machine learning, but provides
-sufficient background and references for the readers to follow the main
-ideas and results. The book also provides code examples and datasets for
-some of the methods and applications discussed in the book. The field of
-machine learning from human preference is a vibrant and growing area of
-research and practice, with many open challenges and opportunities. We
-hope that this book will inspire and inform the readers to further
-explore and advance this exciting and important field.
+eliciting preference. We review the relevant foundations in
+microeconomics, psychology, marketing, statistics, and other disciplines
+and explore their applications to various domains, such as language,
+robotics, logistics, and more. We adopt the machine learning perspective
+for modeling, estimating, and evaluating the learning processes.
 
 \bookmarksetup{startatroot}
 
-\chapter{Human Decision Making and Choice
-Models}\label{ch-human-decision-making-choice-models}
+\chapter{Models of Preferences and
+Decisions}\label{ch-human-decision-making-choice-models}
 
 \section{Introduction}\label{introduction}
 
 Human preference modeling aims to capture humans' decision making
 processes in a probabilistic framework. Many problems would benefit from
 a quantitative perspective, enabling an understanding of how humans
-engage with the world. While human decision-making is only somewhat
-understood, we can use real-world data representing the outcomes of
-decisions to align human-facing systems with user preferences. Through
-our exploration of human preference models, we will ground ourselves in
-building a health coaching system that can provide meal recommendations
-aligned with a user's dietary needs and preferences. Examples of
-scenarios which can benefit from a model of how humans make choices
-include:
-
-\begin{enumerate}
-\def\labelenumi{\arabic{enumi}.}
-\item
-  \textbf{Health coaching:} Humans express their preferences every time
-  they pick lunch for consumption. Humans may have several goals related
-  to nutrition, such as weight loss and improving concentration. We can
-  learn how a given individual or set of individuals prefer to eat to
-  provide personalized recommendations to help them attain their goals.
-  This chapter will use this use case to ground human preference
-  modeling in a real-life application.
-\item
-  \textbf{Social media:} Platforms have a far greater amount of content
-  than one can consume in a lifetime, yet such products must aim to
-  maximize user engagement. To accomplish this, we can learn what
-  specific things people like to see in their feeds to optimize the
-  value they gain out of their time on social media. For example, the
-  video feed social media platform
-  \href{https://www.tiktok.com/}{TikTok} has had viral adoption due to
-  its notorious ability to personalize a feed for its users based on
-  their preferences.
-\item
-  \textbf{Shopping:} Retail corporations largely aim to maximize revenue
-  by making it easy for people to make purchases. Recommendation systems
-  on online shopping platforms provide a mechanism for curating specific
-  items based on an individual's previous purchases (or even browsing
-  history) to make shoppers aware of items they may like and, therefore,
-  purchase.
-\end{enumerate}
-
-\begin{longtable}[]{@{}
-  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.4865}}
-  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.4865}}@{}}
-\caption{Examples of machine learning tasks and their interpretation as
-modeling human preferences.}\label{tbl-philosophy}\tabularnewline
-\toprule\noalign{}
-\begin{minipage}[b]{\linewidth}\raggedright
-Application
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-Human Preference
-\end{minipage} \\
-\midrule\noalign{}
-\endfirsthead
-\toprule\noalign{}
-\begin{minipage}[b]{\linewidth}\raggedright
-Application
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-Human Preference
-\end{minipage} \\
-\midrule\noalign{}
-\endhead
-\bottomrule\noalign{}
-\endlastfoot
-Computer vision: train a neural network to predict bounding boxes
-delineating all instances of dogs in an image & This is how humans
-process images by identifying the position and geometry of the things we
-see in them \\
-Natural language processing: train a model to generate coherent text &
-Coherent text is itself a human-created and defined concept, and we
-prefer that any synthetically generated text matches that of humans \\
-Computer vision: train a diffusion model to generate realistic images of
-nature & Humans prefer that images accurately capture the world as
-observed by humans, and this generative model should reflect the details
-that comprise that preference \\
-\end{longtable}
-
-In this chapter, we will explore how one can model human preferences,
-including different formulations of such models, how one can optimize
-these models given data, and considerations one must understand to
-create such systems. We note that the exact assumptions we make about
-human preferences in this chapter differentiate the \emph{specific}
-human preference learning problem we are considering from the
-discriminative and generative tasks we describe in
-Table~\ref{tbl-philosophy}. We describe these assumptions in
-Section~\ref{sec-foundations}.
+engage with the world. In this chapter, we will explore how one can
+model human preferences, including different formulations of such
+models, how one can optimize these models given data, and considerations
+one should understand to create such systems. We describe these
+assumptions in Section~\ref{sec-foundations}.
 
 \section{Foundations of Preference Models}\label{sec-foundations}
 
-We introduce a framework for discussing human preferences. The different
-methods to model these preferences Section~\ref{sec-models} all build
-upon this framework.
+\subsection*{Axiom 1: Construction of Choices
+Set}\label{axiom-1-preference-models-model-choice}
+\addcontentsline{toc}{subsection}{Axiom 1: Construction of Choices Set}
 
-\subsection*{Axiom 1: Preference models model
-choice}\label{axiom-1-preference-models-model-choice}
-\addcontentsline{toc}{subsection}{Axiom 1: Preference models model
-choice}
+Human preference models model the preferred choices amongst a set of
+options. For example, this could be modeling which meal from a set of
+options a person will most likely choose. Preference models must
+enumerate the set of all possible choices included in a human decision.
+As such, we must ensure that the choices we enumerate capture the entire
+domain (collectively exhaustive) but are distinct (mutually exclusive)
+choices. A discrete set of choices is a constraint we canonically impose
+to ensure we can tractably model preferences and aptly estimate the
+parameters of preference models. We assume that if a new option is added
+to the choice set, the relative probabilities of choosing between the
+original options remain unchanged. This is known as Independence of
+Irrelevant Alternatives (IIA) property from Luce's axiom of choices
+(\citeproc{ref-Luce1977}{Luce 1977}).
 
-Human preference models model the preferred choice or choices amongst a
-set of options. In our health coaching example, this could be modeling
-which meal from a set of options a person will most likely choose. An
-alternative framework we will explore is ranking, in which we can model
-an ordering of given choices from most to least desirable. It is
-certainly possible that there is an infinite set of options (such as in
-a continuous action space); in this case, our model will have to reason
-about a discretized set of options and may fail to capture the full
-space of possibilities a human would choose from in the real world.
+\subsection*{Axiom 2: Preference Centers around
+Utility}\label{axiom-3-preference-centers-around-utility}
+\addcontentsline{toc}{subsection}{Axiom 2: Preference Centers around
+Utility}
 
-Choices are \emph{collectively exhaustive}, \emph{mutually exclusive},
-and \emph{finite}. Human preference models must enumerate an
-\emph{action space}, or the set of all possible choices included in a
-human decision. As such, we must ensure that the choices we enumerate
-capture the entire domain (collectively exhaustive) but are indeed
-distinct (mutually exclusive) choices. In our health coaching example, a
-person either chooses to eat chicken or fish. Choosing one does not
-affect the other.
+Human preference models are centered around the notion of utility, a
+scalar quantity representing the benefit or value an individual attains
+from selecting a given choice. We assume that the underlying utility
+mechanism of a human preference model captures the final decision output
+from a human. We use the notation \(U_i\) as the utility corresponding
+to choice \(i\). The utility of a choice \(i\) is a stochastic function
+\(H_i\) of the choice's attributes \(z_i\):
+\(U_i = H_i(z_i) + \epsilon_i\), where \(\epsilon_i\) is an unobserved
+factor for choice \(i\) following a specified distribution, such as a
+standard normal distribution. The attributes representing a choice
+\(z_i\) are crucial in defining the human preference model, as they
+provide the context for capturing human behavior when choice \(i\) is
+made. Only the relative difference in utility matters. As such, the
+scale of the utilities is irrelevant within a given set of human
+preference data for a given individual. The scale of utilities is
+important when comparing across datasets or across different humans;
+since utility may be defined differently in various datasets or
+different human. A common practice to address this consideration is to
+standardize the utilities in each dataset based on its variance in the
+observed data.
 
-A discrete set of choices is a constraint we canonically impose to
-ensure we can tractably model preferences and aptly estimate the
-parameters of preference models. This is usually sufficiently expressive
-to create a powerful human preference model (for example, recent
-generative language models have vocabulary sizes of 40,000+ and can
-model nearly arbitrary language sequences
-(\citeproc{ref-Radford2018GPT}{Radford et al. 2018})). While in theory,
-one can imagine a continuous domain for choices, a discrete set fits
-nicely with most decision-making processes humans face. While human
-thought is extremely nuanced, most thoughts are expressed as discrete
-words or discrete decisions in every step humans take in the world.
+\subsection*{Axiom 3: Rationality}\label{human-rationality}
+\addcontentsline{toc}{subsection}{Axiom 3: Rationality}
 
-\subsection*{Axiom 2: Preference captures
-decision-making}\label{axiom-2-preference-captures-decision-making}
-\addcontentsline{toc}{subsection}{Axiom 2: Preference captures
-decision-making}
-
-There are certainly cases in which human preferences don't reflect the
-human decision-making process, for example if there are external factors
-(social, political, economic) which govern a human's choices, or if one
-is explicitly choosing to go against their preferences in the context of
-exploration. However, human preference models will always do their best
-to model the ultimate decision, and we assume that they are in some way
-accounting for these other factors (and any lack of such accounting will
-result in a biased model). Human preferences are generally classified
-into two categories:
-
-\begin{enumerate}
-\def\labelenumi{\arabic{enumi}.}
-\item
-  Revealed preferences are those one can observe retroactively from
-  existing data. The implicit decision-making knowledge can be captured
-  via learnable parameters and their usage in models which represent
-  relationships between input decision attributes that may have little
-  human interpretability, but enable powerful models of human
-  preference. For health coaching, we may have information about which
-  foods an individual has chosen previously in different contexts,
-  allowing us to build a model from their decisions. Such data may be
-  easier to acquire and can reflect real-world outcomes (since they are,
-  at least theoretically, inherently based on human preferences).
-  However, if we fail to capture sufficient context in such data, human
-  preference models may not sufficiently capture human preferences.
-\item
-  Stated preferences are those individuals explicitly indicate in
-  potentially experimental conditions. The explicit knowledge may be
-  leveraged by including inductive biases during modeling (for example,
-  the context used in a model) which are reasonable assumptions for how
-  a human would consider a set of options.This may include controlled
-  experiments or studies. This may be harder to obtain and somewhat
-  biased, as they can be hypothetical or only accurately reflect a piece
-  of the overall context of a decision. However, they enable greater
-  control of the decision-making process.
-\end{enumerate}
-
-\subsubsection*{Human Rationality}\label{human-rationality}
-\addcontentsline{toc}{subsubsection}{Human Rationality}
-
-Modeling decision-making must also take into account the rational and
-irrational behaviour of humans. Therefore we consider \emph{rationality
-assumptions} as a fundamental aspect of understanding how individuals
-make decisions. These assumptions provide a framework for predicting and
-modeling human behavior by outlining the principles that guide
-decision-making processes (\citeproc{ref-keisler2003common}{Keisler and
-Lee 2003}).
-
-Perfect rationality posits that individuals always make decisions that
-maximize their utility. It assumes that individuals have complete
-information and the cognitive ability to process this information to
-make optimal choices (\citeproc{ref-miljkovic2005rational}{Miljkovic
-2005}). This assumption is often used in economic models to predict how
-rational agents would behave under ideal conditions. However, numerous
-studies have shown that this assumption frequently fails to describe
-actual human behavior, as individuals do not always act in ways that
-maximize their utility due to various constraints and biases
+Modeling decision-making must also take into account rationality.
+Rationality assumption provides a framework for predicting and modeling
+human behavior by outlining the principles that guide decision-making
+processes (\citeproc{ref-keisler2003common}{Keisler and Lee 2003}). By
+incorporating different types of rationality, researchers can create
+more accurate and realistic models that reflect the complexities of
+human decision-making (\citeproc{ref-miljkovic2005rational}{Miljkovic
+2005}; \citeproc{ref-simon1972theories}{Simon 1972}). Perfect
+rationality posits that individuals make decisions that maximize their
+utility, assuming they have complete information and the cognitive
+ability to process this information to make optimal choices
+(\citeproc{ref-miljkovic2005rational}{Miljkovic 2005}). Numerous studies
+have shown that this assumption frequently fails to describe actual
+human behavior, as individuals do not always act in ways that maximize
+their utility due to various constraints and biases
 (\citeproc{ref-miljkovic2005rational}{Miljkovic 2005}). Bounded
-rationality, on the other hand, acknowledges that individuals operate
-within the limits of their information and cognitive capabilities.
-Decisions are made using heuristics or rules of thumb rather than
-through exhaustive analysis, reflecting the practical constraints of
-real-world decision-making (\citeproc{ref-simon1972theories}{Simon
-1972}). This concept, introduced by Herbert Simon, recognizes the
-limitations of human cognitive processing and the impact of these
-limitations on decision-making. Simon's theory suggests that instead of
-optimizing, individuals satisfy, seeking solutions or decisions that are
-``good enough'' under the circumstances
-(\citeproc{ref-simon1972theories}{Simon 1972}). Noisy rationality
-assumes that decisions are influenced by random noise, resulting in
-probabilistic choice behavior. This means that while individuals aim to
-maximize their utility, random factors can lead to deviations from
-perfectly rational choices. This approach is useful for modeling
-behavior in situations where decisions are not entirely deterministic
-and are subject to variability
-(\citeproc{ref-miljkovic2005rational}{Miljkovic 2005}). This
-probabilistic approach aligns with findings from behavioral economics
-and psychology, which indicate that human decision-making is often
-inconsistent and influenced by various random factors
-(\citeproc{ref-miljkovic2005rational}{Miljkovic 2005}).
+rationality acknowledges that individuals operate within the limits of
+their information and cognitive capabilities. Decisions are made using
+heuristics rather than through exhaustive analysis, reflecting the
+practical constraints of real-world decision-making
+(\citeproc{ref-simon1972theories}{Simon 1972}). Bounded rationality
+acknowledges that decisions are influenced by noise, resulting in
+probabilistic choice behavior: while individuals aim to maximize their
+utility, random factors can lead to deviations from perfectly rational
+choices (\citeproc{ref-miljkovic2005rational}{Miljkovic 2005}).
 
-Understanding rationality assumptions is crucial for modeling and
-predicting human behavior in various decision-making scenarios. These
-assumptions provide the foundation for developing models that can
-simulate and analyze how individuals interact with one another and their
-environment. By incorporating different types of rationality,
-researchers can create more accurate and realistic models that reflect
-the complexities of human decision-making. This comprehensive approach
-enhances the predictive power of models and improves the understanding
-of human behavior in economic and social contexts
-(\citeproc{ref-miljkovic2005rational}{Miljkovic 2005};
-\citeproc{ref-simon1972theories}{Simon 1972}).
-
-Luce's axiom of choice (\citeproc{ref-Luce1977}{Luce 1977}) and
-Boltzmann's Rationality provide a probabilistic framework for modeling
-noisily-rational human behavior. Luce's axiom of choice addresses the
-likelihood of a human selecting an option \(o\) from a set \(O\).
-Desirability is represented by a value function
+Bounded rationality can be operationalized through Boltzmann rationalit.
+It addresses the likelihood of a human selecting an option \(o\) from a
+set \(O\). Desirability is represented by a value function
 \(v : O \rightarrow \mathbb{R}^+\), with the selection probability
 calculated as \(P(o) = \frac{v(o)}{\sum_{o' \in O} v(o')}\). Assuming
 there is an underlying reward for each option \(R(o) \in \mathbb{R}\)
@@ -1111,46 +683,33 @@ such that \(v(o) = e^{R(o)}\), we get
 \(P(o) = \frac{e^{R(o)}}{\sum_{\bar{o} \in \mathcal{O}} e^{R(\bar{o})}}\).
 Essentially, ``A human will act out a trajectory with a probability
 proportional to the exponentiated return they receive for the
-trajectory.'' This probabilistic approach challenges the traditional
-assumption of perfect economic rationality, where individuals always
-make decisions that maximize their utility. When choices involve
-trajectories \(\xi \in \Xi\) (sequences of actions), the Boltzmann model
-(\citeproc{ref-VonNeumannMorgenstern1945}{Neumann and Morgenstern 1945})
-is used. Here, the reward \(R\) is typically a function of a feature
-vector \(\phi : \Xi \rightarrow \mathbb{R}^k\), and the probability
-density is given by
+trajectory.'' When choices involve trajectories \(\xi \in \Xi\)
+(sequences of actions), the reward \(R\) is typically a function of a
+feature vector \(\phi : \Xi \rightarrow \mathbb{R}^k\), and the
+probability density is given by
 \(p(\xi) = \frac{e^{R(\phi(\xi))}}{\int_{\Xi} e^{R(\phi(\bar{\xi}))} d\bar{\xi}}\).
-Boltzmann Rationality serves a critical role in human preferences and
-decision-making. It captures the probabilistic nature of human choices,
-recognizing that decisions are often noisy and influenced by various
-factors. This model is instrumental in preference modeling,
-accommodating human preferences' inherent variability and uncertainty.
 
-However, the Luce choice axiom and Boltzmann Rationality encounter a
-known issue called the ``duplicates problem,'' where there is no concept
-of similar actions (e.g., choosing between using a car or a train for
-transportation, with no particular preference). The probability of
-making the decision is 50\% for either option. However, if we now have
-100 cars, under Luce/Boltzmann, we would have a 99\% probability of
-choosing a car, which is unrealistic.
-
-To address this issue, various extensions have been proposed. One such
-extension is the attribute rule, which interprets options as bundles of
-attributes. In this rule, attributes \(X\) are associated with options,
-and they have desirability values \(w(x)\). An attribute intensity
-function \(s(x, o)\) indicates the degree to which an attribute is
-expressed in an option. The probability of choosing option \(o\) is
-calculated as:
+Boltzmann rationality has the ``duplicates problem,'' where there is no
+concept of similar actions (e.g., choosing between using a car or a
+train for transportation, with no particular preference). The
+probability of making the decision is 50\% for either option. However,
+if we now have 100 cars, under Boltzmann, we would have a 99\%
+probability of choosing a car, which is unrealistic. To address this
+issue, various extensions have been proposed. One such extension is the
+attribute rule, which interprets options as bundles of attributes. In
+this rule, attributes \(X\) are associated with options, and they have
+desirability values \(w(x)\). An attribute intensity function
+\(s(x, o)\) indicates the degree to which an attribute is expressed in
+an option. The probability of choosing option \(o\) is
 
 \[P(o) = \sum_{x \in \mathcal{X}_o} \frac{w(x)}{\sum_{\bar{x} \in \mathcal{X}_o} w(\bar{x})} \cdot \frac{s(x, o)}{\sum_{\tilde{o} \in \mathcal{O}} s(x, \bar{o})}\]
 
 This equation describes a two-step process where an attribute
-\(x \in X_O\) is first chosen according to a Luce-like rule and then an
-option \(o \in O\) with that attribute is selected using another
-Luce-like rule. This approach handles duplicates gracefully by
+\(x \in X_O\) is first chosen according to a Boltzmann-like rule and
+then an option \(o \in O\) with that attribute is selected using another
+Boltzmann-like rule. This approach handles duplicates gracefully by
 effectively creating a two-layer hierarchy in choosing an option.
-
-Boltzmann Rationality finds practical applications in various fields,
+Boltzmann rationality finds practical applications in various fields,
 particularly in reinforcement learning, where it models decision-making
 in uncertain environments. It also applies to trajectory selection,
 where the probability of a sequence of actions (trajectory) is
@@ -1166,49 +725,46 @@ from the attribute rule and extends it to continuous trajectories
 instead of creating ``attributes'', which group together similar
 discrete options, it introduces a similarity metric on the space of
 continuous actions, thereby creating similar groupings on trajectories.
-
-First, discussing the distinction between trajectory and feature space
-is important. The LESS similarity metric could be defined in trajectory
-space, where the trajectory is some theoretical notion of all states and
-actions one passes through over time. However, it is instead defined on
-the measured feature vector \(\phi(\xi)\) associated with the agent's
-trajectory \(\xi\). Why? In practice, one can never measure the exact
-trajectory with perfect fidelity. The feature vector will almost
-necessarily map in a one-to-many fashion with trajectories. Formally,
-let \(\phi \in \Phi\) be the set of all possible feature vectors
-\(\xi \in \Xi\) the set of all trajectories. The set of feature vectors
-belonging to a set of trajectories \(\Xi' \subseteq \Xi\) is
-\(\Phi_{\Xi'}\). We begin with equation (4) and substitute our
-similarity metric on feature vectors of trajectories.
+The LESS similarity metric could be defined in trajectory space, where
+the trajectory is some theoretical notion of all states and actions one
+passes through over time. However, it is instead defined on the measured
+feature vector \(\phi(\xi)\) associated with the agent's trajectory
+\(\xi\). In practice, one can never measure the exact trajectory with
+perfect fidelity. The feature vector will almost necessarily map in a
+one-to-many fashion with trajectories. Formally, let \(\phi \in \Phi\)
+be the set of all possible feature vectors \(\xi \in \Xi\) the set of
+all trajectories. The set of feature vectors belonging to a set of
+trajectories \(\Xi' \subseteq \Xi\) is \(\Phi_{\Xi'}\). We begin with
+equation (4) and substitute our similarity metric on feature vectors of
+trajectories.
 
 \[\begin{aligned}
     P(\xi) = \frac{e^{R(\phi(\xi))}}{\sum_{\bar{\phi} \in \Phi_{\Xi}} e^{R(\hat{\phi})}} \cdot \frac{s(\phi(\xi), \bar{\xi})}{\sum_{\hat{\xi} \in \Xi} s(\phi(\xi), \bar{\xi})}
 \end{aligned}\]
 
-In this formulation, the first half of the product is simply Boltzmann
-equation. The probability of choosing trajectory \(\xi\) is proportional
-to the exponentiated reward for the agent's measured trajectory
-\(\phi(\xi)\), normalized by the sum of all rewards over all possible
-measured trajectories. The second half of the product is a normalization
-factor based on how similar the current trajectory is to other
-trajectories in feature space. We can define the similarity function as
-an indicator function, where \(s(x, \xi) = 1\) only if
-\(x = \phi(\xi)\). That means that multiple trajectories with the same
-feature vector will effectively be considered a single option. Thus, we
-achieve the ``bundling'' of trajectories, in the same way that the
-attribute rule bundled options under different attributes.
+The probability of choosing trajectory \(\xi\) is proportional to the
+exponentiated reward for the agent's measured trajectory \(\phi(\xi)\),
+normalized by the sum of all rewards over all possible measured
+trajectories. The second half of the product is a normalization factor
+based on how similar the current trajectory is to other trajectories in
+feature space. We can define the similarity function as an indicator
+function, where \(s(x, \xi) = 1\) only if \(x = \phi(\xi)\). That means
+that multiple trajectories with the same feature vector will effectively
+be considered a single option. Thus, we achieve the ``bundling'' of
+trajectories, in the same way that the attribute rule bundled options
+under different attributes.
 
 However, setting the similarity metric as an indicator function isn't
 sufficiently flexible. We want a proper metric that acts more as a
 continuous distance over the feature space. We instead define \(s\) to
-be a \emph{soft similarity metric}
-\(s : \Phi \times \Xi \rightarrow \mathbb{R}^+\). It has the following
+be a soft similarity metric
+\(s : \Phi \times \Xi \rightarrow \mathbb{R}^+\) with the following
 properties:
 
 \begin{enumerate}
 \def\labelenumi{\arabic{enumi}.}
 \item
-  \(s(\phi(\xi), \xi) = \max_{x \in \phi, \bar{\xi} \in \Xi} s(x, \hat{\xi})) \forall (\xi \in \Xi)\)
+  \(s(\phi(\xi), \xi) = \max_{x \in \phi, \bar{\xi} \in \Xi} s(x, \hat{\xi}) \forall (\xi \in \Xi)\)
 \item
   Symmetric: \(s(\phi(\xi), \bar{\xi}) = s(\phi(\bar{\xi}), \xi)\)
 \item
@@ -1228,369 +784,134 @@ effect for our LESS model of human decision-making. This means, though,
 that the ``trajectory bundle'' of similar trajectories still has a
 reasonable probability of being chosen.
 
-\subsection*{Axiom 3: Preference centers around
-utility}\label{axiom-3-preference-centers-around-utility}
-\addcontentsline{toc}{subsection}{Axiom 3: Preference centers around
-utility}
+\subsection*{Axiom 4: Preference captures
+decision-making}\label{axiom-2-preference-captures-decision-making}
+\addcontentsline{toc}{subsection}{Axiom 4: Preference captures
+decision-making}
 
-Human preference models are centered around the notion of utility, which
-can mean a reward one attains after expressing one's preference over
-options.\footnote{GPT-4 is good at coming up with longer-rendered
-  answers about why some things are appropriate or not.} In health
-coaching, the utility, as a function of the health choices users make,
-may be satiety, latent promotion of overall health, or even a
-quantitative extension of life. Of course, humans don't necessarily use
-an explicit measure of utility --- frequently humans use qualitative
-factors such as emotion or external influence to make decision. However,
-we assume that the underlying utility mechanism of a human preference
-model still captures the final decision output from a human.
+Human preferences are classified into two categories: revealed
+preferences and stated preferences.
 
-Utility can be interpreted as a scalar quantity representing the benefit
-or value an individual attains from selecting a given choice. Each
-choice has an associated utility. Human preference models capture both
-the utility of a choice (e.g.~we model the utility value as a function
-of attributes of a given choice) and how the utilities interact to make
-a decision.{[}\^{}2{]} We use the notation \(U_i\) as the utility
-corresponding to choice \(i\).
+Revealed preferences are those one can observe retroactively from
+existing data. The implicit decision-making knowledge can be captured
+via learnable parameters and their usage in models which represent
+relationships between input decision attributes that may have little
+human interpretability, but enable powerful models of human preference.
+For health coaching, we may have information about which foods an
+individual has chosen previously in different contexts, allowing us to
+build a model from their decisions. Such data may be easier to acquire
+and can reflect real-world outcomes (since they are, at least
+theoretically, inherently based on human preferences). However, if we
+fail to capture sufficient context in such data, human preference models
+may not sufficiently capture human preferences.
 
-\begin{enumerate}
-\def\labelenumi{\arabic{enumi}.}
-\item
-  \textbf{The utility of a choice is a stochastic function of the
-  choice's attributes.} We will henceforth define utility as follows
-  \(U_i = H_i(z_i)\) where \(z_i\) is a variable describing the
-  attributes of choice \(i\) and \(H_i\) is the stochastic function
-  defining this choice's utility. As a simple example, we can use a 1-D
-  linear stochastic function to define \(H_i\):
-  \(U_i = H_i(z_i) = \beta z_i + \epsilon_i\), where \(\beta\) is a
-  parameter of the model and \(\epsilon_i\) is an unobserved factor for
-  choice \(i\). Generally, we assume that the \(\epsilon_i\) factor is a
-  random variable following a specified distribution, such as a standard
-  normal distribution. The attributes we use to represent a choice (a
-  single scalar value \(z_i\) in this example) is a critical design
-  decision in defining the human preference model. These attributes
-  define the context our model has in representing the human behavior we
-  wish to capture, when choice \(i\) is made. In our health coaching
-  example, we may hope to provide the best possible diet recommendations
-  for an individual. However, if our vector representation \(z_i\) of
-  their choice \(i\) does not include vital information, such as allergy
-  risks associated to the choice or ingredients which make up the
-  choice, our model may not have enough information to properly capture
-  the human preference.
-\item
-  \textbf{The preferred choice is that whose corresponding utility is
-  the largest.} Given that we model utility as the underlying benefit or
-  value a human derives from choosing a given option, intuitively, we
-  expect a human to choose the option with the largest utility. In our
-  example of health coaching, if we model utility as the expected
-  increase in lifespan, we will surely opt for the choice that maximizes
-  this notion of utility. In our example, since \(U_1 > U_2\), our model
-  indicates that a user would opt for the burrito.
-\item
-  \textbf{Relativity of Utility.} Given the two previously defined
-  characteristics of utility, we observe that only the relative
-  difference in utility matters. Even if \(U_1 = 0.001\) and
-  \(U_2 = 0.0005\), the model indicates the same outcome: a user prefers
-  option \(1\). As such, even the scale of the utilities is irrelevant
-  within a given set of human preference data for a given individual. In
-  our example, we can scale the value of \(\beta\) without changing the
-  overall outcome so long as we do not change the sign. The scale of
-  utilities \emph{is} important when comparing human preferences across
-  datasets, or comparing the same model across different humans; since
-  utility may be defined differently in various datasets, perhaps their
-  exact values are not aligned in a manner which allows one to robustly
-  compare preferences between them. A common practice to address this
-  consideration is to standardize the utilities in each dataset based on
-  its variance in the observed data. Furthermore, a human preference
-  model may generate different scales of utilities across different
-  humans (based on the inputs and representation of the human). In this
-  case, one can standardize the utilities for each individual based on
-  the observed variance for that human. As we can see, the relativity of
-  utility can be both powerful (enabling us to create flexible models
-  and efficiently optimize them) and limiting (requiring us to perform
-  mitigations when translating models across datasets or individuals.
-  Still, we find the notion of utility necessary to model human
-  preferences as it provides a quantitative value we can use to model
-  human decisions.
-\end{enumerate}
+Stated preferences are those individuals explicitly indicate in
+potentially experimental conditions. The explicit knowledge may be
+leveraged by including inductive biases during modeling (for example,
+the context used in a model) which are reasonable assumptions for how a
+human would consider a set of options.This may include controlled
+experiments or studies. This may be harder to obtain and somewhat
+biased, as they can be hypothetical or only accurately reflect a piece
+of the overall context of a decision. However, they enable greater
+control of the decision-making process.
 
-As a concrete model of meal recommendation in health coaching, let us
-suppose that we have three choices:
+\section{Methods for Collecting Preference Data}\label{sec-collect}
 
-\begin{enumerate}
-\def\labelenumi{\arabic{enumi}.}
-\item
-  A burrito with rice, beans, and cheese.
-\item
-  French fries covered in mayonnaise.
-\item
-  A rice bowl with beans and chicken.
-\end{enumerate}
-
-If we design \(z_i\) to be 1D, for example:
-
-\begin{enumerate}
-\def\labelenumi{\arabic{enumi}.}
-\item
-  \(z_1 = 1\) for the burrito since this is a somewhat balanced meal
-  that may help prolong the lifespan, which a user prefers.
-\item
-  \(z_2 = -1\) since this is unhealthy due to being deep fried,
-  including saturated fats, and potentially reducing lifespan.
-\item
-  \(z_3 = 1\) since a rice bowl is another healthy meal.
-\end{enumerate}
-
-After observing the choices of a user who likes to eat healthily, we
-might learn that \(\beta = 1\) is the best parameter for this model, and
-maybe we assume that \(\epsilon \sim \mathcal{N}(0, 1)\). Then, this
-model implies that \(U_1 = 1 \cdot 1 + 0.03 = 1.03\),
-\(U_2 = 1 \cdot -1 + (-0.07) = -1.07\),
-\(U_3 = 1 \cdot 1 + (0.02) = 1.02\), which means that the user, for whom
-\(\beta = 1\) is the learned parameter, they would prefer the first
-meal, with the third meal as a close second option.
-
-If we design \(z_i\) to be 3D, to indicate the carbohydrate, protein,
-and fat content of each meal, then for example:
-
-\begin{enumerate}
-\def\labelenumi{\arabic{enumi}.}
-\item
-  \(z_1 = (1, 1, 0.1)\) for the burrito
-\item
-  \(z_2 = (1, 0, 1)\) for the fries
-\item
-  \(z_3 = (1, 1, 0.2)\) for the rice bowl.
-\end{enumerate}
-
-After observing the choices of a user who likes to eat healthy, we might
-learn that \(\beta = (1, 1, -1)\) is the best parameter for this model,
-and maybe we assume that \(\epsilon \sim \mathcal{N}(0, 1)\). Then, this
-model implies that \(U_1 = (1, 1, 0.1) \cdot (1, 1, -1) + 0.01 = 1.91\),
-\(U_2 = (1, 0, 1) \cdot (1, 1, -1) + 0.03 = 0.03\),
-\(U_3 = (1, 1, 0.2) \cdot (1, 1, -1) - 0.07 = 1.73\), which means that
-the user prefers meals 1 and 3, which again have the best utility, but
-in this multi-dimensional representation of \(z_i\), we start
-understanding how the two preferred meals are related (low fat and high
-protein).
-
-\section{Models of Individual Choices}\label{sec-models}
-
-After exploring motivations for preference learning and the framework we
-use to characterize human preferences to enable modeling, we now expand
-on the common probabilistic methods used to model human preference
-tasks. We will instantiate these models for our real-world health
-coaching application throughout as a pedagogical example. Specifically,
-we can define the following domain for meal choices:
-\(z_i, \beta \in \mathbb{Z}^3\), where \(z_i\) defines the
-representation of a meal option with the three dimensions representing
-the carbohydrate, protein, and lipid macronutrient content of the meal,
-respectively, all measured in grams. \(\beta\) is a parameter of the
-model. This simple representation will allow us to consider how
-different probabilistic frameworks for human preferences can model a
-user's meal preferences. The information representation we instantiate
-here can accommodate scalar and high-dimensional vectors. While we use a
-mixture of integer and real-valued vectors in this simple example, we
-refer the reader to code in the practicum section for an example where
-vectors are all real-valued. If we let \(z = [20, 15, 3]\) and
-\(\beta = [0.2, 1, -3]\). This corresponds to a meal with 20g
-carbohydrates, 15g protein, and 3g lipids. In the following sections, we
-discover how to learn the parameter \(\beta\) and how to predict \(y\)
-for this meal, which indicates whether the user chooses it or refuses
-it.
-
-\subsection{Data Collection}\label{data-collection}
-
-\paragraph*{Pairwise Sampling}\label{pairwise-sampling}
-\addcontentsline{toc}{paragraph}{Pairwise Sampling}
-
-In pairwise sampling, participants compare two options simultaneously to
-determine which is preferred. The goal is to understand relative
-preferences between pairs of items. This method is frequently used in
-preference and choice studies to gather detailed preference data. Two
-key models used in pairwise sampling are the Thurstonian and
-Bradley-Terry models (\citeproc{ref-cattelan2012}{Cattelan 2012}). The
-Thurstonian model assumes each item \(i\) has a true score \(u_i\)
-following a normal distribution. The difference \(d_{ij} = u_i - u_j\)
-is also normally distributed. The probability that item \(i\) is
-preferred over item \(j\) is given by
-\(P(i \succ j) = \Phi \left( \frac{u_i - u_j}{\sqrt{2\sigma^2}} \right)\),
-where \(\Phi\) is the cumulative normal distribution function. The
-denominator \(\sqrt{2\sigma^2}\) is the standard deviation of the
-difference \(d_{ij} = u_i - u_j\) when \(u_i\) and \(u_j\) are normally
-distributed with variance
-\(\sigma^2\)(\citeproc{ref-cattelan2012}{Cattelan 2012}). The
-Bradley-Terry model defines the probability of preference based on
-latent scores \(\beta_i\) and \(\beta_j\). The probability that item
-\(i\) is preferred over item \(j\) is
-\(P(i \succ j) = \frac{e^{\beta_i}}{e^{\beta_i} + e^{\beta_j}}\). This
-model is used to estimate relative strengths or preferences based on
-latent scores. (\citeproc{ref-cattelan2012}{Cattelan 2012}).
-
-\paragraph*{Rank-Order Sampling}\label{rank-order-sampling}
-\addcontentsline{toc}{paragraph}{Rank-Order Sampling}
-
-Rank-order sampling methods enable analysis of human preferences by
-asking participants to rank a set of items from most to least preferred.
-This approach is widely used in voting systems, market research, and
-psychological studies to understand the overall preference ordering
-among a set of items. Rank-order sampling offers comprehensive
-preference data, capturing detailed information about the relative
-ranking of multiple items. This richness makes them suitable for various
-applications, including market research, voting systems, sports
-competitions, and recommender systems. However, these models can be more
-complex and time-consuming for participants compared to pairwise
-comparisons, and they impose a higher cognitive load, especially with
-large sets of items. Additionally, participants may show inconsistencies
-when ranking many items (\citeproc{ref-ragain2019}{Ragain and Ugander
+Next, we explore various mechanisms by which humans can express their
+preferences, including pairwise sampling, rank-order sampling,
+rating-scale sampling, best-worst scaling, and multiple-choice samples.
+In \emph{pairwise sampling}, participants compare two options to
+determine which is preferred. One of the major advantage of this method
+is low cognitive demand for rater. Its disavantage is the limited amount
+of information content elicited by a sample. Next, we will see that we
+can trading cognitive demand for rater to elicit more nuance preference
+information. For example, \emph{Rank-order sampling} captures human
+preferences by having participants rank items from most to least
+preferred. Used in voting, market research, and psychology, it provides
+rich preference data but is more complex and cognitively demanding than
+pairwise comparisons, especially for large item sets. Participants may
+also rank inconsistently (\citeproc{ref-ragain2019}{Ragain and Ugander
 2019}).
 
-\paragraph*{Rating-Scale Sampling}\label{rating-scale-sampling}
-\addcontentsline{toc}{paragraph}{Rating-Scale Sampling}
-
-Rating-scale sampling is a method in which participants rate items on a
-numerical scale to measure the intensity of preference or attitude
-towards items. These models are commonly used in surveys, product
-reviews, and psychological assessments to gather detailed information on
-how participants feel about various subjects. The Likert scale is a
-widely used rating-scale model. In this approach, participants rate
-items on a fixed-point scale, typically ranging from 1 to 5 or 1 to 7,
-to measure levels of agreement or satisfaction. For instance, a Likert
-scale might ask participants to rate their agreement with statements
-such as ``Strongly Disagree'' to ``Strongly Agree''
-(\citeproc{ref-harpe2015}{Harpe 2015}). This method is prevalent in
-survey research, customer satisfaction studies, and attitude
-measurement. Another key model is the continuous rating scale, where
-participants mark a point on a continuous line to indicate their
-preference or attitude. This provides a more nuanced measure compared to
-discrete scales. For example, participants might indicate their
-satisfaction on a line ranging from ``Very Unsatisfied'' to ``Very
-Satisfied'' (\citeproc{ref-harpe2015}{Harpe 2015}). This model is used
-in detailed feedback mechanisms, user experience studies, and
-fine-grained preference measurements.
-
-Rating-scale sampling offers several advantages. They are simple for
-participants to understand and use, provide rich data on the intensity
-of preferences, and are flexible enough for various types of
-measurements (e.g., agreement, satisfaction). Moreover, the data
-collected can be easily analyzed using standard statistical methods
-(\citeproc{ref-harpe2015}{Harpe 2015}).
-
-Applications include data collection on opinions, attitudes, and
-behaviors; in product reviews to measure customer satisfaction and
-product quality; in psychological assessments to evaluate mental states,
-personality traits, and attitudes; and in user experience studies to
-understand user satisfaction and usability of products
+\emph{Rating-scale sampling}, such as the Likert scale, is a method in
+which participants rate items on a fixed-point scale (e.g., 1 to 5,
+``Strongly Disagree'' to ``Strongly Agree'') to measure levels of
+preference towards items (\citeproc{ref-harpe2015}{Harpe 2015}).
+Participants can also mark a point on a continuous rating scale to
+indicate their preference or attitude. Commonly used in surveys, product
+reviews, and psychological assessments, this method provides a more
+nuanced measure than discrete scales. Rating-scale sampling is simple
+for participants to understand and use, provides rich data on the
+intensity of preferences, and is flexible enough for various
+measurements (e.g., agreement, satisfaction)
 (\citeproc{ref-harpe2015}{Harpe 2015}). However, rating-scale sampling
 methods also have limitations. Ratings can be influenced by personal
 biases and interpretations of scales, leading to subjectivity. There is
 a central tendency bias, where participants may avoid extreme ratings,
-resulting in a clustering of responses around the middle. Different
+resulting in clustering responses around the middle. Different
 participants might interpret scale points differently, and fixed-point
 scales may not capture the full nuance of participants' preferences or
 attitudes (\citeproc{ref-harpe2015}{Harpe 2015}).
 
-\paragraph*{Best-Worst Scaling}\label{best-worst-scaling}
-\addcontentsline{toc}{paragraph}{Best-Worst Scaling}
-
-Best-Worst Scaling (BWS) is a powerful method for understanding
+\emph{Best-worst scaling} (BWS) is a powerful method for understanding
 preferences and the relative importance of different items. In BWS,
-participants are presented with a set of items and are asked to identify
-the most and least preferred options. This method helps to gather
-detailed preference data, providing more nuanced insights than
-traditional ranking or rating systems. The primary objective of BWS is
-to discern the relative importance or preference of items within a set,
-making it widely applicable in various fields such as market research,
-health economics, and social sciences
-(\citeproc{ref-campbell2015}{Campbell and Erdem 2015}).
+participants are presented with items and asked to identify the most and
+least preferred options. The primary objective of BWS is to discern the
+relative importance or preference of items within a set, making it
+widely applicable in various fields such as market research, health
+economics, and social sciences (\citeproc{ref-campbell2015}{Campbell and
+Erdem 2015}). A key method within BWS is MaxDiff Analysis, which
+involves presenting participants with items and asking them to select
+the best and worst options. For instance, in a product development
+context, MaxDiff Analysis can help determine the most and least
+important features according to consumer preferences
+(\citeproc{ref-campbell2015}{Campbell and Erdem 2015}). BWS provides
+rich data on the relative importance of items, helps clarify
+preferences, reduces biases found in traditional rating scales, and
+results in utility scores that are easy to interpret. However, BWS also
+has limitations, including potential scale interpretation differences
+among participants, and design challenges to avoid biases, such as the
+order effect or the context in which items are presented.
 
-A key method within BWS is MaxDiff Analysis, which involves presenting
-participants with sets of items and asking them to select the best and
-worst options. This approach yields richer data by identifying extremes
-in preferences, offering a clearer picture of the relative importance of
-each item. For instance, in a product development context, MaxDiff
-Analysis can help identify the most and least important features
-according to consumer preferences (\citeproc{ref-campbell2015}{Campbell
-and Erdem 2015}).
-
-The advantages of Best-Worst Scaling are significant. It provides rich
-data on the relative importance of items, helps clarify preferences,
-reduces biases found in traditional rating scales, and results in
-utility scores that are easy to interpret. BWS is particularly useful in
-market research for understanding consumer preferences, in health
-economics for evaluating patient treatment preferences, in social
-sciences for studying the importance of social issues, and in product
-development for identifying key features driving consumer choices
-(\citeproc{ref-campbell2015}{Campbell and Erdem 2015}).
-
-However, BWS also has limitations, including increased complexity and
-cognitive load for participants compared to simpler rating scales,
-potential scale interpretation differences among participants, and
-design challenges to avoid biases. Additionally, differences in how
-participants interpret the scale can introduce variability, and the
-design of BWS studies requires careful consideration to avoid biases,
-such as the order effect or the context in which items are presented.
-
-\paragraph*{Multiple-Choice Sampling}\label{multiple-choice-sampling}
-\addcontentsline{toc}{paragraph}{Multiple-Choice Sampling}
-
-Multiple-choice sampling models are widely used in various fields such
-as voting systems, surveys, and market research to understand the
-preferred choice among a set of alternatives. These models involve
-participants selecting one option from a set of alternatives, providing
-insights into the most favored options.
-
-Multiple-choice sampling methods offer several advantages. They are
-simple for participants to understand and reflect on realistic
-decision-making scenarios where individuals choose one option from many.
-These models are versatile and can be applied in various applications,
-from voting to market research, providing clear preferences directly
-from the participants' choices. It is particularly useful in complex
-choice scenarios such as mode of transportation, where choices are not
+\emph{Multiple-choice sampling} models are widely used in various
+fields, such as voting systems, surveys, and market research, to
+understand the preferred choice among a set of alternatives. These
+models involve participants selecting one option from a set of
+alternatives. Multiple-choice sampling is simple for participants to
+understand and reflect on realistic decision-making scenarios where
+individuals choose one option from many. It is beneficial in complex
+choice scenarios, such as modes of transportation, where choices are not
 independent (\citeproc{ref-bolt2009}{Bolt and Wollack 2009}).
+Multiple-choice sampling often relies on simplistic assumptions such as
+the independence of irrelevant alternatives (IIA), which may not always
+hold true. This method may also fail to capture the variation in
+preferences among different individuals, as it typically records only
+the most preferred choice without accounting for the relative importance
+of other options.
 
-However, multiple-choice sampling also has limitations. It often relies
-on simplistic assumptions such as the independence of irrelevant
-alternatives (IIA), which may not always hold true. Additionally, these
-models can place a cognitive load on participants, especially if the
-number of choices is large, leading to decision fatigue. This method may
-also fail to capture the variation in preferences among different
-individuals, as it typically records only the most preferred choice
-without accounting for the relative importance of other options.
+\section{Models of Choices}\label{sec-models}
 
-\subsection{Data Interpretation}\label{data-interpretation}
+\subsubsection*{Binary Choice Model}\label{binary-choice-model}
+\addcontentsline{toc}{subsubsection}{Binary Choice Model}
 
-\paragraph*{Binary Choice Model}\label{binary-choice-model}
-\addcontentsline{toc}{paragraph}{Binary Choice Model}
-
-is centered around one specific user option. The model predicts, for
-that option, after observing user choices in the past, whether that
-option will be chosen or not. Specifically, if we are looking at a
-certain choice, we use binary variable \(y \in \{0, 1\}\) to represent
-whether that choice will be picked or not by the user in the next phase
-of selection. Since \(\mathbb{P}(y = 0) = 1 - \mathbb{P}(y = 1)\), we
-only need to model \(\mathbb{P}(y = 1)\) which we will denote as \(P\).
-
-We can use a linear model represented by the parameter \(\beta\) we have
+Binary Choice Model is centered around one specific user option. The
+model predicts, for that option, after observing user choices in the
+past, whether that option will be chosen or not. Specifically, if we are
+looking at a certain choice, we use binary variable \(y \in \{0, 1\}\)
+to represent whether that choice will be picked or not by the user in
+the next phase of selection. We denote \(P = \mathbb{P}(y = 1)\). We can
+use a linear model represented by the parameter \(\beta\) we have
 already defined. Since utility is a stochastic function of the choice
 attributes, we will represent our utility as
 \(U = \beta^\top z + \epsilon\). We can formally model \(y\) as a
 function of the utility of the positive choice: \(y = \mathbb{I}[U>0]\).
-
 We explore two cases based on the choice of distribution for the
 unobserved random variable \(\epsilon\). If
 \(\epsilon \sim \text{Logistic}\), then
 \(\mathbb{P}(\epsilon < a) = \frac{1}{1 + \exp^{-a}}\). The probability
-\(P\) can be modeled as: \[\begin{aligned}
-    P & = \mathbb{P}(U > 0) = \mathbb{P}(\beta^\top z + \epsilon > 0) = \mathbb{P}( \epsilon > -\beta^\top z) = 1 - \mathbb{P}( \epsilon < -\beta^\top z) = 1 - \frac{1}{1 + \exp^{\beta^\top z}} \\
-    & = \frac{1 + \exp^{\beta^\top z}}{1 + \exp^{\beta^\top z}} - \frac{1}{1 + \exp^{\beta^\top z}} = \frac{\exp^{\beta^\top z}}{1 + \exp^{\beta^\top z}} = \frac{1}{1 + \exp^{-\beta^\top z}}
-\end{aligned}\]
-
-In the health coaching example, using this logistic model, we can
-compute the probability that an individual would choose this meal over
-no meal: \(P = \frac{1}{1 + \exp^{-(4 + 15 - 9)}} = 0.99995\).
-Therefore, the model predicts a high probability that the user would
-choose the meal over the no-meal option.
+\(P\) can be modeled as: \[
+P = \mathbb{P}(U > 0) = \mathbb{P}(\beta^\top z + \epsilon > 0) = \mathbb{P}( \epsilon > -\beta^\top z) = 1 - \mathbb{P}( \epsilon < -\beta^\top z) = 1 - \frac{1}{1 + \exp^{\beta^\top z}} = \frac{1}{1 + \exp^{-\beta^\top z}}
+\]
 
 On the other hand, if \(\epsilon \sim \mathcal{N}(0, 1)\), then
 \(\mathbb{P}(\epsilon < a) = \Phi(a)\), where \(\Phi(a)\) is the
@@ -1599,36 +920,24 @@ The probability \(P\) is modeled as:
 
 \[P = \mathbb{P}(U > 0) = \mathbb{P}(\beta^\top z + \epsilon > 0) = \mathbb{P}( \epsilon > -\beta^\top z) = \mathbb{P}( \epsilon < \beta^\top z) = \Phi(\beta^\top z)\]
 
-In the same health coaching example, we can compute the probability that
-an individual would choose this meal over no meal:
-\(\Phi(4 + 15 - 9) = 1\). This model also predicts that the user will
-most likely take the meal!
-
-\paragraph*{Bradley-Terry Model}\label{bradley-terry-model}
-\addcontentsline{toc}{paragraph}{Bradley-Terry Model}
+\subsubsection*{Bradley-Terry Model}\label{bradley-terry-model}
+\addcontentsline{toc}{subsubsection}{Bradley-Terry Model}
 
 The Bradley-Terry (BT) model introduces a framework to model the utility
-of choice \emph{over all others} (a multipronged prediction of overall
-choices, not just a binary prediction over one choice), given their
-attribute vectors (\citeproc{ref-bradley-terry-model}{Bradley and Terry
-1952b}). Given information about all available operations, this is a
-general yet powerful method for modeling human preferences. The core
-idea in this model is to compare utilities of all items at once to model
-the probability of a user's actions and, therefore, their preferences.
-In the BT model, we have a discrete set of \(J\) choices
+of choice over all others given their attribute vectors
+(\citeproc{ref-bradley-terry-model}{Bradley and Terry 1952b}). In the BT
+model, we have a discrete set of \(J\) choices
 \(i \in \{1, 2, \dots, J\}\), each with an attribute representation
 \(z_i \in \mathbb{Z}^n\) (where \(n\) is the dimensionality of the
 representation). Each choice can also have its unique random noise
 variable representing the unobserved factor, although we can also choose
 to have all choices' unobserved factors follow the same distribution
-(e.g.~independent and identically distributed, or iid).
-
-We keep the assumption from previous sections that the utility \(U_i\)
-of choice \(i\) is also a linear stochastic function where the noise is
-sampled from the specified distribution:
-\(U_i = \beta^\top z_i + \epsilon_i\). The noise is represented as an
-extreme value distribution, although we can choose alternatives such as
-a multivariate Gaussian distribution:
+(e.g.~independent and identically distributed, or IID). We keep the
+assumption from previous sections that the utility \(U_i\) of choice
+\(i\) is also a linear stochastic function where the noise is sampled
+from the specified distribution: \(U_i = \beta^\top z_i + \epsilon_i\).
+The noise is represented as an extreme value distribution, although we
+can choose alternatives such as a multivariate Gaussian distribution:
 \(\epsilon \sim \mathcal{N}(0, \Sigma)\). If \(\Sigma\) is not a
 diagonal matrix, we effectively model correlations in the noise across
 choices, enabling us to avoid the iid assumption if necessary. In the
@@ -1637,21 +946,9 @@ user preferring choice \(i\), which we denote as \(P_i\) as
 \(P_i = \exp(\beta^\top z_i)/Z\) where
 \(Z = \sum_{j = 1}^{J} \exp(\beta^\top z_j)\).
 
-We revisit the health coaching example. Denote two choices, where
-\(z_1 = [20, 15, 3]\) is the choice from the previous example. Still, we
-now have a second choice \(z_2 = [60, 20, 7]\) (which seems to be a very
-carbohydrate-heavy meal and potentially a larger meal overall). We will
-also assume we choose an extreme value distribution to model the
-unobserved factors, which are sampled i.i.d. Then, we have
-\(\beta^\top z_1 = 10\) and
-\(\beta^\top z_2 = 11 \Rightarrow P_1 = \frac{1}{1 + \exp(1)} = 0.2689\).
-Since there are only two choices, the probabilities \(P_1\) and \(P_2\)
-must sum to \(1\). Therefore, we can calculate \(P_2\) as
-\(P_2 = 1 - P_1 = 1 - 0.2689 \approx 0.7311\). Our model predicts that
-choice 2 is more favorable between these two options.
-
-\paragraph*{Ordered Preferences Model}\label{ordered-preferences-model}
-\addcontentsline{toc}{paragraph}{Ordered Preferences Model}
+\subsubsection*{Ordered Preferences
+Model}\label{ordered-preferences-model}
+\addcontentsline{toc}{subsubsection}{Ordered Preferences Model}
 
 In all previous examples, we have assumed that we have no information on
 any explicit ordering of the available options a human can choose from:
@@ -1671,15 +968,18 @@ predefined options an individual will choose from. We can define
 \(J - 1\) parameters, which act as thresholds on the utility computed by
 \(U_i = H(z_i)\) to classify the predicted choice between these options.
 For example, if there are 3 predefined options, we can define parameters
-\(a, b \in \mathbb{R}\) such that \[y_i = \begin{cases} 
-      1 & U < a \\
-      2 & a \le U < b \\
-      3 & \text{else}
-   \end{cases}\]
+\(a, b \in \mathbb{R}\) such that
 
-\textbf{1. Logistic Distribution}
+\[
+y_i =
+\begin{cases} 
+    1 & U < a \\
+    2 & a \le U < b \\
+    3 & \text{else}
+\end{cases}
+\]
 
-From a probabilistic perspective, we can use our cumulative
+When the noise follow a logistic distribution, we can use our cumulative
 distributions as before to model the probability that a person will
 choose a given option. Continuing with our linear utility function
 \(U_i = \beta^\top z_i + \epsilon_i\), we can start with the setting
@@ -1698,118 +998,73 @@ The final case follows the form of the inverse of the first case:
 
 \[\mathbb{P}(y_i = 3) = \mathbb{P}(U > b) = \mathbb{P}(\beta^\top z + \epsilon > b ) = \mathbb{P}( \epsilon > b - \beta^\top z) = 1 - \mathbb{P}( \epsilon < b - \beta^\top z) = \frac{1}{1 + \exp(\beta^\top z - b)}\]
 
-\textbf{2. Normal Distribution}
-
 In the case of modeling unobserved factors with a standard normal
-distribution, we have: \[\begin{split}
+distribution, we have: \[
+\begin{split}
     \mathbb{P}(y_i = 1) & = \mathbb{P}(U < a) = \mathbb{P}(\beta^\top z + \epsilon < a ) = \mathbb{P}( \epsilon < a - \beta^\top z) = \Phi(a - \beta^\top z) \\
     \mathbb{P}(y_i = 2) & = \mathbb{P}(a \le U < b) 
     = \mathbb{P}(a - \beta^\top z \le \epsilon < b - \beta^\top z) = \Phi(b - \beta^\top z) - \Phi(a - \beta^\top z) \\
     \mathbb{P}(y_i = 3) & = \mathbb{P}(U > b) 
     = 1 - \Phi(b - \beta^\top z) 
-\end{split}\]
+\end{split}
+\]
 
-In our health coaching example, the derivation above yields three exact
-expressions for computing the probability of choosing each of our meals.
-Each computation involves the normal cumulative distribution function as
-seen for the binary choice model with standard normal for \(\epsilon\)
-after parameters \(a\) and \(b\) are learned Section~\ref{sec-learning}.
+\subsubsection*{Plackett-Luce Model}\label{plackett-luce-model}
+\addcontentsline{toc}{subsubsection}{Plackett-Luce Model}
 
-\paragraph*{Plackett-Luce Model}\label{plackett-luce-model}
-\addcontentsline{toc}{paragraph}{Plackett-Luce Model}
+We can model an open-ended ranking of the available options with the
+Plackett-Luce (PL) Model, in which we jointly model the full sequence of
+choice ordering (\citeproc{ref-plackett_luce}{Plackett 1975}). The
+general form models the joint distribution as the product of conditional
+probabilities, where each is conditioned on the preceding ranking terms.
+Given an ordering of \(J\) choices \(\{Y_1, Y_2, \dots, Y_J\}\) where
+\(Y_1\) is the first selection, \(Y_2\) is the second, and so on, we
+decompose the joint probability into its respective conditionals. To
+compute the conditional probabilities, we can use the same method as the
+BT model, using a softmax to produce valid conditional distributions for
+each element of the sequence:
 
-In other cases, we may need an even more general framework combining
-elements of the BT model and ordered preferences. Specifically, we can
-model an open-ended ranking of the available options in a similar
-probabilistic framework. To do so, we can leverage the Plackett-Luce
-(PL) Model, in which we jointly model the full sequence of choice
-ordering. (\citeproc{ref-plackett_luce}{Plackett 1975})
-
-The general form models the joint distribution as the product of
-conditional probabilities, where each is conditioned on the preceding
-ranking terms. Given an ordering of \(J\) choices
-\(\{Y_1, Y_2, \dots, Y_J\}\) where \(Y_1\) is the first selection,
-\(Y_2\) is the second, and so on, we decompose the joint probability
-into its respective conditionals. To compute the conditional
-probabilities, we can use the same method as the BT model, using a
-softmax to produce valid conditional distributions for each element of
-the sequence:
-\[\mathbb{P}(Y_1, Y_2, \dots, Y_J) = \mathbb{P}(Y_1) \cdot \mathbb{P}(Y_2 | Y_1) \cdot \dots \cdot \mathbb{P}(Y_J | Y_1, Y_2, \dots Y_{J - 1}) = \prod_{i = 1}^J \frac{\exp(\beta^\top z_i)}{\sum_{j \ge i} \exp(\beta^\top z_j)}\]
+\[
+\mathbb{P}(Y_1, Y_2, \dots, Y_J) = \mathbb{P}(Y_1) \cdot \mathbb{P}(Y_2 | Y_1) \cdot \dots \cdot \mathbb{P}(Y_J | Y_1, Y_2, \dots Y_{J - 1}) = \prod_{i = 1}^J \frac{\exp(\beta^\top z_i)}{\sum_{j \ge i} \exp(\beta^\top z_j)}
+\]
 
 An interesting property of the PL Model is that in the naive case of
 only ordering a single choice, it is equivalent to the pairwise
 preference formulation of the BT model.
 
-\textbf{Exercise (Health coaching example)}: In our application, if we
-have \(3\) choices (burrito (B), fries (F), rice bowl (R)), we can let
-\(Y_1, Y_2, Y_3\) be variables to which we assign meals in a one-to-one
-manner to establish a ranking.
+\subsubsection*{Ideal Point Model}\label{ideal-point-model}
+\addcontentsline{toc}{subsubsection}{Ideal Point Model}
 
-\begin{enumerate}
-\def\labelenumi{\arabic{enumi}.}
-\item
-  One of the possible ranking assignments is \(Y_1=B, Y_2=F, Y_3=R\).
-  How many assignments are there in all, and what are they explicitly?
-\item
-  What would one expect the sign to be, out of \(\{\leq, \geq, =\}\) in
-  the following expression? (Hint: healthier meals should be placed
-  earlier in the ranking.)
-  \[\mathbb{P}(Y_1=F, Y_2=R, Y_3=B) \ \ \_\_\ \ \mathbb{P}(Y_1=R, Y_2=B, Y_3=F)\]
-\end{enumerate}
-
-\paragraph*{Ideal Point Model}\label{ideal-point-model}
-\addcontentsline{toc}{paragraph}{Ideal Point Model}
-
-An observation one can make is that we have strictly used linear
-functions to represent the utility. However, in the case of vector
-representations of choice attributes and the individual, one can exploit
-vector geometry to compute this utility value. The Ideal Point Model
-does this by using distance functions to compute utility for
+The Ideal Point Model uses distance functions to compute utility for
 individual-choice pairs (\citeproc{ref-huber1976ideal}{Huber 1976}).
-Formally, with our vector representation \(z_i\) of choice \(i\) and a
-vector \(\textbf{v}_n\) representing an individual \(n\), we can use a
-distance function to model a stochastic utility function, keeping the
-notion of unobserved factors following a specified distribution:
+Given vector representation \(z_i\) of choice \(i\) and a vector
+\(\textbf{v}_n\) representing an individual \(n\), we can use a distance
+function to model a stochastic utility function with the unobserved
+factors following a specified distribution:
 \(U_{n, i} = \texttt{dist}(z_i, \textbf{v}_n) + \epsilon_{n, i}\). We
-continue with our framework of a human's preference following the choice
-corresponding to the maximum utility:
-\(y_{n, i} = \mathbb{I}[U_{n, i} > U_{n, j}\ \forall i \ne j]\). The
-intuition supporting this type of model is that vectors exist in a
-shared \(n\)-dimensional space, and as such we can use geometry to match
-choices whose representations are closest to that of a given individual.
-
-An observation with this model type is that it can often result in
+assume human preferences follow the choice with maximum utility:
+\(y_{n, i} = \mathbb{I}[U_{n, i} > U_{n, j} \ \forall i \ne j]\). The
+intuition is that vectors exist in a shared \(n\)-dimensional space, and
+as such we can use geometry to match choices whose representations are
+closest to that of a given individual. This model can often result in
 faster learning compared to non-geometric approaches
 (\citeproc{ref-ideal_point}{Jamieson and Nowak 2011};
 \citeproc{ref-tatli2022distancepreferences}{Tatli, Nowak, and Vinayak
-2022}). However, it carries the added burden of having to specify a
-distance metric. Certain distance metrics, such as Euclidian distance or
-inner product, can easily be biased by the scale of vectors. A distance
-measure such as cosine similarity, which compensates for scale by
-normalizing the inner product of two vectors by the product of their
-magnitudes, can mitigate this bias yet may discard valuable information
-encoded by the length of the vectors. Beyond the distance metric alone,
-this model places a strong inductive bias that the individual and choice
-representations all share a common embedding space. In some contexts,
-this can be a robust bias to add to the model
+2022}) when equipped with a distance metric. Certain distance metrics,
+such as Euclidian distance or inner product, can easily be biased by the
+scale of vectors. A distance measure such as cosine similarity, which
+compensates for scale by normalizing the inner product of two vectors by
+the product of their magnitudes, can mitigate this bias yet may discard
+valuable information encoded by the length of the vectors. Beyond the
+distance metric alone, this model places a strong inductive bias that
+the individual and choice representations all share a common embedding
+space. In some contexts, this can be a robust bias to add to the model
 (\citeproc{ref-idealpoints}{Greiner 2005}), but it is a key factor one
 must take into account before employing such a model, and is a key
 design choice for modeling.
 
-\textbf{Health coaching example}: vector representations may indeed be
-useful as an individual's representation can capture the macronutrient
-proportions and volumes they wish to consume, enabling a distance metric
-such as inner product to be a powerful tool. This model also starts
-capturing user properties (e.g.~a user may be more into working out,
-another into lowering anxiety and another into gaining weight) and
-implicitly the commonalities between user characteristics start being
-captured, akin to a recommendation system
-(\citeproc{ref-recommender_systems}{Roy and Dutta 2022}). However, in
-other domains and formulations, where perhaps user profiles are not as
-explicit, this may certainly hinder performance and make learning human
-preferences difficult.
-
-\section{Parameter Learning}\label{sec-learning}
+\section{Parameterization and Learning of Utility
+Functions}\label{sec-learning}
 
 With an understanding of the various techniques we can use to model
 human preferences, we can now create robust models which utilize context
@@ -1940,7 +1195,7 @@ with human expectations while continuously improving performance.
 
 \centering{
 
-\includegraphics{src/Figures/arch.png}
+\pandocbounded{\includegraphics[keepaspectratio]{src/Figures/arch.png}}
 
 }
 
@@ -2002,7 +1257,7 @@ Margin Large & 3 & 2 & 1 & 0 \\
 
 \centering{
 
-\includegraphics{src/Figures/margin-2.png}
+\pandocbounded{\includegraphics[keepaspectratio]{src/Figures/margin-2.png}}
 
 }
 
@@ -2105,7 +1360,7 @@ one, but now, the robot shows the human two possible trajectories
 
 \centering{
 
-\includegraphics[width=0.7\textwidth,height=\textheight]{src/Figures/robots.png}
+\includegraphics[width=0.7\linewidth,height=\textheight,keepaspectratio]{src/Figures/robots.png}
 
 }
 
@@ -2367,7 +1622,7 @@ The whole pipeline of the method is outlined in Figure~\ref{fig-few-1}.
 
 \centering{
 
-\includegraphics{src/Figures/overview-few.png}
+\pandocbounded{\includegraphics[keepaspectratio]{src/Figures/overview-few.png}}
 
 }
 
@@ -2410,7 +1665,7 @@ the proposed methord outperforms all of the baselines.
 
 \centering{
 
-\includegraphics{src/Figures/few-exp.png}
+\pandocbounded{\includegraphics[keepaspectratio]{src/Figures/few-exp.png}}
 
 }
 
@@ -2476,7 +1731,7 @@ generally-capable robotic policies from imitation learning alone.
 
 \centering{
 
-\includegraphics{src/Figures/open_x_embodiment.png}
+\pandocbounded{\includegraphics[keepaspectratio]{src/Figures/open_x_embodiment.png}}
 
 }
 
@@ -2628,7 +1883,7 @@ achieved?
 
 \centering{
 
-\includegraphics{src/Figures/watch-try-learn-architecture.png}
+\pandocbounded{\includegraphics[keepaspectratio]{src/Figures/watch-try-learn-architecture.png}}
 
 }
 
@@ -2680,7 +1935,7 @@ the results.
 
 \centering{
 
-\includegraphics{src/Figures/watch-try-learn-envs.png}
+\pandocbounded{\includegraphics[keepaspectratio]{src/Figures/watch-try-learn-envs.png}}
 
 }
 
@@ -2723,7 +1978,7 @@ end-effector (gripper) positions, angles, and opening.
 
 \centering{
 
-\includegraphics[width=0.5\textwidth,height=\textheight]{src/Figures/watch-try-learn-results.png}
+\includegraphics[width=0.5\linewidth,height=\textheight,keepaspectratio]{src/Figures/watch-try-learn-results.png}
 
 }
 
@@ -2881,7 +2136,7 @@ enough to both driving patterns.
 
 \centering{
 
-\includegraphics{src/Figures/driving-patt.png}
+\pandocbounded{\includegraphics[keepaspectratio]{src/Figures/driving-patt.png}}
 
 }
 
@@ -2896,7 +2151,7 @@ another car approaching head-on.}
 
 \centering{
 
-\includegraphics{src/Figures/driving-coll.png}
+\pandocbounded{\includegraphics[keepaspectratio]{src/Figures/driving-coll.png}}
 
 }
 
@@ -2943,7 +2198,7 @@ trajectories and asks a user to rank all the trajectories.
 
 \centering{
 
-\includegraphics{src/Figures/robot-traj.png}
+\pandocbounded{\includegraphics[keepaspectratio]{src/Figures/robot-traj.png}}
 
 }
 
@@ -4270,6 +3525,41 @@ I am here.<end_of_turn>
 
 \end{tcolorbox}
 
+Through our exploration of human preference models, we will ground
+ourselves in building a health coaching system that can provide meal
+recommendations aligned with a user's dietary needs and preferences.
+Examples of scenarios which can benefit from a model of how humans make
+choices include:
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\item
+  \textbf{Health coaching:} Humans express their preferences every time
+  they pick lunch for consumption. Humans may have several goals related
+  to nutrition, such as weight loss and improving concentration. We can
+  learn how a given individual or set of individuals prefer to eat to
+  provide personalized recommendations to help them attain their goals.
+  This chapter will use this use case to ground human preference
+  modeling in a real-life application.
+\item
+  \textbf{Social media:} Platforms have a far greater amount of content
+  than one can consume in a lifetime, yet such products must aim to
+  maximize user engagement. To accomplish this, we can learn what
+  specific things people like to see in their feeds to optimize the
+  value they gain out of their time on social media. For example, the
+  video feed social media platform
+  \href{https://www.tiktok.com/}{TikTok} has had viral adoption due to
+  its notorious ability to personalize a feed for its users based on
+  their preferences.
+\item
+  \textbf{Shopping:} Retail corporations largely aim to maximize revenue
+  by making it easy for people to make purchases. Recommendation systems
+  on online shopping platforms provide a mechanism for curating specific
+  items based on an individual's previous purchases (or even browsing
+  history) to make shoppers aware of items they may like and, therefore,
+  purchase.
+\end{enumerate}
+
 \section*{References}\label{bibliography-2}
 \addcontentsline{toc}{section}{References}
 
@@ -4327,11 +3617,6 @@ Scaling Surveys: A Case Study on Trust in Institutions.''}
 Casella, George, and Roger L. Berger. 1990. \emph{Statistical
 Inference}. Springer.
 \url{https://api.semanticscholar.org/CorpusID:125727004}.
-
-\bibitem[\citeproctext]{ref-cattelan2012}
-Cattelan, Manuela. 2012. {``Models for Paired Comparison Data: A Review
-with Emphasis on Dependent Data.''} \emph{Statistical Science} 27 (3):
-412--33. \url{https://doi.org/10.1214/12-STS396}.
 
 \bibitem[\citeproctext]{ref-christiano2023deep}
 Christiano, Paul, Jan Leike, Tom B. Brown, Miljan Martic, Shane Legg,
@@ -4406,10 +3691,6 @@ Myers, Vivek, Erdem Bıyık, Nima Anari, and Dorsa Sadigh. 2021.
 {``Learning Multimodal Rewards from Rankings.''}
 \url{https://arxiv.org/abs/2109.12750}.
 
-\bibitem[\citeproctext]{ref-VonNeumannMorgenstern1945}
-Neumann, John Von, and Oskar Morgenstern. 1945. \emph{Theory of Games
-and Economic Behavior}. Princeton, NJ: Princeton University Press.
-
 \bibitem[\citeproctext]{ref-padalkar2023open}
 Padalkar, Abhishek, Acorn Pooley, Ajinkya Jain, Alex Bewley, Alex
 Herzog, Alex Irpan, Alexander Khazatsky, et al. 2023. {``Open
@@ -4421,11 +3702,6 @@ Plackett, R. L. 1975. {``The Analysis of Permutations.''} \emph{Journal
 of the Royal Statistical Society. Series C (Applied Statistics)} 24 (2):
 193--202. \url{http://www.jstor.org/stable/2346567}.
 
-\bibitem[\citeproctext]{ref-Radford2018GPT}
-Radford, Alec, Karthik Narasimhan, Tim Salimans, Ilya Sutskever, et al.
-2018. {``Improving Language Understanding by Generative Pre-Training.''}
-San Francisco, CA, USA.
-
 \bibitem[\citeproctext]{ref-rafailov2023direct}
 Rafailov, Rafael, Archit Sharma, Eric Mitchell, Stefano Ermon,
 Christopher D. Manning, and Chelsea Finn. 2023. {``Direct Preference
@@ -4436,11 +3712,6 @@ Optimization: Your Language Model Is Secretly a Reward Model.''}
 Ragain, Stephen, and Johan Ugander. 2019. {``Choosing to Rank.''}
 \emph{arXiv Preprint arXiv:1809.05139}.
 \url{https://arxiv.org/abs/1809.05139}.
-
-\bibitem[\citeproctext]{ref-recommender_systems}
-Roy, Deepjyoti, and Mala Dutta. 2022. {``A Systematic Review and
-Research Perspective on Recommender Systems.''} \emph{Journal of Big
-Data} 9:1--36. \url{https://api.semanticscholar.org/CorpusID:248508374}.
 
 \bibitem[\citeproctext]{ref-gradient_descent}
 Ruder, Sebastian. 2016. {``An Overview of Gradient Descent Optimization
@@ -4534,7 +3805,7 @@ A common AL process is shown in Figure~\ref{fig-schema}:
 
 \centering{
 
-\includegraphics[width=0.4\textwidth,height=\textheight]{src/Figures/active_learning_schema.png}
+\includegraphics[width=0.4\linewidth,height=\textheight,keepaspectratio]{src/Figures/active_learning_schema.png}
 
 }
 
@@ -4881,13 +4152,13 @@ samples: \(x_1\), \(x_2\), and \(x_3\). The predictive distributions for
 each committee member are given below:
 
 \begin{longtable}[]{@{}
-  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.0382}}
-  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1603}}
-  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1603}}
-  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1603}}
-  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1603}}
-  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1603}}
-  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1603}}@{}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.0382}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1603}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1603}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1603}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1603}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1603}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1603}}@{}}
 \toprule\noalign{}
 \begin{minipage}[b]{\linewidth}\raggedright
 \(x\)
@@ -5257,7 +4528,7 @@ et al. 2020})).
 
 \centering{
 
-\includegraphics[width=1\textwidth,height=\textheight]{src/Figures/1_two_models.png}
+\includegraphics[width=1\linewidth,height=\textheight,keepaspectratio]{src/Figures/1_two_models.png}
 
 }
 
@@ -5278,7 +4549,7 @@ model and locally-weighted regression (LOESS).
 
 \centering{
 
-\includegraphics[width=0.4\textwidth,height=\textheight]{src/Figures/1_experiment_setup.png}
+\includegraphics[width=0.4\linewidth,height=\textheight,keepaspectratio]{src/Figures/1_experiment_setup.png}
 
 }
 
@@ -5292,7 +4563,7 @@ attempts to predict tip position given a set of joint angles
 
 \centering{
 
-\includegraphics[width=1\textwidth,height=\textheight]{src/Figures/1_experiment_results_gaussian.png}
+\includegraphics[width=1\linewidth,height=\textheight,keepaspectratio]{src/Figures/1_experiment_results_gaussian.png}
 
 }
 
@@ -5324,7 +4595,7 @@ almost smoothly, aside from some initial instabilities.
 
 \centering{
 
-\includegraphics[width=1\textwidth,height=\textheight]{src/Figures/1_experiment_results_regression.png}
+\includegraphics[width=1\linewidth,height=\textheight,keepaspectratio]{src/Figures/1_experiment_results_regression.png}
 
 }
 
@@ -5430,7 +4701,7 @@ For this application, the following terms are defined:
 
 \centering{
 
-\includegraphics[width=0.4\textwidth,height=\textheight]{src/Figures/SPACE.png}
+\includegraphics[width=0.4\linewidth,height=\textheight,keepaspectratio]{src/Figures/SPACE.png}
 
 }
 
@@ -5582,7 +4853,7 @@ determine the final ranking.
 
 \centering{
 
-\includegraphics[width=0.6\textwidth,height=\textheight]{src/Figures/Dim:query_graph.png}
+\includegraphics[width=0.6\linewidth,height=\textheight,keepaspectratio]{src/Figures/Dim:query_graph.png}
 
 }
 
@@ -5759,7 +5030,7 @@ probability of observation for a given test is:
 
 \centering{
 
-\includegraphics[width=1\textwidth,height=\textheight]{src/Figures/Noiseless probs.png}
+\includegraphics[width=1\linewidth,height=\textheight,keepaspectratio]{src/Figures/Noiseless probs.png}
 
 }
 
@@ -5772,7 +5043,7 @@ setting}
 
 \centering{
 
-\includegraphics[width=1\textwidth,height=\textheight]{src/Figures/Noise probs.png}
+\includegraphics[width=1\linewidth,height=\textheight,keepaspectratio]{src/Figures/Noise probs.png}
 
 }
 
@@ -5863,7 +5134,7 @@ choose the indifferent option.
 
 \centering{
 
-\includegraphics[width=0.6\textwidth,height=\textheight]{src/Figures/equiv.png}
+\includegraphics[width=0.6\linewidth,height=\textheight,keepaspectratio]{src/Figures/equiv.png}
 
 }
 
@@ -5894,7 +5165,7 @@ time).
 
 \centering{
 
-\includegraphics[width=0.6\textwidth,height=\textheight]{src/Figures/GBS:CLAUS.png}
+\includegraphics[width=0.6\linewidth,height=\textheight,keepaspectratio]{src/Figures/GBS:CLAUS.png}
 
 }
 
@@ -6100,7 +5371,7 @@ depicted as:
 
 \centering{
 
-\includegraphics[width=0.75\textwidth,height=\textheight]{src/Figures/greedy.png}
+\includegraphics[width=0.75\linewidth,height=\textheight,keepaspectratio]{src/Figures/greedy.png}
 
 }
 
@@ -6118,7 +5389,7 @@ algorithms on multiple environments:
 
 \centering{
 
-\includegraphics[width=0.75\textwidth,height=\textheight]{src/Figures/activeresults.png}
+\includegraphics[width=0.75\linewidth,height=\textheight,keepaspectratio]{src/Figures/activeresults.png}
 
 }
 
@@ -6160,7 +5431,7 @@ Representation for Robotics}
 
 \centering{
 
-\includegraphics[width=0.95\textwidth,height=\textheight]{src/Figures/r3m.png}
+\includegraphics[width=0.95\linewidth,height=\textheight,keepaspectratio]{src/Figures/r3m.png}
 
 }
 
@@ -6233,7 +5504,7 @@ verbal instructions.
 
 \centering{
 
-\includegraphics[width=0.95\textwidth,height=\textheight]{src/Figures/voltron.png}
+\includegraphics[width=0.95\linewidth,height=\textheight,keepaspectratio]{src/Figures/voltron.png}
 
 }
 
@@ -6542,7 +5813,7 @@ observed in Figure~\ref{fig-c}.
 
 \centering{
 
-\includegraphics[width=0.5\textwidth,height=\textheight]{src/Figures/Screenshot 2023-11-13 at 6.56.44 PM.png}
+\includegraphics[width=0.5\linewidth,height=\textheight,keepaspectratio]{src/Figures/Screenshot 2023-11-13 at 6.56.44 PM.png}
 
 }
 
@@ -6734,7 +6005,7 @@ Figure~\ref{fig-bsearch}:
 
 \begin{minipage}{0.50\linewidth}
 
-\includegraphics[width=0.45\textwidth,height=\textheight]{src/Figures/normaldistribution.png}
+\includegraphics[width=0.45\linewidth,height=\textheight,keepaspectratio]{src/Figures/normaldistribution.png}
 
 \end{minipage}%
 
@@ -6934,7 +6205,7 @@ visually on \(\mathcal{C}\).
 
 \centering{
 
-\includegraphics[width=0.5\textwidth,height=\textheight]{src/Figures/Screenshot 2023-11-13 at 6.56.52 PM.png}
+\includegraphics[width=0.5\linewidth,height=\textheight,keepaspectratio]{src/Figures/Screenshot 2023-11-13 at 6.56.52 PM.png}
 
 }
 
@@ -7294,7 +6565,7 @@ the only vertices are \(\vec{v}_i\) for each \(i \in [k]^{(k-1)}\).
 
 \centering{
 
-\includegraphics{src/Figures/diag_geometry.png}
+\pandocbounded{\includegraphics[keepaspectratio]{src/Figures/diag_geometry.png}}
 
 }
 
@@ -7513,7 +6784,7 @@ hyperplane like in Figure~\ref{fig-2dcomp}.
 
 \begin{minipage}{0.50\linewidth}
 
-\includegraphics[width=0.4\textwidth,height=\textheight]{src/Figures/2D-comp.jpg}
+\includegraphics[width=0.4\linewidth,height=\textheight,keepaspectratio]{src/Figures/2D-comp.jpg}
 
 \subcaption{\label{}A single query for a comparison between the two
 objects splits 2D space into two halves, each of which prefers one of
@@ -7522,7 +6793,7 @@ the objects based on feature weights \(w_1\) and \(w_2\).}
 %
 \begin{minipage}{0.50\linewidth}
 
-\includegraphics[width=0.4\textwidth,height=\textheight]{src/Figures/3D-comp.png}
+\includegraphics[width=0.4\linewidth,height=\textheight,keepaspectratio]{src/Figures/3D-comp.png}
 
 \subcaption{\label{}Extension into 3D space}
 \end{minipage}%
@@ -7557,7 +6828,7 @@ purple portion is exactly half of the blue portion.
 
 \centering{
 
-\includegraphics[width=0.4\textwidth,height=\textheight]{src/Figures/2D-space.jpg}
+\includegraphics[width=0.4\linewidth,height=\textheight,keepaspectratio]{src/Figures/2D-space.jpg}
 
 }
 
@@ -7608,7 +6879,7 @@ with the orange car being controlled by the computer.
 
 \centering{
 
-\includegraphics[width=0.4\textwidth,height=\textheight]{src/Figures/car_dir.png}
+\includegraphics[width=0.4\linewidth,height=\textheight,keepaspectratio]{src/Figures/car_dir.png}
 
 }
 
@@ -7666,7 +6937,7 @@ detrimental to the final performance.
 
 \centering{
 
-\includegraphics[width=0.6\textwidth,height=\textheight]{src/Figures/robo_graph.png}
+\includegraphics[width=0.6\linewidth,height=\textheight,keepaspectratio]{src/Figures/robo_graph.png}
 
 }
 
@@ -7696,7 +6967,7 @@ from different humans.
 
 \centering{
 
-\includegraphics[width=0.8\textwidth,height=\textheight]{src/Figures/negotiation.png}
+\includegraphics[width=0.8\linewidth,height=\textheight,keepaspectratio]{src/Figures/negotiation.png}
 
 }
 
@@ -8268,7 +7539,7 @@ illustrated in Figure~\ref{fig-multimodalexecution}.
 
 \centering{
 
-\includegraphics[width=0.5\textwidth,height=\textheight]{src/Figures/multimodal_peg.png}
+\includegraphics[width=0.5\linewidth,height=\textheight,keepaspectratio]{src/Figures/multimodal_peg.png}
 
 }
 
@@ -8338,7 +7609,7 @@ how to handle these states anyways so more data is needed.
 
 \centering{
 
-\includegraphics[width=0.8\textwidth,height=\textheight]{src/Figures/likelihood_novelty.png}
+\includegraphics[width=0.8\linewidth,height=\textheight,keepaspectratio]{src/Figures/likelihood_novelty.png}
 
 }
 
@@ -8415,7 +7686,7 @@ Operator 4 & 27.3 (3.5) & 37.3 (2.1) & 7.3 (4.6) & 13.3 (1.2) & 4.0
 
 \centering{
 
-\includegraphics[width=0.8\textwidth,height=\textheight]{src/Figures/active_elicitation.png}
+\includegraphics[width=0.8\linewidth,height=\textheight,keepaspectratio]{src/Figures/active_elicitation.png}
 
 }
 
@@ -11496,7 +10767,7 @@ the planner.
 
 \centering{
 
-\includegraphics[width=0.6\textwidth,height=\textheight]{src/Figures/planner-agent-setup.png}
+\includegraphics[width=0.6\linewidth,height=\textheight,keepaspectratio]{src/Figures/planner-agent-setup.png}
 
 }
 
@@ -11578,7 +10849,7 @@ play \(A_2\)?
 
 \centering{
 
-\includegraphics{src/Figures/guinea_pig_fig.png}
+\pandocbounded{\includegraphics[keepaspectratio]{src/Figures/guinea_pig_fig.png}}
 
 }
 
@@ -11628,7 +10899,7 @@ posterior \(\mathbb{E}[\mu_1 | r_1^1, \ldots r_1^M]\).
 
 \centering{
 
-\includegraphics{src/Figures/stochastic_guinea_pig.png}
+\pandocbounded{\includegraphics[keepaspectratio]{src/Figures/stochastic_guinea_pig.png}}
 
 }
 
@@ -11652,7 +10923,7 @@ incentive-compatible.
 
 \centering{
 
-\includegraphics{src/Figures/multi-armed-guinea-pig.png}
+\pandocbounded{\includegraphics[keepaspectratio]{src/Figures/multi-armed-guinea-pig.png}}
 
 }
 
@@ -14406,7 +13677,7 @@ gain traction on values.
 
 \centering{
 
-\includegraphics{src/Figures/hendrycks_fig6.png}
+\pandocbounded{\includegraphics[keepaspectratio]{src/Figures/hendrycks_fig6.png}}
 
 }
 
@@ -14433,7 +13704,7 @@ reason morally at (\citeproc{ref-talat_machine_2022}{Talat et al.
 
 \centering{
 
-\includegraphics{src/Figures/jiang_machines.png}
+\pandocbounded{\includegraphics[keepaspectratio]{src/Figures/jiang_machines.png}}
 
 }
 
@@ -14492,7 +13763,7 @@ optimizing multiple objectives like helpfulness and harmlessness
 
 \centering{
 
-\includegraphics{src/Figures/hendrycks_fig1.png}
+\pandocbounded{\includegraphics[keepaspectratio]{src/Figures/hendrycks_fig1.png}}
 
 }
 
@@ -14700,7 +13971,7 @@ agent does not initially learn the optimal policy.
 
 \centering{
 
-\includegraphics{src/Figures/tree-gridworld.jpeg}
+\pandocbounded{\includegraphics[keepaspectratio]{src/Figures/tree-gridworld.jpeg}}
 
 }
 
@@ -14838,7 +14109,7 @@ al. 2020}).
 
 \centering{
 
-\includegraphics[width=0.8\textwidth,height=\textheight]{src/Figures/rlhf.png}
+\includegraphics[width=0.8\linewidth,height=\textheight,keepaspectratio]{src/Figures/rlhf.png}
 
 }
 
@@ -15078,9 +14349,9 @@ table highlights a detailed comparison of RLHF with PPO and CPL,
 emphasizing their advantages, limitations, and ideal scenarios.
 
 \begin{longtable}[]{@{}
-  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3056}}
-  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3194}}
-  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3194}}@{}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3056}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3194}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3194}}@{}}
 \caption{Comparison between RLHF with PPO and
 CPL}\label{tbl-ppo_vs_cpl}\tabularnewline
 \toprule\noalign{}
@@ -15563,7 +14834,7 @@ theory (See Figure~\ref{fig-taxonomy}).
 
 \centering{
 
-\includegraphics[width=0.3\textwidth,height=\textheight]{src/Figures/seven-taxonomy.png}
+\includegraphics[width=0.3\linewidth,height=\textheight,keepaspectratio]{src/Figures/seven-taxonomy.png}
 
 }
 
@@ -15856,7 +15127,7 @@ Figure~\ref{fig-exp-1}.
 
 \centering{
 
-\includegraphics[width=0.8\textwidth,height=\textheight]{src/Figures/example-1.png}
+\includegraphics[width=0.8\linewidth,height=\textheight,keepaspectratio]{src/Figures/example-1.png}
 
 }
 
@@ -16060,7 +15331,7 @@ rewrite their selections to improve clarity and expression.
 
 \begin{figure}[H]
 
-{\centering \includegraphics{src/Figures/lampost_fig3.png}
+{\centering \pandocbounded{\includegraphics[keepaspectratio]{src/Figures/lampost_fig3.png}}
 
 }
 
@@ -16179,7 +15450,7 @@ over various benchmarks and tasks, like the SPIDER benchmark.
 
 \begin{figure}[H]
 
-{\centering \includegraphics[width=1\textwidth,height=\textheight]{src/Figures/MV2.png}
+{\centering \includegraphics[width=1\linewidth,height=\textheight,keepaspectratio]{src/Figures/MV2.png}
 
 }
 
@@ -16211,7 +15482,7 @@ linguistic features.
 
 \centering{
 
-\includegraphics[width=1\textwidth,height=\textheight]{src/Figures/MV1.png}
+\includegraphics[width=1\linewidth,height=\textheight,keepaspectratio]{src/Figures/MV1.png}
 
 }
 
@@ -16230,7 +15501,7 @@ illustrating the transformation process from SAE to a vernacular form.
 
 \centering{
 
-\includegraphics[width=0.4\textwidth,height=\textheight]{src/Figures/MV3.png}
+\includegraphics[width=0.4\linewidth,height=\textheight,keepaspectratio]{src/Figures/MV3.png}
 
 }
 
@@ -16272,7 +15543,7 @@ most dialects, as shown in Figure~\ref{fig-dada_performance}.
 
 \centering{
 
-\includegraphics[width=0.4\textwidth,height=\textheight]{src/Figures/MV4.png}
+\includegraphics[width=0.4\linewidth,height=\textheight,keepaspectratio]{src/Figures/MV4.png}
 
 }
 
@@ -16355,7 +15626,7 @@ framework.
 
 \centering{
 
-\includegraphics[width=0.45\textwidth,height=\textheight]{src/Figures/care.png}
+\includegraphics[width=0.45\linewidth,height=\textheight,keepaspectratio]{src/Figures/care.png}
 
 }
 
