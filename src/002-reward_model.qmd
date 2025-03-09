@@ -17,446 +17,77 @@
 
 ## Introduction
 
-Human preference modeling aims to capture humans' decision making
-processes in a probabilistic framework. Many problems would benefit from
-a quantitative perspective, enabling an understanding of how humans
-engage with the world. While human decision-making is only somewhat
-understood, we can use real-world data representing the outcomes of
-decisions to align human-facing systems with user preferences. Through
-our exploration of human preference models, we will ground ourselves in
-building a health coaching system that can provide meal recommendations
-aligned with a user's dietary needs and preferences. Examples of
-scenarios which can benefit from a model of how humans make choices
-include:
+Human preference modeling aims to capture humans' decision making processes in a probabilistic framework. Many problems would benefit from a quantitative perspective, enabling an understanding of how humans engage with the world.
 
-1.  **Health coaching:** Humans express their preferences every time
-    they pick lunch for consumption. Humans may have several goals
-    related to nutrition, such as weight loss and improving
-    concentration. We can learn how a given individual or set of
-    individuals prefer to eat to provide personalized recommendations to
-    help them attain their goals. This chapter will use this use case to
-    ground human preference modeling in a real-life application.
-
-2.  **Social media:** Platforms have a far greater amount of content
-    than one can consume in a lifetime, yet such products must aim to
-    maximize user engagement. To accomplish this, we can learn what
-    specific things people like to see in their feeds to optimize the
-    value they gain out of their time on social media. For example, the
-    video feed social media platform [TikTok](https://www.tiktok.com/)
-    has had viral adoption due to its notorious ability to personalize a
-    feed for its users based on their preferences.
-
-3.  **Shopping:** Retail corporations largely aim to maximize revenue by
-    making it easy for people to make purchases. Recommendation systems
-    on online shopping platforms provide a mechanism for curating
-    specific items based on an individual's previous purchases (or even
-    browsing history) to make shoppers aware of items they may like and,
-    therefore, purchase.
-
-::: {#tbl-philosophy}
-  -----------------------------------------------------------------------
-  Application                         Human Preference
-  ----------------------------------- -----------------------------------
-  Computer vision: train a neural     This is how humans process images
-  network to predict bounding boxes   by identifying the position and
-  delineating all instances of dogs   geometry of the things we see in
-  in an image                         them
-
-  Natural language processing: train  Coherent text is itself a
-  a model to generate coherent text   human-created and defined concept,
-                                      and we prefer that any
-                                      synthetically generated text
-                                      matches that of humans
-
-  Computer vision: train a diffusion  Humans prefer that images
-  model to generate realistic images  accurately capture the world as
-  of nature                           observed by humans, and this
-                                      generative model should reflect the
-                                      details that comprise that
-                                      preference
-  -----------------------------------------------------------------------
-
-  : Examples of machine learning tasks and their interpretation as
-  modeling human preferences.
-:::
-
-In this chapter, we will explore how one can model human preferences,
-including different formulations of such models, how one can optimize
-these models given data, and considerations one must understand to
-create such systems. We note that the exact assumptions we make about
-human preferences in this chapter differentiate the *specific* human
-preference learning problem we are considering from the discriminative
-and generative tasks we describe in @tbl-philosophy.
-We describe these assumptions in @sec-foundations.
+In this chapter, we will explore how one can model human preferences, including different formulations of such models, how one can optimize these models given data, and considerations one should understand to create such systems. We describe these assumptions in @sec-foundations.
 
 ## Foundations of Preference Models {#sec-foundations}
 
-We introduce a framework for discussing human preferences. The different
-methods to model these preferences @sec-models all
-build upon this framework.
+<!--
+An alternative framework we will explore is ranking, in which we can model an ordering of given choices from most to least desirable. It is possible that there is an infinite set of options; in this case, our model will have to reason about a discretized set of options and may fail to capture the full space of possibilities a human would choose from in the real world.
+-->
 
 ### Axiom 1: Preference models model choice {#axiom-1-preference-models-model-choice .unnumbered}
 
-Human preference models model the preferred choice or choices amongst a
-set of options. In our health coaching example, this could be modeling
-which meal from a set of options a person will most likely choose. An
-alternative framework we will explore is ranking, in which we can model
-an ordering of given choices from most to least desirable. It is
-certainly possible that there is an infinite set of options (such as in
-a continuous action space); in this case, our model will have to reason
-about a discretized set of options and may fail to capture the full
-space of possibilities a human would choose from in the real world.
-
-Choices are *collectively exhaustive*, *mutually exclusive*, and
-*finite*. Human preference models must enumerate an *action space*, or
-the set of all possible choices included in a human decision. As such,
-we must ensure that the choices we enumerate capture the entire domain
-(collectively exhaustive) but are indeed distinct (mutually exclusive)
-choices. In our health coaching example, a person either chooses to eat
-chicken or fish. Choosing one does not affect the other.
-
-A discrete set of choices is a constraint we canonically impose to
-ensure we can tractably model preferences and aptly estimate the
-parameters of preference models. This is usually sufficiently expressive
-to create a powerful human preference model (for example, recent
-generative language models have vocabulary sizes of 40,000+ and can
-model nearly arbitrary language sequences [@Radford2018GPT]). While in
-theory, one can imagine a continuous domain for choices, a discrete set
-fits nicely with most decision-making processes humans face. While human
-thought is extremely nuanced, most thoughts are expressed as discrete
-words or discrete decisions in every step humans take in the world.
+Human preference models model the preferred choice or choices amongst a set of options. For example, this could be modeling which meal from a set of options a person will most likely choose. Human preference models must enumerate an action space, or the set of all possible choices included in a human decision. As such, we must ensure that the choices we enumerate capture the entire domain (collectively exhaustive) but are indeed distinct (mutually exclusive) choices. A person either chooses to eat chicken or fish. A discrete set of choices is a constraint we canonically impose to ensure we can tractably model preferences and aptly estimate the parameters of preference models. This is usually sufficiently expressive to create a powerful human preference model. We assume that if a new option is added to the choice set, the relative probabilities of choosing between the original options remain unchanged. This is known as Independence of Irrelevant Alternatives (IIA) property from Luce's axiom of choices [@Luce1977].
 
 ### Axiom 2: Preference captures decision-making {#axiom-2-preference-captures-decision-making .unnumbered}
+Human preferences are classified into two categories: revealed preferences and stated preferences.
 
-There are certainly cases in which human preferences don't reflect the
-human decision-making process, for example if there are external factors
-(social, political, economic) which govern a human's choices, or if one
-is explicitly choosing to go against their preferences in the context of
-exploration. However, human preference models will always do their best
-to model the ultimate decision, and we assume that they are in some way
-accounting for these other factors (and any lack of such accounting will
-result in a biased model). Human preferences are generally classified
-into two categories:
+Revealed preferences are those one can observe retroactively from existing data. The implicit decision-making knowledge can be captured via learnable parameters and their usage in models which represent relationships between input decision attributes that may have little human interpretability, but enable powerful models of human preference. For health coaching, we may have information about which foods an individual has chosen previously in different contexts, allowing us to build a model from their decisions. Such data may be easier to acquire and can reflect real-world outcomes (since they are, at least theoretically, inherently based on human preferences). However, if we fail to capture sufficient context in such data, human preference models may not sufficiently capture human preferences.
 
-1.  Revealed preferences are those one can observe retroactively from
-    existing data. The implicit decision-making knowledge can be
-    captured via learnable parameters and their usage in models which
-    represent relationships between input decision attributes that may
-    have little human interpretability, but enable powerful models of
-    human preference. For health coaching, we may have information about
-    which foods an individual has chosen previously in different
-    contexts, allowing us to build a model from their decisions. Such
-    data may be easier to acquire and can reflect real-world outcomes
-    (since they are, at least theoretically, inherently based on human
-    preferences). However, if we fail to capture sufficient context in
-    such data, human preference models may not sufficiently capture
-    human preferences.
+Stated preferences are those individuals explicitly indicate in potentially experimental conditions. The explicit knowledge may be leveraged by including inductive biases during modeling (for example, the context used in a model) which are reasonable assumptions for how a human would consider a set of options.This may include controlled experiments or studies. This may be harder to obtain and somewhat biased, as they can be hypothetical or only accurately reflect a piece of the overall context of a decision. However, they enable greater control of the decision-making process.
 
-2.  Stated preferences are those individuals explicitly indicate in
-    potentially experimental conditions. The explicit knowledge may be
-    leveraged by including inductive biases during modeling (for
-    example, the context used in a model) which are reasonable
-    assumptions for how a human would consider a set of options.This may
-    include controlled experiments or studies. This may be harder to
-    obtain and somewhat biased, as they can be hypothetical or only
-    accurately reflect a piece of the overall context of a decision.
-    However, they enable greater control of the decision-making process.
+### Axiom 3: Rationality {#human-rationality .unnumbered}
 
-#### Human Rationality {#human-rationality .unnumbered}
+Modeling decision-making must also take into account the human rational and irrational behaviour. Rationality assumption provides a framework for predicting and modeling human behavior by outlining the principles that guide decision-making processes [@keisler2003common]. These assumptions provide the foundation for developing models that can simulate and analyze how individuals interact with one another and their environment. By incorporating different types of rationality, researchers can create more accurate and realistic models that reflect the complexities of human decision-making. This comprehensive approach enhances the predictive power of models and improves the understanding of human behavior in economic and social contexts [@miljkovic2005rational; @simon1972theories].
 
-Modeling decision-making must also take into account the rational and
-irrational behaviour of humans. Therefore we consider *rationality
-assumptions* as a fundamental aspect of understanding how individuals
-make decisions. These assumptions provide a framework for predicting and
-modeling human behavior by outlining the principles that guide
-decision-making processes [@keisler2003common].
+Perfect rationality posits that individuals always make decisions that maximize their utility. It assumes that individuals have completeinformation and the cognitive ability to process this information to make optimal choices [@miljkovic2005rational]. This assumption is often used in economic models to predict how rational agents would behave under ideal conditions. However, numerous studies have shown that this assumption frequently fails to describe actual human behavior, as individuals do not always act in ways that maximize their utility due to various constraints and biases [@miljkovic2005rational]. 
 
-Perfect rationality posits that individuals always make decisions that
-maximize their utility. It assumes that individuals have complete
-information and the cognitive ability to process this information to
-make optimal choices [@miljkovic2005rational]. This assumption is often
-used in economic models to predict how rational agents would behave
-under ideal conditions. However, numerous studies have shown that this
-assumption frequently fails to describe actual human behavior, as
-individuals do not always act in ways that maximize their utility due to
-various constraints and biases [@miljkovic2005rational]. Bounded
-rationality, on the other hand, acknowledges that individuals operate
-within the limits of their information and cognitive capabilities.
-Decisions are made using heuristics or rules of thumb rather than
-through exhaustive analysis, reflecting the practical constraints of
-real-world decision-making [@simon1972theories]. This concept,
-introduced by Herbert Simon, recognizes the limitations of human
-cognitive processing and the impact of these limitations on
-decision-making. Simon's theory suggests that instead of optimizing,
-individuals satisfy, seeking solutions or decisions that are "good
-enough" under the circumstances [@simon1972theories]. Noisy rationality
-assumes that decisions are influenced by random noise, resulting in
-probabilistic choice behavior. This means that while individuals aim to
-maximize their utility, random factors can lead to deviations from
-perfectly rational choices. This approach is useful for modeling
-behavior in situations where decisions are not entirely deterministic
-and are subject to variability [@miljkovic2005rational]. This
-probabilistic approach aligns with findings from behavioral economics
-and psychology, which indicate that human decision-making is often
-inconsistent and influenced by various random factors
-[@miljkovic2005rational].
+Bounded rationality, on the other hand, acknowledges that individuals operate within the limits of their information and cognitive capabilities. Decisions are made using heuristics or rules of thumb rather than through exhaustive analysis, reflecting the practical constraints of real-world decision-making [@simon1972theories]. This concept, introduced by Herbert Simon, recognizes the limitations of human cognitive processing and the impact of these limitations on decision-making. Simon's theory suggests that instead of optimizing, individuals satisfy, seeking solutions or decisions that are "good enough" under the circumstances [@simon1972theories]. Bounded rationality acknowledges that decisions are influenced by noise, resulting in probabilistic choice behavior. This means that while individuals aim to maximize their utility, random factors can lead to deviations from perfectly rational choices [@miljkovic2005rational].
 
-Understanding rationality assumptions is crucial for modeling and
-predicting human behavior in various decision-making scenarios. These
-assumptions provide the foundation for developing models that can
-simulate and analyze how individuals interact with one another and their
-environment. By incorporating different types of rationality,
-researchers can create more accurate and realistic models that reflect
-the complexities of human decision-making. This comprehensive approach
-enhances the predictive power of models and improves the understanding
-of human behavior in economic and social contexts
-[@miljkovic2005rational; @simon1972theories].
+Boltzmann rationality provide a probabilistic framework for modeling bounded rational behavior. It addresses the likelihood of a human selecting an option $o$ from a set $O$. Desirability is represented by a value function $v : O \rightarrow \mathbb{R}^+$, with the selection probability calculated as $P(o) = \frac{v(o)}{\sum_{o' \in O} v(o')}$. Assuming there is an underlying reward for each option $R(o) \in \mathbb{R}$ such that $v(o) = e^{R(o)}$, we get $P(o) = \frac{e^{R(o)}}{\sum_{\bar{o} \in \mathcal{O}} e^{R(\bar{o})}}$. Essentially, "A human will act out a trajectory with a probability proportional to the exponentiated return they receive for the trajectory." When choices involve trajectories $\xi \in \Xi$ (sequences of actions), the reward $R$ is typically a function of a feature vector $\phi : \Xi \rightarrow \mathbb{R}^k$, and the probability density is given by $p(\xi) = \frac{e^{R(\phi(\xi))}}{\int_{\Xi} e^{R(\phi(\bar{\xi}))} d\bar{\xi}}$.
 
-Luce's axiom of choice [@Luce1977] and Boltzmann's Rationality provide a
-probabilistic framework for modeling noisily-rational human behavior.
-Luce's axiom of choice addresses the likelihood of a human selecting an
-option $o$ from a set $O$. Desirability is represented by a value
-function $v : O \rightarrow \mathbb{R}^+$, with the selection probability
-calculated as $P(o) = \frac{v(o)}{\sum_{o' \in O} v(o')}$. Assuming
-there is an underlying reward for each option $R(o) \in \mathbb{R}$ such that
-$v(o) = e^{R(o)}$, we get
-$P(o) = \frac{e^{R(o)}}{\sum_{\bar{o} \in \mathcal{O}} e^{R(\bar{o})}}$.
-Essentially, "A human will act out a trajectory with a probability
-proportional to the exponentiated return they receive for the
-trajectory." This probabilistic approach challenges the traditional
-assumption of perfect economic rationality, where individuals always
-make decisions that maximize their utility. When choices involve
-trajectories $\xi \in \Xi$ (sequences of actions), the Boltzmann model
-[@VonNeumannMorgenstern1945] is used. Here, the reward $R$ is typically
-a function of a feature vector $\phi : \Xi \rightarrow \mathbb{R}^k$, and the
-probability density is given by
-$p(\xi) = \frac{e^{R(\phi(\xi))}}{\int_{\Xi} e^{R(\phi(\bar{\xi}))} d\bar{\xi}}$.
-Boltzmann Rationality serves a critical role in human preferences and
-decision-making. It captures the probabilistic nature of human choices,
-recognizing that decisions are often noisy and influenced by various
-factors. This model is instrumental in preference modeling,
-accommodating human preferences' inherent variability and uncertainty.
-
-However, the Luce choice axiom and Boltzmann Rationality encounter a
-known issue called the "duplicates problem," where there is no concept
-of similar actions (e.g., choosing between using a car or a train for
-transportation, with no particular preference). The probability of
-making the decision is 50% for either option. However, if we now have
-100 cars, under Luce/Boltzmann, we would have a 99% probability of
-choosing a car, which is unrealistic.
-
-To address this issue, various extensions have been proposed. One such
-extension is the attribute rule, which interprets options as bundles of
-attributes. In this rule, attributes $X$ are associated with options,
-and they have desirability values $w(x)$. An attribute intensity
-function $s(x, o)$ indicates the degree to which an attribute is
-expressed in an option. The probability of choosing option $o$ is
-calculated as:
+Boltzmann rationality has the "duplicates problem," where there is no concept of similar actions (e.g., choosing between using a car or a train for transportation, with no particular preference). The probability of making the decision is 50% for either option. However, if we now have 100 cars, under Boltzmann, we would have a 99% probability of choosing a car, which is unrealistic. To address this issue, various extensions have been proposed. One such extension is the attribute rule, which interprets options as bundles of attributes. In this rule, attributes $X$ are associated with options, and they have desirability values $w(x)$. An attribute intensity function $s(x, o)$ indicates the degree to which an attribute is expressed in an option. The probability of choosing option $o$ is
 
 $$P(o) = \sum_{x \in \mathcal{X}_o} \frac{w(x)}{\sum_{\bar{x} \in \mathcal{X}_o} w(\bar{x})} \cdot \frac{s(x, o)}{\sum_{\tilde{o} \in \mathcal{O}} s(x, \bar{o})}$$
 
-This equation describes a two-step process where an attribute
-$x \in X_O$ is first chosen according to a Luce-like rule and then an
-option $o \in O$ with that attribute is selected using another Luce-like
-rule. This approach handles duplicates gracefully by effectively
-creating a two-layer hierarchy in choosing an option.
+This equation describes a two-step process where an attribute $x \in X_O$ is first chosen according to a Boltzmann-like rule and then an option $o \in O$ with that attribute is selected using another Boltzmann-like rule. This approach handles duplicates gracefully by effectively creating a two-layer hierarchy in choosing an option.
 
-Boltzmann Rationality finds practical applications in various fields,
-particularly in reinforcement learning, where it models decision-making
-in uncertain environments. It also applies to trajectory selection,
-where the probability of a sequence of actions (trajectory) is
-proportional to the exponential return. These applications enhance the
-accuracy of models that interact with or predict human behavior, making
-Boltzmann Rationality a vital component of the models of interaction.
+Boltzmann rationality finds practical applications in various fields, particularly in reinforcement learning, where it models decision-making in uncertain environments. It also applies to trajectory selection, where the probability of a sequence of actions (trajectory) is proportional to the exponential return. These applications enhance the accuracy of models that interact with or predict human behavior, making Boltzmann Rationality a vital component of the models of interaction.
 
-We next explore a case study to deepen our understanding of rationality:
-Limiting Errors due to Similar Selection (LESS) [@2001.04465]. LESS
-takes inspiration from the attribute rule and extends it to continuous
-trajectories [@2001.04465]. The key insight is that instead of creating
-"attributes", which group together similar discrete options, it
-introduces a similarity metric on the space of continuous actions,
-thereby creating similar groupings on trajectories.
+We next explore a case study to deepen our understanding of rationality: Limiting Errors due to Similar Selection (LESS) [@2001.04465]. LESS takes inspiration from the attribute rule and extends it to continuous trajectories [@2001.04465]. The key insight is that instead of creating "attributes", which group together similar discrete options, it introduces a similarity metric on the space of continuous actions, thereby creating similar groupings on trajectories.
 
-First, discussing the distinction between trajectory and feature space
-is important. The LESS similarity metric could be defined in trajectory
-space, where the trajectory is some theoretical notion of all states and
-actions one passes through over time. However, it is instead defined on
-the measured feature vector $\phi(\xi)$ associated with the agent's
-trajectory $\xi$. Why? In practice, one can never measure the exact
-trajectory with perfect fidelity. The feature vector will almost
-necessarily map in a one-to-many fashion with trajectories. Formally,
-let $\phi \in \Phi$ be the set of all possible feature vectors
-$\xi \in \Xi$ the set of all trajectories. The set of feature vectors
-belonging to a set of trajectories $\Xi' \subseteq \Xi$ is
-$\Phi_{\Xi'}$. We begin with equation (4) and substitute our similarity
-metric on feature vectors of trajectories.
+The LESS similarity metric could be defined in trajectory space, where the trajectory is some theoretical notion of all states and actions one passes through over time. However, it is instead defined on the measured feature vector $\phi(\xi)$ associated with the agent's trajectory $\xi$. In practice, one can never measure the exact trajectory with perfect fidelity. The feature vector will almost necessarily map in a one-to-many fashion with trajectories. Formally,
+let $\phi \in \Phi$ be the set of all possible feature vectors $\xi \in \Xi$ the set of all trajectories. The set of feature vectors belonging to a set of trajectories $\Xi' \subseteq \Xi$ is $\Phi_{\Xi'}$. We begin with equation (4) and substitute our similarity metric on feature vectors of trajectories.
 
 $$\begin{aligned}
     P(\xi) = \frac{e^{R(\phi(\xi))}}{\sum_{\bar{\phi} \in \Phi_{\Xi}} e^{R(\hat{\phi})}} \cdot \frac{s(\phi(\xi), \bar{\xi})}{\sum_{\hat{\xi} \in \Xi} s(\phi(\xi), \bar{\xi})}
 \end{aligned}$$
 
-In this formulation, the first half of the product is simply Boltzmann
-equation. The probability of choosing trajectory $\xi$ is proportional
-to the exponentiated reward for the agent's measured trajectory
-$\phi(\xi)$, normalized by the sum of all rewards over all possible
-measured trajectories. The second half of the product is a normalization
-factor based on how similar the current trajectory is to other
-trajectories in feature space. We can define the similarity function as
-an indicator function, where $s(x, \xi) = 1$ only if $x = \phi(\xi)$.
-That means that multiple trajectories with the same feature vector will
-effectively be considered a single option. Thus, we achieve the
-"bundling" of trajectories, in the same way that the attribute rule
-bundled options under different attributes.
+The probability of choosing trajectory $\xi$ is proportional to the exponentiated reward for the agent's measured trajectory $\phi(\xi)$, normalized by the sum of all rewards over all possible measured trajectories. The second half of the product is a normalization factor based on how similar the current trajectory is to other trajectories in feature space. We can define the similarity function as an indicator function, where $s(x, \xi) = 1$ only if $x = \phi(\xi)$. That means that multiple trajectories with the same feature vector will effectively be considered a single option. Thus, we achieve the "bundling" of trajectories, in the same way that the attribute rule bundled options under different attributes.
 
-However, setting the similarity metric as an indicator function isn't
-sufficiently flexible. We want a proper metric that acts more as a
-continuous distance over the feature space. We instead define $s$ to be
-a *soft similarity metric* $s : \Phi \times \Xi \rightarrow \mathbb{R}^+$. It
-has the following properties:
+However, setting the similarity metric as an indicator function isn't sufficiently flexible. We want a proper metric that acts more as a continuous distance over the feature space. We instead define $s$ to be a *soft similarity metric* $s : \Phi \times \Xi \rightarrow \mathbb{R}^+$. It has the following properties:
 
-1.  $s(\phi(\xi), \xi) = \max_{x \in \phi, \bar{\xi} \in \Xi} s(x, \hat{\xi})) \forall (\xi \in \Xi)$
+1.  $s(\phi(\xi), \xi) = \max_{x \in \phi, \bar{\xi} \in \Xi} s(x, \hat{\xi}) \forall (\xi \in \Xi)$
 
 2.  Symmetric: $s(\phi(\xi), \bar{\xi}) = s(\phi(\bar{\xi}), \xi)$
 
 3.  Positive Semidefinite: $s(x, \xi) \geq 0$
 
-Using this redefined similarity metric $s$, we extend (5) to be a
-probability density on the continuous trajectory space $\mathcal{E}$, as
-in (3).
+Using this redefined similarity metric $s$, we extend (5) to be a probability density on the continuous trajectory space $\mathcal{E}$, as in (3).
 
 $$p(\hat{\xi}) = \frac{\frac{e^{R(\phi(\xi))}}{\int_{\Xi} s(\phi(\xi), \bar{\xi}) d\bar{\xi}}}{\int_{\Xi}\frac{e^{R(\phi(\hat{\xi}))}}{\int_{\Xi} s(\phi(\hat{\xi}), \bar{\xi}) d\bar{\xi}}d\hat{\xi}} \propto \frac{e^{R(\phi(\hat{\xi}))}}{\int_{\Xi} s(\phi(\xi), \bar{\xi}) d\bar{\xi}}$$
 
-Under this formulation, the likelihood of selecting a trajectory is
-inversely proportional to its feature-space similarity with other
-trajectories. This de-weights similar trajectories, which is the desired
-effect for our LESS model of human decision-making. This means, though,
-that the "trajectory bundle" of similar trajectories still has a
-reasonable probability of being chosen.
+Under this formulation, the likelihood of selecting a trajectory is inversely proportional to its feature-space similarity with other trajectories. This de-weights similar trajectories, which is the desired effect for our LESS model of human decision-making. This means, though, that the "trajectory bundle" of similar trajectories still has a reasonable probability of being chosen.
 
-### Axiom 3: Preference centers around utility {#axiom-3-preference-centers-around-utility .unnumbered}
+### Axiom 4: Preference centers around utility {#axiom-3-preference-centers-around-utility .unnumbered}
 
-Human preference models are centered around the notion of utility, which
-can mean a reward one attains after expressing one's preference over
-options.[^1] In health coaching, the utility, as a function of the
-health choices users make, may be satiety, latent promotion of overall
-health, or even a quantitative extension of life. Of course, humans
-don't necessarily use an explicit measure of utility --- frequently
-humans use qualitative factors such as emotion or external influence to
-make decision. However, we assume that the underlying utility mechanism
-of a human preference model still captures the final decision output
-from a human.
+Human preference models are centered around the notion of utility, which can mean a reward one attains after expressing one's preference over options.[^1] In health coaching, the utility, as a function of the health choices users make, may be satiety, latent promotion of overall health, or even a quantitative extension of life. We assume that the underlying utility mechanism of a human preference model captures the final decision output from a human. Utility can be interpreted as a scalar quantity representing the benefit or value an individual attains from selecting a given choice. Each choice has an associated utility. Human preference models capture both the utility of a choice (e.g. we model the utility value as a function of attributes of a given choice) and how the utilities interact to make a decision.[^2] We use the notation $U_i$ as the utility corresponding to choice $i$.
 
-Utility can be interpreted as a scalar quantity representing the benefit
-or value an individual attains from selecting a given choice. Each
-choice has an associated utility. Human preference models capture both
-the utility of a choice (e.g. we model the utility value as a function
-of attributes of a given choice) and how the utilities interact to make
-a decision.[^2] We use the notation $U_i$ as the utility corresponding
-to choice $i$.
+The utility of a choice is a stochastic function of the choice's attributes. We will henceforth define utility as $U_i = H_i(z_i)$ where $z_i$ is a variable describing the attributes of choice $i$ and $H_i$ is the stochastic function defining this choice's utility. For example, we can use a 1-D linear stochastic function to define $H_i$: $U_i = H_i(z_i) = \beta z_i + \epsilon_i$, where $\beta$ is a parameter of the model and $\epsilon_i$ is an unobserved factor for choice $i$. We assume that $\epsilon_i$ is a random variable following a specified distribution, such as a standard normal distribution. The attributes we use to represent a choice (a single scalar value $z_i$ in this example) is a critical design decision in defining the human preference model. These attributes define the context our model has in representing the human behavior we wish to capture, when choice $i$ is made. The preferred choice is that whose corresponding utility is the largest. Given that we model utility as the underlying benefit or value a human derives from choosing a given option, intuitively, we expect a human to choose the option with the largest utility.
 
-1.  **The utility of a choice is a stochastic function of the choice's
-    attributes.** We will henceforth define utility as follows
-    $U_i = H_i(z_i)$ where $z_i$ is a variable describing the attributes
-    of choice $i$ and $H_i$ is the stochastic function defining this
-    choice's utility. As a simple example, we can use a 1-D linear
-    stochastic function to define $H_i$:
-    $U_i = H_i(z_i) = \beta z_i + \epsilon_i$, where $\beta$ is a
-    parameter of the model and $\epsilon_i$ is an unobserved factor for
-    choice $i$. Generally, we assume that the $\epsilon_i$ factor is a
-    random variable following a specified distribution, such as a
-    standard normal distribution. The attributes we use to represent a
-    choice (a single scalar value $z_i$ in this example) is a critical
-    design decision in defining the human preference model. These
-    attributes define the context our model has in representing the
-    human behavior we wish to capture, when choice $i$ is made. In our
-    health coaching example, we may hope to provide the best possible
-    diet recommendations for an individual. However, if our vector
-    representation $z_i$ of their choice $i$ does not include vital
-    information, such as allergy risks associated to the choice or
-    ingredients which make up the choice, our model may not have enough
-    information to properly capture the human preference.
-
-2.  **The preferred choice is that whose corresponding utility is the
-    largest.** Given that we model utility as the underlying benefit or
-    value a human derives from choosing a given option, intuitively, we
-    expect a human to choose the option with the largest utility. In our
-    example of health coaching, if we model utility as the expected
-    increase in lifespan, we will surely opt for the choice that
-    maximizes this notion of utility. In our example, since $U_1 > U_2$,
-    our model indicates that a user would opt for the burrito.
-
-3.  **Relativity of Utility.** Given the two previously defined
-    characteristics of utility, we observe that only the relative
-    difference in utility matters. Even if $U_1 = 0.001$ and
-    $U_2 = 0.0005$, the model indicates the same outcome: a user prefers
-    option $1$. As such, even the scale of the utilities is irrelevant
-    within a given set of human preference data for a given individual.
-    In our example, we can scale the value of $\beta$ without changing
-    the overall outcome so long as we do not change the sign. The scale
-    of utilities *is* important when comparing human preferences across
-    datasets, or comparing the same model across different humans; since
-    utility may be defined differently in various datasets, perhaps
-    their exact values are not aligned in a manner which allows one to
-    robustly compare preferences between them. A common practice to
-    address this consideration is to standardize the utilities in each
-    dataset based on its variance in the observed data. Furthermore, a
-    human preference model may generate different scales of utilities
-    across different humans (based on the inputs and representation of
-    the human). In this case, one can standardize the utilities for each
-    individual based on the observed variance for that human. As we can
-    see, the relativity of utility can be both powerful (enabling us to
-    create flexible models and efficiently optimize them) and limiting
-    (requiring us to perform mitigations when translating models across
-    datasets or individuals. Still, we find the notion of utility
-    necessary to model human preferences as it provides a quantitative
-    value we can use to model human decisions.
-
-As a concrete model of meal recommendation in health coaching, let us
-suppose that we have three choices:
-
-1.  A burrito with rice, beans, and cheese.
-
-2.  French fries covered in mayonnaise.
-
-3.  A rice bowl with beans and chicken.
-
-If we design $z_i$ to be 1D, for example:
-
-1.  $z_1 = 1$ for the burrito since this is a somewhat balanced meal
-    that may help prolong the lifespan, which a user prefers.
-
-2.  $z_2 = -1$ since this is unhealthy due to being deep fried,
-    including saturated fats, and potentially reducing lifespan.
-
-3.  $z_3 = 1$ since a rice bowl is another healthy meal.
-
-After observing the choices of a user who likes to eat healthily, we
-might learn that $\beta = 1$ is the best parameter for this model, and
-maybe we assume that $\epsilon \sim \mathcal{N}(0, 1)$. Then, this model implies
-that $U_1 = 1 \cdot 1 + 0.03 = 1.03$,
-$U_2 = 1 \cdot -1 + (-0.07) = -1.07$, $U_3 = 1 \cdot 1 + (0.02) = 1.02$,
-which means that the user, for whom $\beta = 1$ is the learned
-parameter, they would prefer the first meal, with the third meal as a
-close second option.
-
-If we design $z_i$ to be 3D, to indicate the carbohydrate, protein, and
-fat content of each meal, then for example:
-
-1.  $z_1 = (1, 1, 0.1)$ for the burrito
-
-2.  $z_2 = (1, 0, 1)$ for the fries
-
-3.  $z_3 = (1, 1, 0.2)$ for the rice bowl.
-
-After observing the choices of a user who likes to eat healthy, we might
-learn that $\beta = (1, 1, -1)$ is the best parameter for this model,
-and maybe we assume that $\epsilon \sim \mathcal{N}(0, 1)$. Then, this model
-implies that $U_1 = (1, 1, 0.1) \cdot (1, 1, -1) + 0.01 = 1.91$,
-$U_2 = (1, 0, 1) \cdot (1, 1, -1) + 0.03 = 0.03$,
-$U_3 = (1, 1, 0.2) \cdot (1, 1, -1) - 0.07 = 1.73$, which means that the
-user prefers meals 1 and 3, which again have the best utility, but in
-this multi-dimensional representation of $z_i$, we start understanding
-how the two preferred meals are related (low fat and high protein).
+Given the previously defined characteristics of utility, we observe that only the relative difference in utility matters. Even if $U_1 = 0.001$ and $U_2 = 0.0005$, the model indicates the same outcome: a user prefers option $1$. As such, even the scale of the utilities is irrelevant within a given set of human preference data for a given individual. For example, we can scale the value of $\beta$ without changing the overall outcome so long as we do not change the sign. The scale of utilities *is* important when comparing human preferences across datasets, or comparing the same model across different humans; since utility may be defined differently in various datasets, perhaps their exact values are not aligned in a manner which allows one to robustly compare preferences between them. A common practice to address this consideration is to standardize the utilities in each dataset based on its variance in the observed data. Furthermore, a human preference model may generate different scales of utilities across different humans (based on the inputs and representation of the human). In this case, one can standardize the utilities for each individual based on the observed variance for that human. As we can see, the relativity of utility can be both powerful (enabling us to create flexible models and efficiently optimize them) and limiting (requiring us to perform mitigations when translating models across datasets or individuals. Still, we find the notion of utility necessary to model human preferences as it provides a quantitative value we can use to model human decisions.
 
 ## Models of Individual Choices {#sec-models}
 
@@ -1912,3 +1543,59 @@ the ideal preference vector [@bhatia2020preference].
 
 
 {{< include psets/pset1.qmd >}}
+
+Through our exploration of human preference models, we will ground ourselves in
+building a health coaching system that can provide meal recommendations aligned with a user's dietary needs and preferences. Examples of scenarios which can benefit from a model of how humans make choices include:
+
+1.  **Health coaching:** Humans express their preferences every time
+    they pick lunch for consumption. Humans may have several goals
+    related to nutrition, such as weight loss and improving
+    concentration. We can learn how a given individual or set of
+    individuals prefer to eat to provide personalized recommendations to
+    help them attain their goals. This chapter will use this use case to
+    ground human preference modeling in a real-life application.
+
+2.  **Social media:** Platforms have a far greater amount of content
+    than one can consume in a lifetime, yet such products must aim to
+    maximize user engagement. To accomplish this, we can learn what
+    specific things people like to see in their feeds to optimize the
+    value they gain out of their time on social media. For example, the
+    video feed social media platform [TikTok](https://www.tiktok.com/)
+    has had viral adoption due to its notorious ability to personalize a
+    feed for its users based on their preferences.
+
+3.  **Shopping:** Retail corporations largely aim to maximize revenue by
+    making it easy for people to make purchases. Recommendation systems
+    on online shopping platforms provide a mechanism for curating
+    specific items based on an individual's previous purchases (or even
+    browsing history) to make shoppers aware of items they may like and,
+    therefore, purchase.
+
+<!--
+::: {#tbl-philosophy}
+  -----------------------------------------------------------------------
+  Application                         Human Preference
+  ----------------------------------- -----------------------------------
+  Computer vision: train a neural     This is how humans process images
+  network to predict bounding boxes   by identifying the position and
+  delineating all instances of dogs   geometry of the things we see in
+  in an image                         them
+
+  Natural language processing: train  Coherent text is itself a
+  a model to generate coherent text   human-created and defined concept,
+                                      and we prefer that any
+                                      synthetically generated text
+                                      matches that of humans
+
+  Computer vision: train a diffusion  Humans prefer that images
+  model to generate realistic images  accurately capture the world as
+  of nature                           observed by humans, and this
+                                      generative model should reflect the
+                                      details that comprise that
+                                      preference
+  -----------------------------------------------------------------------
+
+  : Examples of machine learning tasks and their interpretation as
+  modeling human preferences.
+:::
+-->
