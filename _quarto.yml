@@ -103,8 +103,9 @@ knitr:
     dev: "png"
     dpi: 300
 
-execute: 
-  eval: false
+execute:
+  freeze: auto
+  eval: true
   echo: true
   message: false
   warning: false
@@ -133,6 +134,7 @@ book:
   # cookie-consent: true
   chapters:
     - index.qmd
+    - src/001-preference_decision_model.qmd
     - src/002-reward_model.qmd
     - src/003-measure.qmd
     - src/004-optim.qmd

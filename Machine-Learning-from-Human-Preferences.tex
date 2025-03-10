@@ -440,7 +440,7 @@
 
 \title{Machine Learning from Human Preferences}
 \author{Sang T. Truong \and Sanmi Koyejo}
-\date{2025-03-09}
+\date{2025-03-10}
 
 \begin{document}
 \newgeometry{}
@@ -450,19 +450,17 @@
 
 \begin{titlepage}
   \centering
-  {\usekomafont{title}\scshape\Huge Machine Learning from Human
-Preferences\par}\clearpage
+  {\usekomafont{title}\scshape\Huge Machine Learning\\from Human Preferences}\clearpage
 \end{titlepage}
 
 \begin{titlepage}
   \begin{center}
-    {\usekomafont{title}\scshape\Huge Machine Learning from Human
-Preferences\par}
+    {\usekomafont{title}\scshape\Huge Machine Learning\\from Human Preferences}
     \vskip 1em
     {\usekomafont{subtitle}\LARGE \par}
     \vskip 1em
     \setstretch{1.5}
-    {\usekomafont{author} Sang T. Truong,  and~Sanmi Koyejo \par}
+    {\usekomafont{author} Sang T. Truong and Sanmi Koyejo}
     \vfill
     {\rmfamily\large Stanford University\\Stanford, CA}
   \end{center}
@@ -507,40 +505,41 @@ from education and healthcare to scientific discovery. A key challenge
 in developing trustworthy intelligent systems is ensuring they align
 with human preferences. Learning from human feedback offers a promising
 solution to this challenge. This book introduces the foundations and
-practical applications of machine learning from human preferences. It
-explores how traditional machine learning struggles with defining goals
-and preferences and presents preference-based learning as an alternative
-that incorporates human feedback to guide the learning process, drawing
-insights from related fields such as economics, psychology, and
-human-computer interaction. By the end of this book, readers will be
-equipped with the key concepts and tools needed to design systems that
-effectively align with human preferences.
+practical applications of machine learning from human preferences.
+Instead of manually predefining the learning goal, the book presents
+preference-based learning that incorporates human feedback to guide the
+learning process, drawing insights from related fields such as
+economics, psychology, and human-computer interaction. By the end of
+this book, readers will be equipped with the key concepts and tools
+needed to design systems that effectively align with human preferences.
 
 The book is intended for researchers, practitioners, and students who
 are interested in intergrating machine learning with human-centered
 application. We assume some basic knowledge of probability and
 statistics, but provides sufficient background and references for the
-readers to follow the main ideas and results. The book also provides
-illustrative program examples and datasets. The field of machine
-learning from human preference is a vibrant and growing area of research
-and practice with many open challenges and opportunities, and we hope
-that this book will inspire readers to further explore and advance this
-exciting field. The book is divided into 4 chapters:
+readers to follow the main ideas. The book also provides illustrative
+program examples and datasets. The field of machine learning from human
+preference is a vibrant area of research and practice with many open
+challenges and opportunities, and we hope that this book will inspire
+readers to further explore and advance this exciting field. The book is
+divided into 4 chapters:
 
 \begin{itemize}
 \item
   \textbf{Chapter 1} lays the foundation for probabilistic modeling of
-  human preferences. It covers key model assumptions, such as Luce's
-  axiom of choice and Boltzmann rationality, along with interaction
-  models like pairwise and rank-order comparisons. The chapter also
-  explores game-theoretic perspectives on preference learning and
-  examines human biases in reward models, their impact on reward
-  inference, and strategies to leverage both rational and irrational
-  behavior. Additionally, it discusses challenges in learning multimodal
-  rewards and meta-reward learning, including techniques for learning
-  from demonstrations and rewards in complex environments.
+  preferences and decisions. It covers key model assumptions (e.g.,
+  bounded rationality), along with methods for preference data
+  collection (e.g., pairwise comparisons), and models to interpret the
+  data (e.g., Bradley-Terry model). The chapter also explore preference
+  aggregation through the lense of social choice theory.
 \item
-  \textbf{Chapter 2} focused on a process where the end goal is to
+  \textbf{Chapter 2} examines various functional form and learning of
+  reward modeling via examples from the field of language modeling and
+  robotics. We discuss the challenges in learning multimodal rewards,
+  meta-reward learning, human biases in reward models, and strategies to
+  leverage both rational and irrational behavior.
+\item
+  \textbf{Chapter 3} focused on a process where the end goal is to
   elicit the utility function. Since human is involved in the data
   collection, we concentrate on active learning methods that elicit the
   most preference information with a minimal amount of human query.
@@ -548,7 +547,7 @@ exciting field. The book is divided into 4 chapters:
   variance, exploiting ambiguity and domain knowledge in ranking, with
   examples from robotics and machine learning systems.
 \item
-  \textbf{Chapter 3} focuses on process where preference is a signal
+  \textbf{Chapter 4} focuses on process where preference is a signal
   guiding decision. We discuss dueling bandits, an algorithm for
   decision making from pairwise preferences, as well as reinforcement
   learning from human feedback (RLHF) to align language models.
@@ -559,7 +558,7 @@ exciting field. The book is divided into 4 chapters:
   multi-objective is pivotal to representing the multifaceted goals of
   varied stakeholders within AI systems.
 \item
-  \textbf{Chapter 4} analyzes principles from human-computer interaction
+  \textbf{Chapter 5} analyzes principles from human-computer interaction
   (HCI) for systems that learn from humans, like cognitive constraints
   and user experience. We discuss ethical issues that arise in
   interaction models and approaches for designing preference elicitation
@@ -600,9 +599,8 @@ assumptions in Section~\ref{sec-foundations}.
 
 \section{Foundations of Preference Models}\label{sec-foundations}
 
-\subsection*{Axiom 1: Construction of Choices
+\subsection{Axiom 1: Construction of Choices
 Set}\label{axiom-1-preference-models-model-choice}
-\addcontentsline{toc}{subsection}{Axiom 1: Construction of Choices Set}
 
 Human preference models model the preferred choices amongst a set of
 options. For example, this could be modeling which meal from a set of
@@ -618,34 +616,25 @@ original options remain unchanged. This is known as Independence of
 Irrelevant Alternatives (IIA) property from Luce's axiom of choices
 (\citeproc{ref-Luce1977}{Luce 1977}).
 
-\subsection*{Axiom 2: Preference Centers around
+\subsection{Axiom 2: Preference Centers around
 Utility}\label{axiom-3-preference-centers-around-utility}
-\addcontentsline{toc}{subsection}{Axiom 2: Preference Centers around
-Utility}
 
 Human preference models are centered around the notion of utility, a
 scalar quantity representing the benefit or value an individual attains
 from selecting a given choice. We assume that the underlying utility
 mechanism of a human preference model captures the final decision output
-from a human. We use the notation \(U_i\) as the utility corresponding
-to choice \(i\). The utility of a choice \(i\) is a stochastic function
-\(H_i\) of the choice's attributes \(z_i\):
-\(U_i = H_i(z_i) + \epsilon_i\), where \(\epsilon_i\) is an unobserved
-factor for choice \(i\) following a specified distribution, such as a
-standard normal distribution. The attributes representing a choice
-\(z_i\) are crucial in defining the human preference model, as they
-provide the context for capturing human behavior when choice \(i\) is
-made. Only the relative difference in utility matters. As such, the
-scale of the utilities is irrelevant within a given set of human
-preference data for a given individual. The scale of utilities is
-important when comparing across datasets or across different humans;
-since utility may be defined differently in various datasets or
-different human. A common practice to address this consideration is to
-standardize the utilities in each dataset based on its variance in the
-observed data.
+from a human. We use the notation \(u_{i,j}\) as the utility of person
+\(i\) choosing item \(j\). The utility is a random variable, decomposing
+into true utility \(u_{i,j}^*\) and a random noise \(\epsilon_{i,j}\):
+\(u_{i,j} = u_{i,j}^* + \epsilon_{i,j}\). True utility can further be
+decomposed into user-specific utility \(\theta_i\) and item-specific
+utility \(z_j\): \(u_{i,j}^* = \theta_i + z_j\). From this
+decomposition, it is straightforward that, for a single users, only the
+relative difference in utility matters to predict the choice among
+options and the scale of utilities is important when comparing across
+user.
 
-\subsection*{Axiom 3: Rationality}\label{human-rationality}
-\addcontentsline{toc}{subsection}{Axiom 3: Rationality}
+\subsection{Axiom 3: Rationality}\label{human-rationality}
 
 Modeling decision-making must also take into account rationality.
 Rationality assumption provides a framework for predicting and modeling
@@ -784,10 +773,8 @@ effect for our LESS model of human decision-making. This means, though,
 that the ``trajectory bundle'' of similar trajectories still has a
 reasonable probability of being chosen.
 
-\subsection*{Axiom 4: Preference captures
+\subsection{Axiom 4: Preference captures
 decision-making}\label{axiom-2-preference-captures-decision-making}
-\addcontentsline{toc}{subsection}{Axiom 4: Preference captures
-decision-making}
 
 Human preferences are classified into two categories: revealed
 preferences and stated preferences.
@@ -853,18 +840,11 @@ participants might interpret scale points differently, and fixed-point
 scales may not capture the full nuance of participants' preferences or
 attitudes (\citeproc{ref-harpe2015}{Harpe 2015}).
 
-\emph{Best-worst scaling} (BWS) is a powerful method for understanding
-preferences and the relative importance of different items. In BWS,
-participants are presented with items and asked to identify the most and
-least preferred options. The primary objective of BWS is to discern the
-relative importance or preference of items within a set, making it
-widely applicable in various fields such as market research, health
-economics, and social sciences (\citeproc{ref-campbell2015}{Campbell and
-Erdem 2015}). A key method within BWS is MaxDiff Analysis, which
-involves presenting participants with items and asking them to select
-the best and worst options. For instance, in a product development
-context, MaxDiff Analysis can help determine the most and least
-important features according to consumer preferences
+\emph{In Best-worst scaling} (BWS), participants are presented with
+items and asked to identify the most and least preferred options. The
+primary objective of BWS is to discern the relative importance or
+preference of items, making it widely applicable in various fields such
+as market research, health economics, and social sciences
 (\citeproc{ref-campbell2015}{Campbell and Erdem 2015}). BWS provides
 rich data on the relative importance of items, helps clarify
 preferences, reduces biases found in traditional rating scales, and
@@ -873,177 +853,117 @@ has limitations, including potential scale interpretation differences
 among participants, and design challenges to avoid biases, such as the
 order effect or the context in which items are presented.
 
-\emph{Multiple-choice sampling} models are widely used in various
-fields, such as voting systems, surveys, and market research, to
-understand the preferred choice among a set of alternatives. These
-models involve participants selecting one option from a set of
-alternatives. Multiple-choice sampling is simple for participants to
-understand and reflect on realistic decision-making scenarios where
-individuals choose one option from many. It is beneficial in complex
-choice scenarios, such as modes of transportation, where choices are not
-independent (\citeproc{ref-bolt2009}{Bolt and Wollack 2009}).
-Multiple-choice sampling often relies on simplistic assumptions such as
-the independence of irrelevant alternatives (IIA), which may not always
-hold true. This method may also fail to capture the variation in
-preferences among different individuals, as it typically records only
-the most preferred choice without accounting for the relative importance
-of other options.
+\emph{Multiple-choice sampling} involve participants selecting one
+option from a set of alternatives. Multiple-choice sampling is simple
+for participants to understand and reflect on realistic decision-making
+scenarios where individuals choose one option from many. It is
+beneficial in complex choice scenarios, such as modes of transportation,
+where choices are not independent (\citeproc{ref-bolt2009}{Bolt and
+Wollack 2009}). Multiple-choice sampling often relies on simplistic
+assumptions such as the independence of irrelevant alternatives (IIA),
+which may not always hold true. This method may also fail to capture the
+variation in preferences among different individuals, as it typically
+records only the most preferred choice without accounting for the
+relative importance of other options.
 
 \section{Models of Choices}\label{sec-models}
 
-\subsubsection*{Binary Choice Model}\label{binary-choice-model}
-\addcontentsline{toc}{subsubsection}{Binary Choice Model}
+\subsection{Binary Choice Model}\label{binary-choice-model}
 
-Binary Choice Model is centered around one specific user option. The
-model predicts, for that option, after observing user choices in the
-past, whether that option will be chosen or not. Specifically, if we are
-looking at a certain choice, we use binary variable \(y \in \{0, 1\}\)
-to represent whether that choice will be picked or not by the user in
-the next phase of selection. We denote \(P = \mathbb{P}(y = 1)\). We can
-use a linear model represented by the parameter \(\beta\) we have
-already defined. Since utility is a stochastic function of the choice
-attributes, we will represent our utility as
-\(U = \beta^\top z + \epsilon\). We can formally model \(y\) as a
-function of the utility of the positive choice: \(y = \mathbb{I}[U>0]\).
-We explore two cases based on the choice of distribution for the
-unobserved random variable \(\epsilon\). If
-\(\epsilon \sim \text{Logistic}\), then
-\(\mathbb{P}(\epsilon < a) = \frac{1}{1 + \exp^{-a}}\). The probability
-\(P\) can be modeled as: \[
-P = \mathbb{P}(U > 0) = \mathbb{P}(\beta^\top z + \epsilon > 0) = \mathbb{P}( \epsilon > -\beta^\top z) = 1 - \mathbb{P}( \epsilon < -\beta^\top z) = 1 - \frac{1}{1 + \exp^{\beta^\top z}} = \frac{1}{1 + \exp^{-\beta^\top z}}
+Binary choice model is centered around one item. The model predicts, for
+that option, after observing user choices in the past, whether that
+option will be chosen or not. We use binary variable \(y \in \{0, 1\}\)
+to represent whether that choice will be picked by the user in the next
+phase of selection. We denote \(P = \mathbb{P}(y = 1)\). We can formally
+model \(y\) as a function of the utility of the positive choice:
+\(y = \mathbb{I}[U>0]\). We explore two cases based on the noise
+distribution. \(\psi\) is the logistic function or the standard normal
+cummulative distribution function if noise follows logistic distribution
+and the standard normal distribution, repsectively: \[
+\mathbb{P}(u_{i,j} > 0) = \mathbb{P}(u_{i,j}^* + \epsilon > 0) = 1 - \mathbb{P}( \epsilon < -u_{i,j}^*) = \psi(u_{i,j}^*).
 \]
 
-On the other hand, if \(\epsilon \sim \mathcal{N}(0, 1)\), then
-\(\mathbb{P}(\epsilon < a) = \Phi(a)\), where \(\Phi(a)\) is the
-cumulative distribution function of the standard normal distribution.
-The probability \(P\) is modeled as:
+\subsection{Bradley-Terry Model}\label{bradley-terry-model}
 
-\[P = \mathbb{P}(U > 0) = \mathbb{P}(\beta^\top z + \epsilon > 0) = \mathbb{P}( \epsilon > -\beta^\top z) = \mathbb{P}( \epsilon < \beta^\top z) = \Phi(\beta^\top z)\]
+The Bradley-Terry model compares the utility of choice over all others
+(\citeproc{ref-bradley-terry-model}{Bradley and Terry 1952}) in the set
+of \(J\) choices \(i \in \{1, 2, \dots, J\}\). Each choice can also have
+its unique random noise variable representing the unobserved factor,
+although we can also choose to have all choices' unobserved factors
+follow the same distribution (e.g.~independent and identically
+distributed, IID). The noise is represented as an extreme value
+distribution, although we can choose alternatives such as a multivariate
+Gaussian distribution: \(\epsilon \sim \mathcal{N}(0, \Sigma)\). If
+\(\Sigma\) is not a diagonal matrix, we effectively model correlations
+in the noise across choices, enabling us to avoid the IID assumption. In
+the case of the extreme value distribution, we model the probability of
+a user preferring choice \(i\), which we denote as
+\(P_i = Z^{-1}\exp(u_{i,j}^*)\) where
+\(Z = \sum_{j = 1}^{J} \exp(u_{i,j}^*)\).
 
-\subsubsection*{Bradley-Terry Model}\label{bradley-terry-model}
-\addcontentsline{toc}{subsubsection}{Bradley-Terry Model}
+\subsection{Ordered Preferences Model}\label{ordered-preferences-model}
 
-The Bradley-Terry (BT) model introduces a framework to model the utility
-of choice over all others given their attribute vectors
-(\citeproc{ref-bradley-terry-model}{Bradley and Terry 1952b}). In the BT
-model, we have a discrete set of \(J\) choices
-\(i \in \{1, 2, \dots, J\}\), each with an attribute representation
-\(z_i \in \mathbb{Z}^n\) (where \(n\) is the dimensionality of the
-representation). Each choice can also have its unique random noise
-variable representing the unobserved factor, although we can also choose
-to have all choices' unobserved factors follow the same distribution
-(e.g.~independent and identically distributed, or IID). We keep the
-assumption from previous sections that the utility \(U_i\) of choice
-\(i\) is also a linear stochastic function where the noise is sampled
-from the specified distribution: \(U_i = \beta^\top z_i + \epsilon_i\).
-The noise is represented as an extreme value distribution, although we
-can choose alternatives such as a multivariate Gaussian distribution:
-\(\epsilon \sim \mathcal{N}(0, \Sigma)\). If \(\Sigma\) is not a
-diagonal matrix, we effectively model correlations in the noise across
-choices, enabling us to avoid the iid assumption if necessary. In the
-case of the extreme value distribution, we model the probability of a
-user preferring choice \(i\), which we denote as \(P_i\) as
-\(P_i = \exp(\beta^\top z_i)/Z\) where
-\(Z = \sum_{j = 1}^{J} \exp(\beta^\top z_j)\).
-
-\subsubsection*{Ordered Preferences
-Model}\label{ordered-preferences-model}
-\addcontentsline{toc}{subsubsection}{Ordered Preferences Model}
-
-In all previous examples, we have assumed that we have no information on
-any explicit ordering of the available options a human can choose from:
-all choices were treated as independent by the model. The model aims to
-capture how an individual chooses between them. However, in many cases,
-we may introduce an inductive bias based on information about the
-options. For example, in a study for stated preferences, a user may be
-able to choose from intricately dependent options such as very poor,
-poor, fair, good, and great. In this case, it can be useful to include
-this bias in our model to represent a human's decision-making process
-better. For such cases, instead of comparing choices against
-alternatives, we can focus on a single example and use additional
-parameters to define classification criteria based on the utility
-determined by the model. Formally, let us suppose we have a single
+Previous models do not leverage information about ordering of the
+available options a human can choose from: all choices were treated as
+independent by the model. The model aims to capture how an individual
+chooses between them. However, in many cases, we may introduce an
+inductive bias based on information about the options. For example, in a
+study for stated preferences, a user may be able to choose from
+intricately dependent options such as very poor, poor, fair, good, and
+great. In this case, it can be useful to include this bias in our model
+to represent a human's decision-making process better. Instead of
+comparing choices against alternatives, we can focus on a single example
+and use additional parameters to define classification criteria based on
+the utility determined by the model. Let us suppose we have a single
 example with attributes \(z_i\), and wish to know which of \(J\)
 predefined options an individual will choose from. We can define
 \(J - 1\) parameters, which act as thresholds on the utility computed by
-\(U_i = H(z_i)\) to classify the predicted choice between these options.
-For example, if there are 3 predefined options, we can define parameters
-\(a, b \in \mathbb{R}\) such that
+\(u_i = u_{i,j}^*\) to classify the predicted choice between these
+options. For example, if there are 3 predefined options, we can define
+parameters \(a, b \in \mathbb{R}\) such that
 
 \[
 y_i =
 \begin{cases} 
-    1 & U < a \\
-    2 & a \le U < b \\
+    1 & u < a \\
+    2 & a \le u < b \\
     3 & \text{else}
 \end{cases}
 \]
 
-When the noise follow a logistic distribution, we can use our cumulative
-distributions as before to model the probability that a person will
-choose a given option. Continuing with our linear utility function
-\(U_i = \beta^\top z_i + \epsilon_i\), we can start with the setting
-that we assume unobserved factors follow a logistic distribution and
-focus on the first case:
-\[\mathbb{P}(y_i = 1) = \mathbb{P}(U < a) = \mathbb{P}(\beta^\top z + \epsilon < a )  = \mathbb{P}( \epsilon < a - \beta^\top z)  = \frac{1}{1 + \exp(\beta^\top z - a)}\]
-
-Extending this method to the second case, where we estimate the
-probability of the utility falling within a specific interval:
-\[\begin{aligned}
-    \mathbb{P}(y_i = 2) & = \mathbb{P}(a \le U < b) = \mathbb{P}(a - \beta^\top z \le \epsilon < b - \beta^\top z) = \frac{1}{1 + \exp(\beta^\top z - b)}  - (1 - \mathbb{P}( \epsilon < a - \beta^\top z) ) \\
-    & = \frac{1}{1 + \exp(\beta^\top z - b)}  - (1 - \frac{1}{1 + \exp(\beta^\top z - a)}  ) = \frac{1}{1 + \exp(\beta^\top z - b)}  - \frac{1}{1 + \exp(a - \beta^\top z)}  ) \\
-\end{aligned}\]
-
-The final case follows the form of the inverse of the first case:
-
-\[\mathbb{P}(y_i = 3) = \mathbb{P}(U > b) = \mathbb{P}(\beta^\top z + \epsilon > b ) = \mathbb{P}( \epsilon > b - \beta^\top z) = 1 - \mathbb{P}( \epsilon < b - \beta^\top z) = \frac{1}{1 + \exp(\beta^\top z - b)}\]
-
-In the case of modeling unobserved factors with a standard normal
-distribution, we have: \[
+By assuming the noise distribution to be either logistic or standard
+normal, we have \[
 \begin{split}
-    \mathbb{P}(y_i = 1) & = \mathbb{P}(U < a) = \mathbb{P}(\beta^\top z + \epsilon < a ) = \mathbb{P}( \epsilon < a - \beta^\top z) = \Phi(a - \beta^\top z) \\
-    \mathbb{P}(y_i = 2) & = \mathbb{P}(a \le U < b) 
-    = \mathbb{P}(a - \beta^\top z \le \epsilon < b - \beta^\top z) = \Phi(b - \beta^\top z) - \Phi(a - \beta^\top z) \\
-    \mathbb{P}(y_i = 3) & = \mathbb{P}(U > b) 
-    = 1 - \Phi(b - \beta^\top z) 
+    \mathbb{P}(y_i = 1) & = \mathbb{P}(u < a) = \mathbb{P}(u_{i,j}^* + \epsilon < a) = \psi(a-u_{i,j}^*) \\
+    \mathbb{P}(y_i = 2) & = \mathbb{P}(a \le u < b) = \mathbb{P}(a - u_{i,j}^* \le \epsilon < b - u_{i,j}^*) = \psi(b-u_{i,j}^*)  - \psi(u_{i,j}^*-a) \\
+    \mathbb{P}(y_i = 3) & = \mathbb{P}(u > b) = \mathbb{P}(u_{i,j}^* + \epsilon > b ) = \mathbb{P}( \epsilon > b - u_{i,j}^*) = \psi(b-u_{i,j}^*)
 \end{split}
 \]
 
-\subsubsection*{Plackett-Luce Model}\label{plackett-luce-model}
-\addcontentsline{toc}{subsubsection}{Plackett-Luce Model}
+\subsection{Plackett-Luce Model}\label{plackett-luce-model}
 
 We can model an open-ended ranking of the available options with the
-Plackett-Luce (PL) Model, in which we jointly model the full sequence of
+Plackett-Luce model, in which we jointly model the full sequence of
 choice ordering (\citeproc{ref-plackett_luce}{Plackett 1975}). The
 general form models the joint distribution as the product of conditional
 probabilities, where each is conditioned on the preceding ranking terms.
-Given an ordering of \(J\) choices \(\{Y_1, Y_2, \dots, Y_J\}\) where
-\(Y_1\) is the first selection, \(Y_2\) is the second, and so on, we
-decompose the joint probability into its respective conditionals. To
-compute the conditional probabilities, we can use the same method as the
-BT model, using a softmax to produce valid conditional distributions for
-each element of the sequence:
-
-\[
-\mathbb{P}(Y_1, Y_2, \dots, Y_J) = \mathbb{P}(Y_1) \cdot \mathbb{P}(Y_2 | Y_1) \cdot \dots \cdot \mathbb{P}(Y_J | Y_1, Y_2, \dots Y_{J - 1}) = \prod_{i = 1}^J \frac{\exp(\beta^\top z_i)}{\sum_{j \ge i} \exp(\beta^\top z_j)}
+Given an ordering of \(J\) choices \(\{y_1, \dots, y_J\}\), we factorize
+the joint probability into conditionals. Each conditional follows the
+Bradley-Terry model: \[
+\mathbb{P}(y_1, \dots, y_J) = \mathbb{P}(y_1) \cdot \mathbb{P}(y_2 | y_1) \cdot \dots \cdot \mathbb{P}(y_J | y_1, y_2, \dots y_{J - 1}) = \prod_{i = 1}^J \frac{\exp(u_{i,j}^*)}{\sum_{j \ge i} \exp(u_{i,j}^*)}
 \]
 
-An interesting property of the PL Model is that in the naive case of
-only ordering a single choice, it is equivalent to the pairwise
-preference formulation of the BT model.
+\subsection{Ideal Point Model}\label{ideal-point-model}
 
-\subsubsection*{Ideal Point Model}\label{ideal-point-model}
-\addcontentsline{toc}{subsubsection}{Ideal Point Model}
-
-The Ideal Point Model uses distance functions to compute utility for
+The ideal point model uses distance functions to compute utility for
 individual-choice pairs (\citeproc{ref-huber1976ideal}{Huber 1976}).
-Given vector representation \(z_i\) of choice \(i\) and a vector
-\(\textbf{v}_n\) representing an individual \(n\), we can use a distance
-function to model a stochastic utility function with the unobserved
-factors following a specified distribution:
-\(U_{n, i} = \texttt{dist}(z_i, \textbf{v}_n) + \epsilon_{n, i}\). We
-assume human preferences follow the choice with maximum utility:
-\(y_{n, i} = \mathbb{I}[U_{n, i} > U_{n, j} \ \forall i \ne j]\). The
+Given vector representation \(z_i\) of choice \(i\) and a vector \(v_n\)
+representing an individual \(n\), we can use a distance function to
+model a stochastic utility function with the unobserved factors
+following a specified distribution:
+\(u_{n, i} = \texttt{dist}(z_i, v_n) + \epsilon_{n, i}\). We assume
+human preferences follow the choice with maximum utility:
+\(y_{n, i} = \mathbb{I}[u_{n, i} > u_{n, j} \ \forall i \ne j]\). The
 intuition is that vectors exist in a shared \(n\)-dimensional space, and
 as such we can use geometry to match choices whose representations are
 closest to that of a given individual. This model can often result in
@@ -1063,8 +983,319 @@ space. In some contexts, this can be a robust bias to add to the model
 must take into account before employing such a model, and is a key
 design choice for modeling.
 
+\section{Choices Aggregation}\label{sec-choices-aggregation}
+
+In many applications, human preferences must be aggregated across
+multiple individuals to determine a collective decision or ranking. This
+process is central to social choice theory, which provides a
+mathematical foundation for preference aggregation. Unlike individual
+preference modeling, which focuses on understanding how a single person
+makes decisions, social choice theory addresses the challenge of
+combining multiple preference profiles into a single, coherent outcome.
+One of the most widely used approaches to aggregating preferences is
+voting. A \textbf{voting rule} is a function that maps a set of
+individual preference rankings to a collective decision. The outcome of
+a vote is determined by a \textbf{social choice function (SCF)}, which
+selects a winner based on the aggregated preferences. Several voting
+rules exist, each with different properties:
+
+\begin{itemize}
+\tightlist
+\item
+  \textbf{Plurality Rule:} Each voter assigns one point to their top
+  choice, and the alternative with the most points wins.
+\item
+  \textbf{Borda Count:} Voters rank all alternatives, and points are
+  assigned based on the position in each ranking.
+\item
+  \textbf{Single Transferable Vote (STV):} Voters rank choices, and
+  rounds of elimination occur until a candidate has a majority.
+\item
+  \textbf{Condorcet Methods:} The \textbf{Condorcet winner} is the
+  option that would win in all pairwise comparisons against other
+  alternatives (if one exists).
+\end{itemize}
+
+However, preference aggregation is not always straightforward. The
+\textbf{Condorcet Paradox} illustrates that no single alternative may be
+a clear winner due to cycles in majority preferences, violating
+transitivity. Additionally, different voting rules can yield different
+winners, highlighting the importance of selecting an appropriate
+aggregation method. A fundamental result in social choice theory is
+\textbf{Arrow's Impossibility Theorem}, which states that when there are
+three or more alternatives, no voting system can simultaneously satisfy
+the following fairness criteria:
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  \textbf{Unanimity (Pareto efficiency):} If all individuals prefer one
+  option over another, the group ranking should reflect this.
+\item
+  \textbf{Independence of Irrelevant Alternatives (IIA):} The relative
+  ranking of two options should not be influenced by a third, unrelated
+  option.
+\item
+  \textbf{Non-dictatorship:} No single individual's preference should
+  always determine the group's outcome.
+\end{enumerate}
+
+Arrow's theorem suggests that every fair aggregation method must
+compromise on at least one of these desirable properties. Additionally,
+the \textbf{Gibbard-Satterthwaite Theorem} proves that any deterministic
+voting rule that selects a single winner is either \textbf{dictatorial}
+(one person always determines the result) or \textbf{manipulable}
+(voters can strategically misrepresent their preferences to achieve a
+better outcome). While manipulation is theoretically possible, certain
+voting rules, such as STV, introduce computational complexity that makes
+strategic voting impractical in real-world scenarios.
+
+Preference aggregation is also critical in reinforcement learning from
+human feedback (RLHF), where human judgments guide model training.
+Aggregating human preferences in RLHF faces challenges similar to
+traditional voting, such as inconsistencies in preferences and strategic
+bias. Several approaches address these challenges:
+
+\begin{itemize}
+\tightlist
+\item
+  \textbf{Majority Voting:} Simple aggregation by selecting the most
+  preferred response.
+\item
+  \textbf{Weighted Voting:} Adjusting vote weights based on expertise or
+  trustworthiness.
+\item
+  \textbf{Jury Learning:} A method that integrates dissenting opinions,
+  ensuring that minority perspectives are not entirely disregarded.
+\item
+  \textbf{Social Choice in AI Alignment:} Incorporating diverse human
+  feedback to align AI behavior with a broad spectrum of human values.
+\end{itemize}
+
+These approaches highlight the interplay between human preference
+modeling and machine learning, where designing aggregation mechanisms
+that reflect collective human values is an ongoing research challenge.
+
+While traditional social choice methods focus on aggregation, recent
+work in pluralistic alignment suggests alternative frameworks that
+preserve the diversity of human preferences rather than collapsing them
+into a single decision. Pluralistic AI systems aim to:
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  \textbf{Present a spectrum of reasonable responses} instead of forcing
+  a single choice.
+\item
+  \textbf{Allow steering towards specific perspectives} while
+  maintaining fairness.
+\item
+  \textbf{Ensure distributional pluralism}, calibrating AI systems to
+  diverse human viewpoints.
+\end{enumerate}
+
+This perspective is particularly relevant in generative AI, where models
+trained on aggregated preferences may fail to capture the nuances of
+diverse human values.
+
+Aggregating human preferences is a complex task, influenced by both
+mathematical constraints and strategic considerations. Voting-based
+methods provide well-studied mechanisms for aggregation, but they face
+fundamental limitations as outlined by Arrow's and
+Gibbard-Satterthwaite's theorems. Beyond traditional aggregation,
+emerging approaches in reinforcement learning and AI alignment seek to
+balance fairness, robustness, and pluralism. As machine learning systems
+increasingly interact with human preferences, designing aggregation
+frameworks that capture the richness of human decision-making remains an
+active and critical area of research.
+
+\section{Inferences}\label{inferences}
+
+\begin{Shaded}
+\begin{Highlighting}[numbers=left,,]
+\ImportTok{import}\NormalTok{ torch}
+\ImportTok{import}\NormalTok{ torch.nn }\ImportTok{as}\NormalTok{ nn}
+\ImportTok{import}\NormalTok{ torch.optim }\ImportTok{as}\NormalTok{ optim}
+\ImportTok{from}\NormalTok{ torch.distributions }\ImportTok{import}\NormalTok{ Bernoulli}
+\ImportTok{from}\NormalTok{ tqdm }\ImportTok{import}\NormalTok{ tqdm}
+
+\CommentTok{\# Set device}
+\NormalTok{device }\OperatorTok{=}\NormalTok{ torch.device(}\StringTok{"cuda"} \ControlFlowTok{if}\NormalTok{ torch.cuda.is\_available() }\ControlFlowTok{else} \StringTok{"cpu"}\NormalTok{)}
+
+\CommentTok{\# Number of users and items}
+\NormalTok{num\_users }\OperatorTok{=} \DecValTok{50}
+\NormalTok{num\_items }\OperatorTok{=} \DecValTok{100}
+
+\CommentTok{\# Generate user{-}specific and item{-}specific utilities}
+\NormalTok{theta }\OperatorTok{=}\NormalTok{ torch.randn(num\_users, device}\OperatorTok{=}\NormalTok{device, requires\_grad}\OperatorTok{=}\VariableTok{True}\NormalTok{)}
+\NormalTok{z }\OperatorTok{=}\NormalTok{ torch.randn(num\_items, device}\OperatorTok{=}\NormalTok{device, requires\_grad}\OperatorTok{=}\VariableTok{True}\NormalTok{)}
+
+\CommentTok{\# Generate observed choices using logistic function}
+\NormalTok{probs }\OperatorTok{=}\NormalTok{ torch.sigmoid(theta[:, }\VariableTok{None}\NormalTok{] }\OperatorTok{{-}}\NormalTok{ z[}\VariableTok{None}\NormalTok{, :])}
+\NormalTok{data }\OperatorTok{=}\NormalTok{ Bernoulli(probs}\OperatorTok{=}\NormalTok{probs).sample()}
+
+\CommentTok{\# Mask out a fraction of the response matrix}
+\NormalTok{mask }\OperatorTok{=}\NormalTok{ torch.rand\_like(data) }\OperatorTok{\textgreater{}} \FloatTok{0.2}  \CommentTok{\# 80\% observed, 20\% missing}
+\NormalTok{data\_masked }\OperatorTok{=}\NormalTok{ data.clone()}
+\NormalTok{data\_masked[}\OperatorTok{\textasciitilde{}}\NormalTok{mask] }\OperatorTok{=} \BuiltInTok{float}\NormalTok{(}\StringTok{\textquotesingle{}nan\textquotesingle{}}\NormalTok{)}
+
+\CommentTok{\# Initialize parameters for EM algorithm}
+\NormalTok{theta\_est }\OperatorTok{=}\NormalTok{ torch.randn(num\_users, device}\OperatorTok{=}\NormalTok{device, requires\_grad}\OperatorTok{=}\VariableTok{True}\NormalTok{)}
+\NormalTok{z\_est }\OperatorTok{=}\NormalTok{ torch.randn(num\_items, device}\OperatorTok{=}\NormalTok{device, requires\_grad}\OperatorTok{=}\VariableTok{True}\NormalTok{)}
+
+\CommentTok{\# Optimizer}
+\NormalTok{optimizer }\OperatorTok{=}\NormalTok{ optim.LBFGS([theta\_est, z\_est], lr}\OperatorTok{=}\FloatTok{0.1}\NormalTok{, max\_iter}\OperatorTok{=}\DecValTok{20}\NormalTok{, history\_size}\OperatorTok{=}\DecValTok{10}\NormalTok{, line\_search\_fn}\OperatorTok{=}\StringTok{"strong\_wolfe"}\NormalTok{)}
+
+\KeywordTok{def}\NormalTok{ closure():}
+\NormalTok{    optimizer.zero\_grad()}
+\NormalTok{    probs\_est }\OperatorTok{=}\NormalTok{ torch.sigmoid(theta\_est[:, }\VariableTok{None}\NormalTok{] }\OperatorTok{{-}}\NormalTok{ z\_est[}\VariableTok{None}\NormalTok{, :])}
+\NormalTok{    loss }\OperatorTok{=} \OperatorTok{{-}}\NormalTok{(Bernoulli(probs}\OperatorTok{=}\NormalTok{probs\_est).log\_prob(data) }\OperatorTok{*}\NormalTok{ mask).mean()}
+\NormalTok{    loss.backward()}
+    \ControlFlowTok{return}\NormalTok{ loss}
+
+\CommentTok{\# EM Algorithm}
+\NormalTok{pbar }\OperatorTok{=}\NormalTok{ tqdm(}\BuiltInTok{range}\NormalTok{(}\DecValTok{100}\NormalTok{))}
+\ControlFlowTok{for}\NormalTok{ iteration }\KeywordTok{in}\NormalTok{ pbar:}
+    \ControlFlowTok{if}\NormalTok{ iteration }\OperatorTok{\textgreater{}} \DecValTok{0}\NormalTok{:}
+\NormalTok{        previous\_theta }\OperatorTok{=}\NormalTok{ theta\_est.clone()}
+\NormalTok{        previous\_z }\OperatorTok{=}\NormalTok{ z\_est.clone()}
+\NormalTok{        previous\_loss }\OperatorTok{=}\NormalTok{ loss.clone()}
+    
+\NormalTok{    loss }\OperatorTok{=}\NormalTok{ optimizer.step(closure)}
+    
+    \ControlFlowTok{if}\NormalTok{ iteration }\OperatorTok{\textgreater{}} \DecValTok{0}\NormalTok{:}
+\NormalTok{        d\_loss }\OperatorTok{=}\NormalTok{ (previous\_loss }\OperatorTok{{-}}\NormalTok{ loss).item()}
+\NormalTok{        d\_theta }\OperatorTok{=}\NormalTok{ torch.norm(previous\_theta }\OperatorTok{{-}}\NormalTok{ theta\_est, p}\OperatorTok{=}\DecValTok{2}\NormalTok{).item()}
+\NormalTok{        d\_z }\OperatorTok{=}\NormalTok{ torch.norm(previous\_z }\OperatorTok{{-}}\NormalTok{ z\_est, p}\OperatorTok{=}\DecValTok{2}\NormalTok{).item()}
+\NormalTok{        grad\_norm }\OperatorTok{=}\NormalTok{ torch.norm(optimizer.param\_groups[}\DecValTok{0}\NormalTok{][}\StringTok{"params"}\NormalTok{][}\DecValTok{0}\NormalTok{].grad, p}\OperatorTok{=}\DecValTok{2}\NormalTok{).item()}
+\NormalTok{        grad\_norm }\OperatorTok{+=}\NormalTok{ torch.norm(optimizer.param\_groups[}\DecValTok{0}\NormalTok{][}\StringTok{"params"}\NormalTok{][}\DecValTok{1}\NormalTok{].grad, p}\OperatorTok{=}\DecValTok{2}\NormalTok{).item()}
+\NormalTok{        pbar.set\_postfix(\{}\StringTok{"grad\_norm"}\NormalTok{: grad\_norm, }\StringTok{"d\_theta"}\NormalTok{: d\_theta, }\StringTok{"d\_z"}\NormalTok{: d\_z, }\StringTok{"d\_loss"}\NormalTok{: d\_loss\})}
+        \ControlFlowTok{if}\NormalTok{ d\_loss }\OperatorTok{\textless{}} \FloatTok{1e{-}5} \KeywordTok{and}\NormalTok{ d\_theta }\OperatorTok{\textless{}} \FloatTok{1e{-}5} \KeywordTok{and}\NormalTok{ d\_z }\OperatorTok{\textless{}} \FloatTok{1e{-}5} \KeywordTok{and}\NormalTok{ grad\_norm }\OperatorTok{\textless{}} \FloatTok{1e{-}5}\NormalTok{:}
+            \ControlFlowTok{break}
+
+\CommentTok{\# Compute AUC ROC on observed and inferred data}
+\ImportTok{from}\NormalTok{ torchmetrics }\ImportTok{import}\NormalTok{ AUROC}
+\NormalTok{auroc }\OperatorTok{=}\NormalTok{ AUROC(task}\OperatorTok{=}\StringTok{"binary"}\NormalTok{)}
+\NormalTok{probs\_final }\OperatorTok{=}\NormalTok{ torch.sigmoid(theta\_est[:, }\VariableTok{None}\NormalTok{] }\OperatorTok{{-}}\NormalTok{ z\_est[}\VariableTok{None}\NormalTok{, :])}
+\NormalTok{train\_probs }\OperatorTok{=}\NormalTok{ probs\_final[mask]}
+\NormalTok{test\_probs }\OperatorTok{=}\NormalTok{ probs\_final[}\OperatorTok{\textasciitilde{}}\NormalTok{mask]}
+\NormalTok{train\_labels }\OperatorTok{=}\NormalTok{ data[mask]}
+\NormalTok{test\_labels }\OperatorTok{=}\NormalTok{ data[}\OperatorTok{\textasciitilde{}}\NormalTok{mask]}
+\NormalTok{auc\_train }\OperatorTok{=}\NormalTok{ auroc(train\_probs, train\_labels)}
+\NormalTok{auc\_test }\OperatorTok{=}\NormalTok{ auroc(test\_probs, test\_labels)}
+\BuiltInTok{print}\NormalTok{(}\SpecialStringTok{f"train auc: }\SpecialCharTok{\{}\NormalTok{auc\_train}\SpecialCharTok{\}}\SpecialStringTok{"}\NormalTok{)}
+\BuiltInTok{print}\NormalTok{(}\SpecialStringTok{f"test auc: }\SpecialCharTok{\{}\NormalTok{auc\_test}\SpecialCharTok{\}}\SpecialStringTok{"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+train auc: 0.8329640626907349
+test auc: 0.7955405712127686
+\end{verbatim}
+
+\section*{References}\label{bibliography-2}
+\addcontentsline{toc}{section}{References}
+
+\markright{References}
+
+\phantomsection\label{refs-2}
+\begin{CSLReferences}{1}{0}
+\bibitem[\citeproctext]{ref-2001.04465}
+Bobu, Andreea, Dexter R. R. Scobee, Jaime F. Fisac, S. Shankar Sastry,
+and Anca D. Dragan. 2020. {``LESS Is More: Rethinking Probabilistic
+Models of Human Behavior.''}
+\url{https://doi.org/10.1145/3319502.3374811}.
+
+\bibitem[\citeproctext]{ref-bolt2009}
+Bolt, Daniel M., and James A. Wollack. 2009. {``Application of a
+Multidimensional Nested Logit Model to Multiple-Choice Test Items.''}
+\emph{Journal of Educational Measurement} 46 (3): 181--98.
+\url{https://doi.org/10.1111/j.1745-3984.2009.00081.x}.
+
+\bibitem[\citeproctext]{ref-bradley-terry-model}
+Bradley, Ralph Allan, and Milton E. Terry. 1952. {``Rank Analysis of
+Incomplete Block Designs: I. The Method of Paired Comparisons.''}
+\emph{Biometrika} 39 (3/4): 324--45.
+\url{http://www.jstor.org/stable/2334029}.
+
+\bibitem[\citeproctext]{ref-campbell2015}
+Campbell, Danny, and Seda Erdem. 2015. {``Position Bias in Best-Worst
+Scaling Surveys: A Case Study on Trust in Institutions.''}
+\emph{American Journal of Agricultural Economics} 97 (2): 526--45.
+\url{https://doi.org/10.1093/ajae/aau112}.
+
+\bibitem[\citeproctext]{ref-idealpoints}
+Greiner, James. 2005. {``Ideal Points.''} Harvard IQSS Blog.
+\url{https://blogs.iq.harvard.edu/ideal_points_1}.
+
+\bibitem[\citeproctext]{ref-harpe2015}
+Harpe, Spencer E. 2015. {``How to Analyze Likert and Other Rating Scale
+Data.''} \emph{Currents in Pharmacy Teaching and Learning} 7 (5):
+836--50. \url{http://dx.doi.org/10.1016/j.cptl.2015.08.001}.
+
+\bibitem[\citeproctext]{ref-huber1976ideal}
+Huber, Joel. 1976. {``Ideal Point Models of Preference.''} In
+\emph{Advances in Consumer Research}, 03:138--42. Association for
+Consumer Research.
+
+\bibitem[\citeproctext]{ref-ideal_point}
+Jamieson, Kevin G, and Robert Nowak. 2011. {``Active Ranking Using
+Pairwise Comparisons.''} In \emph{Advances in Neural Information
+Processing Systems}, edited by J. Shawe-Taylor, R. Zemel, P. Bartlett,
+F. Pereira, and K. Q. Weinberger. Vol. 24. Curran Associates, Inc.
+\url{https://proceedings.neurips.cc/paper_files/paper/2011/file/6c14da109e294d1e8155be8aa4b1ce8e-Paper.pdf}.
+
+\bibitem[\citeproctext]{ref-keisler2003common}
+Keisler, H. Jerome, and Byung Soo Lee. 2003. {``Common Assumption of
+Rationality.''} \emph{Economic Theory Journal} 30 (2): 123--45.
+
+\bibitem[\citeproctext]{ref-Luce1977}
+Luce, R.Duncan. 1977. {``The Choice Axiom After Twenty Years.''}
+\emph{Journal of Mathematical Psychology} 15 (3): 215--33.
+\url{https://doi.org/10.1016/0022-2496(77)90032-3}.
+
+\bibitem[\citeproctext]{ref-miljkovic2005rational}
+Miljkovic, Dragan. 2005. {``Rational Choice and Irrational Individuals
+or Simply an Irrational Theory: A Critical Review of the Hypothesis of
+Perfect Rationality.''} \emph{The Journal of Socio-Economics} 34 (5):
+621--34. \url{https://doi.org/10.1016/j.socec.2003.12.031}.
+
+\bibitem[\citeproctext]{ref-plackett_luce}
+Plackett, R. L. 1975. {``The Analysis of Permutations.''} \emph{Journal
+of the Royal Statistical Society. Series C (Applied Statistics)} 24 (2):
+193--202. \url{http://www.jstor.org/stable/2346567}.
+
+\bibitem[\citeproctext]{ref-ragain2019}
+Ragain, Stephen, and Johan Ugander. 2019. {``Choosing to Rank.''}
+\emph{arXiv Preprint arXiv:1809.05139}.
+\url{https://arxiv.org/abs/1809.05139}.
+
+\bibitem[\citeproctext]{ref-simon1972theories}
+Simon, Herbert A. 1972. {``Theories of Bounded Rationality.''} In
+\emph{Decision and Organization}, edited by C. B. McGuire and Roy
+Radner, 161--76. North-Holland Publishing Company.
+
+\bibitem[\citeproctext]{ref-tatli2022distancepreferences}
+Tatli, Gokcan, Rob Nowak, and Ramya Korlakai Vinayak. 2022. {``Learning
+Preference Distributions from Distance Measurements.''} In \emph{2022
+58th Annual Allerton Conference on Communication, Control, and Computing
+(Allerton)}, 1--8.
+\url{https://doi.org/10.1109/Allerton49937.2022.9929404}.
+
+\end{CSLReferences}
+
+\bookmarksetup{startatroot}
+
+\chapter{Reward Model}\label{ch-reward-models}
+
 \section{Parameterization and Learning of Utility
 Functions}\label{sec-learning}
+
+The attributes representing a choice \(z_i\) are crucial in defining the
+human preference model, as they provide the context for capturing human
+behavior when choice \(i\) is made.
 
 With an understanding of the various techniques we can use to model
 human preferences, we can now create robust models which utilize context
@@ -1107,11 +1338,10 @@ observed data as defined by the model:
 
 In our very first example of binary choice with logistic noise, this was
 simply the model's probability of the observed preference value:
-\[\mathcal{L}(z_i, y_i; \beta) = \frac{1}{1 + \exp^{-\beta^\top z}}\]
+\[\mathcal{L}(z_i, y_i; \beta) = \frac{1}{1 + \exp^{-u_{i,j}^*}}\]
 
 In the same case with noise following a standard normal distribution,
-this took the form:
-\[\mathcal{L}(z_i, y_i; \beta) = \Phi(\beta^\top z)\]
+this took the form: \[\mathcal{L}(z_i, y_i; \beta) = \Phi(u_{i,j}^*)\]
 
 Fortunately, in these cases, there are straightforward methods for
 parameter estimation: logistic regression and probit regression (binary
@@ -1546,7 +1776,7 @@ representing which trajectory is preferred. Therefore, a loss function
 preferences in dataset \(D\). In (\citeproc{ref-hejna2023few}{Hejna III
 and Sadigh 2023}) they the preference predictor over segments using the
 Bradley-Terry model of paired comparisons
-(\citeproc{ref-bradley1952rank}{Bradley and Terry 1952a}), i.e.,
+(\citeproc{ref-bradley1952rank}{Bradley and Terry 1952}), i.e.,
 \[\begin{aligned}
     P[\sigma_1 \succ \sigma_2 ] = \frac{\exp \sum_t \hat{r}_\psi(s_t^{1}, a_t^{1})}{\exp \sum_t \hat{r}_\psi(s_t^{1}, a_t^{1}) + \exp \sum_t \hat{r}_\psi(s_t^{2}, a_t^{2})}.
 \end{aligned}\] Then, the loss function is essentially a binary
@@ -1555,10 +1785,8 @@ cross-entropy which the reward model \(\psi\) aims to minimize, i.e.,
     {L}(\psi,  {D}) = - \mathbb{E}_{(\sigma^1, \sigma^2, y) \sim {D}} \left[ y(1) \log (P[\sigma_1 \succ \sigma_2 ]) + y(2)\log(1 - P[\sigma_1 \succ \sigma_2 ]) \right].
 \end{aligned}\]
 
-\paragraph*{Method Component 1: Pre-Training with Meta
+\paragraph{Method Component 1: Pre-Training with Meta
 Learning}\label{method-component-1-pre-training-with-meta-learning}
-\addcontentsline{toc}{paragraph}{Method Component 1: Pre-Training with
-Meta Learning}
 
 To efficiently approximate the reward function \(r_\text{new}\) for a
 new task with minimal queries, as described in
@@ -1577,10 +1805,8 @@ rate, respectively. We note that data \(\{D_i\}_i\) of labeled
 preferences queries for prior tasks can come from offline datasets,
 simulated policies, or actual humans.
 
-\paragraph*{Method Component 2: Few-Shot
+\paragraph{Method Component 2: Few-Shot
 Adaptation}\label{method-component-2-few-shot-adaptation}
-\addcontentsline{toc}{paragraph}{Method Component 2: Few-Shot
-Adaptation}
 
 With the aforementioned pre-training with meta learning, the
 meta-learned reward model can then be used for few-shot preference based
@@ -2267,1329 +2493,18 @@ be uniform on a \(M - 1\) simplex to ensure that they add up to 1. Then
 we can use maximum likelihood estimation to compute the parameters with
 the simplified posterior.
 
-\section{Social Choices}\label{social-choices}
-
-Game theory provides a mathematical framework for analyzing strategic
-interactions among rational agents. These models help in understanding
-and predicting human behavior by considering multiple criteria and the
-associated trade-offs. They enhance the understanding of preferences
-across multiple criteria and allow for richer and more accurate feedback
-through structured comparisons. Game-theory framings capture the
-complexity of preferences and interactions in decision-making processes
-(\citeproc{ref-bhatia2020preference}{Bhatia et al. 2020}).
-
-The most popular form of preference elicitation involves pairwise
-comparisons. Users are asked to choose between two options, such as
-product A or product B. This method is used in various applications like
-search engines, recommender systems, and interactive robotics. Key
-concepts include the Von Neumann Winner and the Blackwell Winner. The
-Von Neumann Winner refers to a distribution over objects that beats or
-ties every other object in the collection under the expected utility
-assumption. The Blackwell Winner generalizes the Von Neumann Winner for
-multi-criteria problems using a target set for acceptable payoff vectors
-(\citeproc{ref-bhatia2020preference}{Bhatia et al. 2020}).
-
-Game-theory framings provide a framework for preference learning along
-multiple criteria. These models use tools from vector-valued payoffs in
-game theory, with Blackwell's approach being a key concept. This
-approach allows for a more comprehensive understanding of preferences by
-considering multiple criteria simultaneously
-(\citeproc{ref-bhatia2020preference}{Bhatia et al. 2020}).
-
-In game-theory framings, pairwise preferences are modeled as random
-variables. Comparisons between objects along different criteria are
-captured in a preference tensor \(P\). This tensor models the
-probability that one object is preferred over another along a specific
-criterion, allowing for a detailed understanding of preferences across
-multiple dimensions (\citeproc{ref-bhatia2020preference}{Bhatia et al.
-2020}).
-
-The preference tensor \(P\) captures object comparisons along different
-criteria. It is defined as:
-\[P(i_1, i_2; j) = P(i_1 \succ i_2 \text{ along criterion } j)\] where
-\(P(i_2, i_1; j) = 1 - P(i_1, i_2; j)\). These values are aggregated to
-form an overall preference matrix \(P_{ov}\)
-(\citeproc{ref-bhatia2020preference}{Bhatia et al. 2020}).
-
-The Blackwell Winner is defined using a target set \(S\) of acceptable
-score vectors. The goal is to find a distribution \(\pi^*\) such that
-\(P(\pi^*, \pi) \in S\) for all \(\pi\). This method minimizes the
-maximum distance to the target set, providing a robust solution to
-multi-criteria preference problems
-(\citeproc{ref-bhatia2020preference}{Bhatia et al. 2020}).
-
-The optimization problem for finding the Blackwell Winner is defined as:
-\[\pi(P, S, \|\cdot\|) = \arg \min_{\pi \in \Delta_d} \left[ \max_{\pi' \in \Delta_d} \rho(P(\pi, \pi'), S) \right]\]
-where \(\rho(u, v) = \|u - v\|\). This measures the distance to the
-target set, ensuring that the selected distribution is as close as
-possible to the ideal preference vector
-(\citeproc{ref-bhatia2020preference}{Bhatia et al. 2020}).
-
-\section{Exercises}\label{exercises}
-
-\subsection*{Question 1: Choice Modeling (15
-points)}\label{question-1-choice-modeling-15-points}
-\addcontentsline{toc}{subsection}{Question 1: Choice Modeling (15
-points)}
-
-In Chapter 2, we discussed discrete choice modeling in the context of
-utility being a linear function. Suppose we are deciding between \(N\)
-choices and that the utility of each choice is given by
-\(U_i=\beta_i\mathbf{x}+\epsilon_i\) for \(i=1, 2, \cdots, N\). We view
-\(\mathbf{x}\) as the data point that is being conditioned on for
-deciding which choice to select, and \(\beta_i\) as the weights driving
-the linear utility model. The noise \(\epsilon_i\) is i.i.d. sampled
-from a type of extreme value distribution called the \emph{Gumbel}
-distribution. The standard Gumbel distribution is given by the density
-function \(f(x)=e^{-(x+e^{-x})}\) and cumulative distribution function
-\(F(x)=e^{-e^{-x}}.\) Fix \(i\). Our objective is to calculate
-\(\Pr(U_i\,\, \text{has max utility})\).
-
-\begin{enumerate}
-\def\labelenumi{(\alph{enumi})}
-\item
-  \textbf{(Written, 2 points)}. To start, set \(U_i=t\) and compute
-  \(\Pr(U_j<t)\) for \(j\neq i\) in terms of \(F\). Use this probability
-  to derive an integral for \(\Pr(U_i\,\,  \text{has max utility})\)
-  over \(t\) in terms of \(f\) and \(F\).
-
-  Example of solution environment.
-\item
-  \textbf{(Written, 4 points)}. Compute the integral derived in part (a)
-  with the appropriate \(u\)-substitution. Show your work. You should
-  arrive at multi-class logistic regression in the end!
-\end{enumerate}
-
-Next, you will implement logistic regression to predict preferred prompt
-completions. We will use the preference dataset from
-\href{https://huggingface.co/datasets/allenai/reward-bench}{RewardBench}.
-Notice the provided \texttt{data/chosen\_embeddings.pt} and
-\texttt{data/rejected\_embeddings.pt} files. These files were
-constructed by feeding the prompt alongside the chosen/rejected
-responses through Llama3-8B-Instruct and selecting the last token's
-final hidden embedding. Let \(e_1\) and \(e_2\) be two hidden embeddings
-with \(e_1\succ e_2\). We assume weights \(w\) exist for which the
-Bradley-Terry reward of an embedding \(e\) can be modeled as
-\(r=w\cdot e\). In this setting, the probability of \(e_1\succ e_2\) is
-\[\frac{e^{w\cdot e_1}}{e^{w\cdot e_1}+e^{w\cdot e_2}}=\frac{1}{1+e^{w\cdot(e_2-e_1)}}=\sigma(w\cdot(e_1-e_2)).\]
-Hence, we can view maximum likelihood across the preference dataset with
-this model as logistic regression on \(e_1-e_2\) without a bias term and
-all labels being \(1\).
-
-In biasless logistic regression, we are given a dataset \(X\) with \(N\)
-rows of datapoints and \(D\) features per datapoint. The weights of the
-model are parametrized by \(\theta\), a \(D\)-dimensional column vector.
-Given binary labels \(y\) of shape \(N\) by \(1\), the binary
-cross-entropy loss is
-\[J(\theta)=-\frac{1}{N}(y^T\log(\sigma(X\theta)) + (1-y)^T\log(1-\sigma(X\theta)))\]
-where \(\sigma\) is the sigmoid function and is applied element-wise
-along with \(\log\). The gradient of loss is
-\[\nabla_\theta J(\theta)=\frac{1}{N}X^T(\sigma(X\theta)-y).\]
-
-\begin{enumerate}
-\def\labelenumi{\arabic{enumi}.}
-\item
-  \textbf{(Coding, 3 points)}. Open the file
-  \texttt{logistic\_regression/logistic\_regression.py}. Implement the
-  function \texttt{train} in the biasless case.
-\item
-  \textbf{(Coding, 2 points)}. Implement the function
-  \texttt{predict\_probs}.
-\item
-  \textbf{(Written, 4 points)}. Open the notebook
-  \texttt{rewardbench\_preferences.ipynb} and run all the cells. Make
-  sure to tune the \texttt{learning\_rate} and \texttt{num\_iterations}.
-  Report your final expected accuracy on the training and validation
-  sets. How close are the two expected accuracies? You should be able to
-  achieve \(\approx 90\%\) expected accuracy on validation. You may add
-  loss reporting to the \texttt{train} function to verify your model is
-  improving over time.
-\end{enumerate}
-
-\begin{tcolorbox}[colframe=.grey, title=\faCode \enspace Code]
-
-\begin{Shaded}
-\begin{Highlighting}[numbers=left,,]
-\ImportTok{from}\NormalTok{ sklearn.model\_selection }\ImportTok{import}\NormalTok{ train\_test\_split}
-\ImportTok{import}\NormalTok{ torch}
-
-\KeywordTok{class}\NormalTok{ LogisticRegression:}
-    \KeywordTok{def} \FunctionTok{\_\_init\_\_}\NormalTok{(}\VariableTok{self}\NormalTok{):}
-        \VariableTok{self}\NormalTok{.weights }\OperatorTok{=} \VariableTok{None}  \CommentTok{\# Initialized during training}
-
-    \KeywordTok{def}\NormalTok{ train(}\VariableTok{self}\NormalTok{, X, y, learning\_rate, num\_iterations):}
-        \CommentTok{"""}
-\CommentTok{        Train the logistic regression model using gradient descent (no bias).}
-\CommentTok{        Each gradient update should be with respect to the entire dataset X.}
-
-\CommentTok{        Parameters:}
-\CommentTok{        {-} X (torch.Tensor): Training data of shape (n\_samples, n\_features).}
-\CommentTok{        {-} y (torch.Tensor): Target labels of shape (n\_samples,).}
-\CommentTok{        """}
-\NormalTok{        n\_samples, n\_features }\OperatorTok{=}\NormalTok{ X.shape}
-
-        \CommentTok{\# Initialize weights without the bias term}
-        \VariableTok{self}\NormalTok{.weights }\OperatorTok{=}\NormalTok{ torch.zeros(n\_features)}
-
-        \ControlFlowTok{for}\NormalTok{ i }\KeywordTok{in} \BuiltInTok{range}\NormalTok{(num\_iterations):}
-            \CommentTok{\# YOUR CODE HERE (\textasciitilde{}4{-}5 lines)}
-                \ControlFlowTok{pass}
-            \CommentTok{\# }\RegionMarkerTok{END}\CommentTok{ OF YOUR CODE}
-
-    \KeywordTok{def}\NormalTok{ predict\_probs(}\VariableTok{self}\NormalTok{, X):}
-        \CommentTok{"""}
-\CommentTok{        Predict probabilities for samples in X (no bias).}
-
-\CommentTok{        Parameters:}
-\CommentTok{        {-} X (torch.Tensor): Input data of shape (n\_samples, n\_features).}
-
-\CommentTok{        Returns:}
-\CommentTok{        {-} y\_probs (torch.Tensor): Predicted probabilities.}
-\CommentTok{        """}
-\NormalTok{        y\_probs }\OperatorTok{=} \VariableTok{None}
-
-        \CommentTok{\# YOUR CODE HERE (\textasciitilde{}2{-}3 lines)}
-        \ControlFlowTok{pass}
-        \CommentTok{\# }\RegionMarkerTok{END}\CommentTok{ OF YOUR CODE}
-
-        \ControlFlowTok{return}\NormalTok{ y\_probs}
-
-
-\ControlFlowTok{if} \VariableTok{\_\_name\_\_} \OperatorTok{==} \StringTok{"\_\_main\_\_"}\NormalTok{:}
-    \CommentTok{\# \%\%}
-    \CommentTok{\# Load in Llama3 embeddings of prompt + completions on RewardBench}
-\NormalTok{    chosen\_embeddings }\OperatorTok{=}\NormalTok{ torch.load(}\StringTok{\textquotesingle{}data/chosen\_embeddings.pt\textquotesingle{}}\NormalTok{)}
-\NormalTok{    rejected\_embeddings }\OperatorTok{=}\NormalTok{ torch.load(}\StringTok{\textquotesingle{}data/rejected\_embeddings.pt\textquotesingle{}}\NormalTok{)}
-
-    \CommentTok{\# Subtract the embeddings according to the Bradley{-}Terry reward model setup presented in the problem }
-\NormalTok{    X }\OperatorTok{=}\NormalTok{ (chosen\_embeddings }\OperatorTok{{-}}\NormalTok{ rejected\_embeddings).to(torch.}\BuiltInTok{float}\NormalTok{)}
-\NormalTok{    y }\OperatorTok{=}\NormalTok{ torch.ones(X.shape[}\DecValTok{0}\NormalTok{])}
-
-    \CommentTok{\# Split dataset 80/20 into training and validation sets}
-\NormalTok{    X\_train, X\_val, y\_train, y\_val }\OperatorTok{=}\NormalTok{ train\_test\_split(X, y, test\_size}\OperatorTok{=}\FloatTok{0.2}\NormalTok{, random\_state}\OperatorTok{=}\DecValTok{42}\NormalTok{)  }
-
-    \BuiltInTok{print}\NormalTok{(}\StringTok{"Training set size:"}\NormalTok{, X\_train.shape)}
-    \BuiltInTok{print}\NormalTok{(}\StringTok{"Validation set size:"}\NormalTok{, X\_val.shape)}
-
-\NormalTok{    model }\OperatorTok{=}\NormalTok{ LogisticRegression()}
-
-    \CommentTok{\# Tune the learning\_rate and num\_iterations until you achieve expected validation accuracy of at least 90\%}
-\NormalTok{    learning\_rate }\OperatorTok{=} \VariableTok{None}
-\NormalTok{    num\_iterations }\OperatorTok{=} \VariableTok{None}
-
-\NormalTok{    model.train(X\_train, y\_train, learning\_rate}\OperatorTok{=}\NormalTok{learning\_rate, num\_iterations}\OperatorTok{=}\NormalTok{num\_iterations)}
-
-\NormalTok{    y\_train\_probs }\OperatorTok{=}\NormalTok{ model.predict\_probs(X\_train)}
-    \BuiltInTok{print}\NormalTok{(}\SpecialStringTok{f"Expected Train Accuracy: }\SpecialCharTok{\{}\NormalTok{y\_train\_probs}\SpecialCharTok{.}\NormalTok{mean()}\SpecialCharTok{\}}\SpecialStringTok{"}\NormalTok{)}
-
-\NormalTok{    y\_val\_probs }\OperatorTok{=}\NormalTok{ model.predict\_probs(X\_val)}
-    \BuiltInTok{print}\NormalTok{(}\SpecialStringTok{f"Expected Validation Accuracy: }\SpecialCharTok{\{}\NormalTok{y\_val\_probs}\SpecialCharTok{.}\NormalTok{mean()}\SpecialCharTok{\}}\SpecialStringTok{"}\NormalTok{) }\CommentTok{\# Should reach at least 90\%}
-\end{Highlighting}
-\end{Shaded}
-
-\end{tcolorbox}
-
-\subsection*{Question 2: Revealed and Stated Preferences (20
-points)}\label{question-2-revealed-and-stated-preferences-20-points}
-\addcontentsline{toc}{subsection}{Question 2: Revealed and Stated
-Preferences (20 points)}
-
-Alice and Bob are running for president. For \(R\) voters, we have
-access to their revealed candidate preferences through some means (e.g.,
-social media, blogs, event history). Assume there is an underlying
-probability \(z\) of voting for Alice among the population that is
-unknown. The aim of this question is to estimate \(z\) through
-\emph{maximum likelihood estimation} by also incorporating stated
-preferences. In this scenario, we collect stated preferences through
-surveys. When surveyed, voters tend to be more likely to vote for Alice
-with probability \(\frac{z+1}{2}\) for reasons of ``political
-correctness.''
-
-\begin{enumerate}
-\def\labelenumi{(\alph{enumi})}
-\item
-  \textbf{(Written, 5 points)}. Suppose there are \(R_A\) revealed
-  preferences for Alice, \(R_B\) revealed preferences for Bob, \(S_A\)
-  stated preferences for Alice, and \(S_B\) stated preferences for Bob.
-  Note \(R=R_A+R_B\). Compute the log-likelihood of observing such
-  preferences in terms of \(z, R_A, R_B, S_A, S_B\).
-\item
-  \textbf{(Coding, 1 point)}. Implement the short function
-  \texttt{stated\_prob} in the file \texttt{voting/simulation.py}.
-\item
-  \textbf{(Coding, 5 points)}. Implement the class
-  \texttt{VotingSimulation}.
-\item
-  \textbf{(Coding, 7 points)}. Implement your derived expression from
-  part (a) in the \texttt{log\_likelihoods} function.
-\item
-  \textbf{(Written, 2 points)}. Finally, implement the
-  \texttt{average\_mae\_mle} method that will allow us to visualize the
-  mean absolute error (MAE) of our maximum likelihood estimate
-  \(\hat{z}\) (i.e., \(|\hat{z}-z|\)) as the number of voters surveyed
-  increases. Open \texttt{voting/visualize\_sim.ipynb} and run the cells
-  to get a plot of MAE vs.~voters surveyed averaged across \(100\)
-  simulations. Attach the plot to this question and briefly explain what
-  you notice.
-\end{enumerate}
-
-\begin{tcolorbox}[colframe=.grey, title=\faCode \enspace Code]
-
-\begin{Shaded}
-\begin{Highlighting}[numbers=left,,]
-\ImportTok{import}\NormalTok{ torch}
-\ImportTok{import}\NormalTok{ random}
-\ImportTok{import}\NormalTok{ matplotlib.pyplot }\ImportTok{as}\NormalTok{ plt}
-\ImportTok{from}\NormalTok{ tqdm }\ImportTok{import}\NormalTok{ tqdm}
-\NormalTok{random.seed(}\DecValTok{42}\NormalTok{)}
-\NormalTok{torch.manual\_seed(}\DecValTok{42}\NormalTok{)}
-
-\KeywordTok{def}\NormalTok{ stated\_prob(z\_values):}
-    \CommentTok{"""}
-\CommentTok{    Computes the probability of stated preferences based on z values.}
-\CommentTok{    }
-\CommentTok{    Args:}
-\CommentTok{        z\_values (torch.Tensor): The z value(s), where z represents the true probability of voting for Alice.}
-
-\CommentTok{    Returns:}
-\CommentTok{        torch.Tensor: Probability for stated preferences, derived from z values.}
-\CommentTok{    """}
-    \CommentTok{\# YOUR CODE HERE (\textasciitilde{}1 line)}
-    \CommentTok{\# }\RegionMarkerTok{END}\CommentTok{ OF YOUR CODE}
-
-\KeywordTok{class}\NormalTok{ VotingSimulation:}
-    \CommentTok{"""}
-\CommentTok{    A class to simulate the voting process where revealed and stated preferences are generated.}
-\CommentTok{    }
-\CommentTok{    Attributes:}
-\CommentTok{        R (int): Number of revealed preferences.}
-\CommentTok{        z (float): The true probability of voting for Alice.}
-\CommentTok{        revealed\_preferences (torch.Tensor): Simulated revealed preferences of R voters using Bernoulli distribution.}
-\CommentTok{                                             Takes on 1 for Alice, and 0 for Bob.}
-\CommentTok{        stated\_preferences (torch.Tensor): Simulated stated preferences, initialized as an empty tensor.}
-\CommentTok{                                           Takes on 1 for Alice, and 0 for Bob.}
-\CommentTok{    """}
-    \KeywordTok{def} \FunctionTok{\_\_init\_\_}\NormalTok{(}\VariableTok{self}\NormalTok{, R, z):}
-        \VariableTok{self}\NormalTok{.R }\OperatorTok{=}\NormalTok{ R}
-        \VariableTok{self}\NormalTok{.z }\OperatorTok{=}\NormalTok{ z}
-        \VariableTok{self}\NormalTok{.revealed\_preferences }\OperatorTok{=} \VariableTok{None} \CommentTok{\# YOUR CODE HERE (\textasciitilde{}1 line)}
-        \VariableTok{self}\NormalTok{.stated\_preferences }\OperatorTok{=}\NormalTok{ torch.tensor([])}
-
-    \KeywordTok{def}\NormalTok{ add\_survey(}\VariableTok{self}\NormalTok{):}
-        \CommentTok{"""}
-\CommentTok{        Simulates an additional stated preference based on stated\_prob and adds it to the list.}
-\CommentTok{        This updates the self.stated\_preferences tensor by concatenating on a new simulated survey result.}
-\CommentTok{        """}
-        \CommentTok{\# YOUR CODE HERE (\textasciitilde{}3 lines)}
-        \CommentTok{\# }\RegionMarkerTok{END}\CommentTok{ OF YOUR CODE}
-
-\KeywordTok{def}\NormalTok{ log\_likelihoods(revealed\_preferences, stated\_preferences, z\_values):}
-    \CommentTok{"""}
-\CommentTok{    Computes the log likelihoods across both revealed and stated preferences.}
-\CommentTok{    Use your answer in part (a) to help.}
-\CommentTok{    }
-\CommentTok{    Args:}
-\CommentTok{        revealed\_preferences (torch.Tensor): Tensor containing revealed preferences (0 or 1).}
-\CommentTok{        stated\_preferences (torch.Tensor): Tensor containing stated preferences (0 or 1).}
-\CommentTok{        z\_values (torch.Tensor): Tensor of underlying z values to calculate likelihood for.}
-
-\CommentTok{    Returns:}
-\CommentTok{        torch.Tensor: Log likelihood for each z value.}
-\CommentTok{    """}
-    \CommentTok{\# YOUR CODE HERE (\textasciitilde{}10{-}16 lines)}
-    \ControlFlowTok{pass}
-    \CommentTok{\# }\RegionMarkerTok{END}\CommentTok{ OF YOUR CODE }
-
-\KeywordTok{def}\NormalTok{ average\_mae\_mle(R, z, survey\_count, num\_sims, z\_sweep):}
-    \CommentTok{"""}
-\CommentTok{    Runs multiple simulations to compute the average mean absolute error (MAE) of Maximum Likelihood Estimation (MLE) }
-\CommentTok{    for z after increasing number of surveys.}
-\CommentTok{    }
-\CommentTok{    Args:}
-\CommentTok{        R (int): Number of revealed preferences.}
-\CommentTok{        z (float): The true probability of voting for Alice.}
-\CommentTok{        survey\_count (int): Number of additional surveys to perform.}
-\CommentTok{        num\_sims (int): Number of simulation runs to average over.}
-\CommentTok{        z\_sweep (torch.Tensor): Range of z values to consider for maximum likelihood estimation.}
-
-\CommentTok{    Returns:}
-\CommentTok{        torch.Tensor: Tensor of mean absolute errors averaged over simulations.}
-\CommentTok{                      Should have shape (survey\_count, )}
-\CommentTok{    """}
-\NormalTok{    all\_errors }\OperatorTok{=}\NormalTok{ []}
-    \ControlFlowTok{for}\NormalTok{ \_ }\KeywordTok{in}\NormalTok{ tqdm(}\BuiltInTok{range}\NormalTok{(num\_sims)):}
-\NormalTok{        errors }\OperatorTok{=}\NormalTok{ []}
-\NormalTok{        vote\_simulator }\OperatorTok{=}\NormalTok{ VotingSimulation(R}\OperatorTok{=}\NormalTok{R, z}\OperatorTok{=}\NormalTok{z)}
-
-        \ControlFlowTok{for}\NormalTok{ \_ }\KeywordTok{in} \BuiltInTok{range}\NormalTok{(survey\_count):}
-\NormalTok{            revealed\_preferences }\OperatorTok{=}\NormalTok{ vote\_simulator.revealed\_preferences}
-\NormalTok{            stated\_preferences }\OperatorTok{=}\NormalTok{ vote\_simulator.stated\_preferences}
-
-            \CommentTok{\# YOUR CODE HERE (\textasciitilde{}6{-}8 lines)}
-            \ControlFlowTok{pass} \CommentTok{\# Compute log\_likelihoods across z\_sweep. Argmax to find MLE for z. }
-                 \CommentTok{\# Append the absolute error to errors and add a survey to the simulator.}
-            \CommentTok{\# }\RegionMarkerTok{END}\CommentTok{ OF YOUR CODE}
-
-\NormalTok{        errors\_tensor }\OperatorTok{=}\NormalTok{ torch.stack(errors) }
-\NormalTok{        all\_errors.append(errors\_tensor)}
-
-    \CommentTok{\# Calculate the average error across simulations }
-\NormalTok{    mean\_errors }\OperatorTok{=}\NormalTok{ torch.stack(all\_errors).mean(dim}\OperatorTok{=}\DecValTok{0}\NormalTok{)}
-    \ControlFlowTok{return}\NormalTok{ mean\_errors}
-
-\ControlFlowTok{if} \VariableTok{\_\_name\_\_} \OperatorTok{==} \StringTok{"\_\_main\_\_"}\NormalTok{:}
-    \CommentTok{\# DO NOT CHANGE!}
-\NormalTok{    max\_surveys }\OperatorTok{=} \DecValTok{2000}
-\NormalTok{    z }\OperatorTok{=} \FloatTok{0.5}
-\NormalTok{    R }\OperatorTok{=} \DecValTok{10}
-\NormalTok{    num\_sims }\OperatorTok{=} \DecValTok{100}
-\NormalTok{    z\_sweep }\OperatorTok{=}\NormalTok{ torch.linspace(}\FloatTok{0.01}\NormalTok{, }\FloatTok{0.99}\NormalTok{, }\DecValTok{981}\NormalTok{)}
-
-    \CommentTok{\# Compute and plot the errors. Attach this plot to part (d).}
-\NormalTok{    mean\_errors }\OperatorTok{=}\NormalTok{ average\_mae\_mle(R, z, max\_surveys, num\_sims, z\_sweep)}
-\NormalTok{    plt.plot(mean\_errors)}
-
-\NormalTok{    plt.xlabel(}\StringTok{\textquotesingle{}Surveys Conducted\textquotesingle{}}\NormalTok{)}
-\NormalTok{    plt.ylabel(}\StringTok{\textquotesingle{}Average Error\textquotesingle{}}\NormalTok{)}
-\NormalTok{    plt.title(}\SpecialStringTok{f\textquotesingle{}MLE MAE Error (z=}\SpecialCharTok{\{}\NormalTok{z}\SpecialCharTok{\}}\SpecialStringTok{, }\SpecialCharTok{\{}\NormalTok{num\_sims}\SpecialCharTok{\}}\SpecialStringTok{ simulations)\textquotesingle{}}\NormalTok{)}
-\NormalTok{    plt.show()}
-\end{Highlighting}
-\end{Shaded}
-
-\end{tcolorbox}
-
-\subsection*{Question 3: Probabilistic Multi-modal Preferences (25
-points)}\label{question-3-probabilistic-multi-modal-preferences-25-points}
-\addcontentsline{toc}{subsection}{Question 3: Probabilistic Multi-modal
-Preferences (25 points)}
-
-Suppose you are part of the ML team on the movie streaming site
-CardinalStreams. After taking CS329H, you collect a movie preferences
-dataset with \(30000\) examples of the form
-\((m_1, m_2, \text{user id})\) where \(m_1\) and \(m_2\) are movies with
-\(m_1\succ m_2\). The preferences come from \(600\) distinct users with
-\(50\) examples per user. Each movie has a \(10\)-dimensional feature
-vector \(m\), and each user has a \(10\)-dimensional weight vector
-\(u\). Given movie features \(m_1, m_2\) and user weights \(u\), the
-user's preference between the movies is given by a Bradley-Terry reward
-model, i.e.,
-\[P(m_1\succ m_2)=\frac{e^{u\cdot m_1}}{e^{u\cdot m_1} + e^{u\cdot m_2}}=\frac{1}{1+e^{u\cdot (m_2-m_1)}}=\sigma(u\cdot (m_1-m_2)).\]
-
-You realize that trying to estimate the weights for each user with only
-\(50\) examples will not work due to the lack of data. Instead, you
-choose to drop the user IDs column and shuffle the dataset in order to
-take a \emph{multi-modal preferences} approach. For simplicity, you
-assume a model where a proportion \(p\) of the users have weights
-\(w_1\) and the other \(1-p\) have weights \(w_2\). In this setting,
-each user belongs to one of two groups: users with weights \(w_1\) are
-part of Group 1, and users with weights \(w_2\) are part of Group 2.
-
-\begin{enumerate}
-\def\labelenumi{(\alph{enumi})}
-\item
-  \textbf{(Written, 3 points)}. For a datapoint \((m_1, m_2)\) with
-  label \(m_1\succ m_2\), compute the data likelihood
-  \(P(m_1\succ m_2 | p, w_1, w_2)\) assuming \(p, w_1, w_2\) are given.
-\item
-  \textbf{(Written, 3 points)}. As a follow up, use the likelihood to
-  simplify the posterior distribution of \(p, w_1, w_2\) after updating
-  on \((m_1, m_2)\) leaving terms for the priors unchanged.
-\item
-  \textbf{(Written, 4 points)}. Assume priors \(p\sim B(1, 1)\),
-  \(w_1\sim\mathcal{N}(0, \mathbf{I})\), and
-  \(w_2\sim\mathcal{N}(0, \mathbf{I})\) where \(B\) represents the Beta
-  distribution and \(\mathcal{N}\) represents the normal distribution.
-  You will notice that the posterior from part (b) has no simple
-  closed-form. As a result, we must resort to \emph{Markov Chain Monte
-  Carlo (MCMC)} approaches to sample from the posterior. These
-  approaches allow sampling from highly complex distributions by
-  constructing a Markov chain \(\{x_t\}_{t=1}^\infty\) so that
-  \(\lim_{t\to\infty}x_t\) act as desired samples from the target
-  distribution. You can think of a Markov chain as a sequence with the
-  special property that \(x_{t+1}\) only depends on \(x_t\) for all
-  \(t\ge 1\).
-
-  The most basic version of MCMC is known as Metropolis-Hastings. Assume
-  \(\pi\) is the target distribution we wish to sample from where
-  \(\pi(z)\) represents the probability density at point \(z\).
-  Metropolis-Hastings constructs the approximating Markov chain \(x_t\)
-  as follows: a proposal \(P\) for \(x_{t+1}\) is made via sampling from
-  a chosen distribution \(Q(\,\cdot\,| x_t)\) (e.g., adding Gaussian
-  noise). The acceptance probability of the proposal is given by
-  \[A= \min \left( 1, \frac{\pi(P)Q(x_t | P)}{\pi(x_t)Q(P | x_t)} \right).\]
-  That is, \[x_{t+1}=\begin{cases} 
-  P & \text{with probability } A, \\
-  x_t & \text{with probability } 1 - A.
-  \end{cases}\] To extract our samples from \(\pi\), we run the Markov
-  chain for \(N\) timesteps and disregard the first \(T<N\) timesteps in
-  what is called the \emph{burn-in or mixing time} (i.e., our final
-  samples are \(x_{T+1}, x_{T+2},\cdots, x_{N}\)). The mixing time is
-  needed to ensure that the Markov chain elements are representative of
-  the distribution \(\pi\) -- initial elements of the chain will not be
-  a good approximation of \(\pi\) and depend more on the choice of
-  initialization \(x_1\).
-
-  To build some intuition, suppose we have a biased coin that turns
-  heads with probability \(p_{\text{heads}}\). We observe \(12\) coin
-  flips to have \(9\) heads and \(3\) tails. If our prior for
-  \(p_{\text{heads}}\) was \(B(1, 1)\), then our posterior will be
-  \(B(1+9, 1+3)=B(10, 4)\). The Bayesian update is given by
-
-  \[\begin{aligned}
-      P(p_{\text{heads}}|9\text{ heads}, 3\text{ tails})&=\frac{P(9\text{ heads}, 3\text{ tails} | p_{\text{heads}})B(1, 1)(p_{\text{heads}})}{\int_0^1 P(9\text{ heads}, 3\text{ tails} | p_{\text{heads}})B(1, 1)(p_{\text{heads}}) dp_{\text{heads}}}\\
-      &=\frac{P(9\text{ heads}, 3\text{ tails} | p_{\text{heads}})}{\int_0^1 P(9\text{ heads}, 3\text{ tails} | p_{\text{heads}})  dp_{\text{heads}}}.
-  \end{aligned}\]
-
-  \textbf{Find the acceptance probablity} \(A\) in the setting of the
-  biased coin assuming the proposal distribution
-  \(Q(\cdot|x_t)=x_t+N(0,\sigma)\) for given \(\sigma\). Notice that
-  this choice of \(Q\) is symmetric, i.e., \(Q(x_t|P)=Q(P|x_t)\). In
-  addition, you will realize that is unnecessary to compute the
-  normalizing constant of the Bayesian update (i.e., the integral in the
-  denominator) which is why MCMC is commonly used to sample from
-  posteriors!
-\item
-  \textbf{(Written + Coding, 6 points)}. Implement Metropolis-Hastings
-  to sample from the posterior distribution of the biased coin in
-  \texttt{multimodal\_preferences/biased\_coin.py}. Attach a histogram
-  of your MCMC samples overlayed on top of the true posterior
-  \(B(10, 4)\) by running \texttt{python\ biased\_coin.py}.
-\end{enumerate}
-
-\begin{tcolorbox}[colframe=.grey, title=\faCode \enspace Code]
-
-\begin{Shaded}
-\begin{Highlighting}[numbers=left,,]
-\ImportTok{import}\NormalTok{ numpy }\ImportTok{as}\NormalTok{ np}
-\ImportTok{import}\NormalTok{ matplotlib.pyplot }\ImportTok{as}\NormalTok{ plt}
-\ImportTok{from}\NormalTok{ scipy.stats }\ImportTok{import}\NormalTok{ beta}
-
-\KeywordTok{def}\NormalTok{ likelihood(p: }\BuiltInTok{float}\NormalTok{) }\OperatorTok{{-}\textgreater{}} \BuiltInTok{float}\NormalTok{:}
-    \CommentTok{"""}
-\CommentTok{    Computes the likelihood of 9 heads and 3 tails assuming p\_heads is p.}
-
-\CommentTok{    Args:}
-\CommentTok{    p (float): A value between 0 and 1 representing the probability of heads.}
-
-\CommentTok{    Returns:}
-\CommentTok{    float: The likelihood value at p\_heads=p. Return 0 if p is outside the range [0, 1].}
-\CommentTok{    """}
-    \CommentTok{\# YOUR CODE HERE (\textasciitilde{}1{-}3 lines)}
-    \ControlFlowTok{pass}
-    \CommentTok{\# }\RegionMarkerTok{END}\CommentTok{ OF YOUR CODE}
-
-
-\KeywordTok{def}\NormalTok{ propose(x\_current: }\BuiltInTok{float}\NormalTok{, sigma: }\BuiltInTok{float}\NormalTok{) }\OperatorTok{{-}\textgreater{}} \BuiltInTok{float}\NormalTok{:}
-    \CommentTok{"""}
-\CommentTok{    Proposes a new sample from the proposal distribution Q.}
-\CommentTok{    Here, Q is a normal distribution centered at x\_current with standard deviation sigma.}
-
-\CommentTok{    Args:}
-\CommentTok{    x\_current (float): The current value in the Markov chain.}
-\CommentTok{    sigma (float): Standard deviation of the normal proposal distribution.}
-
-\CommentTok{    Returns:}
-\CommentTok{    float: The proposed new sample.}
-\CommentTok{    """}
-    \CommentTok{\# YOUR CODE HERE (\textasciitilde{}1{-}3 lines)}
-    \ControlFlowTok{pass}
-    \CommentTok{\# }\RegionMarkerTok{END}\CommentTok{ OF YOUR CODE}
-
-
-\KeywordTok{def}\NormalTok{ acceptance\_probability(x\_current: }\BuiltInTok{float}\NormalTok{, x\_proposed: }\BuiltInTok{float}\NormalTok{) }\OperatorTok{{-}\textgreater{}} \BuiltInTok{float}\NormalTok{:}
-    \CommentTok{"""}
-\CommentTok{    Computes the acceptance probability A for the proposed sample.}
-\CommentTok{    Since the proposal distribution is symmetric, Q cancels out.}
-
-\CommentTok{    Args:}
-\CommentTok{    x\_current (float): The current value in the Markov chain.}
-\CommentTok{    x\_proposed (float): The proposed new value.}
-
-\CommentTok{    Returns:}
-\CommentTok{    float: The acceptance probability}
-\CommentTok{    """}
-    \CommentTok{\# YOUR CODE HERE (\textasciitilde{}4{-}6 lines)}
-    \ControlFlowTok{pass}
-    \CommentTok{\# }\RegionMarkerTok{END}\CommentTok{ OF YOUR CODE}
-
-
-\KeywordTok{def}\NormalTok{ metropolis\_hastings(N: }\BuiltInTok{int}\NormalTok{, T: }\BuiltInTok{int}\NormalTok{, x\_init: }\BuiltInTok{float}\NormalTok{, sigma: }\BuiltInTok{float}\NormalTok{) }\OperatorTok{{-}\textgreater{}}\NormalTok{ np.ndarray:}
-    \CommentTok{"""}
-\CommentTok{    Runs the Metropolis{-}Hastings algorithm to sample from a posterior distribution.}
-
-\CommentTok{    Args:}
-\CommentTok{    N (int): Total number of iterations.}
-\CommentTok{    T (int): Burn{-}in period (number of initial samples to discard).}
-\CommentTok{    x\_init (float): Initial value of the chain.}
-\CommentTok{    sigma (float): Standard deviation of the proposal distribution.}
-
-\CommentTok{    Returns:}
-\CommentTok{    list: Samples collected after the burn{-}in period.}
-\CommentTok{    """}
-\NormalTok{    samples }\OperatorTok{=}\NormalTok{ []}
-\NormalTok{    x\_current }\OperatorTok{=}\NormalTok{ x\_init}
-
-    \ControlFlowTok{for}\NormalTok{ t }\KeywordTok{in} \BuiltInTok{range}\NormalTok{(N):}
-        \CommentTok{\# YOUR CODE HERE (\textasciitilde{}7{-}10 lines)}
-        \CommentTok{\# Use the propose and acceptance\_probability functions to get x\_\{t+1\} and store it in samples after the burn{-}in period T}
-        \ControlFlowTok{pass}
-        \CommentTok{\# }\RegionMarkerTok{END}\CommentTok{ OF YOUR CODE}
-
-    \ControlFlowTok{return}\NormalTok{ samples}
-
-
-\KeywordTok{def}\NormalTok{ plot\_results(samples: np.ndarray) }\OperatorTok{{-}\textgreater{}} \VariableTok{None}\NormalTok{:}
-    \CommentTok{"""}
-\CommentTok{    Plots the histogram of MCMC samples along with the true Beta(10, 4) PDF.}
-
-\CommentTok{    Args:}
-\CommentTok{    samples (np.ndarray): Array of samples collected from the Metropolis{-}Hastings algorithm.}
-
-\CommentTok{    Returns:}
-\CommentTok{    None}
-\CommentTok{    """}
-    \CommentTok{\# Histogram of the samples from the Metropolis{-}Hastings algorithm}
-\NormalTok{    plt.hist(samples, bins}\OperatorTok{=}\DecValTok{50}\NormalTok{, density}\OperatorTok{=}\VariableTok{True}\NormalTok{, alpha}\OperatorTok{=}\FloatTok{0.5}\NormalTok{, label}\OperatorTok{=}\StringTok{"MCMC Samples"}\NormalTok{)}
-
-    \CommentTok{\# True Beta(10, 4) distribution for comparison}
-\NormalTok{    p }\OperatorTok{=}\NormalTok{ np.linspace(}\DecValTok{0}\NormalTok{, }\DecValTok{1}\NormalTok{, }\DecValTok{1000}\NormalTok{)}
-\NormalTok{    beta\_pdf }\OperatorTok{=}\NormalTok{ beta.pdf(p, }\DecValTok{10}\NormalTok{, }\DecValTok{4}\NormalTok{)}
-\NormalTok{    plt.plot(p, beta\_pdf, }\StringTok{"r{-}"}\NormalTok{, label}\OperatorTok{=}\StringTok{"Beta(10, 4) PDF"}\NormalTok{)}
-
-\NormalTok{    plt.xlabel(}\StringTok{"p\_heads"}\NormalTok{)}
-\NormalTok{    plt.ylabel(}\StringTok{"Density"}\NormalTok{)}
-\NormalTok{    plt.title(}\StringTok{"Metropolis{-}Hastings Sampling of Biased Coin Posterior"}\NormalTok{)}
-\NormalTok{    plt.legend()}
-\NormalTok{    plt.show()}
-
-
-\ControlFlowTok{if} \VariableTok{\_\_name\_\_} \OperatorTok{==} \StringTok{"\_\_main\_\_"}\NormalTok{:}
-    \CommentTok{\# MCMC Parameters (DO NOT CHANGE!)}
-\NormalTok{    N }\OperatorTok{=} \DecValTok{50000}  \CommentTok{\# Total number of iterations}
-\NormalTok{    T }\OperatorTok{=} \DecValTok{10000}  \CommentTok{\# Burn{-}in period to discard}
-\NormalTok{    x\_init }\OperatorTok{=} \FloatTok{0.5}  \CommentTok{\# Initial guess for p\_heads}
-\NormalTok{    sigma }\OperatorTok{=} \FloatTok{0.1}  \CommentTok{\# Standard deviation of the proposal distribution}
-
-    \CommentTok{\# Run Metropolis{-}Hastings and plot the results}
-\NormalTok{    samples }\OperatorTok{=}\NormalTok{ metropolis\_hastings(N, T, x\_init, sigma)}
-\NormalTok{    plot\_results(samples)}
-\end{Highlighting}
-\end{Shaded}
-
-\end{tcolorbox}
-
-\begin{enumerate}
-\def\labelenumi{(\alph{enumi})}
-\setcounter{enumi}{4}
-\tightlist
-\item
-  \textbf{(Coding, 9 points)}. Implement Metropolis-Hastings in the
-  movie setting inside\\
-  \texttt{multimodal\_preferences/movie\_metropolis.py}. The movie
-  dataset we use for grading will not be provided. However, randomly
-  constructed datasets can be used to test your implementation by
-  running \texttt{python\ movie\_metropolis.py}. You should be able to
-  achieve a \(90\%\) success rate with most \texttt{fraction\_accepted}
-  values above \(0.1\). Success is measured by thresholded closeness of
-  predicted parameters to true parameters. You may notice occasional
-  failures that occur due to lack of convergence which we will account
-  for in grading.
-\end{enumerate}
-
-\begin{tcolorbox}[colframe=.grey, title=\faCode \enspace Code]
-
-\begin{Shaded}
-\begin{Highlighting}[numbers=left,,]
-\ImportTok{import}\NormalTok{ torch}
-\ImportTok{import}\NormalTok{ torch.distributions }\ImportTok{as}\NormalTok{ dist}
-\ImportTok{import}\NormalTok{ math}
-\ImportTok{from}\NormalTok{ tqdm }\ImportTok{import}\NormalTok{ tqdm}
-\ImportTok{from}\NormalTok{ typing }\ImportTok{import}\NormalTok{ Tuple}
-
-\KeywordTok{def}\NormalTok{ make\_data(}
-\NormalTok{    true\_p: torch.Tensor, true\_weights\_1: torch.Tensor, true\_weights\_2: torch.Tensor, num\_movies: }\BuiltInTok{int}\NormalTok{, feature\_dim: }\BuiltInTok{int}
-\NormalTok{) }\OperatorTok{{-}\textgreater{}}\NormalTok{ Tuple[torch.Tensor, torch.Tensor]:}
-    \CommentTok{"""}
-\CommentTok{    Generates a synthetic movie dataset according to the CardinalStreams model.}
-
-\CommentTok{    Args:}
-\CommentTok{        true\_p (torch.Tensor): Probability of coming from Group 1.}
-\CommentTok{        true\_weights\_1 (torch.Tensor): Weights for Group 1.}
-\CommentTok{        true\_weights\_2 (torch.Tensor): Weights for Group 2.}
-
-\CommentTok{    Returns:}
-\CommentTok{        Tuple[torch.Tensor, torch.Tensor]: A tuple containing the dataset and labels.}
-\CommentTok{    """}
-    \CommentTok{\# Create movie features}
-\NormalTok{    first\_movie\_features }\OperatorTok{=}\NormalTok{ torch.randn((num\_movies, feature\_dim))}
-\NormalTok{    second\_movie\_features }\OperatorTok{=}\NormalTok{ torch.randn((num\_movies, feature\_dim))}
-
-    \CommentTok{\# Only care about difference of features for Bradley{-}Terry}
-\NormalTok{    dataset }\OperatorTok{=}\NormalTok{ first\_movie\_features }\OperatorTok{{-}}\NormalTok{ second\_movie\_features}
-
-    \CommentTok{\# Get probabilities that first movie is preferred assuming Group 1 or Group 2}
-\NormalTok{    weight\_1\_probs }\OperatorTok{=}\NormalTok{ torch.sigmoid(dataset }\OperatorTok{@}\NormalTok{ true\_weights\_1)}
-\NormalTok{    weight\_2\_probs }\OperatorTok{=}\NormalTok{ torch.sigmoid(dataset }\OperatorTok{@}\NormalTok{ true\_weights\_2)}
-
-    \CommentTok{\# Probability that first movie is preferred overall can be viewed as sum of conditioning on Group 1 and Group 2}
-\NormalTok{    first\_movie\_preferred\_probs }\OperatorTok{=}\NormalTok{ (}
-\NormalTok{        true\_p }\OperatorTok{*}\NormalTok{ weight\_1\_probs }\OperatorTok{+}\NormalTok{ (}\DecValTok{1} \OperatorTok{{-}}\NormalTok{ true\_p) }\OperatorTok{*}\NormalTok{ weight\_2\_probs}
-\NormalTok{    )}
-\NormalTok{    labels }\OperatorTok{=}\NormalTok{ dist.Bernoulli(first\_movie\_preferred\_probs).sample()}
-    \ControlFlowTok{return}\NormalTok{ dataset, labels}
-
-
-\KeywordTok{def}\NormalTok{ compute\_likelihoods(}
-\NormalTok{    dataset: torch.Tensor,}
-\NormalTok{    labels: torch.Tensor,}
-\NormalTok{    p: torch.Tensor,}
-\NormalTok{    w\_1: torch.Tensor,}
-\NormalTok{    w\_2: torch.Tensor,}
-\NormalTok{) }\OperatorTok{{-}\textgreater{}}\NormalTok{ torch.Tensor:}
-    \CommentTok{"""}
-\CommentTok{    Computes the likelihood of each datapoint. Use your calculation from part (a) to help.}
-
-\CommentTok{    Args:}
-\CommentTok{        dataset (torch.Tensor): The dataset of differences between movie features.}
-\CommentTok{        labels (torch.Tensor): The labels where 1 indicates the first movie is preferred, and 0 indicates preference of the second movie.}
-\CommentTok{        p (torch.Tensor): The probability of coming from Group 1.}
-\CommentTok{        w\_1 (torch.Tensor): Weights for Group 1.}
-\CommentTok{        w\_2 (torch.Tensor): Weights for Group 2.}
-
-\CommentTok{    Returns:}
-\CommentTok{        torch.Tensor: The likelihoods for each datapoint. Should have shape (dataset.shape[0], )}
-\CommentTok{    """}
-    \CommentTok{\# YOUR CODE HERE (\textasciitilde{}6{-}8 lines)}
-    \ControlFlowTok{pass}
-    \CommentTok{\# }\RegionMarkerTok{END}\CommentTok{ OF YOUR CODE}
-
-\KeywordTok{def}\NormalTok{ compute\_prior\_density(}
-\NormalTok{    p: torch.Tensor, w\_1: torch.Tensor, w\_2: torch.Tensor}
-\NormalTok{) }\OperatorTok{{-}\textgreater{}}\NormalTok{ torch.Tensor:}
-    \CommentTok{"""}
-\CommentTok{    Computes the prior density of the parameters.}
-
-\CommentTok{    Args:}
-\CommentTok{        p (torch.Tensor): The probability of preferring model 1.}
-\CommentTok{        w\_1 (torch.Tensor): Weights for model 1.}
-\CommentTok{        w\_2 (torch.Tensor): Weights for model 2.}
-
-\CommentTok{    Returns:}
-\CommentTok{        torch.Tensor: The prior densities of p, w\_1, and w\_2.}
-\CommentTok{    """}
-    \CommentTok{\# Adjusts p to stay in the range [0.3, 0.7] to prevent multiple equilibria issues at p=0 and p=1}
-\NormalTok{    p\_prob }\OperatorTok{=}\NormalTok{ torch.tensor([}\FloatTok{2.5}\NormalTok{]) }\ControlFlowTok{if} \FloatTok{0.3} \OperatorTok{\textless{}=}\NormalTok{ p }\OperatorTok{\textless{}=} \FloatTok{0.7} \ControlFlowTok{else}\NormalTok{ torch.tensor([}\FloatTok{0.0}\NormalTok{])}
-
-    \KeywordTok{def}\NormalTok{ normal\_pdf(x: torch.Tensor) }\OperatorTok{{-}\textgreater{}}\NormalTok{ torch.Tensor:}
-        \CommentTok{"""Computes the PDF of the standard normal distribution at x."""}
-        \ControlFlowTok{return}\NormalTok{ (}\FloatTok{1.0} \OperatorTok{/}\NormalTok{ torch.sqrt(torch.tensor(}\DecValTok{2} \OperatorTok{*}\NormalTok{ math.pi))) }\OperatorTok{*}\NormalTok{ torch.exp(}\OperatorTok{{-}}\FloatTok{0.5} \OperatorTok{*}\NormalTok{ x}\OperatorTok{**}\DecValTok{2}\NormalTok{)}
-
-\NormalTok{    weights\_1\_prob }\OperatorTok{=}\NormalTok{ normal\_pdf(w\_1)}
-\NormalTok{    weights\_2\_prob }\OperatorTok{=}\NormalTok{ normal\_pdf(w\_2)}
-
-    \CommentTok{\# Concatenate the densities}
-\NormalTok{    concatenated\_prob }\OperatorTok{=}\NormalTok{ torch.cat([p\_prob, weights\_1\_prob, weights\_2\_prob])}
-    \ControlFlowTok{return}\NormalTok{ concatenated\_prob}
-
-
-\KeywordTok{def}\NormalTok{ metropolis\_hastings(}
-\NormalTok{    dataset: torch.Tensor,}
-\NormalTok{    labels: torch.Tensor,}
-\NormalTok{    sigma: }\BuiltInTok{float} \OperatorTok{=} \FloatTok{0.01}\NormalTok{,}
-\NormalTok{    num\_iters: }\BuiltInTok{int} \OperatorTok{=} \DecValTok{30000}\NormalTok{,}
-\NormalTok{    burn\_in: }\BuiltInTok{int} \OperatorTok{=} \DecValTok{20000}\NormalTok{,}
-\NormalTok{) }\OperatorTok{{-}\textgreater{}}\NormalTok{ Tuple[torch.Tensor, torch.Tensor, torch.Tensor, }\BuiltInTok{float}\NormalTok{]:}
-    \CommentTok{"""}
-\CommentTok{    Performs the Metropolis{-}Hastings algorithm to sample from the posterior distribution.}
-\CommentTok{    DO NOT CHANGE THE DEFAULT VALUES!}
-
-\CommentTok{    Args:}
-\CommentTok{        dataset (torch.Tensor): The dataset of differences between movie features.}
-\CommentTok{        labels (torch.Tensor): The labels indicating which movie is preferred.}
-\CommentTok{        sigma (float, optional): Standard deviation for proposal distribution.}
-\CommentTok{            Defaults to 0.01.}
-\CommentTok{        num\_iters (int, optional): Total number of iterations. Defaults to 30000.}
-\CommentTok{        burn\_in (int, optional): Number of iterations to discard as burn{-}in.}
-\CommentTok{            Defaults to 20000.}
-
-\CommentTok{    Returns:}
-\CommentTok{        Tuple[torch.Tensor, torch.Tensor, torch.Tensor, float]: Samples of p,}
-\CommentTok{        w\_1, w\_2, and the fraction of accepted proposals.}
-\CommentTok{    """}
-\NormalTok{    feature\_dim }\OperatorTok{=}\NormalTok{ dataset.shape[}\DecValTok{1}\NormalTok{]}
-
-    \CommentTok{\# Initialize random starting parameters by sampling priors}
-\NormalTok{    curr\_p }\OperatorTok{=} \FloatTok{0.3} \OperatorTok{+} \FloatTok{0.4} \OperatorTok{*}\NormalTok{ torch.rand(}\DecValTok{1}\NormalTok{)}
-\NormalTok{    curr\_w\_1 }\OperatorTok{=}\NormalTok{ torch.randn(feature\_dim)}
-\NormalTok{    curr\_w\_2 }\OperatorTok{=}\NormalTok{ torch.randn(feature\_dim)}
-
-    \CommentTok{\# Keep track of samples and total number of accepted proposals}
-\NormalTok{    p\_samples }\OperatorTok{=}\NormalTok{ []}
-\NormalTok{    w\_1\_samples }\OperatorTok{=}\NormalTok{ []}
-\NormalTok{    w\_2\_samples }\OperatorTok{=}\NormalTok{ []}
-\NormalTok{    accept\_count }\OperatorTok{=} \DecValTok{0} 
-
-    \ControlFlowTok{for}\NormalTok{ T }\KeywordTok{in}\NormalTok{ tqdm(}\BuiltInTok{range}\NormalTok{(num\_iters)):}
-        \CommentTok{\# YOUR CODE HERE (\textasciitilde{}3 lines)}
-        \ControlFlowTok{pass} \CommentTok{\# Sample proposals for p, w\_1, w\_2}
-        \CommentTok{\# }\RegionMarkerTok{END}\CommentTok{ OF YOUR CODE}
-
-        \CommentTok{\# YOUR CODE HERE (\textasciitilde{}4{-}6 lines)}
-        \ControlFlowTok{pass} \CommentTok{\# Compute likehoods and prior densities on both the proposed and current samples}
-        \CommentTok{\# }\RegionMarkerTok{END}\CommentTok{ OF YOUR CODE}
-
-        \CommentTok{\# YOUR CODE HERE (\textasciitilde{}2{-}4 lines)}
-        \ControlFlowTok{pass} \CommentTok{\# Obtain the ratios of the likelihoods and prior densities between the proposed and current samples }
-        \CommentTok{\# }\RegionMarkerTok{END}\CommentTok{ OF YOUR CODE }
-
-        \CommentTok{\# YOUR CODE HERE (\textasciitilde{}1{-}2 lines)}
-        \ControlFlowTok{pass} \CommentTok{\# Multiply all ratios (both likelihoods and prior densities) and use this to calculate the acceptance probability of the proposal}
-        \CommentTok{\# }\RegionMarkerTok{END}\CommentTok{ OF YOUR CODE}
-
-        \CommentTok{\# YOUR CODE HERE (\textasciitilde{}4{-}6 lines)}
-        \ControlFlowTok{pass} \CommentTok{\# Sample randomness to determine whether the proposal should be accepted to update curr\_p, curr\_w\_1, curr\_w\_2, and accept\_count}
-        \CommentTok{\# }\RegionMarkerTok{END}\CommentTok{ OF YOUR CODE }
-
-        \CommentTok{\# YOUR CODE HERE (\textasciitilde{}4{-}6 lines)}
-        \ControlFlowTok{pass} \CommentTok{\# Update p\_samples, w\_1\_samples, w\_2\_samples if we have passed the burn in period T}
-        \CommentTok{\# }\RegionMarkerTok{END}\CommentTok{ OF YOUR CODE }
-
-\NormalTok{    fraction\_accepted }\OperatorTok{=}\NormalTok{ accept\_count }\OperatorTok{/}\NormalTok{ num\_iters}
-    \BuiltInTok{print}\NormalTok{(}\SpecialStringTok{f"Fraction of accepted proposals: }\SpecialCharTok{\{}\NormalTok{fraction\_accepted}\SpecialCharTok{\}}\SpecialStringTok{"}\NormalTok{)}
-    \ControlFlowTok{return}\NormalTok{ (}
-\NormalTok{        torch.stack(p\_samples),}
-\NormalTok{        torch.stack(w\_1\_samples),}
-\NormalTok{        torch.stack(w\_2\_samples),}
-\NormalTok{        fraction\_accepted,}
-\NormalTok{    )}
-
-
-\KeywordTok{def}\NormalTok{ evaluate\_metropolis(num\_sims: }\BuiltInTok{int}\NormalTok{, num\_movies: }\BuiltInTok{int}\NormalTok{, feature\_dim: }\BuiltInTok{int}\NormalTok{) }\OperatorTok{{-}\textgreater{}} \VariableTok{None}\NormalTok{:}
-    \CommentTok{"""}
-\CommentTok{    Runs the Metropolis{-}Hastings algorithm N times and compare estimated parameters}
-\CommentTok{    with true parameters to obtain success rate. You should attain a success rate of around 90\%. }
-
-\CommentTok{    Note that there are two successful equilibria to converge to. They are true\_weights\_1 and true\_weights\_2 with probabilities}
-\CommentTok{    p and 1{-}p in addition to true\_weights\_2 and true\_weights\_1 with probabilities 1{-}p and p. This is why even though it may appear your}
-\CommentTok{    predicted parameters don\textquotesingle{}t match the true parameters, they are in fact equivalent. }
-
-\CommentTok{    Args:}
-\CommentTok{        num\_sims (int): Number of simulations to run.}
-
-\CommentTok{    Returns:}
-\CommentTok{        None}
-\CommentTok{    """}
-    
-\NormalTok{    success\_count }\OperatorTok{=} \DecValTok{0}
-    \ControlFlowTok{for}\NormalTok{ \_ }\KeywordTok{in} \BuiltInTok{range}\NormalTok{(num\_sims):}
-        \CommentTok{\# Sample random ground truth parameters}
-\NormalTok{        true\_p }\OperatorTok{=} \FloatTok{0.3} \OperatorTok{+} \FloatTok{0.4} \OperatorTok{*}\NormalTok{ torch.rand(}\DecValTok{1}\NormalTok{)}
-\NormalTok{        true\_weights\_1 }\OperatorTok{=}\NormalTok{ torch.randn(feature\_dim)}
-\NormalTok{        true\_weights\_2 }\OperatorTok{=}\NormalTok{ torch.randn(feature\_dim)}
-
-        \BuiltInTok{print}\NormalTok{(}\StringTok{"}\CharTok{\textbackslash{}n}\StringTok{{-}{-}{-}{-} MCMC Simulation {-}{-}{-}{-}"}\NormalTok{)}
-        \BuiltInTok{print}\NormalTok{(}\StringTok{"True parameters:"}\NormalTok{, true\_p, true\_weights\_1, true\_weights\_2)}
-
-\NormalTok{        dataset, labels }\OperatorTok{=}\NormalTok{ make\_data(true\_p, true\_weights\_1, true\_weights\_2, num\_movies, feature\_dim)}
-\NormalTok{        p\_samples, w\_1\_samples, w\_2\_samples, \_ }\OperatorTok{=}\NormalTok{ metropolis\_hastings(dataset, labels)}
-
-\NormalTok{        p\_pred }\OperatorTok{=}\NormalTok{ p\_samples.mean(dim}\OperatorTok{=}\DecValTok{0}\NormalTok{)}
-\NormalTok{        w\_1\_pred }\OperatorTok{=}\NormalTok{ w\_1\_samples.mean(dim}\OperatorTok{=}\DecValTok{0}\NormalTok{)}
-\NormalTok{        w\_2\_pred }\OperatorTok{=}\NormalTok{ w\_2\_samples.mean(dim}\OperatorTok{=}\DecValTok{0}\NormalTok{)}
-
-        \BuiltInTok{print}\NormalTok{(}\StringTok{"Predicted parameters:"}\NormalTok{, p\_pred, w\_1\_pred, w\_2\_pred)}
-
-        \CommentTok{\# Do casework on two equilibria cases to check for success}
-\NormalTok{        p\_diff\_case\_1 }\OperatorTok{=}\NormalTok{ torch.}\BuiltInTok{abs}\NormalTok{(p\_pred }\OperatorTok{{-}}\NormalTok{ true\_p)}
-\NormalTok{        p\_diff\_case\_2 }\OperatorTok{=}\NormalTok{ torch.}\BuiltInTok{abs}\NormalTok{(p\_pred }\OperatorTok{{-}}\NormalTok{ (}\DecValTok{1} \OperatorTok{{-}}\NormalTok{ true\_p))}
-
-\NormalTok{        w\_1\_diff\_case\_1 }\OperatorTok{=}\NormalTok{ torch.}\BuiltInTok{max}\NormalTok{(torch.}\BuiltInTok{abs}\NormalTok{(w\_1\_pred }\OperatorTok{{-}}\NormalTok{ true\_weights\_1))}
-\NormalTok{        w\_1\_diff\_case\_2 }\OperatorTok{=}\NormalTok{ torch.}\BuiltInTok{max}\NormalTok{(torch.}\BuiltInTok{abs}\NormalTok{(w\_1\_pred }\OperatorTok{{-}}\NormalTok{ true\_weights\_2))}
-
-\NormalTok{        w\_2\_diff\_case\_1 }\OperatorTok{=}\NormalTok{ torch.}\BuiltInTok{max}\NormalTok{(torch.}\BuiltInTok{abs}\NormalTok{(w\_2\_pred }\OperatorTok{{-}}\NormalTok{ true\_weights\_2))}
-\NormalTok{        w\_2\_diff\_case\_2 }\OperatorTok{=}\NormalTok{ torch.}\BuiltInTok{max}\NormalTok{(torch.}\BuiltInTok{abs}\NormalTok{(w\_2\_pred }\OperatorTok{{-}}\NormalTok{ true\_weights\_1))}
-
-\NormalTok{        pass\_case\_1 }\OperatorTok{=}\NormalTok{ (}
-\NormalTok{            p\_diff\_case\_1 }\OperatorTok{\textless{}} \FloatTok{0.1} \KeywordTok{and}\NormalTok{ w\_1\_diff\_case\_1 }\OperatorTok{\textless{}} \FloatTok{0.5} \KeywordTok{and}\NormalTok{ w\_2\_diff\_case\_1 }\OperatorTok{\textless{}} \FloatTok{0.5}
-\NormalTok{        )}
-\NormalTok{        pass\_case\_2 }\OperatorTok{=}\NormalTok{ (}
-\NormalTok{            p\_diff\_case\_2 }\OperatorTok{\textless{}} \FloatTok{0.1} \KeywordTok{and}\NormalTok{ w\_1\_diff\_case\_2 }\OperatorTok{\textless{}} \FloatTok{0.5} \KeywordTok{and}\NormalTok{ w\_2\_diff\_case\_2 }\OperatorTok{\textless{}} \FloatTok{0.5}
-\NormalTok{        )}
-\NormalTok{        passes }\OperatorTok{=}\NormalTok{ pass\_case\_1 }\KeywordTok{or}\NormalTok{ pass\_case\_2}
-
-        \BuiltInTok{print}\NormalTok{(}\SpecialStringTok{f\textquotesingle{}Result: }\SpecialCharTok{\{}\StringTok{"Success"} \ControlFlowTok{if}\NormalTok{ passes }\ControlFlowTok{else} \StringTok{"FAILED"}\SpecialCharTok{\}}\SpecialStringTok{\textquotesingle{}}\NormalTok{)}
-        \ControlFlowTok{if}\NormalTok{ passes:}
-\NormalTok{            success\_count }\OperatorTok{+=} \DecValTok{1}
-    \BuiltInTok{print}\NormalTok{(}\SpecialStringTok{f\textquotesingle{}Success rate: }\SpecialCharTok{\{}\NormalTok{success\_count }\OperatorTok{/}\NormalTok{ num\_sims}\SpecialCharTok{\}}\SpecialStringTok{\textquotesingle{}}\NormalTok{)}
-
-
-\ControlFlowTok{if} \VariableTok{\_\_name\_\_} \OperatorTok{==} \StringTok{"\_\_main\_\_"}\NormalTok{:}
-\NormalTok{    evaluate\_metropolis(num\_sims}\OperatorTok{=}\DecValTok{10}\NormalTok{, num\_movies}\OperatorTok{=}\DecValTok{30000}\NormalTok{, feature\_dim}\OperatorTok{=}\DecValTok{10}\NormalTok{)}
-\end{Highlighting}
-\end{Shaded}
-
-\end{tcolorbox}
-
-\subsection*{Question 4: Direct Preference Optimization (40
-points)}\label{question-4-direct-preference-optimization-40-points}
-\addcontentsline{toc}{subsection}{Question 4: Direct Preference
-Optimization (40 points)}
-
-Note this question requires a GPU which is provided for free on Google
-Colab (T4 instance) or through the course cloud credits provided on
-Ed.\\
-Direct Preference Optimization (DPO) allows for policy alignment on a
-preference dataset without the need to train a separate reward model.
-The preference dataset is constructed by sampling generations
-\((y_1, y_2)\sim \pi_{\text{ref}}(\cdot\mid x)\) where
-\(\pi_\text{ref}\) is the base policy to be aligned, and \(x\) comes
-from a set of previously collected prompts. The pairs of generations are
-then labeled by an annotator for which of the generations is preferred.
-Denote the preference dataset by
-\(\mathcal{D}=\left\{\left(x^{(i)}, y_+^{(i)}, y_-^{(i)}\right)\right\}_{i=1}^N\),
-where \(y_+\) and \(y_-\) are the preferred and non-preferred
-generations, respectively. DPO aims to solve the following:
-\[\hat{\pi}=\arg \min_{\pi\in\Pi}\mathbb{E}_{(x, y_+, y_-)\sim\mathcal{D}}\left[-\log\sigma\left(
-\beta\log\left(\frac{\pi(y_+ | x)}{\pi_{\text{ref}}(y_+ | x)}\right)-\beta\log\left(\frac{\pi(y_- | x)}{\pi_{\text{ref}}(y_- | x)}\right)\right)\right]\]
-where \(\Pi\) is the space of possible polices \(\pi\) can take on.
-\(\pi\) is typically parametrized.
-
-\begin{enumerate}
-\def\labelenumi{(\alph{enumi})}
-\item
-  \textbf{(Written, 6 points)}. Consider the setting where
-  \(\pi_{\text{ref}}\) has no conditioning features and randomly outputs
-  one of two possible values, \(\mathbf{A}\) or \(\mathbf{B}\) (also
-  known as the ``Bandit'' setting). Suppose that
-  \(\pi_{\text{ref}}(\mathbf{A})=p_0\) and
-  \(\pi_{\text{ref}}(\mathbf{B})=1-p_0\). Furthermore, assume that the
-  preference dataset \(\mathcal{D}\) is infinitely large, sampled from
-  \(\pi_{\text{ref}}\), and that the preferred response is selected
-  through a Bradley-Terry reward model where \(\mathbf{A}\) has reward
-  score \(r_A\) and \(\mathbf{B}\) has reward score \(r_B\). Set
-  \(\Pi=\{\pi_p\mid 0<p<1\}\) where \(\pi_p\) is the policy defined by
-  \(\pi_p(\mathbf{A})=p\) and \(\pi_p(\mathbf{B})=1-p\). The DPO
-  objective is to compute:
-  \[\pi_{\hat{p}}=\arg \min_{\pi_p\in \Pi} f(p, p_0, \beta, r_A, r_B),\]
-  for a function \(f\). Find \(f\) by explicitly computing the relevant
-  expectation.
-\item
-  \textbf{(Written, 8 points)}. Assume that a solution to the
-  optimization problem in part (a) exists. Find an expression for
-  \(\hat{p}\). (Hint: Make sure to know your sigmoid derivative
-  properties! Everything should simplify nicely. You may use the
-  \href{https://en.wikipedia.org/wiki/Logit}{\emph{logit function}}
-  denoted by \(\sigma^{-1}\) in your final expression.)
-\item
-  \textbf{(Written, 3 points)}. Show that
-  \(\lim_{\beta\to\infty}\hat{p}=p_0.\) (Very) briefly explain why this
-  makes sense intuitively based on the role of \(\beta\) in
-  KL-constrained reward optimization (we suggest two sentences).
-\item
-  \textbf{(Written, 3 points)}. Assume \(r_A=r_B\) and \(\beta>0\).
-  Notice that \(\hat{p}=p_0\). Briefly explain why this makes sense
-  intuitively (we suggest two sentences).
-\end{enumerate}
-
-Next, you will fine-tune the lightweight 2 billion parameter Gemma 2
-model on the DPO objective. We will use the instruction fine-tuned
-variant of the model (i.e., designed for chat-based interactions).
-
-\begin{enumerate}
-\def\labelenumi{\arabic{enumi}.}
-\item
-  \textbf{(Coding, 4 points)}. Open the \texttt{dpo/dpo.ipynb} file of
-  the PSET's codebase. Execute the first few cells of the notebook until
-  you see the \texttt{sample\_chat\_tokens} and their IDs printed out.
-  The next cell requires you to implement the
-  \texttt{get\_response\_idxs} function in \texttt{dpo/dpo.py}.
-
-  To implement it, you must find the indices of the first and last token
-  of the model's response in \texttt{sample\_chat\_tokens}. In the
-  notebook's example, this corresponds to the tokens ``As'' and ``.''
-\item
-  \textbf{(Coding, 4 points)}. The following cell asks you to implement
-  the \texttt{get\_response\_next\_token\_probs} function. The next
-  token logits for each token of the chat prompt are provided. Pass them
-  through the softmax function and appropriately index the next token
-  IDs.
-
-\begin{verbatim}
-<bos><start_of_turn>user
-Where are you?<end_of_turn>
-<start_of_turn>model
-I am here.<end_of_turn>
-\end{verbatim}
-
-  In the example above, we look for the next-token probabilities of
-  ``I'', ``am'', ``here'', and ``.'' To do so, you must extract the
-  logits for ``\textbackslash n'', ``I'', ``am'', and ``here'' because
-  the probability of generating a given token comes from the prediction
-  of the token before. Use the return value of
-  \texttt{get\_response\_idxs} as anchor points for indexing. Be careful
-  of off-by-one indexing mistakes!
-\item
-  \textbf{(Coding, 6 points)}. The training and reference LLM policies
-  are loaded for you. We load the training policy in with LoRA for
-  computational efficiency during fine-tuning in the next part.
-  Implement \texttt{compute\_dpo\_objective} with the objective provided
-  in the theory portion for your favorite positive value of \(\beta\).
-  Does \(\beta\) affect the loss printed out? Why or why not? You do not
-  need to write why in your submission, but this line of thinking will
-  help debug any issues with your DPO loss function.
-\item
-  \textbf{(Written + Coding, 6 points)}. Finally, you will fine-tune the
-  Gemma model on the DPO loss function with batch size (and dataset
-  size) of \(1\) by implementing \texttt{finetune}. The prompt and
-  completions are provided in the notebook. The optimizer, \(\beta\),
-  and the number of fine-tuning steps have also been provided. Make sure
-  to use \texttt{torch.no\_grad()} on the reference model to prevent
-  unnecessary gradients!
-
-  Report the proportion of ``because of'' occurences before and after
-  fine-tuning. Additionally, include a plot of the DPO loss curve.
-\end{enumerate}
-
-\begin{tcolorbox}[colframe=.grey, title=\faCode \enspace Code]
-
-\begin{Shaded}
-\begin{Highlighting}[numbers=left,,]
-\ImportTok{import}\NormalTok{ torch}
-\ImportTok{from}\NormalTok{ transformers }\ImportTok{import}\NormalTok{ AutoTokenizer, AutoModelForCausalLM, set\_seed}
-\ImportTok{from}\NormalTok{ peft }\ImportTok{import}\NormalTok{ LoraConfig, get\_peft\_model}
-
-\NormalTok{set\_seed(}\DecValTok{42}\NormalTok{) }\CommentTok{\# DO NOT CHANGE THE SEED}
-
-\KeywordTok{def}\NormalTok{ get\_response\_idxs(tokenizer, chat\_token\_ids):}
-    \CommentTok{"""}
-\CommentTok{    Finds the start and end indices of the response in the tokenized chat.}
-
-\CommentTok{    Args:}
-\CommentTok{    tokenizer: The tokenizer object used to encode/decode text.}
-\CommentTok{    chat\_token\_ids (list[int]): The token IDs representing the chat conversation.}
-
-\CommentTok{    Returns:}
-\CommentTok{    tuple: A tuple (response\_start\_idx, response\_end\_idx), both of which are nonnegative integers.}
-\CommentTok{    """}
-
-\NormalTok{    start\_of\_turn\_id }\OperatorTok{=}\NormalTok{ tokenizer.convert\_tokens\_to\_ids(}\StringTok{"\textless{}start\_of\_turn\textgreater{}"}\NormalTok{)}
-\NormalTok{    end\_of\_turn\_id }\OperatorTok{=}\NormalTok{ tokenizer.convert\_tokens\_to\_ids(}\StringTok{"\textless{}end\_of\_turn\textgreater{}"}\NormalTok{)}
-
-\NormalTok{    response\_start\_idx }\OperatorTok{=} \VariableTok{None} \CommentTok{\# Nonnegative integer}
-\NormalTok{    response\_end\_idx }\OperatorTok{=} \VariableTok{None} \CommentTok{\# Nonnegative integer}
-
-    \CommentTok{\# YOUR CODE HERE (\textasciitilde{}3{-}5 lines)}
-    \ControlFlowTok{pass}
-    \CommentTok{\# }\RegionMarkerTok{END}\CommentTok{ OF YOUR CODE}
-
-    \ControlFlowTok{return}\NormalTok{ response\_start\_idx, response\_end\_idx}
-
-\KeywordTok{def}\NormalTok{ get\_response\_next\_token\_probs(tokenizer, model, chat\_token\_ids):}
-    \CommentTok{"""}
-\CommentTok{    Computes the next token probabilities for the response in a chat.}
-
-\CommentTok{    Args:}
-\CommentTok{    tokenizer: The tokenizer object used to encode/decode text.}
-\CommentTok{    model: The language model used to generate the logits.}
-\CommentTok{    chat\_token\_ids (list[int]): The token IDs representing the chat conversation.}
-
-\CommentTok{    Returns:}
-\CommentTok{    torch.Tensor: A 1D tensor containing the probabilities of the tokens in the response found by appropriately indexing}
-\CommentTok{                  the next token probabilities of the preceding token.}
-\CommentTok{    """}
-
-\NormalTok{    response\_start\_idx, response\_end\_idx }\OperatorTok{=}\NormalTok{ get\_response\_idxs(tokenizer, chat\_token\_ids)}
-\NormalTok{    chat\_token\_ids\_tensor }\OperatorTok{=}\NormalTok{ torch.tensor([chat\_token\_ids]).to(model.device)}
-\NormalTok{    logits }\OperatorTok{=}\NormalTok{ model(chat\_token\_ids\_tensor).logits[}\DecValTok{0}\NormalTok{, :, :] }\CommentTok{\# shape (len(chat\_token\_ids), vocabulary\_size)}
-
-\NormalTok{    next\_token\_probs }\OperatorTok{=} \VariableTok{None} \CommentTok{\# Should be a 1D{-}tensor}
-
-    \CommentTok{\# YOUR CODE HERE (\textasciitilde{}3{-}5 lines)}
-    \ControlFlowTok{pass}
-    \CommentTok{\# }\RegionMarkerTok{END}\CommentTok{ OF YOUR CODE}
-
-    \ControlFlowTok{return}\NormalTok{ next\_token\_probs}
-
-\KeywordTok{def}\NormalTok{ compute\_dpo\_objective(preferred\_train\_probs, nonpreferred\_train\_probs, preferred\_ref\_probs, nonpreferred\_ref\_probs, beta):}
-    \CommentTok{"""}
-\CommentTok{    Computes the Direct Preference Optimization (DPO) objective for training.}
-
-\CommentTok{    Args:}
-\CommentTok{    preferred\_train\_probs (torch.Tensor): Token probabilities for the preferred chat sequence from the training model.}
-\CommentTok{    nonpreferred\_train\_probs (torch.Tensor): Token probabilities for the non{-}preferred chat sequence from the training model.}
-\CommentTok{    preferred\_ref\_probs (torch.Tensor): Token probabilities for the preferred chat sequence from the reference model.}
-\CommentTok{    nonpreferred\_ref\_probs (torch.Tensor): Token probabilities for the non{-}preferred chat sequence from the reference model.}
-\CommentTok{    beta (float): Controls the KL strength of staying close to the reference model.}
-
-\CommentTok{    Returns:}
-\CommentTok{    torch.Tensor: The computed DPO objective, which is a float.}
-\CommentTok{    """}
-
-\NormalTok{    dpo\_obj }\OperatorTok{=} \VariableTok{None} \CommentTok{\# Float value}
-    
-    \CommentTok{\# YOUR CODE HERE (\textasciitilde{}4{-}6 lines)}
-    \ControlFlowTok{pass}
-    \CommentTok{\# }\RegionMarkerTok{END}\CommentTok{ OF YOUR CODE}
-
-    \ControlFlowTok{return}\NormalTok{ dpo\_obj}
-
-\KeywordTok{def}\NormalTok{ finetune(tokenizer, optimizer, train\_model, ref\_model, preferred\_chat\_ids, nonpreferred\_chat\_ids, num\_gradient\_steps, beta):}
-    \CommentTok{"""}
-\CommentTok{    Fine{-}tunes the training model using DPO. Make sure to disable gradients on the reference model!}
-
-\CommentTok{    Args:}
-\CommentTok{    tokenizer: The tokenizer object used to encode/decode text.}
-\CommentTok{    optimizer: The optimizer for updating the training model\textquotesingle{}s parameters.}
-\CommentTok{    train\_model: The model being fine{-}tuned.}
-\CommentTok{    ref\_model: The reference model.}
-\CommentTok{    preferred\_chat\_ids (list[int]): The token IDs representing the preferred chat sequence.}
-\CommentTok{    nonpreferred\_chat\_ids (list[int]): The token IDs representing the non{-}preferred chat sequence.}
-\CommentTok{    num\_gradient\_steps (int): The number of gradient updates to perform.}
-\CommentTok{    beta (float): A parameter used in computing the DPO objective.}
-
-\CommentTok{    Returns:}
-\CommentTok{    None}
-\CommentTok{    """}
-
-    \BuiltInTok{print}\NormalTok{(}\StringTok{\textquotesingle{}Fine{-}tuning...\textquotesingle{}}\NormalTok{)}
-    \ControlFlowTok{for}\NormalTok{ i }\KeywordTok{in} \BuiltInTok{range}\NormalTok{(num\_gradient\_steps):}
-        \CommentTok{\# YOUR CODE HERE (\textasciitilde{}9{-}12 lines)}
-        \ControlFlowTok{pass}
-        \CommentTok{\# }\RegionMarkerTok{END}\CommentTok{ OF YOUR CODE}
-    \BuiltInTok{print}\NormalTok{(}\StringTok{"Fine{-}tuning complete!"}\NormalTok{)}
-
-\CommentTok{\# DO NOT CHANGE!}
-\KeywordTok{def}\NormalTok{ sample\_model(tokenizer, model, prompt, N}\OperatorTok{=}\DecValTok{100}\NormalTok{):}
-    \CommentTok{"""}
-\CommentTok{    Samples N different completions from the model based on the given prompt.}
-
-\CommentTok{    Args:}
-\CommentTok{    tokenizer: The tokenizer object used to encode/decode text.}
-\CommentTok{    model: The language model used for generation.}
-\CommentTok{    prompt (str): The input prompt for which completions will be generated.}
-\CommentTok{    N (int): The number of completions to generate.}
-
-\CommentTok{    Returns:}
-\CommentTok{    list[str]: A list of N generated completions.}
-\CommentTok{    """}
-
-\NormalTok{    chat }\OperatorTok{=}\NormalTok{ [\{}\StringTok{"role"}\NormalTok{: }\StringTok{"user"}\NormalTok{, }\StringTok{"content"}\NormalTok{: prompt\}]}
-\NormalTok{    chat\_tokens }\OperatorTok{=}\NormalTok{ tokenizer.apply\_chat\_template(chat, tokenize}\OperatorTok{=}\VariableTok{True}\NormalTok{, add\_generation\_prompt}\OperatorTok{=}\VariableTok{True}\NormalTok{)}
-
-    \CommentTok{\# Generate N different responses}
-\NormalTok{    outputs }\OperatorTok{=}\NormalTok{ model.generate(}
-\NormalTok{        torch.tensor([chat\_tokens], device}\OperatorTok{=}\NormalTok{model.device),}
-\NormalTok{        num\_return\_sequences}\OperatorTok{=}\NormalTok{N,}
-\NormalTok{        max\_new\_tokens}\OperatorTok{=}\DecValTok{32}\NormalTok{,}
-\NormalTok{        temperature}\OperatorTok{=}\FloatTok{0.15}\NormalTok{,}
-\NormalTok{        top\_k}\OperatorTok{=}\DecValTok{50}\NormalTok{,}
-\NormalTok{        top\_p}\OperatorTok{=}\FloatTok{0.95}\NormalTok{,}
-\NormalTok{        do\_sample}\OperatorTok{=}\VariableTok{True}
-\NormalTok{    )}
-
-    \KeywordTok{def}\NormalTok{ extract\_response(decoded\_text):}
-        \ControlFlowTok{return}\NormalTok{ decoded\_text.rsplit(}\StringTok{\textquotesingle{}model}\CharTok{\textbackslash{}n}\StringTok{\textquotesingle{}}\NormalTok{, }\DecValTok{1}\NormalTok{)[}\OperatorTok{{-}}\DecValTok{1}\NormalTok{][:}\OperatorTok{{-}}\DecValTok{2}\NormalTok{]}
-
-\NormalTok{    responses }\OperatorTok{=}\NormalTok{ [extract\_response(tokenizer.decode(output, skip\_special\_tokens}\OperatorTok{=}\VariableTok{True}\NormalTok{)) }\ControlFlowTok{for}\NormalTok{ output }\KeywordTok{in}\NormalTok{ outputs]}
-    \ControlFlowTok{return}\NormalTok{ responses}
-
-\CommentTok{\# DO NOT CHANGE!}
-\KeywordTok{def}\NormalTok{ fraction\_responses\_with\_because\_of(responses):}
-    \CommentTok{"""}
-\CommentTok{    Calculates the fraction of responses that start with a specific match string.}
-
-\CommentTok{    Args:}
-\CommentTok{    responses (list[str]): A list of model{-}generated responses.}
-
-\CommentTok{    Returns:}
-\CommentTok{    float: The fraction of responses that start with the phrase "The sky appears blue because of".}
-\CommentTok{    """}
-
-\NormalTok{    match\_str }\OperatorTok{=} \StringTok{"The sky appears blue because of"}
-\NormalTok{    match\_count }\OperatorTok{=} \DecValTok{0}
-
-    \ControlFlowTok{for}\NormalTok{ response }\KeywordTok{in}\NormalTok{ responses:}
-        \ControlFlowTok{if}\NormalTok{ response.startswith(match\_str):}
-\NormalTok{            match\_count }\OperatorTok{+=} \DecValTok{1}
-
-    \ControlFlowTok{return}\NormalTok{ match\_count }\OperatorTok{/} \BuiltInTok{len}\NormalTok{(responses)}
-
-
-\ControlFlowTok{if} \VariableTok{\_\_name\_\_} \OperatorTok{==} \StringTok{\textquotesingle{}\_\_main\_\_\textquotesingle{}}\NormalTok{:}
-\NormalTok{    model }\OperatorTok{=}\NormalTok{ AutoModelForCausalLM.from\_pretrained(}
-        \StringTok{"google/gemma{-}2{-}2b{-}it"}\NormalTok{,}
-\NormalTok{        torch\_dtype}\OperatorTok{=}\NormalTok{torch.bfloat16,}
-\NormalTok{        device\_map}\OperatorTok{=}\StringTok{\textquotesingle{}auto\textquotesingle{}}
-\NormalTok{    )}
-\NormalTok{    tokenizer }\OperatorTok{=}\NormalTok{ AutoTokenizer.from\_pretrained(}\StringTok{"google/gemma{-}2{-}2b{-}it"}\NormalTok{)}
-
-\NormalTok{    sample\_prompt }\OperatorTok{=} \StringTok{"How is it going?"}
-\NormalTok{    sample\_completion }\OperatorTok{=} \StringTok{"As an AI, I don\textquotesingle{}t have feelings or experiences like humans do, so I don\textquotesingle{}t have a }\CharTok{\textbackslash{}"}\StringTok{going}\CharTok{\textbackslash{}"}\StringTok{ in the same way."}
-
-\NormalTok{    sample\_chat }\OperatorTok{=}\NormalTok{ [}
-\NormalTok{        \{}\StringTok{"role"}\NormalTok{: }\StringTok{"user"}\NormalTok{, }\StringTok{"content"}\NormalTok{: sample\_prompt\},}
-\NormalTok{        \{}\StringTok{"role"}\NormalTok{: }\StringTok{"assistant"}\NormalTok{, }\StringTok{"content"}\NormalTok{: sample\_completion\}}
-\NormalTok{    ]}
-
-\NormalTok{    sample\_chat\_tokens }\OperatorTok{=}\NormalTok{ tokenizer.apply\_chat\_template(sample\_chat, tokenize}\OperatorTok{=}\VariableTok{False}\NormalTok{, add\_generation\_prompt}\OperatorTok{=}\VariableTok{False}\NormalTok{)}
-\NormalTok{    sample\_chat\_token\_ids }\OperatorTok{=}\NormalTok{ tokenizer.apply\_chat\_template(sample\_chat, tokenize}\OperatorTok{=}\VariableTok{True}\NormalTok{, add\_generation\_prompt}\OperatorTok{=}\VariableTok{False}\NormalTok{)}
-
-    \BuiltInTok{print}\NormalTok{(}\StringTok{"Chat tokens:"}\NormalTok{)}
-    \BuiltInTok{print}\NormalTok{(sample\_chat\_tokens)}
-
-    \BuiltInTok{print}\NormalTok{(}\StringTok{"Chat token IDs:"}\NormalTok{)}
-    \BuiltInTok{print}\NormalTok{(sample\_chat\_token\_ids)}
-
-\NormalTok{    response\_start\_idx, response\_end\_idx }\OperatorTok{=}\NormalTok{ get\_response\_idxs(tokenizer, sample\_chat\_token\_ids)}
-    \BuiltInTok{print}\NormalTok{(}\SpecialStringTok{f"Response tokens index in sample\_chat\_tokens range from }\SpecialCharTok{\{}\NormalTok{response\_start\_idx}\SpecialCharTok{\}}\SpecialStringTok{ to }\SpecialCharTok{\{}\NormalTok{response\_end\_idx}\SpecialCharTok{\}}\SpecialStringTok{."}\NormalTok{)}
-
-\NormalTok{    first\_response\_token\_id }\OperatorTok{=}\NormalTok{ sample\_chat\_token\_ids[response\_start\_idx]}
-\NormalTok{    last\_response\_token\_id }\OperatorTok{=}\NormalTok{ sample\_chat\_token\_ids[response\_end\_idx]}
-    \BuiltInTok{print}\NormalTok{(}\SpecialStringTok{f\textquotesingle{}First response token is "}\SpecialCharTok{\{}\NormalTok{tokenizer}\SpecialCharTok{.}\NormalTok{decode(first\_response\_token\_id)}\SpecialCharTok{\}}\SpecialStringTok{" with ID }\SpecialCharTok{\{}\NormalTok{first\_response\_token\_id}\SpecialCharTok{\}}\SpecialStringTok{\textquotesingle{}}\NormalTok{)}
-    \BuiltInTok{print}\NormalTok{(}\SpecialStringTok{f\textquotesingle{}Last response token is "}\SpecialCharTok{\{}\NormalTok{tokenizer}\SpecialCharTok{.}\NormalTok{decode(last\_response\_token\_id)}\SpecialCharTok{\}}\SpecialStringTok{" with ID }\SpecialCharTok{\{}\NormalTok{last\_response\_token\_id}\SpecialCharTok{\}}\SpecialStringTok{\textquotesingle{}}\NormalTok{)}
-
-    \CommentTok{\# Make sure your code passes this test!}
-    \ControlFlowTok{assert}\NormalTok{ tokenizer.decode(first\_response\_token\_id) }\OperatorTok{==} \StringTok{"As"} \KeywordTok{and}\NormalTok{ tokenizer.decode(last\_response\_token\_id) }\OperatorTok{==} \StringTok{"."}
-
-    \ControlFlowTok{with}\NormalTok{ torch.no\_grad():}
-\NormalTok{        next\_token\_probs }\OperatorTok{=}\NormalTok{ get\_response\_next\_token\_probs(tokenizer, model, sample\_chat\_token\_ids)}
-    \BuiltInTok{print}\NormalTok{(}\SpecialStringTok{f\textquotesingle{}Next token probabilities: }\SpecialCharTok{\{}\NormalTok{next\_token\_probs}\SpecialCharTok{\}}\SpecialStringTok{\textquotesingle{}}\NormalTok{)}
-
-    \CommentTok{\# Make sure your code passes this test!}
-    \ControlFlowTok{assert}\NormalTok{ next\_token\_probs.mean() }\OperatorTok{\textgreater{}} \FloatTok{0.7}
-
-\NormalTok{    train\_model }\OperatorTok{=}\NormalTok{ AutoModelForCausalLM.from\_pretrained(}
-        \StringTok{"google/gemma{-}2{-}2b{-}it"}\NormalTok{,}
-\NormalTok{        torch\_dtype}\OperatorTok{=}\NormalTok{torch.bfloat16,}
-\NormalTok{        device\_map}\OperatorTok{=}\StringTok{\textquotesingle{}auto\textquotesingle{}}
-\NormalTok{    )}
-\NormalTok{    lora\_config }\OperatorTok{=}\NormalTok{ LoraConfig()}
-\NormalTok{    train\_model }\OperatorTok{=}\NormalTok{ get\_peft\_model(train\_model, lora\_config)}
-\NormalTok{    train\_model.train()}
-
-\NormalTok{    ref\_model }\OperatorTok{=}\NormalTok{ model}
-\NormalTok{    ref\_model.train()}
-    \BuiltInTok{print}\NormalTok{(}\StringTok{\textquotesingle{}Loaded models!\textquotesingle{}}\NormalTok{)}
-
-    \CommentTok{\# The model\textquotesingle{}s response to the prompt usually includes the words "due to" {-} we want to change that to "because of" using DPO!}
-\NormalTok{    prompt }\OperatorTok{=} \StringTok{"Explain why the sky is blue in one sentence."}
-\NormalTok{    preferred\_completion }\OperatorTok{=} \StringTok{"The sky appears blue because of"}
-\NormalTok{    nonpreferred\_completion }\OperatorTok{=} \StringTok{"The sky appears blue due to"}
-
-\NormalTok{    preferred\_chat }\OperatorTok{=}\NormalTok{ [}
-\NormalTok{        \{}\StringTok{"role"}\NormalTok{: }\StringTok{"user"}\NormalTok{, }\StringTok{"content"}\NormalTok{: prompt\},}
-\NormalTok{        \{}\StringTok{"role"}\NormalTok{: }\StringTok{"assistant"}\NormalTok{, }\StringTok{"content"}\NormalTok{: preferred\_completion\}}
-\NormalTok{    ]}
-
-\NormalTok{    nonpreferred\_chat }\OperatorTok{=}\NormalTok{ [}
-\NormalTok{        \{}\StringTok{"role"}\NormalTok{: }\StringTok{"user"}\NormalTok{, }\StringTok{"content"}\NormalTok{: prompt\},}
-\NormalTok{        \{}\StringTok{"role"}\NormalTok{: }\StringTok{"assistant"}\NormalTok{, }\StringTok{"content"}\NormalTok{: nonpreferred\_completion\}}
-\NormalTok{    ]}
-
-\NormalTok{    preferred\_chat\_ids }\OperatorTok{=}\NormalTok{ tokenizer.apply\_chat\_template(preferred\_chat, tokenize}\OperatorTok{=}\VariableTok{True}\NormalTok{, add\_generation\_prompt}\OperatorTok{=}\VariableTok{False}\NormalTok{)}
-\NormalTok{    nonpreferred\_chat\_ids }\OperatorTok{=}\NormalTok{ tokenizer.apply\_chat\_template(nonpreferred\_chat, tokenize}\OperatorTok{=}\VariableTok{True}\NormalTok{, add\_generation\_prompt}\OperatorTok{=}\VariableTok{False}\NormalTok{)}
-
-\NormalTok{    preferred\_train\_probs }\OperatorTok{=}\NormalTok{ get\_response\_next\_token\_probs(tokenizer, train\_model, preferred\_chat\_ids)}
-\NormalTok{    nonpreferred\_train\_probs }\OperatorTok{=}\NormalTok{ get\_response\_next\_token\_probs(tokenizer, train\_model, nonpreferred\_chat\_ids)}
-
-    \CommentTok{\# Gradients are not needed for the reference model since we will not be optimizing with respect to it}
-    \ControlFlowTok{with}\NormalTok{ torch.no\_grad():}
-\NormalTok{        preferred\_ref\_probs }\OperatorTok{=}\NormalTok{ get\_response\_next\_token\_probs(tokenizer, ref\_model, preferred\_chat\_ids)}
-\NormalTok{        nonpreferred\_ref\_probs }\OperatorTok{=}\NormalTok{ get\_response\_next\_token\_probs(tokenizer, ref\_model, nonpreferred\_chat\_ids)}
-
-\NormalTok{    your\_favorite\_beta }\OperatorTok{=} \FloatTok{1.0} \CommentTok{\# Feel free to play with beta here. Does anything change?}
-\NormalTok{    dpo\_obj }\OperatorTok{=}\NormalTok{ compute\_dpo\_objective(preferred\_train\_probs, nonpreferred\_train\_probs, preferred\_ref\_probs, nonpreferred\_ref\_probs, beta}\OperatorTok{=}\NormalTok{your\_favorite\_beta)}
-    \BuiltInTok{print}\NormalTok{(dpo\_obj)}
-
-\NormalTok{    prior\_responses }\OperatorTok{=}\NormalTok{ sample\_model(tokenizer, train\_model, prompt)}
-    \BuiltInTok{print}\NormalTok{(}\StringTok{\textquotesingle{}Sampled responses before fine{-}tuning:}\CharTok{\textbackslash{}n}\StringTok{\textquotesingle{}} \OperatorTok{+} \StringTok{\textquotesingle{}}\CharTok{\textbackslash{}n}\StringTok{\textquotesingle{}}\NormalTok{.join(prior\_responses[:}\DecValTok{10}\NormalTok{]))}
-    \BuiltInTok{print}\NormalTok{(}\SpecialStringTok{f\textquotesingle{}Fraction responses with because of: }\SpecialCharTok{\{}\NormalTok{fraction\_responses\_with\_because\_of(prior\_responses)}\SpecialCharTok{\}}\SpecialStringTok{\textquotesingle{}}\NormalTok{) }\CommentTok{\# should start close to 0}
-
-    \CommentTok{\# DO NOT CHANGE THESE VALUES}
-\NormalTok{    num\_gradient\_steps }\OperatorTok{=} \DecValTok{150} 
-\NormalTok{    learning\_rate }\OperatorTok{=} \FloatTok{2e{-}6}
-\NormalTok{    beta }\OperatorTok{=} \DecValTok{1}
-\NormalTok{    optimizer }\OperatorTok{=}\NormalTok{ torch.optim.Adam(train\_model.parameters(), lr}\OperatorTok{=}\NormalTok{learning\_rate)}
-
-\NormalTok{    finetune(tokenizer, optimizer, train\_model, ref\_model, preferred\_chat\_ids, nonpreferred\_chat\_ids, num\_gradient\_steps, beta)}
-
-    \CommentTok{\# Save GPU memory}
-    \KeywordTok{del}\NormalTok{ ref\_model}
-    \KeywordTok{del}\NormalTok{ model}
-
-\NormalTok{    post\_tuning\_responses }\OperatorTok{=}\NormalTok{ sample\_model(tokenizer, train\_model, prompt)}
-    \BuiltInTok{print}\NormalTok{(}\StringTok{\textquotesingle{}Sampled responses after fine{-}tuning:}\CharTok{\textbackslash{}n}\StringTok{\textquotesingle{}} \OperatorTok{+} \StringTok{\textquotesingle{}}\CharTok{\textbackslash{}n}\StringTok{\textquotesingle{}}\NormalTok{.join(post\_tuning\_responses[:}\DecValTok{10}\NormalTok{]))}
-    \BuiltInTok{print}\NormalTok{(}\SpecialStringTok{f\textquotesingle{}Fraction responses with because of: }\SpecialCharTok{\{}\NormalTok{fraction\_responses\_with\_because\_of(post\_tuning\_responses)}\SpecialCharTok{\}}\SpecialStringTok{\textquotesingle{}}\NormalTok{) }\CommentTok{\# should be more than half}
-\end{Highlighting}
-\end{Shaded}
-
-\end{tcolorbox}
-
-Through our exploration of human preference models, we will ground
-ourselves in building a health coaching system that can provide meal
-recommendations aligned with a user's dietary needs and preferences.
-Examples of scenarios which can benefit from a model of how humans make
-choices include:
-
-\begin{enumerate}
-\def\labelenumi{\arabic{enumi}.}
-\item
-  \textbf{Health coaching:} Humans express their preferences every time
-  they pick lunch for consumption. Humans may have several goals related
-  to nutrition, such as weight loss and improving concentration. We can
-  learn how a given individual or set of individuals prefer to eat to
-  provide personalized recommendations to help them attain their goals.
-  This chapter will use this use case to ground human preference
-  modeling in a real-life application.
-\item
-  \textbf{Social media:} Platforms have a far greater amount of content
-  than one can consume in a lifetime, yet such products must aim to
-  maximize user engagement. To accomplish this, we can learn what
-  specific things people like to see in their feeds to optimize the
-  value they gain out of their time on social media. For example, the
-  video feed social media platform
-  \href{https://www.tiktok.com/}{TikTok} has had viral adoption due to
-  its notorious ability to personalize a feed for its users based on
-  their preferences.
-\item
-  \textbf{Shopping:} Retail corporations largely aim to maximize revenue
-  by making it easy for people to make purchases. Recommendation systems
-  on online shopping platforms provide a mechanism for curating specific
-  items based on an individual's previous purchases (or even browsing
-  history) to make shoppers aware of items they may like and, therefore,
-  purchase.
-\end{enumerate}
-
-\section*{References}\label{bibliography-2}
+\section*{References}\label{bibliography-3}
 \addcontentsline{toc}{section}{References}
 
 \markright{References}
 
-\phantomsection\label{refs-2}
+\phantomsection\label{refs-3}
 \begin{CSLReferences}{1}{0}
-\bibitem[\citeproctext]{ref-bhatia2020preference}
-Bhatia, Kush, Ashwin Pananjady, Peter L. Bartlett, Anca D. Dragan, and
-Martin J. Wainwright. 2020. {``Preference Learning Along Multiple
-Criteria: A Game-Theoretic Perspective.''} \emph{Neural Information
-Processing Systems} 34 (1): 1--12.
-
-\bibitem[\citeproctext]{ref-2001.04465}
-Bobu, Andreea, Dexter R. R. Scobee, Jaime F. Fisac, S. Shankar Sastry,
-and Anca D. Dragan. 2020. {``LESS Is More: Rethinking Probabilistic
-Models of Human Behavior.''}
-\url{https://doi.org/10.1145/3319502.3374811}.
-
 \bibitem[\citeproctext]{ref-book_estimation_bock}
 Bock, Hans Georg, Thomas Carraro, Willi Jäger, Stefan Körkel, Rolf
 Rannacher, and Johannes P. Schlöder. 2015. \emph{Model Based Parameter
 Estimation: Theory and Applications}. Springer.
 \url{https://api.semanticscholar.org/CorpusID:60333071}.
-
-\bibitem[\citeproctext]{ref-bolt2009}
-Bolt, Daniel M., and James A. Wollack. 2009. {``Application of a
-Multidimensional Nested Logit Model to Multiple-Choice Test Items.''}
-\emph{Journal of Educational Measurement} 46 (3): 181--98.
-\url{https://doi.org/10.1111/j.1745-3984.2009.00081.x}.
 
 \bibitem[\citeproctext]{ref-Liang2021}
 Bommasani, Rishi, Drew A. Hudson, Ehsan Adeli, Russ Altman, Simran
@@ -3597,21 +2512,9 @@ Arora, Sydney von Arx, Michael S. Bernstein, et al. 2021. {``On the
 Opportunities and Risks of Foundation Models.''}
 
 \bibitem[\citeproctext]{ref-bradley1952rank}
-Bradley, Ralph Allan, and Milton E Terry. 1952a. {``Rank Analysis of
+Bradley, Ralph Allan, and Milton E Terry. 1952. {``Rank Analysis of
 Incomplete Block Designs: I. The Method of Paired Comparisons.''}
 \emph{Biometrika} 39 (3/4): 324--45.
-
-\bibitem[\citeproctext]{ref-bradley-terry-model}
-Bradley, Ralph Allan, and Milton E. Terry. 1952b. {``Rank Analysis of
-Incomplete Block Designs: I. The Method of Paired Comparisons.''}
-\emph{Biometrika} 39 (3/4): 324--45.
-\url{http://www.jstor.org/stable/2334029}.
-
-\bibitem[\citeproctext]{ref-campbell2015}
-Campbell, Danny, and Seda Erdem. 2015. {``Position Bias in Best-Worst
-Scaling Surveys: A Case Study on Trust in Institutions.''}
-\emph{American Journal of Agricultural Economics} 97 (2): 526--45.
-\url{https://doi.org/10.1093/ajae/aau112}.
 
 \bibitem[\citeproctext]{ref-book_estimation_casella}
 Casella, George, and Roger L. Berger. 1990. \emph{Statistical
@@ -3628,58 +2531,22 @@ Finn, Chelsea, Pieter Abbeel, and Sergey Levine. 2017. {``Model-Agnostic
 Meta-Learning for Fast Adaptation of Deep Networks.''} In
 \emph{International Conference on Machine Learning}, 1126--35. PMLR.
 
-\bibitem[\citeproctext]{ref-idealpoints}
-Greiner, James. 2005. {``Ideal Points.''} Harvard IQSS Blog.
-\url{https://blogs.iq.harvard.edu/ideal_points_1}.
-
 \bibitem[\citeproctext]{ref-haarnoja2018soft}
 Haarnoja, Tuomas, Aurick Zhou, Pieter Abbeel, and Sergey Levine. 2018.
 {``Soft Actor-Critic: Off-Policy Maximum Entropy Deep Reinforcement
 Learning with a Stochastic Actor.''} In \emph{International Conference
 on Machine Learning}, 1861--70. PMLR.
 
-\bibitem[\citeproctext]{ref-harpe2015}
-Harpe, Spencer E. 2015. {``How to Analyze Likert and Other Rating Scale
-Data.''} \emph{Currents in Pharmacy Teaching and Learning} 7 (5):
-836--50. \url{http://dx.doi.org/10.1016/j.cptl.2015.08.001}.
-
 \bibitem[\citeproctext]{ref-hejna2023few}
 Hejna III, Donald Joseph, and Dorsa Sadigh. 2023. {``Few-Shot Preference
 Learning for Human-in-the-Loop Rl.''} In \emph{Conference on Robot
 Learning}, 2014--25. PMLR.
-
-\bibitem[\citeproctext]{ref-huber1976ideal}
-Huber, Joel. 1976. {``Ideal Point Models of Preference.''} In
-\emph{Advances in Consumer Research}, 03:138--42. Association for
-Consumer Research.
-
-\bibitem[\citeproctext]{ref-ideal_point}
-Jamieson, Kevin G, and Robert Nowak. 2011. {``Active Ranking Using
-Pairwise Comparisons.''} In \emph{Advances in Neural Information
-Processing Systems}, edited by J. Shawe-Taylor, R. Zemel, P. Bartlett,
-F. Pereira, and K. Q. Weinberger. Vol. 24. Curran Associates, Inc.
-\url{https://proceedings.neurips.cc/paper_files/paper/2011/file/6c14da109e294d1e8155be8aa4b1ce8e-Paper.pdf}.
-
-\bibitem[\citeproctext]{ref-keisler2003common}
-Keisler, H. Jerome, and Byung Soo Lee. 2003. {``Common Assumption of
-Rationality.''} \emph{Economic Theory Journal} 30 (2): 123--45.
 
 \bibitem[\citeproctext]{ref-lee2021pebble}
 Lee, Kimin, Laura Smith, and Pieter Abbeel. 2021. {``Pebble:
 Feedback-Efficient Interactive Reinforcement Learning via Relabeling
 Experience and Unsupervised Pre-Training.''} \emph{arXiv Preprint
 arXiv:2106.05091}.
-
-\bibitem[\citeproctext]{ref-Luce1977}
-Luce, R.Duncan. 1977. {``The Choice Axiom After Twenty Years.''}
-\emph{Journal of Mathematical Psychology} 15 (3): 215--33.
-\url{https://doi.org/10.1016/0022-2496(77)90032-3}.
-
-\bibitem[\citeproctext]{ref-miljkovic2005rational}
-Miljkovic, Dragan. 2005. {``Rational Choice and Irrational Individuals
-or Simply an Irrational Theory: A Critical Review of the Hypothesis of
-Perfect Rationality.''} \emph{The Journal of Socio-Economics} 34 (5):
-621--34. \url{https://doi.org/10.1016/j.socec.2003.12.031}.
 
 \bibitem[\citeproctext]{ref-myers2022learning}
 Myers, Vivek, Erdem Biyik, Nima Anari, and Dorsa Sadigh. 2022.
@@ -3697,38 +2564,16 @@ Herzog, Alex Irpan, Alexander Khazatsky, et al. 2023. {``Open
 x-Embodiment: Robotic Learning Datasets and RT-x Models.''} \emph{arXiv
 Preprint arXiv:2310.08864}.
 
-\bibitem[\citeproctext]{ref-plackett_luce}
-Plackett, R. L. 1975. {``The Analysis of Permutations.''} \emph{Journal
-of the Royal Statistical Society. Series C (Applied Statistics)} 24 (2):
-193--202. \url{http://www.jstor.org/stable/2346567}.
-
 \bibitem[\citeproctext]{ref-rafailov2023direct}
 Rafailov, Rafael, Archit Sharma, Eric Mitchell, Stefano Ermon,
 Christopher D. Manning, and Chelsea Finn. 2023. {``Direct Preference
 Optimization: Your Language Model Is Secretly a Reward Model.''}
 \url{https://arxiv.org/abs/2305.18290}.
 
-\bibitem[\citeproctext]{ref-ragain2019}
-Ragain, Stephen, and Johan Ugander. 2019. {``Choosing to Rank.''}
-\emph{arXiv Preprint arXiv:1809.05139}.
-\url{https://arxiv.org/abs/1809.05139}.
-
 \bibitem[\citeproctext]{ref-gradient_descent}
 Ruder, Sebastian. 2016. {``An Overview of Gradient Descent Optimization
 Algorithms.''} \emph{ArXiv} abs/1609.04747.
 \url{https://api.semanticscholar.org/CorpusID:17485266}.
-
-\bibitem[\citeproctext]{ref-simon1972theories}
-Simon, Herbert A. 1972. {``Theories of Bounded Rationality.''} In
-\emph{Decision and Organization}, edited by C. B. McGuire and Roy
-Radner, 161--76. North-Holland Publishing Company.
-
-\bibitem[\citeproctext]{ref-tatli2022distancepreferences}
-Tatli, Gokcan, Rob Nowak, and Ramya Korlakai Vinayak. 2022. {``Learning
-Preference Distributions from Distance Measurements.''} In \emph{2022
-58th Annual Allerton Conference on Communication, Control, and Computing
-(Allerton)}, 1--8.
-\url{https://doi.org/10.1109/Allerton49937.2022.9929404}.
 
 \bibitem[\citeproctext]{ref-2307.09288}
 Touvron, Hugo et al. 2023. {``Llama 2: Open Foundation and Fine-Tuned
@@ -7812,7 +6657,7 @@ representation learning for remarkably adaptable and nuanced robotic
 task performance. These models represent significant leaps in robotics
 while opening new frontiers for future research and applications.
 
-\section{Exercises}\label{exercises-1}
+\section{Exercises}\label{exercises}
 
 \subsection*{Question 1: Uncertainty Quantification in Preference
 Learning (40
@@ -9472,12 +8317,12 @@ slice sampling for posterior inference.
 
 \end{tcolorbox}
 
-\section*{References}\label{bibliography-3}
+\section*{References}\label{bibliography-4}
 \addcontentsline{toc}{section}{References}
 
 \markright{References}
 
-\phantomsection\label{refs-3}
+\phantomsection\label{refs-4}
 \begin{CSLReferences}{1}{0}
 \bibitem[\citeproctext]{ref-unnoisy_humans}
 Amershi, Saleema, Maya Cakmak, W. Bradley Knox, and Todd Kulesza. 2014.
@@ -11507,7 +10352,7 @@ Setting \(\epsilon=1 / T\) and running our POP-BO algorithm in Alg. 1,
   \[\left.R_T=\mathcal{O}\left(T^{3 / 4}(\log T)^{3 / 4} T^{\frac{d}{\nu}\left(\frac{1}{4}+\frac{d+1}{4+2(d+1)^d / \nu}\right.}\right)\right).\]
 \end{enumerate}
 
-\section{Exercises}\label{exercises-2}
+\section{Exercises}\label{exercises-1}
 
 \subsection*{Question 1: Preferential Bayesian Optimization (30
 points)}\label{sec-question-1-preferential-bayesian-optimization-30-points}
@@ -13042,12 +11887,12 @@ while ensuring full resource utilization.
 
 \end{tcolorbox}
 
-\section*{References}\label{bibliography-4}
+\section*{References}\label{bibliography-5}
 \addcontentsline{toc}{section}{References}
 
 \markright{References}
 
-\phantomsection\label{refs-4}
+\phantomsection\label{refs-5}
 \begin{CSLReferences}{1}{0}
 \bibitem[\citeproctext]{ref-astudillo2023qeubodecisiontheoreticacquisitionfunction}
 Astudillo, Raul, Zhiyuan Jerry Lin, Eytan Bakshy, and Peter I. Frazier.
@@ -15659,12 +14504,12 @@ tool to enhance their counseling skills effectively.
 
 \section{Practice Exercises}\label{practice-exercises}
 
-\section*{References}\label{bibliography-5}
+\section*{References}\label{bibliography-6}
 \addcontentsline{toc}{section}{References}
 
 \markright{References}
 
-\phantomsection\label{refs-5}
+\phantomsection\label{refs-6}
 \begin{CSLReferences}{1}{0}
 \bibitem[\citeproctext]{ref-amodei2016concrete}
 Amodei, Dario, Chris Olah, Jacob Steinhardt, Paul Christiano, John

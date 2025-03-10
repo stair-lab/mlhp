@@ -1,0 +1,37 @@
+\begin{theindex}
+
+  \item analytic flexibility, 
+		\hyperindexformat{\seealso{p-hacking}}{232}
+  \item anonymization, 
+		\hyperindexformat{\seealso{de-identification}}{232}
+  \item APA, 
+		\hyperindexformat{\see{American Psychological Association (APA)}}{232}
+
+  \indexspace
+
+  \item blinding, \hyperindexformat{\see{masking}}{232}
+
+  \indexspace
+
+  \item CDI, 
+		\hyperindexformat{\see{Communicative Development Inventory}}{232}
+  \item Cohen's d, 
+		\hyperindexformat{\seealso{standardized mean difference (SMD)}}{232}
+
+  \indexspace
+
+  \item DAG, \hyperindexformat{\see{directed acyclic graph (DAG)}}{232}
+  \item de-identification, 
+		\hyperindexformat{\seealso{anonymization}}{232}
+
+  \indexspace
+
+  \item p-hacking, 
+		\hyperindexformat{\seealso{analytic flexibility}}{232}
+
+  \indexspace
+
+  \item standardized mean difference (SMD), 
+		\hyperindexformat{\seealso{Cohen's d}}{232}
+
+\end{theindex}

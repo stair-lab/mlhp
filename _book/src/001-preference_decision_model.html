@@ -1,0 +1,1499 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.6.33">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>2&nbsp; Models of Preferences and Decisions – Machine Learning from Human Preferences</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+/* CSS for citations */
+div.csl-bib-body { }
+div.csl-entry {
+  clear: both;
+  margin-bottom: 0em;
+}
+.hanging-indent div.csl-entry {
+  margin-left:2em;
+  text-indent:-2em;
+}
+div.csl-left-margin {
+  min-width:2em;
+  float:left;
+}
+div.csl-right-inline {
+  margin-left:2em;
+  padding-left:1em;
+}
+div.csl-indent {
+  margin-left: 2em;
+}</style>
+
+
+<script src="../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../">
+<link href="../src/002-reward_model.html" rel="next">
+<link href="../index.html" rel="prev">
+<script src="../site_libs/quarto-html/quarto.js"></script>
+<script src="../site_libs/quarto-html/popper.min.js"></script>
+<script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting-07ba0ad10f5680c660e360ac31d2f3b6.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting-dark-8b864f0777c60eecff11d75b6b2e1175.css" rel="prefetch" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<script src="../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../site_libs/bootstrap/bootstrap-fa3d1c749edcb96cd5cb7d620f3e5237.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../site_libs/bootstrap/bootstrap-dark-6f24586c8b15e78d85e3983c622e3e8a.min.css" rel="prefetch" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<script src="../site_libs/quarto-contrib/pseudocode-2.4.1/pseudocode.min.js"></script>
+<link href="../site_libs/quarto-contrib/pseudocode-2.4.1/pseudocode.min.css" rel="stylesheet">
+<script id="quarto-search-options" type="application/json">{
+  "location": "sidebar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "start",
+  "type": "textbox",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script>
+MathJax = {
+  loader: {
+    load: ['[tex]/boldsymbol']
+  },
+  tex: {
+    tags: "all",
+    inlineMath: [['$','$'], ['\\(','\\)']],
+    displayMath: [['$$','$$'], ['\\[','\\]']],
+    processEscapes: true,
+    processEnvironments: true,
+    packages: {
+      '[+]': ['boldsymbol']
+    }
+  }
+};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+</head>
+
+<body class="nav-sidebar docked">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../src/001-preference_decision_model.html"><span class="chapter-number">2</span>&nbsp; <span class="chapter-title">Models of Preferences and Decisions</span></a></li></ol></nav>
+        <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+        </a>
+      <button type="button" class="btn quarto-search-button" aria-label="Search" onclick="window.quartoOpenSearch();">
+        <i class="bi bi-search"></i>
+      </button>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation docked overflow-auto">
+    <div class="pt-lg-2 mt-2 text-left sidebar-header">
+    <div class="sidebar-title mb-0 py-0">
+      <a href="../">Machine Learning from Human Preferences</a> 
+        <div class="sidebar-tools-main tools-wide">
+    <a href="https://github.com/sangttruong/mlhp" title="Source Code" class="quarto-navigation-tool px-1" aria-label="Source Code"><i class="bi bi-github"></i></a>
+    <a href="../Machine-Learning-from-Human-Preferences.pdf" title="Download PDF" class="quarto-navigation-tool px-1" aria-label="Download PDF"><i class="bi bi-file-pdf"></i></a>
+  <a href="" class="quarto-color-scheme-toggle quarto-navigation-tool  px-1" onclick="window.quartoToggleColorScheme(); return false;" title="Toggle dark mode"><i class="bi"></i></a>
+</div>
+    </div>
+      </div>
+        <div class="mt-2 flex-shrink-0 align-items-center">
+        <div class="sidebar-search">
+        <div id="quarto-search" class="" title="Search"></div>
+        </div>
+        </div>
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">1</span>&nbsp; <span class="chapter-title">Introduction</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../src/001-preference_decision_model.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text"><span class="chapter-number">2</span>&nbsp; <span class="chapter-title">Models of Preferences and Decisions</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../src/002-reward_model.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">3</span>&nbsp; <span class="chapter-title">Reward Model</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../src/003-measure.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">4</span>&nbsp; <span class="chapter-title">Model-Based Preference Optimization</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../src/004-optim.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">5</span>&nbsp; <span class="chapter-title">Model-Free Preference Optimization</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../src/005-align.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">6</span>&nbsp; <span class="chapter-title">Human Values and AI Alignment</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../src/006-conclusion.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Acknowledgments</span></a>
+  </div>
+</li>
+    </ul>
+    </div>
+<div class="quarto-sidebar-footer"><div class="sidebar-footer-item">
+<p>license.qmd</p>
+</div></div></nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Table of contents</h2>
+   
+  <ul>
+  <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction"><span class="header-section-number">2.1</span> Introduction</a></li>
+  <li><a href="#sec-foundations" id="toc-sec-foundations" class="nav-link" data-scroll-target="#sec-foundations"><span class="header-section-number">2.2</span> Foundations of Preference Models</a>
+  <ul class="collapse">
+  <li><a href="#axiom-1-preference-models-model-choice" id="toc-axiom-1-preference-models-model-choice" class="nav-link" data-scroll-target="#axiom-1-preference-models-model-choice"><span class="header-section-number">2.2.1</span> Axiom 1: Construction of Choices Set</a></li>
+  <li><a href="#axiom-3-preference-centers-around-utility" id="toc-axiom-3-preference-centers-around-utility" class="nav-link" data-scroll-target="#axiom-3-preference-centers-around-utility"><span class="header-section-number">2.2.2</span> Axiom 2: Preference Centers around Utility</a></li>
+  <li><a href="#human-rationality" id="toc-human-rationality" class="nav-link" data-scroll-target="#human-rationality"><span class="header-section-number">2.2.3</span> Axiom 3: Rationality</a></li>
+  <li><a href="#axiom-2-preference-captures-decision-making" id="toc-axiom-2-preference-captures-decision-making" class="nav-link" data-scroll-target="#axiom-2-preference-captures-decision-making"><span class="header-section-number">2.2.4</span> Axiom 4: Preference captures decision-making</a></li>
+  </ul></li>
+  <li><a href="#sec-collect" id="toc-sec-collect" class="nav-link" data-scroll-target="#sec-collect"><span class="header-section-number">2.3</span> Methods for Collecting Preference Data</a></li>
+  <li><a href="#sec-models" id="toc-sec-models" class="nav-link" data-scroll-target="#sec-models"><span class="header-section-number">2.4</span> Models of Choices</a>
+  <ul class="collapse">
+  <li><a href="#binary-choice-model" id="toc-binary-choice-model" class="nav-link" data-scroll-target="#binary-choice-model"><span class="header-section-number">2.4.1</span> Binary Choice Model</a></li>
+  <li><a href="#bradley-terry-model" id="toc-bradley-terry-model" class="nav-link" data-scroll-target="#bradley-terry-model"><span class="header-section-number">2.4.2</span> Bradley-Terry Model</a></li>
+  <li><a href="#ordered-preferences-model" id="toc-ordered-preferences-model" class="nav-link" data-scroll-target="#ordered-preferences-model"><span class="header-section-number">2.4.3</span> Ordered Preferences Model</a></li>
+  <li><a href="#plackett-luce-model" id="toc-plackett-luce-model" class="nav-link" data-scroll-target="#plackett-luce-model"><span class="header-section-number">2.4.4</span> Plackett-Luce Model</a></li>
+  <li><a href="#ideal-point-model" id="toc-ideal-point-model" class="nav-link" data-scroll-target="#ideal-point-model"><span class="header-section-number">2.4.5</span> Ideal Point Model</a></li>
+  </ul></li>
+  <li><a href="#sec-choices-aggregation" id="toc-sec-choices-aggregation" class="nav-link" data-scroll-target="#sec-choices-aggregation"><span class="header-section-number">2.5</span> Choices Aggregation</a></li>
+  <li><a href="#inferences" id="toc-inferences" class="nav-link" data-scroll-target="#inferences"><span class="header-section-number">2.6</span> Inferences</a></li>
+  <li><a href="#bibliography" id="toc-bibliography" class="nav-link" data-scroll-target="#bibliography">References</a></li>
+  </ul>
+<div class="toc-actions"><ul><li><a href="https://github.com/sangttruong/mlhp/blob/main/src/001-preference_decision_model.qmd" class="toc-action"><i class="bi bi-github"></i>View source</a></li><li><a href="https://github.com/sangttruong/mlhp/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<div class="quarto-title-block"><div><h1 class="title"><span id="ch-human-decision-making-choice-models" class="quarto-section-identifier"><span class="chapter-number">2</span>&nbsp; <span class="chapter-title">Models of Preferences and Decisions</span></span></h1><button type="button" class="btn code-tools-button" id="quarto-code-tools-source"><i class="bi"></i> Code</button></div></div>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<iframe src="https://web.stanford.edu/class/cs329h/slides/2.1.choice_models/#/" style="width:45%; height:225px;">
+</iframe>
+<iframe src="https://web.stanford.edu/class/cs329h/slides/2.2.choice_models/#/" style="width:45%; height:225px;">
+</iframe>
+<p><a href="https://web.stanford.edu/class/cs329h/slides/2.1.choice_models/#/" class="btn btn-outline-primary" role="button">Fullscreen Part 1</a> <a href="https://web.stanford.edu/class/cs329h/slides/2.2.choice_models/#/" class="btn btn-outline-primary" role="button">Fullscreen Part 2</a></p>
+<section id="introduction" class="level2" data-number="2.1">
+<h2 data-number="2.1" class="anchored" data-anchor-id="introduction"><span class="header-section-number">2.1</span> Introduction</h2>
+<p>Human preference modeling aims to capture humans’ decision making processes in a probabilistic framework. Many problems would benefit from a quantitative perspective, enabling an understanding of how humans engage with the world. In this chapter, we will explore how one can model human preferences, including different formulations of such models, how one can optimize these models given data, and considerations one should understand to create such systems. We describe these assumptions in <a href="#sec-foundations" class="quarto-xref"><span>Section 2.2</span></a>.</p>
+</section>
+<section id="sec-foundations" class="level2" data-number="2.2">
+<h2 data-number="2.2" class="anchored" data-anchor-id="sec-foundations"><span class="header-section-number">2.2</span> Foundations of Preference Models</h2>
+<!--
+An alternative framework we will explore is ranking, in which we can model an ordering of given choices from most to least desirable. It is possible that there is an infinite set of options; in this case, our model will have to reason about a discretized set of options and may fail to capture the full space of possibilities a human would choose from in the real world.
+-->
+<section id="axiom-1-preference-models-model-choice" class="level3" data-number="2.2.1">
+<h3 data-number="2.2.1" class="anchored" data-anchor-id="axiom-1-preference-models-model-choice"><span class="header-section-number">2.2.1</span> Axiom 1: Construction of Choices Set</h3>
+<p>Human preference models model the preferred choices amongst a set of options. For example, this could be modeling which meal from a set of options a person will most likely choose. Preference models must enumerate the set of all possible choices included in a human decision. As such, we must ensure that the choices we enumerate capture the entire domain (collectively exhaustive) but are distinct (mutually exclusive) choices. A discrete set of choices is a constraint we canonically impose to ensure we can tractably model preferences and aptly estimate the parameters of preference models. We assume that if a new option is added to the choice set, the relative probabilities of choosing between the original options remain unchanged. This is known as Independence of Irrelevant Alternatives (IIA) property from Luce’s axiom of choices <span class="citation" data-cites="Luce1977">(<a href="#ref-Luce1977" role="doc-biblioref">Luce 1977</a>)</span>.</p>
+</section>
+<section id="axiom-3-preference-centers-around-utility" class="level3" data-number="2.2.2">
+<h3 data-number="2.2.2" class="anchored" data-anchor-id="axiom-3-preference-centers-around-utility"><span class="header-section-number">2.2.2</span> Axiom 2: Preference Centers around Utility</h3>
+<p>Human preference models are centered around the notion of utility, a scalar quantity representing the benefit or value an individual attains from selecting a given choice. We assume that the underlying utility mechanism of a human preference model captures the final decision output from a human. We use the notation <span class="math inline">\(u_{i,j}\)</span> as the utility of person <span class="math inline">\(i\)</span> choosing item <span class="math inline">\(j\)</span>. The utility is a random variable, decomposing into true utility <span class="math inline">\(u_{i,j}^*\)</span> and a random noise <span class="math inline">\(\epsilon_{i,j}\)</span>: <span class="math inline">\(u_{i,j} = u_{i,j}^* + \epsilon_{i,j}\)</span>. True utility can further be decomposed into user-specific utility <span class="math inline">\(\theta_i\)</span> and item-specific utility <span class="math inline">\(z_j\)</span>: <span class="math inline">\(u_{i,j}^* = \theta_i + z_j\)</span>. From this decomposition, it is straightforward that, for a single users, only the relative difference in utility matters to predict the choice among options and the scale of utilities is important when comparing across user.</p>
+</section>
+<section id="human-rationality" class="level3" data-number="2.2.3">
+<h3 data-number="2.2.3" class="anchored" data-anchor-id="human-rationality"><span class="header-section-number">2.2.3</span> Axiom 3: Rationality</h3>
+<p>Modeling decision-making must also take into account rationality. Rationality assumption provides a framework for predicting and modeling human behavior by outlining the principles that guide decision-making processes <span class="citation" data-cites="keisler2003common">(<a href="#ref-keisler2003common" role="doc-biblioref">Keisler and Lee 2003</a>)</span>. By incorporating different types of rationality, researchers can create more accurate and realistic models that reflect the complexities of human decision-making <span class="citation" data-cites="miljkovic2005rational simon1972theories">(<a href="#ref-miljkovic2005rational" role="doc-biblioref">Miljkovic 2005</a>; <a href="#ref-simon1972theories" role="doc-biblioref">Simon 1972</a>)</span>. Perfect rationality posits that individuals make decisions that maximize their utility, assuming they have complete information and the cognitive ability to process this information to make optimal choices <span class="citation" data-cites="miljkovic2005rational">(<a href="#ref-miljkovic2005rational" role="doc-biblioref">Miljkovic 2005</a>)</span>. Numerous studies have shown that this assumption frequently fails to describe actual human behavior, as individuals do not always act in ways that maximize their utility due to various constraints and biases <span class="citation" data-cites="miljkovic2005rational">(<a href="#ref-miljkovic2005rational" role="doc-biblioref">Miljkovic 2005</a>)</span>. Bounded rationality acknowledges that individuals operate within the limits of their information and cognitive capabilities. Decisions are made using heuristics rather than through exhaustive analysis, reflecting the practical constraints of real-world decision-making <span class="citation" data-cites="simon1972theories">(<a href="#ref-simon1972theories" role="doc-biblioref">Simon 1972</a>)</span>. Bounded rationality acknowledges that decisions are influenced by noise, resulting in probabilistic choice behavior: while individuals aim to maximize their utility, random factors can lead to deviations from perfectly rational choices <span class="citation" data-cites="miljkovic2005rational">(<a href="#ref-miljkovic2005rational" role="doc-biblioref">Miljkovic 2005</a>)</span>.</p>
+<p>Bounded rationality can be operationalized through Boltzmann rationalit. It addresses the likelihood of a human selecting an option <span class="math inline">\(o\)</span> from a set <span class="math inline">\(O\)</span>. Desirability is represented by a value function <span class="math inline">\(v : O \rightarrow \mathbb{R}^+\)</span>, with the selection probability calculated as <span class="math inline">\(P(o) = \frac{v(o)}{\sum_{o' \in O} v(o')}\)</span>. Assuming there is an underlying reward for each option <span class="math inline">\(R(o) \in \mathbb{R}\)</span> such that <span class="math inline">\(v(o) = e^{R(o)}\)</span>, we get <span class="math inline">\(P(o) = \frac{e^{R(o)}}{\sum_{\bar{o} \in \mathcal{O}} e^{R(\bar{o})}}\)</span>. Essentially, “A human will act out a trajectory with a probability proportional to the exponentiated return they receive for the trajectory.” When choices involve trajectories <span class="math inline">\(\xi \in \Xi\)</span> (sequences of actions), the reward <span class="math inline">\(R\)</span> is typically a function of a feature vector <span class="math inline">\(\phi : \Xi \rightarrow \mathbb{R}^k\)</span>, and the probability density is given by <span class="math inline">\(p(\xi) = \frac{e^{R(\phi(\xi))}}{\int_{\Xi} e^{R(\phi(\bar{\xi}))} d\bar{\xi}}\)</span>.</p>
+<p>Boltzmann rationality has the “duplicates problem,” where there is no concept of similar actions (e.g., choosing between using a car or a train for transportation, with no particular preference). The probability of making the decision is 50% for either option. However, if we now have 100 cars, under Boltzmann, we would have a 99% probability of choosing a car, which is unrealistic. To address this issue, various extensions have been proposed. One such extension is the attribute rule, which interprets options as bundles of attributes. In this rule, attributes <span class="math inline">\(X\)</span> are associated with options, and they have desirability values <span class="math inline">\(w(x)\)</span>. An attribute intensity function <span class="math inline">\(s(x, o)\)</span> indicates the degree to which an attribute is expressed in an option. The probability of choosing option <span class="math inline">\(o\)</span> is</p>
+<p><span class="math display">\[P(o) = \sum_{x \in \mathcal{X}_o} \frac{w(x)}{\sum_{\bar{x} \in \mathcal{X}_o} w(\bar{x})} \cdot \frac{s(x, o)}{\sum_{\tilde{o} \in \mathcal{O}} s(x, \bar{o})}\]</span></p>
+<p>This equation describes a two-step process where an attribute <span class="math inline">\(x \in X_O\)</span> is first chosen according to a Boltzmann-like rule and then an option <span class="math inline">\(o \in O\)</span> with that attribute is selected using another Boltzmann-like rule. This approach handles duplicates gracefully by effectively creating a two-layer hierarchy in choosing an option. Boltzmann rationality finds practical applications in various fields, particularly in reinforcement learning, where it models decision-making in uncertain environments. It also applies to trajectory selection, where the probability of a sequence of actions (trajectory) is proportional to the exponential return. These applications enhance the accuracy of models that interact with or predict human behavior, making Boltzmann Rationality a vital component of the models of interaction.</p>
+<p>We next explore a case study to deepen our understanding of rationality: Limiting Errors due to Similar Selection (LESS) <span class="citation" data-cites="2001.04465">(<a href="#ref-2001.04465" role="doc-biblioref">Bobu et al. 2020</a>)</span>. LESS takes inspiration from the attribute rule and extends it to continuous trajectories <span class="citation" data-cites="2001.04465">(<a href="#ref-2001.04465" role="doc-biblioref">Bobu et al. 2020</a>)</span>. The key insight is that instead of creating “attributes”, which group together similar discrete options, it introduces a similarity metric on the space of continuous actions, thereby creating similar groupings on trajectories. The LESS similarity metric could be defined in trajectory space, where the trajectory is some theoretical notion of all states and actions one passes through over time. However, it is instead defined on the measured feature vector <span class="math inline">\(\phi(\xi)\)</span> associated with the agent’s trajectory <span class="math inline">\(\xi\)</span>. In practice, one can never measure the exact trajectory with perfect fidelity. The feature vector will almost necessarily map in a one-to-many fashion with trajectories. Formally, let <span class="math inline">\(\phi \in \Phi\)</span> be the set of all possible feature vectors <span class="math inline">\(\xi \in \Xi\)</span> the set of all trajectories. The set of feature vectors belonging to a set of trajectories <span class="math inline">\(\Xi' \subseteq \Xi\)</span> is <span class="math inline">\(\Phi_{\Xi'}\)</span>. We begin with equation (4) and substitute our similarity metric on feature vectors of trajectories.</p>
+<p><span class="math display">\[\begin{aligned}
+    P(\xi) = \frac{e^{R(\phi(\xi))}}{\sum_{\bar{\phi} \in \Phi_{\Xi}} e^{R(\hat{\phi})}} \cdot \frac{s(\phi(\xi), \bar{\xi})}{\sum_{\hat{\xi} \in \Xi} s(\phi(\xi), \bar{\xi})}
+\end{aligned}\]</span></p>
+<p>The probability of choosing trajectory <span class="math inline">\(\xi\)</span> is proportional to the exponentiated reward for the agent’s measured trajectory <span class="math inline">\(\phi(\xi)\)</span>, normalized by the sum of all rewards over all possible measured trajectories. The second half of the product is a normalization factor based on how similar the current trajectory is to other trajectories in feature space. We can define the similarity function as an indicator function, where <span class="math inline">\(s(x, \xi) = 1\)</span> only if <span class="math inline">\(x = \phi(\xi)\)</span>. That means that multiple trajectories with the same feature vector will effectively be considered a single option. Thus, we achieve the “bundling” of trajectories, in the same way that the attribute rule bundled options under different attributes.</p>
+<p>However, setting the similarity metric as an indicator function isn’t sufficiently flexible. We want a proper metric that acts more as a continuous distance over the feature space. We instead define <span class="math inline">\(s\)</span> to be a soft similarity metric <span class="math inline">\(s : \Phi \times \Xi \rightarrow \mathbb{R}^+\)</span> with the following properties:</p>
+<ol type="1">
+<li><p><span class="math inline">\(s(\phi(\xi), \xi) = \max_{x \in \phi, \bar{\xi} \in \Xi} s(x, \hat{\xi}) \forall (\xi \in \Xi)\)</span></p></li>
+<li><p>Symmetric: <span class="math inline">\(s(\phi(\xi), \bar{\xi}) = s(\phi(\bar{\xi}), \xi)\)</span></p></li>
+<li><p>Positive Semidefinite: <span class="math inline">\(s(x, \xi) \geq 0\)</span></p></li>
+</ol>
+<p>Using this redefined similarity metric <span class="math inline">\(s\)</span>, we extend (5) to be a probability density on the continuous trajectory space <span class="math inline">\(\mathcal{E}\)</span>, as in (3).</p>
+<p><span class="math display">\[p(\hat{\xi}) = \frac{\frac{e^{R(\phi(\xi))}}{\int_{\Xi} s(\phi(\xi), \bar{\xi}) d\bar{\xi}}}{\int_{\Xi}\frac{e^{R(\phi(\hat{\xi}))}}{\int_{\Xi} s(\phi(\hat{\xi}), \bar{\xi}) d\bar{\xi}}d\hat{\xi}} \propto \frac{e^{R(\phi(\hat{\xi}))}}{\int_{\Xi} s(\phi(\xi), \bar{\xi}) d\bar{\xi}}\]</span></p>
+<p>Under this formulation, the likelihood of selecting a trajectory is inversely proportional to its feature-space similarity with other trajectories. This de-weights similar trajectories, which is the desired effect for our LESS model of human decision-making. This means, though, that the “trajectory bundle” of similar trajectories still has a reasonable probability of being chosen.</p>
+</section>
+<section id="axiom-2-preference-captures-decision-making" class="level3" data-number="2.2.4">
+<h3 data-number="2.2.4" class="anchored" data-anchor-id="axiom-2-preference-captures-decision-making"><span class="header-section-number">2.2.4</span> Axiom 4: Preference captures decision-making</h3>
+<p>Human preferences are classified into two categories: revealed preferences and stated preferences.</p>
+<p>Revealed preferences are those one can observe retroactively from existing data. The implicit decision-making knowledge can be captured via learnable parameters and their usage in models which represent relationships between input decision attributes that may have little human interpretability, but enable powerful models of human preference. For health coaching, we may have information about which foods an individual has chosen previously in different contexts, allowing us to build a model from their decisions. Such data may be easier to acquire and can reflect real-world outcomes (since they are, at least theoretically, inherently based on human preferences). However, if we fail to capture sufficient context in such data, human preference models may not sufficiently capture human preferences.</p>
+<p>Stated preferences are those individuals explicitly indicate in potentially experimental conditions. The explicit knowledge may be leveraged by including inductive biases during modeling (for example, the context used in a model) which are reasonable assumptions for how a human would consider a set of options.This may include controlled experiments or studies. This may be harder to obtain and somewhat biased, as they can be hypothetical or only accurately reflect a piece of the overall context of a decision. However, they enable greater control of the decision-making process.</p>
+</section>
+</section>
+<section id="sec-collect" class="level2" data-number="2.3">
+<h2 data-number="2.3" class="anchored" data-anchor-id="sec-collect"><span class="header-section-number">2.3</span> Methods for Collecting Preference Data</h2>
+<p>Next, we explore various mechanisms by which humans can express their preferences, including pairwise sampling, rank-order sampling, rating-scale sampling, best-worst scaling, and multiple-choice samples. In <em>pairwise sampling</em>, participants compare two options to determine which is preferred. One of the major advantage of this method is low cognitive demand for rater. Its disavantage is the limited amount of information content elicited by a sample. Next, we will see that we can trading cognitive demand for rater to elicit more nuance preference information. For example, <em>Rank-order sampling</em> captures human preferences by having participants rank items from most to least preferred. Used in voting, market research, and psychology, it provides rich preference data but is more complex and cognitively demanding than pairwise comparisons, especially for large item sets. Participants may also rank inconsistently <span class="citation" data-cites="ragain2019">(<a href="#ref-ragain2019" role="doc-biblioref">Ragain and Ugander 2019</a>)</span>.</p>
+<p><em>Rating-scale sampling</em>, such as the Likert scale, is a method in which participants rate items on a fixed-point scale (e.g., 1 to 5, “Strongly Disagree” to “Strongly Agree”) to measure levels of preference towards items <span class="citation" data-cites="harpe2015">(<a href="#ref-harpe2015" role="doc-biblioref">Harpe 2015</a>)</span>. Participants can also mark a point on a continuous rating scale to indicate their preference or attitude. Commonly used in surveys, product reviews, and psychological assessments, this method provides a more nuanced measure than discrete scales. Rating-scale sampling is simple for participants to understand and use, provides rich data on the intensity of preferences, and is flexible enough for various measurements (e.g., agreement, satisfaction) <span class="citation" data-cites="harpe2015">(<a href="#ref-harpe2015" role="doc-biblioref">Harpe 2015</a>)</span>. However, rating-scale sampling methods also have limitations. Ratings can be influenced by personal biases and interpretations of scales, leading to subjectivity. There is a central tendency bias, where participants may avoid extreme ratings, resulting in clustering responses around the middle. Different participants might interpret scale points differently, and fixed-point scales may not capture the full nuance of participants’ preferences or attitudes <span class="citation" data-cites="harpe2015">(<a href="#ref-harpe2015" role="doc-biblioref">Harpe 2015</a>)</span>.</p>
+<p><em>In Best-worst scaling</em> (BWS), participants are presented with items and asked to identify the most and least preferred options. The primary objective of BWS is to discern the relative importance or preference of items, making it widely applicable in various fields such as market research, health economics, and social sciences <span class="citation" data-cites="campbell2015">(<a href="#ref-campbell2015" role="doc-biblioref">Campbell and Erdem 2015</a>)</span>. BWS provides rich data on the relative importance of items, helps clarify preferences, reduces biases found in traditional rating scales, and results in utility scores that are easy to interpret. However, BWS also has limitations, including potential scale interpretation differences among participants, and design challenges to avoid biases, such as the order effect or the context in which items are presented.</p>
+<p><em>Multiple-choice sampling</em> involve participants selecting one option from a set of alternatives. Multiple-choice sampling is simple for participants to understand and reflect on realistic decision-making scenarios where individuals choose one option from many. It is beneficial in complex choice scenarios, such as modes of transportation, where choices are not independent <span class="citation" data-cites="bolt2009">(<a href="#ref-bolt2009" role="doc-biblioref">Bolt and Wollack 2009</a>)</span>. Multiple-choice sampling often relies on simplistic assumptions such as the independence of irrelevant alternatives (IIA), which may not always hold true. This method may also fail to capture the variation in preferences among different individuals, as it typically records only the most preferred choice without accounting for the relative importance of other options.</p>
+</section>
+<section id="sec-models" class="level2" data-number="2.4">
+<h2 data-number="2.4" class="anchored" data-anchor-id="sec-models"><span class="header-section-number">2.4</span> Models of Choices</h2>
+<section id="binary-choice-model" class="level3" data-number="2.4.1">
+<h3 data-number="2.4.1" class="anchored" data-anchor-id="binary-choice-model"><span class="header-section-number">2.4.1</span> Binary Choice Model</h3>
+<p>Binary choice model is centered around one item. The model predicts, for that option, after observing user choices in the past, whether that option will be chosen or not. We use binary variable <span class="math inline">\(y \in \{0, 1\}\)</span> to represent whether that choice will be picked by the user in the next phase of selection. We denote <span class="math inline">\(P = \mathbb{P}(y = 1)\)</span>. We can formally model <span class="math inline">\(y\)</span> as a function of the utility of the positive choice: <span class="math inline">\(y = \mathbb{I}[U&gt;0]\)</span>. We explore two cases based on the noise distribution. <span class="math inline">\(\psi\)</span> is the logistic function or the standard normal cummulative distribution function if noise follows logistic distribution and the standard normal distribution, repsectively: <span class="math display">\[
+\mathbb{P}(u_{i,j} &gt; 0) = \mathbb{P}(u_{i,j}^* + \epsilon &gt; 0) = 1 - \mathbb{P}( \epsilon &lt; -u_{i,j}^*) = \psi(u_{i,j}^*).
+\]</span></p>
+</section>
+<section id="bradley-terry-model" class="level3" data-number="2.4.2">
+<h3 data-number="2.4.2" class="anchored" data-anchor-id="bradley-terry-model"><span class="header-section-number">2.4.2</span> Bradley-Terry Model</h3>
+<p>The Bradley-Terry model compares the utility of choice over all others <span class="citation" data-cites="bradley-terry-model">(<a href="#ref-bradley-terry-model" role="doc-biblioref">Bradley and Terry 1952</a>)</span> in the set of <span class="math inline">\(J\)</span> choices <span class="math inline">\(i \in \{1, 2, \dots, J\}\)</span>. Each choice can also have its unique random noise variable representing the unobserved factor, although we can also choose to have all choices’ unobserved factors follow the same distribution (e.g.&nbsp;independent and identically distributed, IID). The noise is represented as an extreme value distribution, although we can choose alternatives such as a multivariate Gaussian distribution: <span class="math inline">\(\epsilon \sim \mathcal{N}(0, \Sigma)\)</span>. If <span class="math inline">\(\Sigma\)</span> is not a diagonal matrix, we effectively model correlations in the noise across choices, enabling us to avoid the IID assumption. In the case of the extreme value distribution, we model the probability of a user preferring choice <span class="math inline">\(i\)</span>, which we denote as <span class="math inline">\(P_i = Z^{-1}\exp(u_{i,j}^*)\)</span> where <span class="math inline">\(Z = \sum_{j = 1}^{J} \exp(u_{i,j}^*)\)</span>.</p>
+</section>
+<section id="ordered-preferences-model" class="level3" data-number="2.4.3">
+<h3 data-number="2.4.3" class="anchored" data-anchor-id="ordered-preferences-model"><span class="header-section-number">2.4.3</span> Ordered Preferences Model</h3>
+<p>Previous models do not leverage information about ordering of the available options a human can choose from: all choices were treated as independent by the model. The model aims to capture how an individual chooses between them. However, in many cases, we may introduce an inductive bias based on information about the options. For example, in a study for stated preferences, a user may be able to choose from intricately dependent options such as very poor, poor, fair, good, and great. In this case, it can be useful to include this bias in our model to represent a human’s decision-making process better. Instead of comparing choices against alternatives, we can focus on a single example and use additional parameters to define classification criteria based on the utility determined by the model. Let us suppose we have a single example with attributes <span class="math inline">\(z_i\)</span>, and wish to know which of <span class="math inline">\(J\)</span> predefined options an individual will choose from. We can define <span class="math inline">\(J - 1\)</span> parameters, which act as thresholds on the utility computed by <span class="math inline">\(u_i = u_{i,j}^*\)</span> to classify the predicted choice between these options. For example, if there are 3 predefined options, we can define parameters <span class="math inline">\(a, b \in \mathbb{R}\)</span> such that</p>
+<p><span class="math display">\[
+y_i =
+\begin{cases}
+    1 &amp; u &lt; a \\
+    2 &amp; a \le u &lt; b \\
+    3 &amp; \text{else}
+\end{cases}
+\]</span></p>
+<p>By assuming the noise distribution to be either logistic or standard normal, we have <span class="math display">\[
+\begin{split}
+    \mathbb{P}(y_i = 1) &amp; = \mathbb{P}(u &lt; a) = \mathbb{P}(u_{i,j}^* + \epsilon &lt; a) = \psi(a-u_{i,j}^*) \\
+    \mathbb{P}(y_i = 2) &amp; = \mathbb{P}(a \le u &lt; b) = \mathbb{P}(a - u_{i,j}^* \le \epsilon &lt; b - u_{i,j}^*) = \psi(b-u_{i,j}^*)  - \psi(u_{i,j}^*-a) \\
+    \mathbb{P}(y_i = 3) &amp; = \mathbb{P}(u &gt; b) = \mathbb{P}(u_{i,j}^* + \epsilon &gt; b ) = \mathbb{P}( \epsilon &gt; b - u_{i,j}^*) = \psi(b-u_{i,j}^*)
+\end{split}
+\]</span></p>
+</section>
+<section id="plackett-luce-model" class="level3" data-number="2.4.4">
+<h3 data-number="2.4.4" class="anchored" data-anchor-id="plackett-luce-model"><span class="header-section-number">2.4.4</span> Plackett-Luce Model</h3>
+<p>We can model an open-ended ranking of the available options with the Plackett-Luce model, in which we jointly model the full sequence of choice ordering <span class="citation" data-cites="plackett_luce">(<a href="#ref-plackett_luce" role="doc-biblioref">Plackett 1975</a>)</span>. The general form models the joint distribution as the product of conditional probabilities, where each is conditioned on the preceding ranking terms. Given an ordering of <span class="math inline">\(J\)</span> choices <span class="math inline">\(\{y_1, \dots, y_J\}\)</span>, we factorize the joint probability into conditionals. Each conditional follows the Bradley-Terry model: <span class="math display">\[
+\mathbb{P}(y_1, \dots, y_J) = \mathbb{P}(y_1) \cdot \mathbb{P}(y_2 | y_1) \cdot \dots \cdot \mathbb{P}(y_J | y_1, y_2, \dots y_{J - 1}) = \prod_{i = 1}^J \frac{\exp(u_{i,j}^*)}{\sum_{j \ge i} \exp(u_{i,j}^*)}
+\]</span></p>
+</section>
+<section id="ideal-point-model" class="level3" data-number="2.4.5">
+<h3 data-number="2.4.5" class="anchored" data-anchor-id="ideal-point-model"><span class="header-section-number">2.4.5</span> Ideal Point Model</h3>
+<p>The ideal point model uses distance functions to compute utility for individual-choice pairs <span class="citation" data-cites="huber1976ideal">(<a href="#ref-huber1976ideal" role="doc-biblioref">Huber 1976</a>)</span>. Given vector representation <span class="math inline">\(z_i\)</span> of choice <span class="math inline">\(i\)</span> and a vector <span class="math inline">\(v_n\)</span> representing an individual <span class="math inline">\(n\)</span>, we can use a distance function to model a stochastic utility function with the unobserved factors following a specified distribution: <span class="math inline">\(u_{n, i} = \texttt{dist}(z_i, v_n) + \epsilon_{n, i}\)</span>. We assume human preferences follow the choice with maximum utility: <span class="math inline">\(y_{n, i} = \mathbb{I}[u_{n, i} &gt; u_{n, j} \ \forall i \ne j]\)</span>. The intuition is that vectors exist in a shared <span class="math inline">\(n\)</span>-dimensional space, and as such we can use geometry to match choices whose representations are closest to that of a given individual. This model can often result in faster learning compared to non-geometric approaches <span class="citation" data-cites="ideal_point tatli2022distancepreferences">(<a href="#ref-ideal_point" role="doc-biblioref">Jamieson and Nowak 2011</a>; <a href="#ref-tatli2022distancepreferences" role="doc-biblioref">Tatli, Nowak, and Vinayak 2022</a>)</span> when equipped with a distance metric. Certain distance metrics, such as Euclidian distance or inner product, can easily be biased by the scale of vectors. A distance measure such as cosine similarity, which compensates for scale by normalizing the inner product of two vectors by the product of their magnitudes, can mitigate this bias yet may discard valuable information encoded by the length of the vectors. Beyond the distance metric alone, this model places a strong inductive bias that the individual and choice representations all share a common embedding space. In some contexts, this can be a robust bias to add to the model <span class="citation" data-cites="idealpoints">(<a href="#ref-idealpoints" role="doc-biblioref">Greiner 2005</a>)</span>, but it is a key factor one must take into account before employing such a model, and is a key design choice for modeling.</p>
+</section>
+</section>
+<section id="sec-choices-aggregation" class="level2" data-number="2.5">
+<h2 data-number="2.5" class="anchored" data-anchor-id="sec-choices-aggregation"><span class="header-section-number">2.5</span> Choices Aggregation</h2>
+<p>In many applications, human preferences must be aggregated across multiple individuals to determine a collective decision or ranking. This process is central to social choice theory, which provides a mathematical foundation for preference aggregation. Unlike individual preference modeling, which focuses on understanding how a single person makes decisions, social choice theory addresses the challenge of combining multiple preference profiles into a single, coherent outcome. One of the most widely used approaches to aggregating preferences is voting. A <strong>voting rule</strong> is a function that maps a set of individual preference rankings to a collective decision. The outcome of a vote is determined by a <strong>social choice function (SCF)</strong>, which selects a winner based on the aggregated preferences. Several voting rules exist, each with different properties:</p>
+<ul>
+<li><strong>Plurality Rule:</strong> Each voter assigns one point to their top choice, and the alternative with the most points wins.</li>
+<li><strong>Borda Count:</strong> Voters rank all alternatives, and points are assigned based on the position in each ranking.</li>
+<li><strong>Single Transferable Vote (STV):</strong> Voters rank choices, and rounds of elimination occur until a candidate has a majority.</li>
+<li><strong>Condorcet Methods:</strong> The <strong>Condorcet winner</strong> is the option that would win in all pairwise comparisons against other alternatives (if one exists).</li>
+</ul>
+<p>However, preference aggregation is not always straightforward. The <strong>Condorcet Paradox</strong> illustrates that no single alternative may be a clear winner due to cycles in majority preferences, violating transitivity. Additionally, different voting rules can yield different winners, highlighting the importance of selecting an appropriate aggregation method. A fundamental result in social choice theory is <strong>Arrow’s Impossibility Theorem</strong>, which states that when there are three or more alternatives, no voting system can simultaneously satisfy the following fairness criteria:</p>
+<ol type="1">
+<li><strong>Unanimity (Pareto efficiency):</strong> If all individuals prefer one option over another, the group ranking should reflect this.</li>
+<li><strong>Independence of Irrelevant Alternatives (IIA):</strong> The relative ranking of two options should not be influenced by a third, unrelated option.</li>
+<li><strong>Non-dictatorship:</strong> No single individual’s preference should always determine the group’s outcome.</li>
+</ol>
+<p>Arrow’s theorem suggests that every fair aggregation method must compromise on at least one of these desirable properties. Additionally, the <strong>Gibbard-Satterthwaite Theorem</strong> proves that any deterministic voting rule that selects a single winner is either <strong>dictatorial</strong> (one person always determines the result) or <strong>manipulable</strong> (voters can strategically misrepresent their preferences to achieve a better outcome). While manipulation is theoretically possible, certain voting rules, such as STV, introduce computational complexity that makes strategic voting impractical in real-world scenarios.</p>
+<p>Preference aggregation is also critical in reinforcement learning from human feedback (RLHF), where human judgments guide model training. Aggregating human preferences in RLHF faces challenges similar to traditional voting, such as inconsistencies in preferences and strategic bias. Several approaches address these challenges:</p>
+<ul>
+<li><strong>Majority Voting:</strong> Simple aggregation by selecting the most preferred response.</li>
+<li><strong>Weighted Voting:</strong> Adjusting vote weights based on expertise or trustworthiness.</li>
+<li><strong>Jury Learning:</strong> A method that integrates dissenting opinions, ensuring that minority perspectives are not entirely disregarded.</li>
+<li><strong>Social Choice in AI Alignment:</strong> Incorporating diverse human feedback to align AI behavior with a broad spectrum of human values.</li>
+</ul>
+<p>These approaches highlight the interplay between human preference modeling and machine learning, where designing aggregation mechanisms that reflect collective human values is an ongoing research challenge.</p>
+<p>While traditional social choice methods focus on aggregation, recent work in pluralistic alignment suggests alternative frameworks that preserve the diversity of human preferences rather than collapsing them into a single decision. Pluralistic AI systems aim to:</p>
+<ol type="1">
+<li><strong>Present a spectrum of reasonable responses</strong> instead of forcing a single choice.</li>
+<li><strong>Allow steering towards specific perspectives</strong> while maintaining fairness.</li>
+<li><strong>Ensure distributional pluralism</strong>, calibrating AI systems to diverse human viewpoints.</li>
+</ol>
+<p>This perspective is particularly relevant in generative AI, where models trained on aggregated preferences may fail to capture the nuances of diverse human values.</p>
+<p>Aggregating human preferences is a complex task, influenced by both mathematical constraints and strategic considerations. Voting-based methods provide well-studied mechanisms for aggregation, but they face fundamental limitations as outlined by Arrow’s and Gibbard-Satterthwaite’s theorems. Beyond traditional aggregation, emerging approaches in reinforcement learning and AI alignment seek to balance fairness, robustness, and pluralism. As machine learning systems increasingly interact with human preferences, designing aggregation frameworks that capture the richness of human decision-making remains an active and critical area of research.</p>
+</section>
+<section id="inferences" class="level2" data-number="2.6">
+<h2 data-number="2.6" class="anchored" data-anchor-id="inferences"><span class="header-section-number">2.6</span> Inferences</h2>
+<div id="5be1b2cb" class="cell" data-execution_count="2">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1"></a><span class="im">import</span> torch</span>
+<span id="cb1-2"><a href="#cb1-2"></a><span class="im">import</span> torch.nn <span class="im">as</span> nn</span>
+<span id="cb1-3"><a href="#cb1-3"></a><span class="im">import</span> torch.optim <span class="im">as</span> optim</span>
+<span id="cb1-4"><a href="#cb1-4"></a><span class="im">from</span> torch.distributions <span class="im">import</span> Bernoulli</span>
+<span id="cb1-5"><a href="#cb1-5"></a><span class="im">from</span> tqdm <span class="im">import</span> tqdm</span>
+<span id="cb1-6"><a href="#cb1-6"></a></span>
+<span id="cb1-7"><a href="#cb1-7"></a><span class="co"># Set device</span></span>
+<span id="cb1-8"><a href="#cb1-8"></a>device <span class="op">=</span> torch.device(<span class="st">"cuda"</span> <span class="cf">if</span> torch.cuda.is_available() <span class="cf">else</span> <span class="st">"cpu"</span>)</span>
+<span id="cb1-9"><a href="#cb1-9"></a></span>
+<span id="cb1-10"><a href="#cb1-10"></a><span class="co"># Number of users and items</span></span>
+<span id="cb1-11"><a href="#cb1-11"></a>num_users <span class="op">=</span> <span class="dv">50</span></span>
+<span id="cb1-12"><a href="#cb1-12"></a>num_items <span class="op">=</span> <span class="dv">100</span></span>
+<span id="cb1-13"><a href="#cb1-13"></a></span>
+<span id="cb1-14"><a href="#cb1-14"></a><span class="co"># Generate user-specific and item-specific utilities</span></span>
+<span id="cb1-15"><a href="#cb1-15"></a>theta <span class="op">=</span> torch.randn(num_users, device<span class="op">=</span>device, requires_grad<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb1-16"><a href="#cb1-16"></a>z <span class="op">=</span> torch.randn(num_items, device<span class="op">=</span>device, requires_grad<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb1-17"><a href="#cb1-17"></a></span>
+<span id="cb1-18"><a href="#cb1-18"></a><span class="co"># Generate observed choices using logistic function</span></span>
+<span id="cb1-19"><a href="#cb1-19"></a>probs <span class="op">=</span> torch.sigmoid(theta[:, <span class="va">None</span>] <span class="op">-</span> z[<span class="va">None</span>, :])</span>
+<span id="cb1-20"><a href="#cb1-20"></a>data <span class="op">=</span> Bernoulli(probs<span class="op">=</span>probs).sample()</span>
+<span id="cb1-21"><a href="#cb1-21"></a></span>
+<span id="cb1-22"><a href="#cb1-22"></a><span class="co"># Mask out a fraction of the response matrix</span></span>
+<span id="cb1-23"><a href="#cb1-23"></a>mask <span class="op">=</span> torch.rand_like(data) <span class="op">&gt;</span> <span class="fl">0.2</span>  <span class="co"># 80% observed, 20% missing</span></span>
+<span id="cb1-24"><a href="#cb1-24"></a>data_masked <span class="op">=</span> data.clone()</span>
+<span id="cb1-25"><a href="#cb1-25"></a>data_masked[<span class="op">~</span>mask] <span class="op">=</span> <span class="bu">float</span>(<span class="st">'nan'</span>)</span>
+<span id="cb1-26"><a href="#cb1-26"></a></span>
+<span id="cb1-27"><a href="#cb1-27"></a><span class="co"># Initialize parameters for EM algorithm</span></span>
+<span id="cb1-28"><a href="#cb1-28"></a>theta_est <span class="op">=</span> torch.randn(num_users, device<span class="op">=</span>device, requires_grad<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb1-29"><a href="#cb1-29"></a>z_est <span class="op">=</span> torch.randn(num_items, device<span class="op">=</span>device, requires_grad<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb1-30"><a href="#cb1-30"></a></span>
+<span id="cb1-31"><a href="#cb1-31"></a><span class="co"># Optimizer</span></span>
+<span id="cb1-32"><a href="#cb1-32"></a>optimizer <span class="op">=</span> optim.LBFGS([theta_est, z_est], lr<span class="op">=</span><span class="fl">0.1</span>, max_iter<span class="op">=</span><span class="dv">20</span>, history_size<span class="op">=</span><span class="dv">10</span>, line_search_fn<span class="op">=</span><span class="st">"strong_wolfe"</span>)</span>
+<span id="cb1-33"><a href="#cb1-33"></a></span>
+<span id="cb1-34"><a href="#cb1-34"></a><span class="kw">def</span> closure():</span>
+<span id="cb1-35"><a href="#cb1-35"></a>    optimizer.zero_grad()</span>
+<span id="cb1-36"><a href="#cb1-36"></a>    probs_est <span class="op">=</span> torch.sigmoid(theta_est[:, <span class="va">None</span>] <span class="op">-</span> z_est[<span class="va">None</span>, :])</span>
+<span id="cb1-37"><a href="#cb1-37"></a>    loss <span class="op">=</span> <span class="op">-</span>(Bernoulli(probs<span class="op">=</span>probs_est).log_prob(data) <span class="op">*</span> mask).mean()</span>
+<span id="cb1-38"><a href="#cb1-38"></a>    loss.backward()</span>
+<span id="cb1-39"><a href="#cb1-39"></a>    <span class="cf">return</span> loss</span>
+<span id="cb1-40"><a href="#cb1-40"></a></span>
+<span id="cb1-41"><a href="#cb1-41"></a><span class="co"># EM Algorithm</span></span>
+<span id="cb1-42"><a href="#cb1-42"></a>pbar <span class="op">=</span> tqdm(<span class="bu">range</span>(<span class="dv">100</span>))</span>
+<span id="cb1-43"><a href="#cb1-43"></a><span class="cf">for</span> iteration <span class="kw">in</span> pbar:</span>
+<span id="cb1-44"><a href="#cb1-44"></a>    <span class="cf">if</span> iteration <span class="op">&gt;</span> <span class="dv">0</span>:</span>
+<span id="cb1-45"><a href="#cb1-45"></a>        previous_theta <span class="op">=</span> theta_est.clone()</span>
+<span id="cb1-46"><a href="#cb1-46"></a>        previous_z <span class="op">=</span> z_est.clone()</span>
+<span id="cb1-47"><a href="#cb1-47"></a>        previous_loss <span class="op">=</span> loss.clone()</span>
+<span id="cb1-48"><a href="#cb1-48"></a>    </span>
+<span id="cb1-49"><a href="#cb1-49"></a>    loss <span class="op">=</span> optimizer.step(closure)</span>
+<span id="cb1-50"><a href="#cb1-50"></a>    </span>
+<span id="cb1-51"><a href="#cb1-51"></a>    <span class="cf">if</span> iteration <span class="op">&gt;</span> <span class="dv">0</span>:</span>
+<span id="cb1-52"><a href="#cb1-52"></a>        d_loss <span class="op">=</span> (previous_loss <span class="op">-</span> loss).item()</span>
+<span id="cb1-53"><a href="#cb1-53"></a>        d_theta <span class="op">=</span> torch.norm(previous_theta <span class="op">-</span> theta_est, p<span class="op">=</span><span class="dv">2</span>).item()</span>
+<span id="cb1-54"><a href="#cb1-54"></a>        d_z <span class="op">=</span> torch.norm(previous_z <span class="op">-</span> z_est, p<span class="op">=</span><span class="dv">2</span>).item()</span>
+<span id="cb1-55"><a href="#cb1-55"></a>        grad_norm <span class="op">=</span> torch.norm(optimizer.param_groups[<span class="dv">0</span>][<span class="st">"params"</span>][<span class="dv">0</span>].grad, p<span class="op">=</span><span class="dv">2</span>).item()</span>
+<span id="cb1-56"><a href="#cb1-56"></a>        grad_norm <span class="op">+=</span> torch.norm(optimizer.param_groups[<span class="dv">0</span>][<span class="st">"params"</span>][<span class="dv">1</span>].grad, p<span class="op">=</span><span class="dv">2</span>).item()</span>
+<span id="cb1-57"><a href="#cb1-57"></a>        pbar.set_postfix({<span class="st">"grad_norm"</span>: grad_norm, <span class="st">"d_theta"</span>: d_theta, <span class="st">"d_z"</span>: d_z, <span class="st">"d_loss"</span>: d_loss})</span>
+<span id="cb1-58"><a href="#cb1-58"></a>        <span class="cf">if</span> d_loss <span class="op">&lt;</span> <span class="fl">1e-5</span> <span class="kw">and</span> d_theta <span class="op">&lt;</span> <span class="fl">1e-5</span> <span class="kw">and</span> d_z <span class="op">&lt;</span> <span class="fl">1e-5</span> <span class="kw">and</span> grad_norm <span class="op">&lt;</span> <span class="fl">1e-5</span>:</span>
+<span id="cb1-59"><a href="#cb1-59"></a>            <span class="cf">break</span></span>
+<span id="cb1-60"><a href="#cb1-60"></a></span>
+<span id="cb1-61"><a href="#cb1-61"></a><span class="co"># Compute AUC ROC on observed and inferred data</span></span>
+<span id="cb1-62"><a href="#cb1-62"></a><span class="im">from</span> torchmetrics <span class="im">import</span> AUROC</span>
+<span id="cb1-63"><a href="#cb1-63"></a>auroc <span class="op">=</span> AUROC(task<span class="op">=</span><span class="st">"binary"</span>)</span>
+<span id="cb1-64"><a href="#cb1-64"></a>probs_final <span class="op">=</span> torch.sigmoid(theta_est[:, <span class="va">None</span>] <span class="op">-</span> z_est[<span class="va">None</span>, :])</span>
+<span id="cb1-65"><a href="#cb1-65"></a>train_probs <span class="op">=</span> probs_final[mask]</span>
+<span id="cb1-66"><a href="#cb1-66"></a>test_probs <span class="op">=</span> probs_final[<span class="op">~</span>mask]</span>
+<span id="cb1-67"><a href="#cb1-67"></a>train_labels <span class="op">=</span> data[mask]</span>
+<span id="cb1-68"><a href="#cb1-68"></a>test_labels <span class="op">=</span> data[<span class="op">~</span>mask]</span>
+<span id="cb1-69"><a href="#cb1-69"></a>auc_train <span class="op">=</span> auroc(train_probs, train_labels)</span>
+<span id="cb1-70"><a href="#cb1-70"></a>auc_test <span class="op">=</span> auroc(test_probs, test_labels)</span>
+<span id="cb1-71"><a href="#cb1-71"></a><span class="bu">print</span>(<span class="ss">f"train auc: </span><span class="sc">{</span>auc_train<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb1-72"><a href="#cb1-72"></a><span class="bu">print</span>(<span class="ss">f"test auc: </span><span class="sc">{</span>auc_test<span class="sc">}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>train auc: 0.8159288167953491
+test auc: 0.767458438873291</code></pre>
+</div>
+</div>
+
+
+<!-- -->
+
+</section>
+<section id="bibliography" class="level1 unnumbered">
+<h1 class="unnumbered">References</h1>
+<div id="refs" class="references csl-bib-body hanging-indent" data-entry-spacing="0" role="list">
+<div id="ref-2001.04465" class="csl-entry" role="listitem">
+Bobu, Andreea, Dexter R. R. Scobee, Jaime F. Fisac, S. Shankar Sastry, and Anca D. Dragan. 2020. <span>“LESS Is More: Rethinking Probabilistic Models of Human Behavior.”</span> <a href="https://doi.org/10.1145/3319502.3374811">https://doi.org/10.1145/3319502.3374811</a>.
+</div>
+<div id="ref-bolt2009" class="csl-entry" role="listitem">
+Bolt, Daniel M., and James A. Wollack. 2009. <span>“Application of a Multidimensional Nested Logit Model to Multiple-Choice Test Items.”</span> <em>Journal of Educational Measurement</em> 46 (3): 181–98. <a href="https://doi.org/10.1111/j.1745-3984.2009.00081.x">https://doi.org/10.1111/j.1745-3984.2009.00081.x</a>.
+</div>
+<div id="ref-bradley-terry-model" class="csl-entry" role="listitem">
+Bradley, Ralph Allan, and Milton E. Terry. 1952. <span>“Rank Analysis of Incomplete Block Designs: I. The Method of Paired Comparisons.”</span> <em>Biometrika</em> 39 (3/4): 324–45. <a href="http://www.jstor.org/stable/2334029">http://www.jstor.org/stable/2334029</a>.
+</div>
+<div id="ref-campbell2015" class="csl-entry" role="listitem">
+Campbell, Danny, and Seda Erdem. 2015. <span>“Position Bias in Best-Worst Scaling Surveys: A Case Study on Trust in Institutions.”</span> <em>American Journal of Agricultural Economics</em> 97 (2): 526–45. <a href="https://doi.org/10.1093/ajae/aau112">https://doi.org/10.1093/ajae/aau112</a>.
+</div>
+<div id="ref-idealpoints" class="csl-entry" role="listitem">
+Greiner, James. 2005. <span>“Ideal Points.”</span> Harvard IQSS Blog. <a href="https://blogs.iq.harvard.edu/ideal_points_1">https://blogs.iq.harvard.edu/ideal_points_1</a>.
+</div>
+<div id="ref-harpe2015" class="csl-entry" role="listitem">
+Harpe, Spencer E. 2015. <span>“How to Analyze Likert and Other Rating Scale Data.”</span> <em>Currents in Pharmacy Teaching and Learning</em> 7 (5): 836–50. <a href="http://dx.doi.org/10.1016/j.cptl.2015.08.001">http://dx.doi.org/10.1016/j.cptl.2015.08.001</a>.
+</div>
+<div id="ref-huber1976ideal" class="csl-entry" role="listitem">
+Huber, Joel. 1976. <span>“Ideal Point Models of Preference.”</span> In <em>Advances in Consumer Research</em>, 03:138–42. Association for Consumer Research.
+</div>
+<div id="ref-ideal_point" class="csl-entry" role="listitem">
+Jamieson, Kevin G, and Robert Nowak. 2011. <span>“Active Ranking Using Pairwise Comparisons.”</span> In <em>Advances in Neural Information Processing Systems</em>, edited by J. Shawe-Taylor, R. Zemel, P. Bartlett, F. Pereira, and K. Q. Weinberger. Vol. 24. Curran Associates, Inc. <a href="https://proceedings.neurips.cc/paper_files/paper/2011/file/6c14da109e294d1e8155be8aa4b1ce8e-Paper.pdf">https://proceedings.neurips.cc/paper_files/paper/2011/file/6c14da109e294d1e8155be8aa4b1ce8e-Paper.pdf</a>.
+</div>
+<div id="ref-keisler2003common" class="csl-entry" role="listitem">
+Keisler, H. Jerome, and Byung Soo Lee. 2003. <span>“Common Assumption of Rationality.”</span> <em>Economic Theory Journal</em> 30 (2): 123–45.
+</div>
+<div id="ref-Luce1977" class="csl-entry" role="listitem">
+Luce, R.Duncan. 1977. <span>“The Choice Axiom After Twenty Years.”</span> <em>Journal of Mathematical Psychology</em> 15 (3): 215–33. <a href="https://doi.org/10.1016/0022-2496(77)90032-3">https://doi.org/10.1016/0022-2496(77)90032-3</a>.
+</div>
+<div id="ref-miljkovic2005rational" class="csl-entry" role="listitem">
+Miljkovic, Dragan. 2005. <span>“Rational Choice and Irrational Individuals or Simply an Irrational Theory: A Critical Review of the Hypothesis of Perfect Rationality.”</span> <em>The Journal of Socio-Economics</em> 34 (5): 621–34. <a href="https://doi.org/10.1016/j.socec.2003.12.031">https://doi.org/10.1016/j.socec.2003.12.031</a>.
+</div>
+<div id="ref-plackett_luce" class="csl-entry" role="listitem">
+Plackett, R. L. 1975. <span>“The Analysis of Permutations.”</span> <em>Journal of the Royal Statistical Society. Series C (Applied Statistics)</em> 24 (2): 193–202. <a href="http://www.jstor.org/stable/2346567">http://www.jstor.org/stable/2346567</a>.
+</div>
+<div id="ref-ragain2019" class="csl-entry" role="listitem">
+Ragain, Stephen, and Johan Ugander. 2019. <span>“Choosing to Rank.”</span> <em>arXiv Preprint arXiv:1809.05139</em>. <a href="https://arxiv.org/abs/1809.05139">https://arxiv.org/abs/1809.05139</a>.
+</div>
+<div id="ref-simon1972theories" class="csl-entry" role="listitem">
+Simon, Herbert A. 1972. <span>“Theories of Bounded Rationality.”</span> In <em>Decision and Organization</em>, edited by C. B. McGuire and Roy Radner, 161–76. North-Holland Publishing Company.
+</div>
+<div id="ref-tatli2022distancepreferences" class="csl-entry" role="listitem">
+Tatli, Gokcan, Rob Nowak, and Ramya Korlakai Vinayak. 2022. <span>“Learning Preference Distributions from Distance Measurements.”</span> In <em>2022 58th Annual Allerton Conference on Communication, Control, and Computing (Allerton)</em>, 1–8. <a href="https://doi.org/10.1109/Allerton49937.2022.9929404">https://doi.org/10.1109/Allerton49937.2022.9929404</a>.
+</div>
+</div>
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const disableStylesheet = (stylesheets) => {
+    for (let i=0; i < stylesheets.length; i++) {
+      const stylesheet = stylesheets[i];
+      stylesheet.rel = 'prefetch';
+    }
+  }
+  const enableStylesheet = (stylesheets) => {
+    for (let i=0; i < stylesheets.length; i++) {
+      const stylesheet = stylesheets[i];
+      stylesheet.rel = 'stylesheet';
+    }
+  }
+  const manageTransitions = (selector, allowTransitions) => {
+    const els = window.document.querySelectorAll(selector);
+    for (let i=0; i < els.length; i++) {
+      const el = els[i];
+      if (allowTransitions) {
+        el.classList.remove('notransition');
+      } else {
+        el.classList.add('notransition');
+      }
+    }
+  }
+  const toggleGiscusIfUsed = (isAlternate, darkModeDefault) => {
+    const baseTheme = document.querySelector('#giscus-base-theme')?.value ?? 'light';
+    const alternateTheme = document.querySelector('#giscus-alt-theme')?.value ?? 'dark';
+    let newTheme = '';
+    if(darkModeDefault) {
+      newTheme = isAlternate ? baseTheme : alternateTheme;
+    } else {
+      newTheme = isAlternate ? alternateTheme : baseTheme;
+    }
+    const changeGiscusTheme = () => {
+      // From: https://github.com/giscus/giscus/issues/336
+      const sendMessage = (message) => {
+        const iframe = document.querySelector('iframe.giscus-frame');
+        if (!iframe) return;
+        iframe.contentWindow.postMessage({ giscus: message }, 'https://giscus.app');
+      }
+      sendMessage({
+        setConfig: {
+          theme: newTheme
+        }
+      });
+    }
+    const isGiscussLoaded = window.document.querySelector('iframe.giscus-frame') !== null;
+    if (isGiscussLoaded) {
+      changeGiscusTheme();
+    }
+  }
+  const toggleColorMode = (alternate) => {
+    // Switch the stylesheets
+    const alternateStylesheets = window.document.querySelectorAll('link.quarto-color-scheme.quarto-color-alternate');
+    manageTransitions('#quarto-margin-sidebar .nav-link', false);
+    if (alternate) {
+      enableStylesheet(alternateStylesheets);
+      for (const sheetNode of alternateStylesheets) {
+        if (sheetNode.id === "quarto-bootstrap") {
+          toggleBodyColorMode(sheetNode);
+        }
+      }
+    } else {
+      disableStylesheet(alternateStylesheets);
+      toggleBodyColorPrimary();
+    }
+    manageTransitions('#quarto-margin-sidebar .nav-link', true);
+    // Switch the toggles
+    const toggles = window.document.querySelectorAll('.quarto-color-scheme-toggle');
+    for (let i=0; i < toggles.length; i++) {
+      const toggle = toggles[i];
+      if (toggle) {
+        if (alternate) {
+          toggle.classList.add("alternate");     
+        } else {
+          toggle.classList.remove("alternate");
+        }
+      }
+    }
+    // Hack to workaround the fact that safari doesn't
+    // properly recolor the scrollbar when toggling (#1455)
+    if (navigator.userAgent.indexOf('Safari') > 0 && navigator.userAgent.indexOf('Chrome') == -1) {
+      manageTransitions("body", false);
+      window.scrollTo(0, 1);
+      setTimeout(() => {
+        window.scrollTo(0, 0);
+        manageTransitions("body", true);
+      }, 40);  
+    }
+  }
+  const isFileUrl = () => { 
+    return window.location.protocol === 'file:';
+  }
+  const hasAlternateSentinel = () => {  
+    let styleSentinel = getColorSchemeSentinel();
+    if (styleSentinel !== null) {
+      return styleSentinel === "alternate";
+    } else {
+      return false;
+    }
+  }
+  const setStyleSentinel = (alternate) => {
+    const value = alternate ? "alternate" : "default";
+    if (!isFileUrl()) {
+      window.localStorage.setItem("quarto-color-scheme", value);
+    } else {
+      localAlternateSentinel = value;
+    }
+  }
+  const getColorSchemeSentinel = () => {
+    if (!isFileUrl()) {
+      const storageValue = window.localStorage.getItem("quarto-color-scheme");
+      return storageValue != null ? storageValue : localAlternateSentinel;
+    } else {
+      return localAlternateSentinel;
+    }
+  }
+  const darkModeDefault = false;
+  let localAlternateSentinel = darkModeDefault ? 'alternate' : 'default';
+  // Dark / light mode switch
+  window.quartoToggleColorScheme = () => {
+    // Read the current dark / light value 
+    let toAlternate = !hasAlternateSentinel();
+    toggleColorMode(toAlternate);
+    setStyleSentinel(toAlternate);
+    toggleGiscusIfUsed(toAlternate, darkModeDefault);
+  };
+  // Ensure there is a toggle, if there isn't float one in the top right
+  if (window.document.querySelector('.quarto-color-scheme-toggle') === null) {
+    const a = window.document.createElement('a');
+    a.classList.add('top-right');
+    a.classList.add('quarto-color-scheme-toggle');
+    a.href = "";
+    a.onclick = function() { try { window.quartoToggleColorScheme(); } catch {} return false; };
+    const i = window.document.createElement("i");
+    i.classList.add('bi');
+    a.appendChild(i);
+    window.document.body.appendChild(a);
+  }
+  // Switch to dark mode if need be
+  if (hasAlternateSentinel()) {
+    toggleColorMode(true);
+  } else {
+    toggleColorMode(false);
+  }
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const onCopySuccess = function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  }
+  const getTextToCopy = function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+    text: getTextToCopy
+  });
+  clipboard.on('success', onCopySuccess);
+  if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+    // For code content inside modals, clipBoardJS needs to be initialized with a container option
+    // TODO: Check when it could be a function (https://github.com/zenorocha/clipboard.js/issues/860)
+    const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+      text: getTextToCopy,
+      container: window.document.getElementById('quarto-embedded-source-code-modal')
+    });
+    clipboardModal.on('success', onCopySuccess);
+  }
+  const viewSource = window.document.getElementById('quarto-view-source') ||
+                     window.document.getElementById('quarto-code-tools-source');
+  if (viewSource) {
+    const sourceUrl = viewSource.getAttribute("data-quarto-source-url");
+    viewSource.addEventListener("click", function(e) {
+      if (sourceUrl) {
+        // rstudio viewer pane
+        if (/\bcapabilities=\b/.test(window.location)) {
+          window.open(sourceUrl);
+        } else {
+          window.location.href = sourceUrl;
+        }
+      } else {
+        const modal = new bootstrap.Modal(document.getElementById('quarto-embedded-source-code-modal'));
+        modal.show();
+      }
+      return false;
+    });
+  }
+  function toggleCodeHandler(show) {
+    return function(e) {
+      const detailsSrc = window.document.querySelectorAll(".cell > details > .sourceCode");
+      for (let i=0; i<detailsSrc.length; i++) {
+        const details = detailsSrc[i].parentElement;
+        if (show) {
+          details.open = true;
+        } else {
+          details.removeAttribute("open");
+        }
+      }
+      const cellCodeDivs = window.document.querySelectorAll(".cell > .sourceCode");
+      const fromCls = show ? "hidden" : "unhidden";
+      const toCls = show ? "unhidden" : "hidden";
+      for (let i=0; i<cellCodeDivs.length; i++) {
+        const codeDiv = cellCodeDivs[i];
+        if (codeDiv.classList.contains(fromCls)) {
+          codeDiv.classList.remove(fromCls);
+          codeDiv.classList.add(toCls);
+        } 
+      }
+      return false;
+    }
+  }
+  const hideAllCode = window.document.getElementById("quarto-hide-all-code");
+  if (hideAllCode) {
+    hideAllCode.addEventListener("click", toggleCodeHandler(false));
+  }
+  const showAllCode = window.document.getElementById("quarto-show-all-code");
+  if (showAllCode) {
+    showAllCode.addEventListener("click", toggleCodeHandler(true));
+  }
+    var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+    var mailtoRegex = new RegExp(/^mailto:/);
+      var filterRegex = new RegExp('/' + window.location.host + '/');
+    var isInternal = (href) => {
+        return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+    }
+    // Inspect non-navigation links and adorn them if external
+ 	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+    for (var i=0; i<links.length; i++) {
+      const link = links[i];
+      if (!isInternal(link.href)) {
+        // undo the damage that might have been done by quarto-nav.js in the case of
+        // links that we want to consider external
+        if (link.dataset.originalHref !== undefined) {
+          link.href = link.dataset.originalHref;
+        }
+      }
+    }
+  function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+    const config = {
+      allowHTML: true,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start',
+    };
+    if (contentFn) {
+      config.content = contentFn;
+    }
+    if (onTriggerFn) {
+      config.onTrigger = onTriggerFn;
+    }
+    if (onUntriggerFn) {
+      config.onUntrigger = onUntriggerFn;
+    }
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      if (note) {
+        return note.innerHTML;
+      } else {
+        return "";
+      }
+    });
+  }
+  const xrefs = window.document.querySelectorAll('a.quarto-xref');
+  const processXRef = (id, note) => {
+    // Strip column container classes
+    const stripColumnClz = (el) => {
+      el.classList.remove("page-full", "page-columns");
+      if (el.children) {
+        for (const child of el.children) {
+          stripColumnClz(child);
+        }
+      }
+    }
+    stripColumnClz(note)
+    if (id === null || id.startsWith('sec-')) {
+      // Special case sections, only their first couple elements
+      const container = document.createElement("div");
+      if (note.children && note.children.length > 2) {
+        container.appendChild(note.children[0].cloneNode(true));
+        for (let i = 1; i < note.children.length; i++) {
+          const child = note.children[i];
+          if (child.tagName === "P" && child.innerText === "") {
+            continue;
+          } else {
+            container.appendChild(child.cloneNode(true));
+            break;
+          }
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(container);
+        }
+        return container.innerHTML
+      } else {
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        return note.innerHTML;
+      }
+    } else {
+      // Remove any anchor links if they are present
+      const anchorLink = note.querySelector('a.anchorjs-link');
+      if (anchorLink) {
+        anchorLink.remove();
+      }
+      if (window.Quarto?.typesetMath) {
+        window.Quarto.typesetMath(note);
+      }
+      // TODO in 1.5, we should make sure this works without a callout special case
+      if (note.classList.contains("callout")) {
+        return note.outerHTML;
+      } else {
+        return note.innerHTML;
+      }
+    }
+  }
+  for (var i=0; i<xrefs.length; i++) {
+    const xref = xrefs[i];
+    tippyHover(xref, undefined, function(instance) {
+      instance.disable();
+      let url = xref.getAttribute('href');
+      let hash = undefined; 
+      if (url.startsWith('#')) {
+        hash = url;
+      } else {
+        try { hash = new URL(url).hash; } catch {}
+      }
+      if (hash) {
+        const id = hash.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note !== null) {
+          try {
+            const html = processXRef(id, note.cloneNode(true));
+            instance.setContent(html);
+          } finally {
+            instance.enable();
+            instance.show();
+          }
+        } else {
+          // See if we can fetch this
+          fetch(url.split('#')[0])
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.getElementById(id);
+            if (note !== null) {
+              const html = processXRef(id, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      } else {
+        // See if we can fetch a full url (with no hash to target)
+        // This is a special case and we should probably do some content thinning / targeting
+        fetch(url)
+        .then(res => res.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const htmlDoc = parser.parseFromString(html, "text/html");
+          const note = htmlDoc.querySelector('main.content');
+          if (note !== null) {
+            // This should only happen for chapter cross references
+            // (since there is no id in the URL)
+            // remove the first header
+            if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+              note.children[0].remove();
+            }
+            const html = processXRef(null, note);
+            instance.setContent(html);
+          } 
+        }).finally(() => {
+          instance.enable();
+          instance.show();
+        });
+      }
+    }, function(instance) {
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            div.style.left = 0;
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+        // Handle positioning of the toggle
+    window.addEventListener(
+      "resize",
+      throttle(() => {
+        elRect = undefined;
+        if (selectedAnnoteEl) {
+          selectCodeLines(selectedAnnoteEl);
+        }
+      }, 10)
+    );
+    function throttle(fn, ms) {
+    let throttle = false;
+    let timer;
+      return (...args) => {
+        if(!throttle) { // first call gets through
+            fn.apply(this, args);
+            throttle = true;
+        } else { // all the others get throttled
+            if(timer) clearTimeout(timer); // cancel #2
+            timer = setTimeout(() => {
+              fn.apply(this, args);
+              timer = throttle = false;
+            }, ms);
+        }
+      };
+    }
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+<nav class="page-navigation">
+  <div class="nav-page nav-page-previous">
+      <a href="../index.html" class="pagination-link" aria-label="Introduction">
+        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text"><span class="chapter-number">1</span>&nbsp; <span class="chapter-title">Introduction</span></span>
+      </a>          
+  </div>
+  <div class="nav-page nav-page-next">
+      <a href="../src/002-reward_model.html" class="pagination-link" aria-label="Reward Model">
+        <span class="nav-page-text"><span class="chapter-number">3</span>&nbsp; <span class="chapter-title">Reward Model</span></span> <i class="bi bi-arrow-right-short"></i>
+      </a>
+  </div>
+</nav><div class="modal fade" id="quarto-embedded-source-code-modal" tabindex="-1" aria-labelledby="quarto-embedded-source-code-modal-label" aria-hidden="true"><div class="modal-dialog modal-dialog-scrollable"><div class="modal-content"><div class="modal-header"><h5 class="modal-title" id="quarto-embedded-source-code-modal-label">Source Code</h5><button class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><div class="">
+<div class="sourceCode" id="cb3" data-shortcodes="false"><pre class="sourceCode numberSource markdown number-lines code-with-copy"><code class="sourceCode markdown"><span id="cb3-1"><a href="#cb3-1"></a><span class="fu"># Models of Preferences and Decisions {#ch-human-decision-making-choice-models}</span></span>
+<span id="cb3-2"><a href="#cb3-2"></a></span>
+<span id="cb3-3"><a href="#cb3-3"></a>::: {.content-visible when-format="html"}</span>
+<span id="cb3-4"><a href="#cb3-4"></a></span>
+<span id="cb3-5"><a href="#cb3-5"></a>&lt;iframe</span>
+<span id="cb3-6"><a href="#cb3-6"></a>  src="https://web.stanford.edu/class/cs329h/slides/2.1.choice_models/#/"</span>
+<span id="cb3-7"><a href="#cb3-7"></a>  style="width:45%; height:225px;"</span>
+<span id="cb3-8"><a href="#cb3-8"></a>&gt;&lt;/iframe&gt;</span>
+<span id="cb3-9"><a href="#cb3-9"></a>&lt;iframe</span>
+<span id="cb3-10"><a href="#cb3-10"></a>  src="https://web.stanford.edu/class/cs329h/slides/2.2.choice_models/#/"</span>
+<span id="cb3-11"><a href="#cb3-11"></a>  style="width:45%; height:225px;"</span>
+<span id="cb3-12"><a href="#cb3-12"></a>&gt;&lt;/iframe&gt;</span>
+<span id="cb3-13"><a href="#cb3-13"></a><span class="co">[</span><span class="ot">Fullscreen Part 1</span><span class="co">](https://web.stanford.edu/class/cs329h/slides/2.1.choice_models/#/)</span>{.btn .btn-outline-primary .btn role="button"}</span>
+<span id="cb3-14"><a href="#cb3-14"></a><span class="co">[</span><span class="ot">Fullscreen Part 2</span><span class="co">](https://web.stanford.edu/class/cs329h/slides/2.2.choice_models/#/)</span>{.btn .btn-outline-primary .btn role="button"}</span>
+<span id="cb3-15"><a href="#cb3-15"></a></span>
+<span id="cb3-16"><a href="#cb3-16"></a>:::</span>
+<span id="cb3-17"><a href="#cb3-17"></a></span>
+<span id="cb3-18"><a href="#cb3-18"></a><span class="fu">## Introduction</span></span>
+<span id="cb3-19"><a href="#cb3-19"></a></span>
+<span id="cb3-20"><a href="#cb3-20"></a>Human preference modeling aims to capture humans' decision making processes in a probabilistic framework. Many problems would benefit from a quantitative perspective, enabling an understanding of how humans engage with the world. In this chapter, we will explore how one can model human preferences, including different formulations of such models, how one can optimize these models given data, and considerations one should understand to create such systems. We describe these assumptions in @sec-foundations.</span>
+<span id="cb3-21"><a href="#cb3-21"></a></span>
+<span id="cb3-22"><a href="#cb3-22"></a><span class="fu">## Foundations of Preference Models {#sec-foundations}</span></span>
+<span id="cb3-23"><a href="#cb3-23"></a></span>
+<span id="cb3-24"><a href="#cb3-24"></a><span class="co">&lt;!--</span></span>
+<span id="cb3-25"><a href="#cb3-25"></a><span class="co">An alternative framework we will explore is ranking, in which we can model an ordering of given choices from most to least desirable. It is possible that there is an infinite set of options; in this case, our model will have to reason about a discretized set of options and may fail to capture the full space of possibilities a human would choose from in the real world.</span></span>
+<span id="cb3-26"><a href="#cb3-26"></a><span class="co">--&gt;</span></span>
+<span id="cb3-27"><a href="#cb3-27"></a></span>
+<span id="cb3-28"><a href="#cb3-28"></a><span class="fu">### Axiom 1: Construction of Choices Set {#axiom-1-preference-models-model-choice}</span></span>
+<span id="cb3-29"><a href="#cb3-29"></a></span>
+<span id="cb3-30"><a href="#cb3-30"></a>Human preference models model the preferred choices amongst a set of options. For example, this could be modeling which meal from a set of options a person will most likely choose. Preference models must enumerate the set of all possible choices included in a human decision. As such, we must ensure that the choices we enumerate capture the entire domain (collectively exhaustive) but are distinct (mutually exclusive) choices. A discrete set of choices is a constraint we canonically impose to ensure we can tractably model preferences and aptly estimate the parameters of preference models. We assume that if a new option is added to the choice set, the relative probabilities of choosing between the original options remain unchanged. This is known as Independence of Irrelevant Alternatives (IIA) property from Luce's axiom of choices <span class="co">[</span><span class="ot">@Luce1977</span><span class="co">]</span>.</span>
+<span id="cb3-31"><a href="#cb3-31"></a></span>
+<span id="cb3-32"><a href="#cb3-32"></a><span class="fu">### Axiom 2: Preference Centers around Utility {#axiom-3-preference-centers-around-utility}</span></span>
+<span id="cb3-33"><a href="#cb3-33"></a></span>
+<span id="cb3-34"><a href="#cb3-34"></a>Human preference models are centered around the notion of utility, a scalar quantity representing the benefit or value an individual attains from selecting a given choice. We assume that the underlying utility mechanism of a human preference model captures the final decision output from a human. We use the notation $u_{i,j}$ as the utility of person $i$ choosing item $j$. The utility is a random variable, decomposing into true utility $u_{i,j}^*$ and a random noise $\epsilon_{i,j}$: $u_{i,j} = u_{i,j}^* + \epsilon_{i,j}$. True utility can further be decomposed into user-specific utility $\theta_i$ and item-specific utility $z_j$: $u_{i,j}^* = \theta_i + z_j$. From this decomposition, it is straightforward that, for a single users, only the relative difference in utility matters to predict the choice among options and the scale of utilities is important when comparing across user.</span>
+<span id="cb3-35"><a href="#cb3-35"></a></span>
+<span id="cb3-36"><a href="#cb3-36"></a><span class="fu">### Axiom 3: Rationality {#human-rationality}</span></span>
+<span id="cb3-37"><a href="#cb3-37"></a></span>
+<span id="cb3-38"><a href="#cb3-38"></a>Modeling decision-making must also take into account rationality. Rationality assumption provides a framework for predicting and modeling human behavior by outlining the principles that guide decision-making processes <span class="co">[</span><span class="ot">@keisler2003common</span><span class="co">]</span>. By incorporating different types of rationality, researchers can create more accurate and realistic models that reflect the complexities of human decision-making <span class="co">[</span><span class="ot">@miljkovic2005rational; @simon1972theories</span><span class="co">]</span>. Perfect rationality posits that individuals make decisions that maximize their utility, assuming they have complete information and the cognitive ability to process this information to make optimal choices <span class="co">[</span><span class="ot">@miljkovic2005rational</span><span class="co">]</span>. Numerous studies have shown that this assumption frequently fails to describe actual human behavior, as individuals do not always act in ways that maximize their utility due to various constraints and biases <span class="co">[</span><span class="ot">@miljkovic2005rational</span><span class="co">]</span>. Bounded rationality acknowledges that individuals operate within the limits of their information and cognitive capabilities. Decisions are made using heuristics rather than through exhaustive analysis, reflecting the practical constraints of real-world decision-making <span class="co">[</span><span class="ot">@simon1972theories</span><span class="co">]</span>. Bounded rationality acknowledges that decisions are influenced by noise, resulting in probabilistic choice behavior: while individuals aim to maximize their utility, random factors can lead to deviations from perfectly rational choices <span class="co">[</span><span class="ot">@miljkovic2005rational</span><span class="co">]</span>.</span>
+<span id="cb3-39"><a href="#cb3-39"></a></span>
+<span id="cb3-40"><a href="#cb3-40"></a>Bounded rationality can be operationalized through Boltzmann rationalit. It addresses the likelihood of a human selecting an option $o$ from a set $O$. Desirability is represented by a value function $v : O \rightarrow \mathbb{R}^+$, with the selection probability calculated as $P(o) = \frac{v(o)}{\sum_{o' \in O} v(o')}$. Assuming there is an underlying reward for each option $R(o) \in \mathbb{R}$ such that $v(o) = e^{R(o)}$, we get $P(o) = \frac{e^{R(o)}}{\sum_{\bar{o} \in \mathcal{O}} e^{R(\bar{o})}}$. Essentially, "A human will act out a trajectory with a probability proportional to the exponentiated return they receive for the trajectory." When choices involve trajectories $\xi \in \Xi$ (sequences of actions), the reward $R$ is typically a function of a feature vector $\phi : \Xi \rightarrow \mathbb{R}^k$, and the probability density is given by $p(\xi) = \frac{e^{R(\phi(\xi))}}{\int_{\Xi} e^{R(\phi(\bar{\xi}))} d\bar{\xi}}$.</span>
+<span id="cb3-41"><a href="#cb3-41"></a></span>
+<span id="cb3-42"><a href="#cb3-42"></a>Boltzmann rationality has the "duplicates problem," where there is no concept of similar actions (e.g., choosing between using a car or a train for transportation, with no particular preference). The probability of making the decision is 50% for either option. However, if we now have 100 cars, under Boltzmann, we would have a 99% probability of choosing a car, which is unrealistic. To address this issue, various extensions have been proposed. One such extension is the attribute rule, which interprets options as bundles of attributes. In this rule, attributes $X$ are associated with options, and they have desirability values $w(x)$. An attribute intensity function $s(x, o)$ indicates the degree to which an attribute is expressed in an option. The probability of choosing option $o$ is</span>
+<span id="cb3-43"><a href="#cb3-43"></a></span>
+<span id="cb3-44"><a href="#cb3-44"></a>$$P(o) = \sum_{x \in \mathcal{X}_o} \frac{w(x)}{\sum_{\bar{x} \in \mathcal{X}_o} w(\bar{x})} \cdot \frac{s(x, o)}{\sum_{\tilde{o} \in \mathcal{O}} s(x, \bar{o})}$$</span>
+<span id="cb3-45"><a href="#cb3-45"></a></span>
+<span id="cb3-46"><a href="#cb3-46"></a>This equation describes a two-step process where an attribute $x \in X_O$ is first chosen according to a Boltzmann-like rule and then an option $o \in O$ with that attribute is selected using another Boltzmann-like rule. This approach handles duplicates gracefully by effectively creating a two-layer hierarchy in choosing an option. Boltzmann rationality finds practical applications in various fields, particularly in reinforcement learning, where it models decision-making in uncertain environments. It also applies to trajectory selection, where the probability of a sequence of actions (trajectory) is proportional to the exponential return. These applications enhance the accuracy of models that interact with or predict human behavior, making Boltzmann Rationality a vital component of the models of interaction.</span>
+<span id="cb3-47"><a href="#cb3-47"></a></span>
+<span id="cb3-48"><a href="#cb3-48"></a>We next explore a case study to deepen our understanding of rationality: Limiting Errors due to Similar Selection (LESS) <span class="co">[</span><span class="ot">@2001.04465</span><span class="co">]</span>. LESS takes inspiration from the attribute rule and extends it to continuous trajectories <span class="co">[</span><span class="ot">@2001.04465</span><span class="co">]</span>. The key insight is that instead of creating "attributes", which group together similar discrete options, it introduces a similarity metric on the space of continuous actions, thereby creating similar groupings on trajectories. The LESS similarity metric could be defined in trajectory space, where the trajectory is some theoretical notion of all states and actions one passes through over time. However, it is instead defined on the measured feature vector $\phi(\xi)$ associated with the agent's trajectory $\xi$. In practice, one can never measure the exact trajectory with perfect fidelity. The feature vector will almost necessarily map in a one-to-many fashion with trajectories. Formally,</span>
+<span id="cb3-49"><a href="#cb3-49"></a>let $\phi \in \Phi$ be the set of all possible feature vectors $\xi \in \Xi$ the set of all trajectories. The set of feature vectors belonging to a set of trajectories $\Xi' \subseteq \Xi$ is $\Phi_{\Xi'}$. We begin with equation (4) and substitute our similarity metric on feature vectors of trajectories.</span>
+<span id="cb3-50"><a href="#cb3-50"></a></span>
+<span id="cb3-51"><a href="#cb3-51"></a>$$\begin{aligned}</span>
+<span id="cb3-52"><a href="#cb3-52"></a>    P(\xi) = \frac{e^{R(\phi(\xi))}}{\sum_{\bar{\phi} \in \Phi_{\Xi}} e^{R(\hat{\phi})}} \cdot \frac{s(\phi(\xi), \bar{\xi})}{\sum_{\hat{\xi} \in \Xi} s(\phi(\xi), \bar{\xi})}</span>
+<span id="cb3-53"><a href="#cb3-53"></a>\end{aligned}$$</span>
+<span id="cb3-54"><a href="#cb3-54"></a></span>
+<span id="cb3-55"><a href="#cb3-55"></a>The probability of choosing trajectory $\xi$ is proportional to the exponentiated reward for the agent's measured trajectory $\phi(\xi)$, normalized by the sum of all rewards over all possible measured trajectories. The second half of the product is a normalization factor based on how similar the current trajectory is to other trajectories in feature space. We can define the similarity function as an indicator function, where $s(x, \xi) = 1$ only if $x = \phi(\xi)$. That means that multiple trajectories with the same feature vector will effectively be considered a single option. Thus, we achieve the "bundling" of trajectories, in the same way that the attribute rule bundled options under different attributes.</span>
+<span id="cb3-56"><a href="#cb3-56"></a></span>
+<span id="cb3-57"><a href="#cb3-57"></a>However, setting the similarity metric as an indicator function isn't sufficiently flexible. We want a proper metric that acts more as a continuous distance over the feature space. We instead define $s$ to be a soft similarity metric $s : \Phi \times \Xi \rightarrow \mathbb{R}^+$ with the following properties:</span>
+<span id="cb3-58"><a href="#cb3-58"></a></span>
+<span id="cb3-59"><a href="#cb3-59"></a><span class="ss">1.  </span>$s(\phi(\xi), \xi) = \max_{x \in \phi, \bar{\xi} \in \Xi} s(x, \hat{\xi}) \forall (\xi \in \Xi)$</span>
+<span id="cb3-60"><a href="#cb3-60"></a></span>
+<span id="cb3-61"><a href="#cb3-61"></a><span class="ss">2.  </span>Symmetric: $s(\phi(\xi), \bar{\xi}) = s(\phi(\bar{\xi}), \xi)$</span>
+<span id="cb3-62"><a href="#cb3-62"></a></span>
+<span id="cb3-63"><a href="#cb3-63"></a><span class="ss">3.  </span>Positive Semidefinite: $s(x, \xi) \geq 0$</span>
+<span id="cb3-64"><a href="#cb3-64"></a></span>
+<span id="cb3-65"><a href="#cb3-65"></a>Using this redefined similarity metric $s$, we extend (5) to be a probability density on the continuous trajectory space $\mathcal{E}$, as in (3).</span>
+<span id="cb3-66"><a href="#cb3-66"></a></span>
+<span id="cb3-67"><a href="#cb3-67"></a>$$p(\hat{\xi}) = \frac{\frac{e^{R(\phi(\xi))}}{\int_{\Xi} s(\phi(\xi), \bar{\xi}) d\bar{\xi}}}{\int_{\Xi}\frac{e^{R(\phi(\hat{\xi}))}}{\int_{\Xi} s(\phi(\hat{\xi}), \bar{\xi}) d\bar{\xi}}d\hat{\xi}} \propto \frac{e^{R(\phi(\hat{\xi}))}}{\int_{\Xi} s(\phi(\xi), \bar{\xi}) d\bar{\xi}}$$</span>
+<span id="cb3-68"><a href="#cb3-68"></a></span>
+<span id="cb3-69"><a href="#cb3-69"></a>Under this formulation, the likelihood of selecting a trajectory is inversely proportional to its feature-space similarity with other trajectories. This de-weights similar trajectories, which is the desired effect for our LESS model of human decision-making. This means, though, that the "trajectory bundle" of similar trajectories still has a reasonable probability of being chosen.</span>
+<span id="cb3-70"><a href="#cb3-70"></a></span>
+<span id="cb3-71"><a href="#cb3-71"></a><span class="fu">### Axiom 4: Preference captures decision-making {#axiom-2-preference-captures-decision-making}</span></span>
+<span id="cb3-72"><a href="#cb3-72"></a>Human preferences are classified into two categories: revealed preferences and stated preferences.</span>
+<span id="cb3-73"><a href="#cb3-73"></a></span>
+<span id="cb3-74"><a href="#cb3-74"></a>Revealed preferences are those one can observe retroactively from existing data. The implicit decision-making knowledge can be captured via learnable parameters and their usage in models which represent relationships between input decision attributes that may have little human interpretability, but enable powerful models of human preference. For health coaching, we may have information about which foods an individual has chosen previously in different contexts, allowing us to build a model from their decisions. Such data may be easier to acquire and can reflect real-world outcomes (since they are, at least theoretically, inherently based on human preferences). However, if we fail to capture sufficient context in such data, human preference models may not sufficiently capture human preferences.</span>
+<span id="cb3-75"><a href="#cb3-75"></a></span>
+<span id="cb3-76"><a href="#cb3-76"></a>Stated preferences are those individuals explicitly indicate in potentially experimental conditions. The explicit knowledge may be leveraged by including inductive biases during modeling (for example, the context used in a model) which are reasonable assumptions for how a human would consider a set of options.This may include controlled experiments or studies. This may be harder to obtain and somewhat biased, as they can be hypothetical or only accurately reflect a piece of the overall context of a decision. However, they enable greater control of the decision-making process.</span>
+<span id="cb3-77"><a href="#cb3-77"></a></span>
+<span id="cb3-78"><a href="#cb3-78"></a><span class="fu">## Methods for Collecting Preference Data {#sec-collect}</span></span>
+<span id="cb3-79"><a href="#cb3-79"></a></span>
+<span id="cb3-80"><a href="#cb3-80"></a>Next, we explore various mechanisms by which humans can express their preferences, including pairwise sampling, rank-order sampling, rating-scale sampling, best-worst scaling, and multiple-choice samples. In *pairwise sampling*, participants compare two options to determine which is preferred. One of the major advantage of this method is low cognitive demand for rater. Its disavantage is the limited amount of information content elicited by a sample. Next, we will see that we can trading cognitive demand for rater to elicit more nuance preference information. For example, *Rank-order sampling* captures human preferences by having participants rank items from most to least preferred. Used in voting, market research, and psychology, it provides rich preference data but is more complex and cognitively demanding than pairwise comparisons, especially for large item sets. Participants may also rank inconsistently <span class="co">[</span><span class="ot">@ragain2019</span><span class="co">]</span>. </span>
+<span id="cb3-81"><a href="#cb3-81"></a></span>
+<span id="cb3-82"><a href="#cb3-82"></a>*Rating-scale sampling*, such as the Likert scale, is a method in which participants rate items on a fixed-point scale (e.g., 1 to 5, "Strongly Disagree" to "Strongly Agree") to measure levels of preference towards items <span class="co">[</span><span class="ot">@harpe2015</span><span class="co">]</span>. Participants can also mark a point on a continuous rating scale to indicate their preference or attitude. Commonly used in surveys, product reviews, and psychological assessments, this method provides a more nuanced measure than discrete scales. Rating-scale sampling is simple for participants to understand and use, provides rich data on the intensity of preferences, and is flexible enough for various measurements (e.g., agreement, satisfaction) <span class="co">[</span><span class="ot">@harpe2015</span><span class="co">]</span>. However, rating-scale sampling methods also have limitations. Ratings can be influenced by personal biases and interpretations of scales, leading to subjectivity. There is a central tendency bias, where participants may avoid extreme ratings, resulting in clustering responses around the middle. Different participants might interpret scale points differently, and fixed-point scales may not capture the full nuance of participants' preferences or attitudes <span class="co">[</span><span class="ot">@harpe2015</span><span class="co">]</span>.</span>
+<span id="cb3-83"><a href="#cb3-83"></a></span>
+<span id="cb3-84"><a href="#cb3-84"></a>*In Best-worst scaling* (BWS), participants are presented with items and asked to identify the most and least preferred options. The primary objective of BWS is to discern the relative importance or preference of items, making it widely applicable in various fields such as market research, health economics, and social sciences <span class="co">[</span><span class="ot">@campbell2015</span><span class="co">]</span>. BWS provides rich data on the relative importance of items, helps clarify preferences, reduces biases found in traditional rating scales, and results in utility scores that are easy to interpret. However, BWS also has limitations, including potential scale interpretation differences among participants, and design challenges to avoid biases, such as the order effect or the context in which items are presented.</span>
+<span id="cb3-85"><a href="#cb3-85"></a></span>
+<span id="cb3-86"><a href="#cb3-86"></a>*Multiple-choice sampling* involve participants selecting one option from a set of alternatives. Multiple-choice sampling is simple for participants to understand and reflect on realistic decision-making scenarios where individuals choose one option from many. It is beneficial in complex choice scenarios, such as modes of transportation, where choices are not independent <span class="co">[</span><span class="ot">@bolt2009</span><span class="co">]</span>. Multiple-choice sampling often relies on simplistic assumptions such as the independence of irrelevant alternatives (IIA), which may not always hold true. This method may also fail to capture the variation in preferences among different individuals, as it typically records only the most preferred choice without accounting for the relative importance of other options.</span>
+<span id="cb3-87"><a href="#cb3-87"></a></span>
+<span id="cb3-88"><a href="#cb3-88"></a><span class="fu">## Models of Choices {#sec-models}</span></span>
+<span id="cb3-89"><a href="#cb3-89"></a></span>
+<span id="cb3-90"><a href="#cb3-90"></a><span class="fu">### Binary Choice Model {#binary-choice-model}</span></span>
+<span id="cb3-91"><a href="#cb3-91"></a></span>
+<span id="cb3-92"><a href="#cb3-92"></a>Binary choice model is centered around one item. The model predicts, for that option, after observing user choices in the past, whether that option will be chosen or not. We use binary variable $y \in <span class="sc">\{</span>0, 1<span class="sc">\}</span>$ to represent whether that choice will be picked by the user in the next phase of selection. We denote $P = \mathbb{P}(y = 1)$. We can formally model $y$ as a function of the utility of the positive choice: $y = \mathbb{I}<span class="co">[</span><span class="ot">U&gt;0</span><span class="co">]</span>$. We explore two cases based on the noise distribution. $\psi$ is the logistic function or the standard normal cummulative distribution function if noise follows logistic distribution and the standard normal distribution, repsectively:</span>
+<span id="cb3-93"><a href="#cb3-93"></a>$$</span>
+<span id="cb3-94"><a href="#cb3-94"></a>\mathbb{P}(u_{i,j} &gt; 0) = \mathbb{P}(u_{i,j}^* + \epsilon &gt; 0) = 1 - \mathbb{P}( \epsilon &lt; -u_{i,j}^*) = \psi(u_{i,j}^*).</span>
+<span id="cb3-95"><a href="#cb3-95"></a>$$</span>
+<span id="cb3-96"><a href="#cb3-96"></a></span>
+<span id="cb3-97"><a href="#cb3-97"></a><span class="fu">### Bradley-Terry Model {#bradley-terry-model}</span></span>
+<span id="cb3-98"><a href="#cb3-98"></a></span>
+<span id="cb3-99"><a href="#cb3-99"></a>The Bradley-Terry model compares the utility of choice over all others <span class="co">[</span><span class="ot">@bradley-terry-model</span><span class="co">]</span> in the set of $J$ choices $i \in <span class="sc">\{</span>1, 2, \dots, J<span class="sc">\}</span>$. Each choice can also have its unique random noise variable representing the unobserved factor, although we can also choose to have all choices' unobserved factors follow the same distribution (e.g. independent and identically distributed, IID). The noise is represented as an extreme value distribution, although we can choose alternatives such as a multivariate Gaussian distribution: $\epsilon \sim \mathcal{N}(0, \Sigma)$. If $\Sigma$ is not a diagonal matrix, we effectively model correlations in the noise across choices, enabling us to avoid the IID assumption. In the case of the extreme value distribution, we model the probability of a user preferring choice $i$, which we denote as $P_i = Z^{-1}\exp(u_{i,j}^*)$ where $Z = \sum_{j = 1}^{J} \exp(u_{i,j}^*)$.</span>
+<span id="cb3-100"><a href="#cb3-100"></a></span>
+<span id="cb3-101"><a href="#cb3-101"></a><span class="fu">### Ordered Preferences Model {#ordered-preferences-model}</span></span>
+<span id="cb3-102"><a href="#cb3-102"></a></span>
+<span id="cb3-103"><a href="#cb3-103"></a>Previous models do not leverage information about ordering of the available options a human can choose from: all choices were treated as independent by the model. The model aims to capture how an individual chooses between them. However, in many cases, we may introduce an inductive bias based on information about the options. For example, in a study for stated preferences, a user may be able to choose from intricately dependent options such as very poor, poor, fair, good, and great. In this case, it can be useful to include this bias in our model to represent a human's decision-making process better. Instead of comparing choices against alternatives, we can focus on a single example and use additional parameters to define classification criteria based on the utility determined by the model. Let us suppose we have a single example with attributes $z_i$, and wish to know which of $J$ predefined options an individual will choose from. We can define $J - 1$ parameters, which act as thresholds on the utility computed by $u_i = u_{i,j}^*$ to classify the predicted choice between these options. For example, if there are 3 predefined options, we can define parameters $a, b \in \mathbb{R}$ such that</span>
+<span id="cb3-104"><a href="#cb3-104"></a></span>
+<span id="cb3-105"><a href="#cb3-105"></a>$$</span>
+<span id="cb3-106"><a href="#cb3-106"></a>y_i =</span>
+<span id="cb3-107"><a href="#cb3-107"></a>\begin{cases} </span>
+<span id="cb3-108"><a href="#cb3-108"></a>    1 &amp; u &lt; a <span class="sc">\\</span></span>
+<span id="cb3-109"><a href="#cb3-109"></a>    2 &amp; a \le u &lt; b <span class="sc">\\</span></span>
+<span id="cb3-110"><a href="#cb3-110"></a>    3 &amp; \text{else}</span>
+<span id="cb3-111"><a href="#cb3-111"></a>\end{cases}</span>
+<span id="cb3-112"><a href="#cb3-112"></a>$$</span>
+<span id="cb3-113"><a href="#cb3-113"></a></span>
+<span id="cb3-114"><a href="#cb3-114"></a>By assuming the noise distribution to be either logistic or standard normal, we have </span>
+<span id="cb3-115"><a href="#cb3-115"></a>$$</span>
+<span id="cb3-116"><a href="#cb3-116"></a>\begin{split}</span>
+<span id="cb3-117"><a href="#cb3-117"></a>    \mathbb{P}(y_i = 1) &amp; = \mathbb{P}(u &lt; a) = \mathbb{P}(u_{i,j}^* + \epsilon &lt; a) = \psi(a-u_{i,j}^*) <span class="sc">\\</span></span>
+<span id="cb3-118"><a href="#cb3-118"></a>    \mathbb{P}(y_i = 2) &amp; = \mathbb{P}(a \le u &lt; b) = \mathbb{P}(a - u_{i,j}^* \le \epsilon &lt; b - u_{i,j}^*) = \psi(b-u_{i,j}^*)  - \psi(u_{i,j}^*-a) <span class="sc">\\</span></span>
+<span id="cb3-119"><a href="#cb3-119"></a>    \mathbb{P}(y_i = 3) &amp; = \mathbb{P}(u &gt; b) = \mathbb{P}(u_{i,j}^* + \epsilon &gt; b ) = \mathbb{P}( \epsilon &gt; b - u_{i,j}^*) = \psi(b-u_{i,j}^*)</span>
+<span id="cb3-120"><a href="#cb3-120"></a>\end{split}</span>
+<span id="cb3-121"><a href="#cb3-121"></a>$$</span>
+<span id="cb3-122"><a href="#cb3-122"></a></span>
+<span id="cb3-123"><a href="#cb3-123"></a><span class="fu">### Plackett-Luce Model {#plackett-luce-model}</span></span>
+<span id="cb3-124"><a href="#cb3-124"></a></span>
+<span id="cb3-125"><a href="#cb3-125"></a>We can model an open-ended ranking of the available options with the Plackett-Luce model, in which we jointly model the full sequence of choice ordering <span class="co">[</span><span class="ot">@plackett_luce</span><span class="co">]</span>. The general form models the joint distribution as the product of conditional probabilities, where each is conditioned on the preceding ranking terms. Given an ordering of $J$ choices $<span class="sc">\{</span>y_1, \dots, y_J<span class="sc">\}</span>$, we factorize the joint probability into conditionals. Each conditional follows the Bradley-Terry model:</span>
+<span id="cb3-126"><a href="#cb3-126"></a>$$</span>
+<span id="cb3-127"><a href="#cb3-127"></a>\mathbb{P}(y_1, \dots, y_J) = \mathbb{P}(y_1) \cdot \mathbb{P}(y_2 | y_1) \cdot \dots \cdot \mathbb{P}(y_J | y_1, y_2, \dots y_{J - 1}) = \prod_{i = 1}^J \frac{\exp(u_{i,j}^*)}{\sum_{j \ge i} \exp(u_{i,j}^*)}</span>
+<span id="cb3-128"><a href="#cb3-128"></a>$$</span>
+<span id="cb3-129"><a href="#cb3-129"></a></span>
+<span id="cb3-130"><a href="#cb3-130"></a><span class="fu">### Ideal Point Model {#ideal-point-model}</span></span>
+<span id="cb3-131"><a href="#cb3-131"></a></span>
+<span id="cb3-132"><a href="#cb3-132"></a>The ideal point model uses distance functions to compute utility for individual-choice pairs <span class="co">[</span><span class="ot">@huber1976ideal</span><span class="co">]</span>. Given vector representation $z_i$ of choice $i$ and a vector $v_n$ representing an individual $n$, we can use a distance function to model a stochastic utility function with the unobserved factors following a specified distribution: $u_{n, i} = \texttt{dist}(z_i, v_n) + \epsilon_{n, i}$. We assume human preferences follow the choice with maximum utility: $y_{n, i} = \mathbb{I}<span class="co">[</span><span class="ot">u_{n, i} &gt; u_{n, j} \ \forall i \ne j</span><span class="co">]</span>$. The intuition is that vectors exist in a shared $n$-dimensional space, and as such we can use geometry to match choices whose representations are closest to that of a given individual. This model can often result in faster learning compared to non-geometric approaches <span class="co">[</span><span class="ot">@ideal_point; @tatli2022distancepreferences</span><span class="co">]</span> when equipped with a distance metric. Certain distance metrics, such as Euclidian distance or inner product, can easily be biased by the scale of vectors. A distance measure such as cosine similarity, which compensates for scale by normalizing the inner product of two vectors by the product of their magnitudes, can mitigate this bias yet may discard valuable information encoded by the length of the vectors. Beyond the distance metric alone, this model places a strong inductive bias that the individual and choice representations all share a common embedding space. In some contexts, this can be a robust bias to add to the model <span class="co">[</span><span class="ot">@idealpoints</span><span class="co">]</span>, but it is a key factor one must take into account before employing such a model, and is a key design choice for modeling.</span>
+<span id="cb3-133"><a href="#cb3-133"></a></span>
+<span id="cb3-134"><a href="#cb3-134"></a><span class="fu">## Choices Aggregation {#sec-choices-aggregation}</span></span>
+<span id="cb3-135"><a href="#cb3-135"></a></span>
+<span id="cb3-136"><a href="#cb3-136"></a>In many applications, human preferences must be aggregated across multiple individuals to determine a collective decision or ranking. This process is central to social choice theory, which provides a mathematical foundation for preference aggregation. Unlike individual preference modeling, which focuses on understanding how a single person makes decisions, social choice theory addresses the challenge of combining multiple preference profiles into a single, coherent outcome. One of the most widely used approaches to aggregating preferences is voting. A **voting rule** is a function that maps a set of individual preference rankings to a collective decision. The outcome of a vote is determined by a **social choice function (SCF)**, which selects a winner based on the aggregated preferences. Several voting rules exist, each with different properties:</span>
+<span id="cb3-137"><a href="#cb3-137"></a></span>
+<span id="cb3-138"><a href="#cb3-138"></a><span class="ss">- </span>**Plurality Rule:** Each voter assigns one point to their top choice, and the alternative with the most points wins.</span>
+<span id="cb3-139"><a href="#cb3-139"></a><span class="ss">- </span>**Borda Count:** Voters rank all alternatives, and points are assigned based on the position in each ranking.</span>
+<span id="cb3-140"><a href="#cb3-140"></a><span class="ss">- </span>**Single Transferable Vote (STV):** Voters rank choices, and rounds of elimination occur until a candidate has a majority.</span>
+<span id="cb3-141"><a href="#cb3-141"></a><span class="ss">- </span>**Condorcet Methods:** The **Condorcet winner** is the option that would win in all pairwise comparisons against other alternatives (if one exists).</span>
+<span id="cb3-142"><a href="#cb3-142"></a></span>
+<span id="cb3-143"><a href="#cb3-143"></a>However, preference aggregation is not always straightforward. The **Condorcet Paradox** illustrates that no single alternative may be a clear winner due to cycles in majority preferences, violating transitivity. Additionally, different voting rules can yield different winners, highlighting the importance of selecting an appropriate aggregation method. A fundamental result in social choice theory is **Arrow’s Impossibility Theorem**, which states that when there are three or more alternatives, no voting system can simultaneously satisfy the following fairness criteria:</span>
+<span id="cb3-144"><a href="#cb3-144"></a></span>
+<span id="cb3-145"><a href="#cb3-145"></a><span class="ss">1. </span>**Unanimity (Pareto efficiency):** If all individuals prefer one option over another, the group ranking should reflect this.</span>
+<span id="cb3-146"><a href="#cb3-146"></a><span class="ss">2. </span>**Independence of Irrelevant Alternatives (IIA):** The relative ranking of two options should not be influenced by a third, unrelated option.</span>
+<span id="cb3-147"><a href="#cb3-147"></a><span class="ss">3. </span>**Non-dictatorship:** No single individual's preference should always determine the group's outcome.</span>
+<span id="cb3-148"><a href="#cb3-148"></a></span>
+<span id="cb3-149"><a href="#cb3-149"></a>Arrow’s theorem suggests that every fair aggregation method must compromise on at least one of these desirable properties. Additionally, the **Gibbard-Satterthwaite Theorem** proves that any deterministic voting rule that selects a single winner is either **dictatorial** (one person always determines the result) or **manipulable** (voters can strategically misrepresent their preferences to achieve a better outcome). While manipulation is theoretically possible, certain voting rules, such as STV, introduce computational complexity that makes strategic voting impractical in real-world scenarios.</span>
+<span id="cb3-150"><a href="#cb3-150"></a></span>
+<span id="cb3-151"><a href="#cb3-151"></a>Preference aggregation is also critical in reinforcement learning from human feedback (RLHF), where human judgments guide model training. Aggregating human preferences in RLHF faces challenges similar to traditional voting, such as inconsistencies in preferences and strategic bias. Several approaches address these challenges:</span>
+<span id="cb3-152"><a href="#cb3-152"></a></span>
+<span id="cb3-153"><a href="#cb3-153"></a><span class="ss">- </span>**Majority Voting:** Simple aggregation by selecting the most preferred response.</span>
+<span id="cb3-154"><a href="#cb3-154"></a><span class="ss">- </span>**Weighted Voting:** Adjusting vote weights based on expertise or trustworthiness.</span>
+<span id="cb3-155"><a href="#cb3-155"></a><span class="ss">- </span>**Jury Learning:** A method that integrates dissenting opinions, ensuring that minority perspectives are not entirely disregarded.</span>
+<span id="cb3-156"><a href="#cb3-156"></a><span class="ss">- </span>**Social Choice in AI Alignment:** Incorporating diverse human feedback to align AI behavior with a broad spectrum of human values.</span>
+<span id="cb3-157"><a href="#cb3-157"></a></span>
+<span id="cb3-158"><a href="#cb3-158"></a>These approaches highlight the interplay between human preference modeling and machine learning, where designing aggregation mechanisms that reflect collective human values is an ongoing research challenge.</span>
+<span id="cb3-159"><a href="#cb3-159"></a></span>
+<span id="cb3-160"><a href="#cb3-160"></a>While traditional social choice methods focus on aggregation, recent work in pluralistic alignment suggests alternative frameworks that preserve the diversity of human preferences rather than collapsing them into a single decision. Pluralistic AI systems aim to:</span>
+<span id="cb3-161"><a href="#cb3-161"></a></span>
+<span id="cb3-162"><a href="#cb3-162"></a><span class="ss">1. </span>**Present a spectrum of reasonable responses** instead of forcing a single choice.</span>
+<span id="cb3-163"><a href="#cb3-163"></a><span class="ss">2. </span>**Allow steering towards specific perspectives** while maintaining fairness.</span>
+<span id="cb3-164"><a href="#cb3-164"></a><span class="ss">3. </span>**Ensure distributional pluralism**, calibrating AI systems to diverse human viewpoints.</span>
+<span id="cb3-165"><a href="#cb3-165"></a></span>
+<span id="cb3-166"><a href="#cb3-166"></a>This perspective is particularly relevant in generative AI, where models trained on aggregated preferences may fail to capture the nuances of diverse human values.</span>
+<span id="cb3-167"><a href="#cb3-167"></a></span>
+<span id="cb3-168"><a href="#cb3-168"></a>Aggregating human preferences is a complex task, influenced by both mathematical constraints and strategic considerations. Voting-based methods provide well-studied mechanisms for aggregation, but they face fundamental limitations as outlined by Arrow’s and Gibbard-Satterthwaite’s theorems. Beyond traditional aggregation, emerging approaches in reinforcement learning and AI alignment seek to balance fairness, robustness, and pluralism. As machine learning systems increasingly interact with human preferences, designing aggregation frameworks that capture the richness of human decision-making remains an active and critical area of research.</span>
+<span id="cb3-169"><a href="#cb3-169"></a></span>
+<span id="cb3-170"><a href="#cb3-170"></a><span class="fu">## Inferences </span></span>
+<span id="cb3-171"><a href="#cb3-171"></a></span>
+<span id="cb3-174"><a href="#cb3-174"></a><span class="in">```{python}</span></span>
+<span id="cb3-175"><a href="#cb3-175"></a><span class="im">import</span> torch</span>
+<span id="cb3-176"><a href="#cb3-176"></a><span class="im">import</span> torch.nn <span class="im">as</span> nn</span>
+<span id="cb3-177"><a href="#cb3-177"></a><span class="im">import</span> torch.optim <span class="im">as</span> optim</span>
+<span id="cb3-178"><a href="#cb3-178"></a><span class="im">from</span> torch.distributions <span class="im">import</span> Bernoulli</span>
+<span id="cb3-179"><a href="#cb3-179"></a><span class="im">from</span> tqdm <span class="im">import</span> tqdm</span>
+<span id="cb3-180"><a href="#cb3-180"></a></span>
+<span id="cb3-181"><a href="#cb3-181"></a><span class="co"># Set device</span></span>
+<span id="cb3-182"><a href="#cb3-182"></a>device <span class="op">=</span> torch.device(<span class="st">"cuda"</span> <span class="cf">if</span> torch.cuda.is_available() <span class="cf">else</span> <span class="st">"cpu"</span>)</span>
+<span id="cb3-183"><a href="#cb3-183"></a></span>
+<span id="cb3-184"><a href="#cb3-184"></a><span class="co"># Number of users and items</span></span>
+<span id="cb3-185"><a href="#cb3-185"></a>num_users <span class="op">=</span> <span class="dv">50</span></span>
+<span id="cb3-186"><a href="#cb3-186"></a>num_items <span class="op">=</span> <span class="dv">100</span></span>
+<span id="cb3-187"><a href="#cb3-187"></a></span>
+<span id="cb3-188"><a href="#cb3-188"></a><span class="co"># Generate user-specific and item-specific utilities</span></span>
+<span id="cb3-189"><a href="#cb3-189"></a>theta <span class="op">=</span> torch.randn(num_users, device<span class="op">=</span>device, requires_grad<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb3-190"><a href="#cb3-190"></a>z <span class="op">=</span> torch.randn(num_items, device<span class="op">=</span>device, requires_grad<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb3-191"><a href="#cb3-191"></a></span>
+<span id="cb3-192"><a href="#cb3-192"></a><span class="co"># Generate observed choices using logistic function</span></span>
+<span id="cb3-193"><a href="#cb3-193"></a>probs <span class="op">=</span> torch.sigmoid(theta[:, <span class="va">None</span>] <span class="op">-</span> z[<span class="va">None</span>, :])</span>
+<span id="cb3-194"><a href="#cb3-194"></a>data <span class="op">=</span> Bernoulli(probs<span class="op">=</span>probs).sample()</span>
+<span id="cb3-195"><a href="#cb3-195"></a></span>
+<span id="cb3-196"><a href="#cb3-196"></a><span class="co"># Mask out a fraction of the response matrix</span></span>
+<span id="cb3-197"><a href="#cb3-197"></a>mask <span class="op">=</span> torch.rand_like(data) <span class="op">&gt;</span> <span class="fl">0.2</span>  <span class="co"># 80% observed, 20% missing</span></span>
+<span id="cb3-198"><a href="#cb3-198"></a>data_masked <span class="op">=</span> data.clone()</span>
+<span id="cb3-199"><a href="#cb3-199"></a>data_masked[<span class="op">~</span>mask] <span class="op">=</span> <span class="bu">float</span>(<span class="st">'nan'</span>)</span>
+<span id="cb3-200"><a href="#cb3-200"></a></span>
+<span id="cb3-201"><a href="#cb3-201"></a><span class="co"># Initialize parameters for EM algorithm</span></span>
+<span id="cb3-202"><a href="#cb3-202"></a>theta_est <span class="op">=</span> torch.randn(num_users, device<span class="op">=</span>device, requires_grad<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb3-203"><a href="#cb3-203"></a>z_est <span class="op">=</span> torch.randn(num_items, device<span class="op">=</span>device, requires_grad<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb3-204"><a href="#cb3-204"></a></span>
+<span id="cb3-205"><a href="#cb3-205"></a><span class="co"># Optimizer</span></span>
+<span id="cb3-206"><a href="#cb3-206"></a>optimizer <span class="op">=</span> optim.LBFGS([theta_est, z_est], lr<span class="op">=</span><span class="fl">0.1</span>, max_iter<span class="op">=</span><span class="dv">20</span>, history_size<span class="op">=</span><span class="dv">10</span>, line_search_fn<span class="op">=</span><span class="st">"strong_wolfe"</span>)</span>
+<span id="cb3-207"><a href="#cb3-207"></a></span>
+<span id="cb3-208"><a href="#cb3-208"></a><span class="kw">def</span> closure():</span>
+<span id="cb3-209"><a href="#cb3-209"></a>    optimizer.zero_grad()</span>
+<span id="cb3-210"><a href="#cb3-210"></a>    probs_est <span class="op">=</span> torch.sigmoid(theta_est[:, <span class="va">None</span>] <span class="op">-</span> z_est[<span class="va">None</span>, :])</span>
+<span id="cb3-211"><a href="#cb3-211"></a>    loss <span class="op">=</span> <span class="op">-</span>(Bernoulli(probs<span class="op">=</span>probs_est).log_prob(data) <span class="op">*</span> mask).mean()</span>
+<span id="cb3-212"><a href="#cb3-212"></a>    loss.backward()</span>
+<span id="cb3-213"><a href="#cb3-213"></a>    <span class="cf">return</span> loss</span>
+<span id="cb3-214"><a href="#cb3-214"></a></span>
+<span id="cb3-215"><a href="#cb3-215"></a><span class="co"># EM Algorithm</span></span>
+<span id="cb3-216"><a href="#cb3-216"></a>pbar <span class="op">=</span> tqdm(<span class="bu">range</span>(<span class="dv">100</span>))</span>
+<span id="cb3-217"><a href="#cb3-217"></a><span class="cf">for</span> iteration <span class="kw">in</span> pbar:</span>
+<span id="cb3-218"><a href="#cb3-218"></a>    <span class="cf">if</span> iteration <span class="op">&gt;</span> <span class="dv">0</span>:</span>
+<span id="cb3-219"><a href="#cb3-219"></a>        previous_theta <span class="op">=</span> theta_est.clone()</span>
+<span id="cb3-220"><a href="#cb3-220"></a>        previous_z <span class="op">=</span> z_est.clone()</span>
+<span id="cb3-221"><a href="#cb3-221"></a>        previous_loss <span class="op">=</span> loss.clone()</span>
+<span id="cb3-222"><a href="#cb3-222"></a>    </span>
+<span id="cb3-223"><a href="#cb3-223"></a>    loss <span class="op">=</span> optimizer.step(closure)</span>
+<span id="cb3-224"><a href="#cb3-224"></a>    </span>
+<span id="cb3-225"><a href="#cb3-225"></a>    <span class="cf">if</span> iteration <span class="op">&gt;</span> <span class="dv">0</span>:</span>
+<span id="cb3-226"><a href="#cb3-226"></a>        d_loss <span class="op">=</span> (previous_loss <span class="op">-</span> loss).item()</span>
+<span id="cb3-227"><a href="#cb3-227"></a>        d_theta <span class="op">=</span> torch.norm(previous_theta <span class="op">-</span> theta_est, p<span class="op">=</span><span class="dv">2</span>).item()</span>
+<span id="cb3-228"><a href="#cb3-228"></a>        d_z <span class="op">=</span> torch.norm(previous_z <span class="op">-</span> z_est, p<span class="op">=</span><span class="dv">2</span>).item()</span>
+<span id="cb3-229"><a href="#cb3-229"></a>        grad_norm <span class="op">=</span> torch.norm(optimizer.param_groups[<span class="dv">0</span>][<span class="st">"params"</span>][<span class="dv">0</span>].grad, p<span class="op">=</span><span class="dv">2</span>).item()</span>
+<span id="cb3-230"><a href="#cb3-230"></a>        grad_norm <span class="op">+=</span> torch.norm(optimizer.param_groups[<span class="dv">0</span>][<span class="st">"params"</span>][<span class="dv">1</span>].grad, p<span class="op">=</span><span class="dv">2</span>).item()</span>
+<span id="cb3-231"><a href="#cb3-231"></a>        pbar.set_postfix({<span class="st">"grad_norm"</span>: grad_norm, <span class="st">"d_theta"</span>: d_theta, <span class="st">"d_z"</span>: d_z, <span class="st">"d_loss"</span>: d_loss})</span>
+<span id="cb3-232"><a href="#cb3-232"></a>        <span class="cf">if</span> d_loss <span class="op">&lt;</span> <span class="fl">1e-5</span> <span class="kw">and</span> d_theta <span class="op">&lt;</span> <span class="fl">1e-5</span> <span class="kw">and</span> d_z <span class="op">&lt;</span> <span class="fl">1e-5</span> <span class="kw">and</span> grad_norm <span class="op">&lt;</span> <span class="fl">1e-5</span>:</span>
+<span id="cb3-233"><a href="#cb3-233"></a>            <span class="cf">break</span></span>
+<span id="cb3-234"><a href="#cb3-234"></a></span>
+<span id="cb3-235"><a href="#cb3-235"></a><span class="co"># Compute AUC ROC on observed and inferred data</span></span>
+<span id="cb3-236"><a href="#cb3-236"></a><span class="im">from</span> torchmetrics <span class="im">import</span> AUROC</span>
+<span id="cb3-237"><a href="#cb3-237"></a>auroc <span class="op">=</span> AUROC(task<span class="op">=</span><span class="st">"binary"</span>)</span>
+<span id="cb3-238"><a href="#cb3-238"></a>probs_final <span class="op">=</span> torch.sigmoid(theta_est[:, <span class="va">None</span>] <span class="op">-</span> z_est[<span class="va">None</span>, :])</span>
+<span id="cb3-239"><a href="#cb3-239"></a>train_probs <span class="op">=</span> probs_final[mask]</span>
+<span id="cb3-240"><a href="#cb3-240"></a>test_probs <span class="op">=</span> probs_final[<span class="op">~</span>mask]</span>
+<span id="cb3-241"><a href="#cb3-241"></a>train_labels <span class="op">=</span> data[mask]</span>
+<span id="cb3-242"><a href="#cb3-242"></a>test_labels <span class="op">=</span> data[<span class="op">~</span>mask]</span>
+<span id="cb3-243"><a href="#cb3-243"></a>auc_train <span class="op">=</span> auroc(train_probs, train_labels)</span>
+<span id="cb3-244"><a href="#cb3-244"></a>auc_test <span class="op">=</span> auroc(test_probs, test_labels)</span>
+<span id="cb3-245"><a href="#cb3-245"></a><span class="bu">print</span>(<span class="ss">f"train auc: </span><span class="sc">{</span>auc_train<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb3-246"><a href="#cb3-246"></a><span class="bu">print</span>(<span class="ss">f"test auc: </span><span class="sc">{</span>auc_test<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb3-247"><a href="#cb3-247"></a><span class="in">```</span></span>
+</code><button title="Copy to Clipboard" class="code-copy-button" data-in-quarto-modal=""><i class="bi"></i></button></pre></div>
+</div></div></div></div></div>
+</div> <!-- /content -->
+    <footer class="footer"><div class="nav-footer"><div class="nav-footer-center"><div class="toc-actions d-sm-block d-md-none"><ul><li><a href="https://github.com/sangttruong/mlhp/blob/main/src/001-preference_decision_model.qmd" class="toc-action"><i class="bi bi-github"></i>View source</a></li><li><a href="https://github.com/sangttruong/mlhp/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></div></div></footer><script type="text/javascript">
+    (function(d) {
+      d.querySelectorAll(".pseudocode-container").forEach(function(el) {
+        let pseudocodeOptions = {
+          indentSize: el.dataset.indentSize || "1.2em",
+          commentDelimiter: el.dataset.commentDelimiter || "//",
+          lineNumber: el.dataset.lineNumber === "true" ? true : false,
+          lineNumberPunc: el.dataset.lineNumberPunc || ":",
+          noEnd: el.dataset.noEnd === "true" ? true : false,
+          titlePrefix: el.dataset.captionPrefix || "Algorithm"
+        };
+        pseudocode.renderElement(el.querySelector(".pseudocode"), pseudocodeOptions);
+      });
+    })(document);
+    (function(d) {
+      d.querySelectorAll(".pseudocode-container").forEach(function(el) {
+        let captionSpan = el.querySelector(".ps-root > .ps-algorithm > .ps-line > .ps-keyword")
+        if (captionSpan !== null) {
+          let captionPrefix = el.dataset.captionPrefix + " ";
+          let captionNumber = "";
+          if (el.dataset.pseudocodeNumber) {
+            captionNumber = el.dataset.pseudocodeNumber + " ";
+            if (el.dataset.chapterLevel) {
+              captionNumber = el.dataset.chapterLevel + "." + captionNumber;
+            }
+          }
+          captionSpan.innerHTML = captionPrefix + captionNumber;
+        }
+      });
+    })(document);
+    </script>
+  
+
+
+
+
+</body></html>
