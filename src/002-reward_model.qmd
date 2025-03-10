@@ -31,7 +31,7 @@ Human preference models model the preferred choices amongst a set of options. Fo
 
 ### Axiom 2: Preference Centers around Utility {#axiom-3-preference-centers-around-utility .unnumbered}
 
-Human preference models are centered around the notion of utility, a scalar quantity representing the benefit or value an individual attains from selecting a given choice. We assume that the underlying utility mechanism of a human preference model captures the final decision output from a human. We use the notation $U_i$ as the utility corresponding to choice $i$. The utility of a choice $i$ is a stochastic function $H_i$ of the choice's attributes $z_i$: $U_i = H_i(z_i) + \epsilon_i$, where $\epsilon_i$ is an unobserved factor for choice $i$ following a specified distribution, such as a standard normal distribution. The attributes representing a choice $z_i$ are crucial in defining the human preference model, as they provide the context for capturing human behavior when choice $i$ is made. Only the relative difference in utility matters. As such, the scale of the utilities is irrelevant within a given set of human preference data for a given individual. The scale of utilities is important when comparing across datasets or across different humans; since utility may be defined differently in various datasets or different human. A common practice to address this consideration is to standardize the utilities in each dataset based on its variance in the observed data.
+Human preference models are centered around the notion of utility, a scalar quantity representing the benefit or value an individual attains from selecting a given choice. We assume that the underlying utility mechanism of a human preference model captures the final decision output from a human. We use the notation $u_{i,j}$ as the utility of person $i$ choosing item $j$. The utility is a random variable, decomposing into true utility $u_{i,j}^*$ and a random noise $\epsilon_{i,j}$: $u_{i,j} = u_{i,j}^* + \epsilon_{i,j}$. Only the relative difference in utility matters to predict the choice among options. As such, the scale of the utilities is irrelevant within a given set of human preference data. The scale of utilities is important when comparing across datasets or across different humans; since utility may be defined differently in various datasets or different human. A common practice to address this consideration is to standardize the utilities in each dataset based on its variance in the observed data.
 
 ### Axiom 3: Rationality {#human-rationality .unnumbered}
 
@@ -81,80 +81,112 @@ Next, we explore various mechanisms by which humans can express their preference
 
 *Rating-scale sampling*, such as the Likert scale, is a method in which participants rate items on a fixed-point scale (e.g., 1 to 5, "Strongly Disagree" to "Strongly Agree") to measure levels of preference towards items [@harpe2015]. Participants can also mark a point on a continuous rating scale to indicate their preference or attitude. Commonly used in surveys, product reviews, and psychological assessments, this method provides a more nuanced measure than discrete scales. Rating-scale sampling is simple for participants to understand and use, provides rich data on the intensity of preferences, and is flexible enough for various measurements (e.g., agreement, satisfaction) [@harpe2015]. However, rating-scale sampling methods also have limitations. Ratings can be influenced by personal biases and interpretations of scales, leading to subjectivity. There is a central tendency bias, where participants may avoid extreme ratings, resulting in clustering responses around the middle. Different participants might interpret scale points differently, and fixed-point scales may not capture the full nuance of participants' preferences or attitudes [@harpe2015].
 
-*Best-worst scaling* (BWS) is a powerful method for understanding preferences and the relative importance of different items. In BWS, participants are presented with items and asked to identify the most and least preferred options. The primary objective of BWS is to discern the relative importance or preference of items within a set, making it widely applicable in various fields such as market research, health economics, and social sciences [@campbell2015]. A key method within BWS is MaxDiff Analysis, which involves presenting participants with items and asking them to select the best and worst options. For instance, in a product development context, MaxDiff Analysis can help determine the most and least important features according to consumer preferences [@campbell2015]. BWS provides rich data on the relative importance of items, helps clarify preferences, reduces biases found in traditional rating scales, and results in utility scores that are easy to interpret. However, BWS also has limitations, including potential scale interpretation differences among participants, and design challenges to avoid biases, such as the order effect or the context in which items are presented.
+*In Best-worst scaling* (BWS), participants are presented with items and asked to identify the most and least preferred options. The primary objective of BWS is to discern the relative importance or preference of items, making it widely applicable in various fields such as market research, health economics, and social sciences [@campbell2015]. BWS provides rich data on the relative importance of items, helps clarify preferences, reduces biases found in traditional rating scales, and results in utility scores that are easy to interpret. However, BWS also has limitations, including potential scale interpretation differences among participants, and design challenges to avoid biases, such as the order effect or the context in which items are presented.
 
-*Multiple-choice sampling* models are widely used in various fields, such as voting systems, surveys, and market research, to understand the preferred choice among a set of alternatives. These models involve participants selecting one option from a set of alternatives. Multiple-choice sampling is simple for participants to understand and reflect on realistic decision-making scenarios where individuals choose one option from many. It is beneficial in complex choice scenarios, such as modes of transportation, where choices are not independent [@bolt2009]. Multiple-choice sampling often relies on simplistic assumptions such as the independence of irrelevant alternatives (IIA), which may not always hold true. This method may also fail to capture the variation in preferences among different individuals, as it typically records only the most preferred choice without accounting for the relative importance of other options.
+*Multiple-choice sampling* involve participants selecting one option from a set of alternatives. Multiple-choice sampling is simple for participants to understand and reflect on realistic decision-making scenarios where individuals choose one option from many. It is beneficial in complex choice scenarios, such as modes of transportation, where choices are not independent [@bolt2009]. Multiple-choice sampling often relies on simplistic assumptions such as the independence of irrelevant alternatives (IIA), which may not always hold true. This method may also fail to capture the variation in preferences among different individuals, as it typically records only the most preferred choice without accounting for the relative importance of other options.
 
 ## Models of Choices {#sec-models}
 
 #### Binary Choice Model {#binary-choice-model .unnumbered}
 
-Binary Choice Model is centered around one specific user option. The model predicts, for that option, after observing user choices in the past, whether that option will be chosen or not. Specifically, if we are looking at a certain choice, we use binary variable $y \in \{0, 1\}$ to represent whether that choice will be picked or not by the user in the next phase of selection. We denote $P = \mathbb{P}(y = 1)$. We can use a linear model represented by the parameter $\beta$ we have already defined. Since utility is a stochastic function of the choice attributes, we will represent our utility as $U = \beta^\top z + \epsilon$. We can formally model $y$ as a function of the utility of the positive choice: $y = \mathbb{I}[U>0]$. We explore two cases based on the choice of distribution for the unobserved random variable $\epsilon$. If $\epsilon \sim \text{Logistic}$, then $\mathbb{P}(\epsilon < a) = \frac{1}{1 + \exp^{-a}}$. The probability $P$ can be modeled as:
+Binary choice model is centered around one item. The model predicts, for that option, after observing user choices in the past, whether that option will be chosen or not. We use binary variable $y \in \{0, 1\}$ to represent whether that choice will be picked by the user in the next phase of selection. We denote $P = \mathbb{P}(y = 1)$. We can formally model $y$ as a function of the utility of the positive choice: $y = \mathbb{I}[U>0]$. We explore two cases based on the noise distribution. $\psi$ is the logistic function or the standard normal cummulative distribution function if noise follows logistic distribution and the standard normal distribution, repsectively:
 $$
-P = \mathbb{P}(U > 0) = \mathbb{P}(\beta^\top z + \epsilon > 0) = \mathbb{P}( \epsilon > -\beta^\top z) = 1 - \mathbb{P}( \epsilon < -\beta^\top z) = 1 - \frac{1}{1 + \exp^{\beta^\top z}} = \frac{1}{1 + \exp^{-\beta^\top z}}
+\mathbb{P}(u_{i,j} > 0) = \mathbb{P}(u_{i,j}^* + \epsilon > 0) = 1 - \mathbb{P}( \epsilon < -u_{i,j}^*) = \psi(u_{i,j}^*).
 $$
-
-On the other hand, if $\epsilon \sim \mathcal{N}(0, 1)$, then $\mathbb{P}(\epsilon < a) = \Phi(a)$, where $\Phi(a)$ is the cumulative distribution function of the standard normal distribution. The probability $P$ is modeled as:
-
-$$P = \mathbb{P}(U > 0) = \mathbb{P}(\beta^\top z + \epsilon > 0) = \mathbb{P}( \epsilon > -\beta^\top z) = \mathbb{P}( \epsilon < \beta^\top z) = \Phi(\beta^\top z)$$
 
 #### Bradley-Terry Model {#bradley-terry-model .unnumbered}
 
-The Bradley-Terry (BT) model introduces a framework to model the utility of choice over all others given their attribute vectors [@bradley-terry-model]. In the BT model, we have a discrete set of $J$ choices $i \in \{1, 2, \dots, J\}$, each with an attribute representation $z_i \in \mathbb{Z}^n$ (where $n$ is the dimensionality of the representation). Each choice can also have its unique random noise variable representing the unobserved factor, although we can also choose to have all choices' unobserved factors follow the same distribution (e.g. independent and identically distributed, or IID). We keep the assumption from previous sections that the utility $U_i$ of choice $i$ is also a linear stochastic function where the noise is sampled from the specified distribution: $U_i = \beta^\top z_i + \epsilon_i$. The noise is represented as an extreme value distribution, although we can choose alternatives such as a multivariate Gaussian distribution: $\epsilon \sim \mathcal{N}(0, \Sigma)$. If $\Sigma$ is not a diagonal matrix, we effectively model correlations in the noise across choices, enabling us to avoid the iid assumption if necessary. In the case of the extreme value distribution, we model the probability of a user preferring choice $i$, which we denote as $P_i$ as $P_i = \exp(\beta^\top z_i)/Z$ where $Z = \sum_{j = 1}^{J} \exp(\beta^\top z_j)$.
+The Bradley-Terry model compares the utility of choice over all others [@bradley-terry-model] in the set of $J$ choices $i \in \{1, 2, \dots, J\}$. Each choice can also have its unique random noise variable representing the unobserved factor, although we can also choose to have all choices' unobserved factors follow the same distribution (e.g. independent and identically distributed, IID). The noise is represented as an extreme value distribution, although we can choose alternatives such as a multivariate Gaussian distribution: $\epsilon \sim \mathcal{N}(0, \Sigma)$. If $\Sigma$ is not a diagonal matrix, we effectively model correlations in the noise across choices, enabling us to avoid the IID assumption. In the case of the extreme value distribution, we model the probability of a user preferring choice $i$, which we denote as $P_i = Z^{-1}\exp(u_{i,j}^*)$ where $Z = \sum_{j = 1}^{J} \exp(u_{i,j}^*)$.
 
 #### Ordered Preferences Model {#ordered-preferences-model .unnumbered}
 
-In all previous examples, we have assumed that we have no information on any explicit ordering of the available options a human can choose from: all choices were treated as independent by the model. The model aims to capture how an individual chooses between them. However, in many cases, we may introduce an inductive bias based on information about the options. For example, in a study for stated preferences, a user may be able to choose from intricately dependent options such as very poor, poor, fair, good, and great. In this case, it can be useful to include this bias in our model to represent a human's decision-making process better. For such cases, instead of comparing choices against alternatives, we can focus on a single example and use additional parameters to define classification criteria based on the utility determined by the model. Formally, let us suppose we have a single example with attributes $z_i$, and wish to know which of $J$ predefined options an individual will choose from. We can define $J - 1$ parameters, which act as thresholds on the utility computed by $U_i = H(z_i)$ to classify the predicted choice between these options. For example, if there are 3 predefined options, we can define parameters $a, b \in \mathbb{R}$ such that
+Previous models do not leverage information about ordering of the available options a human can choose from: all choices were treated as independent by the model. The model aims to capture how an individual chooses between them. However, in many cases, we may introduce an inductive bias based on information about the options. For example, in a study for stated preferences, a user may be able to choose from intricately dependent options such as very poor, poor, fair, good, and great. In this case, it can be useful to include this bias in our model to represent a human's decision-making process better. Instead of comparing choices against alternatives, we can focus on a single example and use additional parameters to define classification criteria based on the utility determined by the model. Let us suppose we have a single example with attributes $z_i$, and wish to know which of $J$ predefined options an individual will choose from. We can define $J - 1$ parameters, which act as thresholds on the utility computed by $u_i = u_{i,j}^*$ to classify the predicted choice between these options. For example, if there are 3 predefined options, we can define parameters $a, b \in \mathbb{R}$ such that
 
 $$
 y_i =
 \begin{cases} 
-    1 & U < a \\
-    2 & a \le U < b \\
+    1 & u < a \\
+    2 & a \le u < b \\
     3 & \text{else}
 \end{cases}
 $$
 
-When the noise follow a logistic distribution, we can use our cumulative distributions as before to model the probability that a person will choose a given option. Continuing with our linear utility function $U_i = \beta^\top z_i + \epsilon_i$, we can start with the setting that we assume unobserved factors follow a logistic distribution and focus on
-the first case:
-$$\mathbb{P}(y_i = 1) = \mathbb{P}(U < a) = \mathbb{P}(\beta^\top z + \epsilon < a )  = \mathbb{P}( \epsilon < a - \beta^\top z)  = \frac{1}{1 + \exp(\beta^\top z - a)}$$
-
-Extending this method to the second case, where we estimate the probability of the utility falling within a specific interval:
-$$\begin{aligned}
-    \mathbb{P}(y_i = 2) & = \mathbb{P}(a \le U < b) = \mathbb{P}(a - \beta^\top z \le \epsilon < b - \beta^\top z) = \frac{1}{1 + \exp(\beta^\top z - b)}  - (1 - \mathbb{P}( \epsilon < a - \beta^\top z) ) \\
-    & = \frac{1}{1 + \exp(\beta^\top z - b)}  - (1 - \frac{1}{1 + \exp(\beta^\top z - a)}  ) = \frac{1}{1 + \exp(\beta^\top z - b)}  - \frac{1}{1 + \exp(a - \beta^\top z)}  ) \\
-\end{aligned}$$
-
-The final case follows the form of the inverse of the first case:
-
-$$\mathbb{P}(y_i = 3) = \mathbb{P}(U > b) = \mathbb{P}(\beta^\top z + \epsilon > b ) = \mathbb{P}( \epsilon > b - \beta^\top z) = 1 - \mathbb{P}( \epsilon < b - \beta^\top z) = \frac{1}{1 + \exp(\beta^\top z - b)}$$
-
-In the case of modeling unobserved factors with a standard normal distribution, we have:
+By assuming the noise distribution to be either logistic or standard normal, we have 
 $$
 \begin{split}
-    \mathbb{P}(y_i = 1) & = \mathbb{P}(U < a) = \mathbb{P}(\beta^\top z + \epsilon < a ) = \mathbb{P}( \epsilon < a - \beta^\top z) = \Phi(a - \beta^\top z) \\
-    \mathbb{P}(y_i = 2) & = \mathbb{P}(a \le U < b) 
-    = \mathbb{P}(a - \beta^\top z \le \epsilon < b - \beta^\top z) = \Phi(b - \beta^\top z) - \Phi(a - \beta^\top z) \\
-    \mathbb{P}(y_i = 3) & = \mathbb{P}(U > b) 
-    = 1 - \Phi(b - \beta^\top z) 
+    \mathbb{P}(y_i = 1) & = \mathbb{P}(u < a) = \mathbb{P}(u_{i,j}^* + \epsilon < a) = \psi(a-u_{i,j}^*) \\
+    \mathbb{P}(y_i = 2) & = \mathbb{P}(a \le u < b) = \mathbb{P}(a - u_{i,j}^* \le \epsilon < b - u_{i,j}^*) = \psi(b-u_{i,j}^*)  - \psi(u_{i,j}^*-a) \\
+    \mathbb{P}(y_i = 3) & = \mathbb{P}(u > b) = \mathbb{P}(u_{i,j}^* + \epsilon > b ) = \mathbb{P}( \epsilon > b - u_{i,j}^*) = \psi(b-u_{i,j}^*)
 \end{split}
 $$
 
 #### Plackett-Luce Model {#plackett-luce-model .unnumbered}
 
-We can model an open-ended ranking of the available options with the Plackett-Luce (PL) Model, in which we jointly model the full sequence of choice ordering [@plackett_luce]. The general form models the joint distribution as the product of conditional probabilities, where each is conditioned on the preceding ranking terms. Given an ordering of $J$ choices $\{Y_1, Y_2, \dots, Y_J\}$ where $Y_1$ is the first selection, $Y_2$ is the second, and so on, we decompose the joint probability into its respective conditionals. To compute the conditional probabilities, we can use the same method as the BT model, using a softmax to produce valid conditional distributions for each element of the sequence:
-
+We can model an open-ended ranking of the available options with the Plackett-Luce model, in which we jointly model the full sequence of choice ordering [@plackett_luce]. The general form models the joint distribution as the product of conditional probabilities, where each is conditioned on the preceding ranking terms. Given an ordering of $J$ choices $\{y_1, \dots, y_J\}$, we factorize the joint probability into conditionals. Each conditional follows the Bradley-Terry model:
 $$
-\mathbb{P}(Y_1, Y_2, \dots, Y_J) = \mathbb{P}(Y_1) \cdot \mathbb{P}(Y_2 | Y_1) \cdot \dots \cdot \mathbb{P}(Y_J | Y_1, Y_2, \dots Y_{J - 1}) = \prod_{i = 1}^J \frac{\exp(\beta^\top z_i)}{\sum_{j \ge i} \exp(\beta^\top z_j)}
+\mathbb{P}(y_1, \dots, y_J) = \mathbb{P}(y_1) \cdot \mathbb{P}(y_2 | y_1) \cdot \dots \cdot \mathbb{P}(y_J | y_1, y_2, \dots y_{J - 1}) = \prod_{i = 1}^J \frac{\exp(u_{i,j}^*)}{\sum_{j \ge i} \exp(u_{i,j}^*)}
 $$
-
-An interesting property of the PL Model is that in the naive case of only ordering a single choice, it is equivalent to the pairwise preference formulation of the BT model.
 
 #### Ideal Point Model {#ideal-point-model .unnumbered}
 
-The Ideal Point Model uses distance functions to compute utility for individual-choice pairs [@huber1976ideal]. Given vector representation $z_i$ of choice $i$ and a vector $\textbf{v}_n$ representing an individual $n$, we can use a distance function to model a stochastic utility function with the unobserved factors following a specified distribution: $U_{n, i} = \texttt{dist}(z_i, \textbf{v}_n) + \epsilon_{n, i}$. We assume human preferences follow the choice with maximum utility: $y_{n, i} = \mathbb{I}[U_{n, i} > U_{n, j} \ \forall i \ne j]$. The intuition is that vectors exist in a shared $n$-dimensional space, and as such we can use geometry to match choices whose representations are closest to that of a given individual. This model can often result in faster learning compared to non-geometric approaches [@ideal_point; @tatli2022distancepreferences] when equipped with a distance metric. Certain distance metrics, such as Euclidian distance or inner product, can easily be biased by the scale of vectors. A distance measure such as cosine similarity, which compensates for scale by normalizing the inner product of two vectors by the product of their magnitudes, can mitigate this bias yet may discard valuable information encoded by the length of the vectors. Beyond the distance metric alone, this model places a strong inductive bias that the individual and choice representations all share a common embedding space. In some contexts, this can be a robust bias to add to the model [@idealpoints], but it is a key factor one must take into account before employing such a model, and is a key design choice for modeling.
+The ideal point model uses distance functions to compute utility for individual-choice pairs [@huber1976ideal]. Given vector representation $z_i$ of choice $i$ and a vector $v_n$ representing an individual $n$, we can use a distance function to model a stochastic utility function with the unobserved factors following a specified distribution: $u_{n, i} = \texttt{dist}(z_i, v_n) + \epsilon_{n, i}$. We assume human preferences follow the choice with maximum utility: $y_{n, i} = \mathbb{I}[u_{n, i} > u_{n, j} \ \forall i \ne j]$. The intuition is that vectors exist in a shared $n$-dimensional space, and as such we can use geometry to match choices whose representations are closest to that of a given individual. This model can often result in faster learning compared to non-geometric approaches [@ideal_point; @tatli2022distancepreferences] when equipped with a distance metric. Certain distance metrics, such as Euclidian distance or inner product, can easily be biased by the scale of vectors. A distance measure such as cosine similarity, which compensates for scale by normalizing the inner product of two vectors by the product of their magnitudes, can mitigate this bias yet may discard valuable information encoded by the length of the vectors. Beyond the distance metric alone, this model places a strong inductive bias that the individual and choice representations all share a common embedding space. In some contexts, this can be a robust bias to add to the model [@idealpoints], but it is a key factor one must take into account before employing such a model, and is a key design choice for modeling.
+
+## Choices Aggregation
+
+Game theory provides a mathematical framework for analyzing strategic
+interactions among rational agents. These models help in understanding
+and predicting human behavior by considering multiple criteria and the
+associated trade-offs. They enhance the understanding of preferences
+across multiple criteria and allow for richer and more accurate feedback
+through structured comparisons. Game-theory framings capture the
+complexity of preferences and interactions in decision-making processes
+[@bhatia2020preference].
+
+The most popular form of preference elicitation involves pairwise
+comparisons. Users are asked to choose between two options, such as
+product A or product B. This method is used in various applications like
+search engines, recommender systems, and interactive robotics. Key
+concepts include the Von Neumann Winner and the Blackwell Winner. The
+Von Neumann Winner refers to a distribution over objects that beats or
+ties every other object in the collection under the expected utility
+assumption. The Blackwell Winner generalizes the Von Neumann Winner for
+multi-criteria problems using a target set for acceptable payoff vectors
+[@bhatia2020preference].
+
+Game-theory framings provide a framework for preference learning along
+multiple criteria. These models use tools from vector-valued payoffs in
+game theory, with Blackwell's approach being a key concept. This
+approach allows for a more comprehensive understanding of preferences by
+considering multiple criteria simultaneously [@bhatia2020preference].
+
+In game-theory framings, pairwise preferences are modeled as random
+variables. Comparisons between objects along different criteria are
+captured in a preference tensor $P$. This tensor models the probability
+that one object is preferred over another along a specific criterion,
+allowing for a detailed understanding of preferences across multiple
+dimensions [@bhatia2020preference].
+
+The preference tensor $P$ captures object comparisons along different
+criteria. It is defined as:
+$$P(i_1, i_2; j) = P(i_1 \succ i_2 \text{ along criterion } j)$$ where
+$P(i_2, i_1; j) = 1 - P(i_1, i_2; j)$. These values are aggregated to
+form an overall preference matrix $P_{ov}$ [@bhatia2020preference].
+
+The Blackwell Winner is defined using a target set $S$ of acceptable
+score vectors. The goal is to find a distribution $\pi^*$ such that
+$P(\pi^*, \pi) \in S$ for all $\pi$. This method minimizes the maximum
+distance to the target set, providing a robust solution to
+multi-criteria preference problems [@bhatia2020preference].
+
+The optimization problem for finding the Blackwell Winner is defined as:
+$$\pi(P, S, \|\cdot\|) = \arg \min_{\pi \in \Delta_d} \left[ \max_{\pi' \in \Delta_d} \rho(P(\pi, \pi'), S) \right]$$
+where $\rho(u, v) = \|u - v\|$. This measures the distance to the target
+set, ensuring that the selected distribution is as close as possible to
+the ideal preference vector [@bhatia2020preference].
+
 
 ## Parameterization and Learning of Utility Functions {#sec-learning}
+The attributes representing a choice $z_i$ are crucial in defining the human preference model, as they provide the context for capturing human behavior when choice $i$ is made. 
 
 With an understanding of the various techniques we can use to model
 human preferences, we can now create robust models which utilize context
@@ -195,10 +227,10 @@ $$\mathcal{L}(z, Y; \beta) = \prod_{i = 1}^J \mathbb{P}(y = y_i | z_i; \beta)$$
 
 In our very first example of binary choice with logistic noise, this was
 simply the model's probability of the observed preference value:
-$$\mathcal{L}(z_i, y_i; \beta) = \frac{1}{1 + \exp^{-\beta^\top z}}$$
+$$\mathcal{L}(z_i, y_i; \beta) = \frac{1}{1 + \exp^{-u_{i,j}^*}}$$
 
 In the same case with noise following a standard normal distribution,
-this took the form: $$\mathcal{L}(z_i, y_i; \beta) = \Phi(\beta^\top z)$$
+this took the form: $$\mathcal{L}(z_i, y_i; \beta) = \Phi(u_{i,j}^*)$$
 
 Fortunately, in these cases, there are straightforward methods for
 parameter estimation: logistic regression and probit regression (binary
@@ -1145,60 +1177,6 @@ standard Gaussian for the reward weights and the mixing coefficients to
 be uniform on a $M - 1$ simplex to ensure that they add up to 1. Then we
 can use maximum likelihood estimation to compute the parameters with the
 simplified posterior.
-
-## Social Choices
-
-Game theory provides a mathematical framework for analyzing strategic
-interactions among rational agents. These models help in understanding
-and predicting human behavior by considering multiple criteria and the
-associated trade-offs. They enhance the understanding of preferences
-across multiple criteria and allow for richer and more accurate feedback
-through structured comparisons. Game-theory framings capture the
-complexity of preferences and interactions in decision-making processes
-[@bhatia2020preference].
-
-The most popular form of preference elicitation involves pairwise
-comparisons. Users are asked to choose between two options, such as
-product A or product B. This method is used in various applications like
-search engines, recommender systems, and interactive robotics. Key
-concepts include the Von Neumann Winner and the Blackwell Winner. The
-Von Neumann Winner refers to a distribution over objects that beats or
-ties every other object in the collection under the expected utility
-assumption. The Blackwell Winner generalizes the Von Neumann Winner for
-multi-criteria problems using a target set for acceptable payoff vectors
-[@bhatia2020preference].
-
-Game-theory framings provide a framework for preference learning along
-multiple criteria. These models use tools from vector-valued payoffs in
-game theory, with Blackwell's approach being a key concept. This
-approach allows for a more comprehensive understanding of preferences by
-considering multiple criteria simultaneously [@bhatia2020preference].
-
-In game-theory framings, pairwise preferences are modeled as random
-variables. Comparisons between objects along different criteria are
-captured in a preference tensor $P$. This tensor models the probability
-that one object is preferred over another along a specific criterion,
-allowing for a detailed understanding of preferences across multiple
-dimensions [@bhatia2020preference].
-
-The preference tensor $P$ captures object comparisons along different
-criteria. It is defined as:
-$$P(i_1, i_2; j) = P(i_1 \succ i_2 \text{ along criterion } j)$$ where
-$P(i_2, i_1; j) = 1 - P(i_1, i_2; j)$. These values are aggregated to
-form an overall preference matrix $P_{ov}$ [@bhatia2020preference].
-
-The Blackwell Winner is defined using a target set $S$ of acceptable
-score vectors. The goal is to find a distribution $\pi^*$ such that
-$P(\pi^*, \pi) \in S$ for all $\pi$. This method minimizes the maximum
-distance to the target set, providing a robust solution to
-multi-criteria preference problems [@bhatia2020preference].
-
-The optimization problem for finding the Blackwell Winner is defined as:
-$$\pi(P, S, \|\cdot\|) = \arg \min_{\pi \in \Delta_d} \left[ \max_{\pi' \in \Delta_d} \rho(P(\pi, \pi'), S) \right]$$
-where $\rho(u, v) = \|u - v\|$. This measures the distance to the target
-set, ensuring that the selected distribution is as close as possible to
-the ideal preference vector [@bhatia2020preference].
-
 
 {{< include psets/pset1.qmd >}}
 
