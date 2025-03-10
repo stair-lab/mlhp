@@ -19,6 +19,6 @@ images/management/analysis_pipeline.pdf
 *.toc
 *.aux
 # *.tex
-*.pdf
+# *.pdf
 
 /.quarto/
