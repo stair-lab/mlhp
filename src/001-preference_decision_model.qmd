@@ -15,11 +15,9 @@
 
 :::
 
-## Introduction
-
 Human preference modeling aims to capture humans' decision making processes in a probabilistic framework. Many problems would benefit from a quantitative perspective, enabling an understanding of how humans engage with the world. In this chapter, we will explore how one can model human preferences, including different formulations of such models, how one can optimize these models given data, and considerations one should understand to create such systems. We describe these assumptions in @sec-foundations.
 
-## Foundations of Preference Models {#sec-foundations}
+## The Construction of Preference {#sec-foundations}
 
 <!--
 An alternative framework we will explore is ranking, in which we can model an ordering of given choices from most to least desirable. It is possible that there is an infinite set of options; in this case, our model will have to reason about a discretized set of options and may fail to capture the full space of possibilities a human would choose from in the real world.
