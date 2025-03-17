@@ -1,3 +1,10 @@
+---
+title: Chapter 2
+format: html
+filters:
+  - pyodide
+---
+
 # Models of Preferences and Decisions {#ch-human-decision-making-choice-models}
 
 ::: {.content-visible when-format="html"}
@@ -75,9 +82,123 @@ Stated preferences are those individuals explicitly indicate in potentially expe
 
 ## Methods for Collecting Preference Data {#sec-collect}
 
-Next, we explore various mechanisms by which humans can express their preferences, including pairwise sampling, rank-order sampling, rating-scale sampling, best-worst scaling, and multiple-choice samples. In *pairwise sampling*, participants compare two options to determine which is preferred. One of the major advantage of this method is low cognitive demand for rater. Its disavantage is the limited amount of information content elicited by a sample. Next, we will see that we can trading cognitive demand for rater to elicit more nuance preference information. For example, *Rank-order sampling* captures human preferences by having participants rank items from most to least preferred. Used in voting, market research, and psychology, it provides rich preference data but is more complex and cognitively demanding than pairwise comparisons, especially for large item sets. Participants may also rank inconsistently [@ragain2019]. 
+Next, we explore various mechanisms by which humans can express their preferences, including pairwise sampling, rank-order sampling, rating-scale sampling, best-worst scaling, and multiple-choice samples. In *pairwise sampling*, participants compare two options to determine which is preferred. One of the major advantage of this method is low cognitive demand for rater. Its disavantage is the limited amount of information content elicited by a sample. We will familiarize ourselves with pairwise sampling through a simulation. Each item $i$ is represented by a $d$ dimentional vector $x_i$. The user has a latent utility function $f$ that they use to compute the latent utility of item from the features. In this simulation, the latent utility function is the Ackley function \cite{ackley1987}. In the surface below, blue and red points corresponds to accept or reject points.
+
+```{python}
+import torch
+from botorch.test_functions.synthetic import Ackley
+import matplotlib.pyplot as plt
+import numpy as np
+from matplotlib.colors import LinearSegmentedColormap
+custom_cmap = LinearSegmentedColormap.from_list("custom_ackley", ["#F89B28", "#FFF2C9"], N=100)
+torch.manual_seed(0)
+from tueplots import bundles
+bundles.icml2024()
+plot_config = bundles.icml2024(usetex=True, family="serif")
+plot_config.update({
+    "font.size": 14,         # Increase base font size
+    "axes.labelsize": 16,    # Increase axis label font size
+    "xtick.labelsize": 14,   # Increase x-axis tick labels
+    "ytick.labelsize": 14,   # Increase y-axis tick labels
+    "legend.fontsize": 14,   # Increase legend font size
+    "axes.titlesize": 16,    # Increase title font size
+})
+
+# Visualize the Ackley function as a heat map
+def draw_surface():
+    x = np.linspace(-6, 6, 100)
+    y = np.linspace(-6, 6, 100)
+    X, Y = np.meshgrid(x, y)
+    Z = utility_fn(torch.tensor(np.c_[X.ravel(), Y.ravel()])).reshape(X.shape)
+    plt.figure(figsize=(6, 4.5))
+    contour = plt.contourf(X, Y, Z.numpy(), 50, cmap=custom_cmap)
+    plt.contour(X, Y, Z.numpy(), levels=15, colors='black', linewidths=0.5, alpha=0.6)
+    plt.colorbar(contour, label=r'$f(x)$')
+    plt.xlabel(r'$x_1$')
+    plt.ylabel(r'$x_2$')
+
+d = 2
+n_items = 400
+utility_fn = Ackley(dim=d)
+items = torch.randn(n_items, d) + torch.ones(n_items, d)
+utilities = utility_fn(items).numpy()
+```
+
+```{pyodide-python}
+n = 5
+while n > 0:
+  print(n)
+  n = n - 1
+
+print('Blastoff!')
+```
+
+```{python}
+preference = (utilities > utilities.mean())
+with plt.rc_context(plot_config):
+    draw_surface()
+    plt.scatter(items[:, 0], items[:, 1], c=preference, cmap='coolwarm', s=5, alpha=0.5)
+    plt.show()
+```
 
 *Rating-scale sampling*, such as the Likert scale, is a method in which participants rate items on a fixed-point scale (e.g., 1 to 5, "Strongly Disagree" to "Strongly Agree") to measure levels of preference towards items [@harpe2015]. Participants can also mark a point on a continuous rating scale to indicate their preference or attitude. Commonly used in surveys, product reviews, and psychological assessments, this method provides a more nuanced measure than discrete scales. Rating-scale sampling is simple for participants to understand and use, provides rich data on the intensity of preferences, and is flexible enough for various measurements (e.g., agreement, satisfaction) [@harpe2015]. However, rating-scale sampling methods also have limitations. Ratings can be influenced by personal biases and interpretations of scales, leading to subjectivity. There is a central tendency bias, where participants may avoid extreme ratings, resulting in clustering responses around the middle. Different participants might interpret scale points differently, and fixed-point scales may not capture the full nuance of participants' preferences or attitudes [@harpe2015].
+
+```{python}
+# Custom discrete colormap: red for lowest rating (0) to blue for highest rating (4)
+likert_cmap = LinearSegmentedColormap.from_list("likert_scale", ["red", "blue"], N=5)
+
+# Normalize utilities to get ratings from 0 to 4
+min_util, max_util = utilities.min(), utilities.max()
+# Avoid division by zero in case all utilities are equal
+if max_util - min_util > 0:
+    normalized = (utilities - min_util) / (max_util - min_util)
+else:
+    normalized = torch.zeros_like(utilities)
+ratings = np.round(normalized * 4).squeeze()  # discrete ratings 0,1,2,3,4
+
+with plt.rc_context(plot_config):
+    draw_surface()
+    # Plot items with their Likert rating
+    scatter = plt.scatter(
+        items[:, 0], items[:, 1], c=ratings, cmap=likert_cmap,
+        s=40, edgecolor='k', label='Item Rating'
+    )
+    
+    # Create a colorbar with discrete ticks for ratings 0 to 4
+    cbar = plt.colorbar(scatter, ticks=[0, 1, 2, 3, 4])
+    cbar.set_label('Likert Rating (0 = most hate, 4 = most liked)')    
+    plt.legend()
+    plt.show()
+
+```
+
+Next, we will see that we can trading cognitive demand for rater to elicit more nuance preference information. For example, *Rank-order sampling* captures human preferences by having participants rank items from most to least preferred. Used in voting, market research, and psychology, it provides rich preference data but is more complex and cognitively demanding than pairwise comparisons, especially for large item sets. Participants may also rank inconsistently [@ragain2019]. 
+
+```{python}
+n_pairs = 10000  # number of random pair comparisons
+pair_indices = torch.randint(0, n_items, (n_pairs, 2))
+mask = pair_indices[:, 0] != pair_indices[:, 1]
+pair_indices = pair_indices[mask]
+
+scores = torch.zeros(n_items)
+for i, j in pair_indices:
+    if utilities[i] > utilities[j]:
+        scores[i] += 1  # win for point i
+        scores[j] -= 1  # loss for point j
+    else:
+        scores[i] -= 1  # loss for point i
+        scores[j] += 1  # win for point j
+
+preferred = scores > 0
+non_preferred = scores < 0
+
+with plt.rc_context(plot_config):
+    draw_surface()
+    plt.scatter(items[preferred, 0], items[preferred, 1], marker='+', c='blue', s=40, label='Preferred')
+    plt.scatter(items[non_preferred, 0], items[non_preferred, 1], marker='_', c='red', s=40, label='Non-preferred')
+    plt.legend()
+    plt.show()
+```
 
 *In Best-worst scaling* (BWS), participants are presented with items and asked to identify the most and least preferred options. The primary objective of BWS is to discern the relative importance or preference of items, making it widely applicable in various fields such as market research, health economics, and social sciences [@campbell2015]. BWS provides rich data on the relative importance of items, helps clarify preferences, reduces biases found in traditional rating scales, and results in utility scores that are easy to interpret. However, BWS also has limitations, including potential scale interpretation differences among participants, and design challenges to avoid biases, such as the order effect or the context in which items are presented.
 

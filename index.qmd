@@ -1,3 +1,10 @@
+---
+title: Chapter 1
+format: html
+filters:
+  - pyodide
+---
+
 # Introduction {#ch-introduction}
 ::: {.content-visible when-format="html"}
 
