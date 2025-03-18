@@ -1,11 +1,9 @@
 ---
-title: Chapter 2
+title: Models of Preferences and Decisions
 format: html
 filters:
   - pyodide
 ---
-
-# Models of Preferences and Decisions {#ch-human-decision-making-choice-models}
 
 ::: {.content-visible when-format="html"}
 
@@ -84,6 +82,73 @@ Stated preferences are those individuals explicitly indicate in potentially expe
 
 Next, we explore various mechanisms by which humans can express their preferences, including pairwise sampling, rank-order sampling, rating-scale sampling, best-worst scaling, and multiple-choice samples. In *pairwise sampling*, participants compare two options to determine which is preferred. One of the major advantage of this method is low cognitive demand for rater. Its disavantage is the limited amount of information content elicited by a sample. We will familiarize ourselves with pairwise sampling through a simulation. Each item $i$ is represented by a $d$ dimentional vector $x_i$. The user has a latent utility function $f$ that they use to compute the latent utility of item from the features. In this simulation, the latent utility function is the Ackley function \cite{ackley1987}. In the surface below, blue and red points corresponds to accept or reject points.
 
+```{pyodide-python}
+import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.colors import LinearSegmentedColormap
+
+# Create a custom colormap
+custom_cmap = LinearSegmentedColormap.from_list("custom_ackley", ["#F89B28", "#FFF2C9"], N=100)
+
+# Set a random seed for reproducibility
+np.random.seed(0)
+
+# Define the Ackley function for a d-dimensional input.
+def ackley(X, a=20, b=0.2, c=2*np.pi):
+    """
+    Compute the Ackley function.
+    Parameters:
+      X: A NumPy array of shape (n, d) where each row is a d-dimensional point.
+      a, b, c: Parameters of the Ackley function.
+    Returns:
+      A NumPy array of function values.
+    """
+    X = np.atleast_2d(X)
+    d = X.shape[1]
+    sum_sq = np.sum(X ** 2, axis=1)
+    term1 = -a * np.exp(-b * np.sqrt(sum_sq / d))
+    term2 = -np.exp(np.sum(np.cos(c * X), axis=1) / d)
+    return term1 + term2 + a + np.e
+
+# Generate a surface plot for the Ackley function.
+def draw_surface():
+    x = np.linspace(-6, 6, 100)
+    y = np.linspace(-6, 6, 100)
+    X, Y = np.meshgrid(x, y)
+    # Stack X and Y coordinates to create a grid of 2D points.
+    grid = np.column_stack([X.ravel(), Y.ravel()])
+    Z = ackley(grid).reshape(X.shape)
+    
+    plt.figure(figsize=(6, 4.5))
+    contour = plt.contourf(X, Y, Z, 50, cmap=custom_cmap)
+    plt.contour(X, Y, Z, levels=15, colors='black', linewidths=0.5, alpha=0.6)
+    plt.colorbar(contour, label=r'$f(x)$')
+    plt.xlabel(r'$x_1$')
+    plt.ylabel(r'$x_2$')
+    return X, Y, Z
+
+# Generate random items and compute their utility values.
+d = 2
+n_items = 400
+items = np.random.randn(n_items, d) + np.ones((n_items, d))
+utilities = ackley(items)
+
+# Optionally, adjust global plot settings (font sizes, etc.)
+plt.rcParams.update({
+    "font.size": 14,
+    "axes.labelsize": 16,
+    "xtick.labelsize": 14,
+    "ytick.labelsize": 14,
+    "legend.fontsize": 14,
+    "axes.titlesize": 16,
+})
+
+# Draw the Ackley function surface and overlay the random items.
+draw_surface()
+plt.scatter(items[:, 0], items[:, 1], c=utilities, cmap=custom_cmap, edgecolors='k')
+plt.show()
+```
+
 ```{python}
 import torch
 from botorch.test_functions.synthetic import Ackley
@@ -122,15 +187,6 @@ n_items = 400
 utility_fn = Ackley(dim=d)
 items = torch.randn(n_items, d) + torch.ones(n_items, d)
 utilities = utility_fn(items).numpy()
-```
-
-```{pyodide-python}
-n = 5
-while n > 0:
-  print(n)
-  n = n - 1
-
-print('Blastoff!')
 ```
 
 ```{python}

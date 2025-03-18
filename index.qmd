@@ -1,11 +1,10 @@
 ---
-title: Chapter 1
+title: Introduction
 format: html
 filters:
   - pyodide
 ---
 
-# Introduction {#ch-introduction}
 ::: {.content-visible when-format="html"}
 
 <iframe
