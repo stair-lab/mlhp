@@ -306,7 +306,7 @@ globalThis.qpyodideCustomizedPyodideOptions = {
 }
 
 // Store cell data
-globalThis.qpyodideCellDetails = [{"code":"import numpy as np\nnp.random.seed(0)\n\ndef ackley(X, a=20, b=0.2, c=2*np.pi):\n    \"\"\"\n    Compute the Ackley function.\n    Parameters:\n      X: A NumPy array of shape (n, d) where each row is a d-dimensional point.\n      a, b, c: Parameters of the Ackley function.\n    Returns:\n      A NumPy array of function values.\n    \"\"\"\n    X = np.atleast_2d(X)\n    d = X.shape[1]\n    sum_sq = np.sum(X ** 2, axis=1)\n    term1 = -a * np.exp(-b * np.sqrt(sum_sq / d))\n    term2 = -np.exp(np.sum(np.cos(c * X), axis=1) / d)\n    return term1 + term2 + a + np.e","id":1,"options":{"autorun":"","classes":"","comment":"","context":"interactive","dpi":72,"fig-cap":"","fig-height":5,"fig-width":7,"label":"","message":"true","out-height":"","out-width":"700px","output":"true","read-only":"false","results":"markup","warning":"true"}},{"code":"import matplotlib.pyplot as plt\nfrom matplotlib.colors import LinearSegmentedColormap\nccmap = LinearSegmentedColormap.from_list(\"ackley\", [\"#f76a05\", \"#FFF2C9\"])\nplt.rcParams.update({\n    \"font.size\": 14,\n    \"axes.labelsize\": 16,\n    \"xtick.labelsize\": 14,\n    \"ytick.labelsize\": 14,\n    \"legend.fontsize\": 14,\n    \"axes.titlesize\": 16,\n})\nplt.rcParams['text.usetex'] = True\n\ndef draw_surface():\n    inps = np.linspace(-2, 2, 100)\n    X, Y = np.meshgrid(inps, inps)\n    grid = np.column_stack([X.ravel(), Y.ravel()])\n    Z = ackley(grid).reshape(X.shape)\n    \n    plt.figure(figsize=(6, 5))\n    contour = plt.contourf(X, Y, Z, 50, cmap=ccmap)\n    plt.contour(X, Y, Z, levels=15, colors='black', linewidths=0.5, alpha=0.6)\n    plt.colorbar(contour, label=r'$f(x)$', ticks=[0, 3, 6])\n    plt.xlim(-2, 2)\n    plt.ylim(-2, 2)\n    plt.xticks([-2, 0, 2])\n    plt.yticks([-2, 0, 2])\n    plt.xlabel(r'$x_1$')\n    plt.ylabel(r'$x_2$')","id":2,"options":{"autorun":"","classes":"","comment":"","context":"interactive","dpi":72,"fig-cap":"","fig-height":5,"fig-width":7,"label":"","message":"true","out-height":"","out-width":"700px","output":"true","read-only":"false","results":"markup","warning":"true"}},{"code":"d = 2\nn_items = 800\nitems = np.random.randn(n_items, d)*0.5 + np.ones((n_items, d))*0.5\nutilities = ackley(items)\ny = (utilities > utilities.mean())\ndraw_surface()\nplt.scatter(items[:, 0], items[:, 1], c=y, cmap='coolwarm', alpha=0.5)\nplt.show()","id":3,"options":{"autorun":"","classes":"","comment":"","context":"interactive","dpi":72,"fig-cap":"","fig-height":5,"fig-width":7,"label":"","message":"true","out-height":"","out-width":"700px","output":"true","read-only":"false","results":"markup","warning":"true"}},{"code":"from matplotlib.colors import LinearSegmentedColormap\nlikert_cmap = LinearSegmentedColormap.from_list(\"likert_scale\", [\"red\", \"blue\"], N=5)\nnormalized = (utilities - utilities.min()) / (utilities.max() - utilities.min())\nratings = np.round(normalized * 4).squeeze()\n\ndraw_surface()\nscatter = plt.scatter(items[:, 0], items[:, 1], c=ratings, cmap=likert_cmap, alpha=0.5)\nplt.show()","id":4,"options":{"autorun":"","classes":"","comment":"","context":"interactive","dpi":72,"fig-cap":"","fig-height":5,"fig-width":7,"label":"","message":"true","out-height":"","out-width":"700px","output":"true","read-only":"false","results":"markup","warning":"true"}},{"code":"n_pairs = 10000\npair_indices = np.random.randint(0, n_items, size=(n_pairs, 2))\n# Exclude pairs where both indices are the same\nmask = pair_indices[:, 0] != pair_indices[:, 1]\npair_indices = pair_indices[mask]\n\nscores = np.zeros(n_items, dtype=int)\nwins = utilities[pair_indices[:, 0]] > utilities[pair_indices[:, 1]]\n\n# For pairs where the first item wins:\n#   - Increase score for the first item by 1\n#   - Decrease score for the second item by 1\nnp.add.at(scores, pair_indices[wins, 0], 1)\nnp.add.at(scores, pair_indices[wins, 1], -1)\n\n# For pairs where the second item wins or it's a tie:\n#   - Decrease score for the first item by 1\n#   - Increase score for the second item by 1\nnp.add.at(scores, pair_indices[~wins, 0], -1)\nnp.add.at(scores, pair_indices[~wins, 1], 1)\n\n# Determine preferred and non-preferred items based on scores\npreferred = scores > 0\nnon_preferred = scores < 0\n\ndraw_surface()\nplt.scatter(items[preferred, 0], items[preferred, 1], c='blue', label='Preferred', alpha=0.5)\nplt.scatter(items[non_preferred, 0], items[non_preferred, 1], c='purple', label='Non-preferred', alpha=0.5)\nplt.legend()\nplt.show()","id":5,"options":{"autorun":"","classes":"","comment":"","context":"interactive","dpi":72,"fig-cap":"","fig-height":5,"fig-width":7,"label":"","message":"true","out-height":"","out-width":"700px","output":"true","read-only":"false","results":"markup","warning":"true"}},{"code":"import numpy as np\nfrom scipy.optimize import minimize\nfrom sklearn.metrics import roc_auc_score\nfrom tqdm import tqdm\n\n# Set random seed for reproducibility (optional)\nnp.random.seed(42)\n\n# Number of users and items\nnum_users = 50\nnum_items = 100\n\n# Generate user-specific and item-specific utilities\ntheta_true = np.random.randn(num_users)\nz_true = np.random.randn(num_items)\n\n# Define the logistic (sigmoid) function\ndef sigmoid(x):\n    return 1.0 / (1.0 + np.exp(-x))\n\n# Generate observed choices using the logistic function\n# Compute probability matrix: shape (num_users, num_items)\nprobs = sigmoid(theta_true[:, None] - z_true[None, :])\n# Sample binary responses (0 or 1) from a Bernoulli distribution\ndata = np.random.binomial(1, probs)\n\n# Mask out a fraction of the response matrix (80% observed, 20% missing)\nmask = np.random.rand(num_users, num_items) > 0.2  # boolean mask\n# Create a version of the data with missing values (not needed for optimization, but for reference)\ndata_masked = data.copy().astype(float)\ndata_masked[~mask] = np.nan\n\n# Count of observed entries (used for averaging)\nobserved_count = np.sum(mask)\n\n# We will optimize over parameters theta and z.\n# Initialize estimates (random starting points)\ntheta_init = np.random.randn(num_users)\nz_init = np.random.randn(num_items)\n\n# Pack parameters into a single vector for the optimizer.\n# First num_users elements are theta_est, next num_items are z_est.\nparams_init = np.concatenate([theta_init, z_init])\n\ndef objective(params):\n    \"\"\"\n    Computes the loss and gradient for the current parameters.\n    Loss is defined as the negative log likelihood (averaged over observed entries).\n    \"\"\"\n    # Unpack parameters\n    theta = params[:num_users]\n    z = params[num_users:]\n    \n    # Compute difference and estimated probabilities\n    diff = theta[:, None] - z[None, :]  # shape: (num_users, num_items)\n    sigma = sigmoid(diff)\n    \n    # To avoid log(0), clip probabilities a little bit\n    eps = 1e-8\n    sigma = np.clip(sigma, eps, 1 - eps)\n    \n    # Compute negative log likelihood only on observed entries\n    # For each observed entry: if data == 1 then -log(sigma) else -log(1-sigma)\n    log_likelihood = data * np.log(sigma) + (1 - data) * np.log(1 - sigma)\n    loss = -np.sum(mask * log_likelihood) / observed_count\n    \n    # Compute gradient with respect to the difference x = theta_i - z_j\n    # d(loss)/d(x) = sigma - data  (for observed entries, zero otherwise)\n    diff_grad = (sigma - data) * mask  # shape: (num_users, num_items)\n    \n    # Gradients for theta: sum over items (axis 1)\n    grad_theta = np.sum(diff_grad, axis=1) / observed_count\n    # Gradients for z: negative sum over users (axis 0)\n    grad_z = -np.sum(diff_grad, axis=0) / observed_count\n    \n    # Pack gradients back into a single vector\n    grad = np.concatenate([grad_theta, grad_z])\n    return loss, grad\n\n# Callback to track progress (optional)\niteration_progress = tqdm()\n\ndef callback(xk):\n    iteration_progress.update(1)\n\n# Optimize using L-BFGS-B\nresult = minimize(\n    fun=lambda params: objective(params),\n    x0=params_init,\n    method=\"L-BFGS-B\",\n    jac=True,\n    callback=callback,\n    options={\"maxiter\": 100, \"disp\": True}\n)\niteration_progress.close()\n\n# Extract the estimated parameters\ntheta_est = result.x[:num_users]\nz_est = result.x[num_users:]\n\n# Compute final estimated probabilities\nprobs_final = sigmoid(theta_est[:, None] - z_est[None, :])\n\n# Compute AUC ROC on observed (training) and missing (test) entries\ntrain_probs = probs_final[mask]\ntest_probs = probs_final[~mask]\ntrain_labels = data[mask]\ntest_labels = data[~mask]\n\nauc_train = roc_auc_score(train_labels, train_probs)\nauc_test = roc_auc_score(test_labels, test_probs)\n\nprint(f\"Train AUC: {auc_train:.4f}\")\nprint(f\"Test AUC: {auc_test:.4f}\")","id":6,"options":{"autorun":"","classes":"","comment":"","context":"interactive","dpi":72,"fig-cap":"","fig-height":5,"fig-width":7,"label":"","message":"true","out-height":"","out-width":"700px","output":"true","read-only":"false","results":"markup","warning":"true"}}];
+globalThis.qpyodideCellDetails = [{"code":"import numpy as np\nnp.random.seed(0)\n\ndef ackley(X, a=20, b=0.2, c=2*np.pi):\n    \"\"\"\n    Compute the Ackley function.\n    Parameters:\n      X: A NumPy array of shape (n, d) where each row is a d-dimensional point.\n      a, b, c: Parameters of the Ackley function.\n    Returns:\n      A NumPy array of function values.\n    \"\"\"\n    X = np.atleast_2d(X)\n    d = X.shape[1]\n    sum_sq = np.sum(X ** 2, axis=1)\n    term1 = -a * np.exp(-b * np.sqrt(sum_sq / d))\n    term2 = -np.exp(np.sum(np.cos(c * X), axis=1) / d)\n    return term1 + term2 + a + np.e","id":1,"options":{"autorun":"","classes":"","comment":"","context":"interactive","dpi":72,"fig-cap":"","fig-height":5,"fig-width":7,"label":"","message":"true","out-height":"","out-width":"700px","output":"true","read-only":"false","results":"markup","warning":"true"}},{"code":"import matplotlib.pyplot as plt\nfrom matplotlib.colors import LinearSegmentedColormap\nccmap = LinearSegmentedColormap.from_list(\"ackley\", [\"#f76a05\", \"#FFF2C9\"])\nplt.rcParams.update({\n    \"font.size\": 14,\n    \"axes.labelsize\": 16,\n    \"xtick.labelsize\": 14,\n    \"ytick.labelsize\": 14,\n    \"legend.fontsize\": 14,\n    \"axes.titlesize\": 16,\n})\n\ndef draw_surface():\n    inps = np.linspace(-2, 2, 100)\n    X, Y = np.meshgrid(inps, inps)\n    grid = np.column_stack([X.ravel(), Y.ravel()])\n    Z = ackley(grid).reshape(X.shape)\n    \n    plt.figure(figsize=(6, 5))\n    contour = plt.contourf(X, Y, Z, 50, cmap=ccmap)\n    plt.contour(X, Y, Z, levels=15, colors='black', linewidths=0.5, alpha=0.6)\n    plt.colorbar(contour, label=r'$f(x)$', ticks=[0, 3, 6])\n    plt.xlim(-2, 2)\n    plt.ylim(-2, 2)\n    plt.xticks([-2, 0, 2])\n    plt.yticks([-2, 0, 2])\n    plt.xlabel(r'$x_1$')\n    plt.ylabel(r'$x_2$')","id":2,"options":{"autorun":"","classes":"","comment":"","context":"interactive","dpi":72,"fig-cap":"","fig-height":5,"fig-width":7,"label":"","message":"true","out-height":"","out-width":"700px","output":"true","read-only":"false","results":"markup","warning":"true"}},{"code":"d = 2\nn_items = 800\nitems = np.random.randn(n_items, d)*0.5 + np.ones((n_items, d))*0.5\nutilities = ackley(items)\ny = (utilities > utilities.mean())\ndraw_surface()\nplt.scatter(items[:, 0], items[:, 1], c=y, cmap='coolwarm', alpha=0.5)\nplt.show()","id":3,"options":{"autorun":"","classes":"","comment":"","context":"interactive","dpi":72,"fig-cap":"","fig-height":5,"fig-width":7,"label":"","message":"true","out-height":"","out-width":"700px","output":"true","read-only":"false","results":"markup","warning":"true"}},{"code":"from matplotlib.colors import LinearSegmentedColormap\nlikert_cmap = LinearSegmentedColormap.from_list(\"likert_scale\", [\"red\", \"blue\"], N=5)\nnormalized = (utilities - utilities.min()) / (utilities.max() - utilities.min())\nratings = np.round(normalized * 4).squeeze()\n\ndraw_surface()\nscatter = plt.scatter(items[:, 0], items[:, 1], c=ratings, cmap=likert_cmap, alpha=0.5)\nplt.show()","id":4,"options":{"autorun":"","classes":"","comment":"","context":"interactive","dpi":72,"fig-cap":"","fig-height":5,"fig-width":7,"label":"","message":"true","out-height":"","out-width":"700px","output":"true","read-only":"false","results":"markup","warning":"true"}},{"code":"n_pairs = 10000\npair_indices = np.random.randint(0, n_items, size=(n_pairs, 2))\n# Exclude pairs where both indices are the same\nmask = pair_indices[:, 0] != pair_indices[:, 1]\npair_indices = pair_indices[mask]\n\nscores = np.zeros(n_items, dtype=int)\nwins = utilities[pair_indices[:, 0]] > utilities[pair_indices[:, 1]]\n\n# For pairs where the first item wins:\n#   - Increase score for the first item by 1\n#   - Decrease score for the second item by 1\nnp.add.at(scores, pair_indices[wins, 0], 1)\nnp.add.at(scores, pair_indices[wins, 1], -1)\n\n# For pairs where the second item wins or it's a tie:\n#   - Decrease score for the first item by 1\n#   - Increase score for the second item by 1\nnp.add.at(scores, pair_indices[~wins, 0], -1)\nnp.add.at(scores, pair_indices[~wins, 1], 1)\n\n# Determine preferred and non-preferred items based on scores\npreferred = scores > 0\nnon_preferred = scores < 0\n\ndraw_surface()\nplt.scatter(items[preferred, 0], items[preferred, 1], c='blue', label='Preferred', alpha=0.5)\nplt.scatter(items[non_preferred, 0], items[non_preferred, 1], c='purple', label='Non-preferred', alpha=0.5)\nplt.legend()\nplt.show()","id":5,"options":{"autorun":"","classes":"","comment":"","context":"interactive","dpi":72,"fig-cap":"","fig-height":5,"fig-width":7,"label":"","message":"true","out-height":"","out-width":"700px","output":"true","read-only":"false","results":"markup","warning":"true"}},{"code":"import numpy as np\nfrom scipy.optimize import minimize\nfrom sklearn.metrics import roc_auc_score\nfrom tqdm import tqdm\n\n# Set random seed for reproducibility (optional)\nnp.random.seed(42)\n\n# Number of users and items\nnum_users = 50\nnum_items = 100\n\n# Generate user-specific and item-specific utilities\ntheta_true = np.random.randn(num_users)\nz_true = np.random.randn(num_items)\n\n# Define the logistic (sigmoid) function\ndef sigmoid(x):\n    return 1.0 / (1.0 + np.exp(-x))\n\n# Generate observed choices using the logistic function\n# Compute probability matrix: shape (num_users, num_items)\nprobs = sigmoid(theta_true[:, None] - z_true[None, :])\n# Sample binary responses (0 or 1) from a Bernoulli distribution\ndata = np.random.binomial(1, probs)\n\n# Mask out a fraction of the response matrix (80% observed, 20% missing)\nmask = np.random.rand(num_users, num_items) > 0.2  # boolean mask\n# Create a version of the data with missing values (not needed for optimization, but for reference)\ndata_masked = data.copy().astype(float)\ndata_masked[~mask] = np.nan\n\n# Count of observed entries (used for averaging)\nobserved_count = np.sum(mask)\n\n# We will optimize over parameters theta and z.\n# Initialize estimates (random starting points)\ntheta_init = np.random.randn(num_users)\nz_init = np.random.randn(num_items)\n\n# Pack parameters into a single vector for the optimizer.\n# First num_users elements are theta_est, next num_items are z_est.\nparams_init = np.concatenate([theta_init, z_init])\n\ndef objective(params):\n    \"\"\"\n    Computes the loss and gradient for the current parameters.\n    Loss is defined as the negative log likelihood (averaged over observed entries).\n    \"\"\"\n    # Unpack parameters\n    theta = params[:num_users]\n    z = params[num_users:]\n    \n    # Compute difference and estimated probabilities\n    diff = theta[:, None] - z[None, :]  # shape: (num_users, num_items)\n    sigma = sigmoid(diff)\n    \n    # To avoid log(0), clip probabilities a little bit\n    eps = 1e-8\n    sigma = np.clip(sigma, eps, 1 - eps)\n    \n    # Compute negative log likelihood only on observed entries\n    # For each observed entry: if data == 1 then -log(sigma) else -log(1-sigma)\n    log_likelihood = data * np.log(sigma) + (1 - data) * np.log(1 - sigma)\n    loss = -np.sum(mask * log_likelihood) / observed_count\n    \n    # Compute gradient with respect to the difference x = theta_i - z_j\n    # d(loss)/d(x) = sigma - data  (for observed entries, zero otherwise)\n    diff_grad = (sigma - data) * mask  # shape: (num_users, num_items)\n    \n    # Gradients for theta: sum over items (axis 1)\n    grad_theta = np.sum(diff_grad, axis=1) / observed_count\n    # Gradients for z: negative sum over users (axis 0)\n    grad_z = -np.sum(diff_grad, axis=0) / observed_count\n    \n    # Pack gradients back into a single vector\n    grad = np.concatenate([grad_theta, grad_z])\n    return loss, grad\n\n# Callback to track progress (optional)\niteration_progress = tqdm()\n\ndef callback(xk):\n    iteration_progress.update(1)\n\n# Optimize using L-BFGS-B\nresult = minimize(\n    fun=lambda params: objective(params),\n    x0=params_init,\n    method=\"L-BFGS-B\",\n    jac=True,\n    callback=callback,\n    options={\"maxiter\": 100, \"disp\": True}\n)\niteration_progress.close()\n\n# Extract the estimated parameters\ntheta_est = result.x[:num_users]\nz_est = result.x[num_users:]\n\n# Compute final estimated probabilities\nprobs_final = sigmoid(theta_est[:, None] - z_est[None, :])\n\n# Compute AUC ROC on observed (training) and missing (test) entries\ntrain_probs = probs_final[mask]\ntest_probs = probs_final[~mask]\ntrain_labels = data[mask]\ntest_labels = data[~mask]\n\nauc_train = roc_auc_score(train_labels, train_probs)\nauc_test = roc_auc_score(test_labels, test_probs)\n\nprint(f\"Train AUC: {auc_train:.4f}\")\nprint(f\"Test AUC: {auc_test:.4f}\")","id":6,"options":{"autorun":"","classes":"","comment":"","context":"interactive","dpi":72,"fig-cap":"","fig-height":5,"fig-width":7,"label":"","message":"true","out-height":"","out-width":"700px","output":"true","read-only":"false","results":"markup","warning":"true"}}];
 
 
 </script>
@@ -1946,470 +1946,469 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
 <span id="cb8-156"><a href="#cb8-156"></a><span class="in">    "legend.fontsize": 14,</span></span>
 <span id="cb8-157"><a href="#cb8-157"></a><span class="in">    "axes.titlesize": 16,</span></span>
 <span id="cb8-158"><a href="#cb8-158"></a><span class="in">})</span></span>
-<span id="cb8-159"><a href="#cb8-159"></a><span class="in">plt.rcParams['text.usetex'] = True</span></span>
-<span id="cb8-160"><a href="#cb8-160"></a></span>
-<span id="cb8-161"><a href="#cb8-161"></a><span class="in">def draw_surface():</span></span>
-<span id="cb8-162"><a href="#cb8-162"></a><span class="in">    inps = np.linspace(-2, 2, 100)</span></span>
-<span id="cb8-163"><a href="#cb8-163"></a><span class="in">    X, Y = np.meshgrid(inps, inps)</span></span>
-<span id="cb8-164"><a href="#cb8-164"></a><span class="in">    grid = np.column_stack([X.ravel(), Y.ravel()])</span></span>
-<span id="cb8-165"><a href="#cb8-165"></a><span class="in">    Z = ackley(grid).reshape(X.shape)</span></span>
-<span id="cb8-166"><a href="#cb8-166"></a><span class="in">    </span></span>
-<span id="cb8-167"><a href="#cb8-167"></a><span class="in">    plt.figure(figsize=(6, 5))</span></span>
-<span id="cb8-168"><a href="#cb8-168"></a><span class="in">    contour = plt.contourf(X, Y, Z, 50, cmap=ccmap)</span></span>
-<span id="cb8-169"><a href="#cb8-169"></a><span class="in">    plt.contour(X, Y, Z, levels=15, colors='black', linewidths=0.5, alpha=0.6)</span></span>
-<span id="cb8-170"><a href="#cb8-170"></a><span class="in">    plt.colorbar(contour, label=r'$f(x)$', ticks=[0, 3, 6])</span></span>
-<span id="cb8-171"><a href="#cb8-171"></a><span class="in">    plt.xlim(-2, 2)</span></span>
-<span id="cb8-172"><a href="#cb8-172"></a><span class="in">    plt.ylim(-2, 2)</span></span>
-<span id="cb8-173"><a href="#cb8-173"></a><span class="in">    plt.xticks([-2, 0, 2])</span></span>
-<span id="cb8-174"><a href="#cb8-174"></a><span class="in">    plt.yticks([-2, 0, 2])</span></span>
-<span id="cb8-175"><a href="#cb8-175"></a><span class="in">    plt.xlabel(r'$x_1$')</span></span>
-<span id="cb8-176"><a href="#cb8-176"></a><span class="in">    plt.ylabel(r'$x_2$')</span></span>
-<span id="cb8-177"><a href="#cb8-177"></a><span class="in">```</span></span>
-<span id="cb8-178"><a href="#cb8-178"></a>:::</span>
-<span id="cb8-181"><a href="#cb8-181"></a><span class="in">```{python}</span></span>
-<span id="cb8-182"><a href="#cb8-182"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
-<span id="cb8-183"><a href="#cb8-183"></a><span class="im">from</span> matplotlib.colors <span class="im">import</span> LinearSegmentedColormap</span>
-<span id="cb8-184"><a href="#cb8-184"></a>ccmap <span class="op">=</span> LinearSegmentedColormap.from_list(<span class="st">"ackley"</span>, [<span class="st">"#f76a05"</span>, <span class="st">"#FFF2C9"</span>])</span>
-<span id="cb8-185"><a href="#cb8-185"></a>plt.rcParams.update({</span>
-<span id="cb8-186"><a href="#cb8-186"></a>    <span class="st">"font.size"</span>: <span class="dv">14</span>,</span>
-<span id="cb8-187"><a href="#cb8-187"></a>    <span class="st">"axes.labelsize"</span>: <span class="dv">16</span>,</span>
-<span id="cb8-188"><a href="#cb8-188"></a>    <span class="st">"xtick.labelsize"</span>: <span class="dv">14</span>,</span>
-<span id="cb8-189"><a href="#cb8-189"></a>    <span class="st">"ytick.labelsize"</span>: <span class="dv">14</span>,</span>
-<span id="cb8-190"><a href="#cb8-190"></a>    <span class="st">"legend.fontsize"</span>: <span class="dv">14</span>,</span>
-<span id="cb8-191"><a href="#cb8-191"></a>    <span class="st">"axes.titlesize"</span>: <span class="dv">16</span>,</span>
-<span id="cb8-192"><a href="#cb8-192"></a>})</span>
-<span id="cb8-193"><a href="#cb8-193"></a>plt.rcParams[<span class="st">'text.usetex'</span>] <span class="op">=</span> <span class="va">True</span></span>
-<span id="cb8-194"><a href="#cb8-194"></a></span>
-<span id="cb8-195"><a href="#cb8-195"></a><span class="kw">def</span> draw_surface():</span>
-<span id="cb8-196"><a href="#cb8-196"></a>    inps <span class="op">=</span> np.linspace(<span class="op">-</span><span class="dv">2</span>, <span class="dv">2</span>, <span class="dv">100</span>)</span>
-<span id="cb8-197"><a href="#cb8-197"></a>    X, Y <span class="op">=</span> np.meshgrid(inps, inps)</span>
-<span id="cb8-198"><a href="#cb8-198"></a>    grid <span class="op">=</span> np.column_stack([X.ravel(), Y.ravel()])</span>
-<span id="cb8-199"><a href="#cb8-199"></a>    Z <span class="op">=</span> ackley(grid).reshape(X.shape)</span>
-<span id="cb8-200"><a href="#cb8-200"></a>    </span>
-<span id="cb8-201"><a href="#cb8-201"></a>    plt.figure(figsize<span class="op">=</span>(<span class="dv">6</span>, <span class="dv">5</span>))</span>
-<span id="cb8-202"><a href="#cb8-202"></a>    contour <span class="op">=</span> plt.contourf(X, Y, Z, <span class="dv">50</span>, cmap<span class="op">=</span>ccmap)</span>
-<span id="cb8-203"><a href="#cb8-203"></a>    plt.contour(X, Y, Z, levels<span class="op">=</span><span class="dv">15</span>, colors<span class="op">=</span><span class="st">'black'</span>, linewidths<span class="op">=</span><span class="fl">0.5</span>, alpha<span class="op">=</span><span class="fl">0.6</span>)</span>
-<span id="cb8-204"><a href="#cb8-204"></a>    plt.colorbar(contour, label<span class="op">=</span><span class="vs">r'$f(x)$'</span>, ticks<span class="op">=</span>[<span class="dv">0</span>, <span class="dv">3</span>, <span class="dv">6</span>])</span>
-<span id="cb8-205"><a href="#cb8-205"></a>    plt.xlim(<span class="op">-</span><span class="dv">2</span>, <span class="dv">2</span>)</span>
-<span id="cb8-206"><a href="#cb8-206"></a>    plt.ylim(<span class="op">-</span><span class="dv">2</span>, <span class="dv">2</span>)</span>
-<span id="cb8-207"><a href="#cb8-207"></a>    plt.xticks([<span class="op">-</span><span class="dv">2</span>, <span class="dv">0</span>, <span class="dv">2</span>])</span>
-<span id="cb8-208"><a href="#cb8-208"></a>    plt.yticks([<span class="op">-</span><span class="dv">2</span>, <span class="dv">0</span>, <span class="dv">2</span>])</span>
-<span id="cb8-209"><a href="#cb8-209"></a>    plt.xlabel(<span class="vs">r'$x_1$'</span>)</span>
-<span id="cb8-210"><a href="#cb8-210"></a>    plt.ylabel(<span class="vs">r'$x_2$'</span>)</span>
-<span id="cb8-211"><a href="#cb8-211"></a><span class="in">```</span></span>
-<span id="cb8-212"><a href="#cb8-212"></a></span>
-<span id="cb8-213"><a href="#cb8-213"></a>In the surface below, blue and red points corresponds to accept or reject points.</span>
-<span id="cb8-214"><a href="#cb8-214"></a></span>
-<span id="cb8-215"><a href="#cb8-215"></a>::: {.callout-note title="code"}</span>
-<span id="cb8-216"><a href="#cb8-216"></a><span class="in">```{pyodide-python}</span></span>
-<span id="cb8-217"><a href="#cb8-217"></a><span class="in">d = 2</span></span>
-<span id="cb8-218"><a href="#cb8-218"></a><span class="in">n_items = 800</span></span>
-<span id="cb8-219"><a href="#cb8-219"></a><span class="in">items = np.random.randn(n_items, d)*0.5 + np.ones((n_items, d))*0.5</span></span>
-<span id="cb8-220"><a href="#cb8-220"></a><span class="in">utilities = ackley(items)</span></span>
-<span id="cb8-221"><a href="#cb8-221"></a><span class="in">y = (utilities &gt; utilities.mean())</span></span>
-<span id="cb8-222"><a href="#cb8-222"></a><span class="in">draw_surface()</span></span>
-<span id="cb8-223"><a href="#cb8-223"></a><span class="in">plt.scatter(items[:, 0], items[:, 1], c=y, cmap='coolwarm', alpha=0.5)</span></span>
-<span id="cb8-224"><a href="#cb8-224"></a><span class="in">plt.show()</span></span>
-<span id="cb8-225"><a href="#cb8-225"></a><span class="in">```</span></span>
-<span id="cb8-226"><a href="#cb8-226"></a>:::</span>
-<span id="cb8-229"><a href="#cb8-229"></a><span class="in">```{python}</span></span>
-<span id="cb8-230"><a href="#cb8-230"></a>d <span class="op">=</span> <span class="dv">2</span></span>
-<span id="cb8-231"><a href="#cb8-231"></a>n_items <span class="op">=</span> <span class="dv">800</span></span>
-<span id="cb8-232"><a href="#cb8-232"></a>items <span class="op">=</span> np.random.randn(n_items, d)<span class="op">*</span><span class="fl">0.5</span> <span class="op">+</span> np.ones((n_items, d))<span class="op">*</span><span class="fl">0.5</span></span>
-<span id="cb8-233"><a href="#cb8-233"></a>utilities <span class="op">=</span> ackley(items)</span>
-<span id="cb8-234"><a href="#cb8-234"></a>y <span class="op">=</span> (utilities <span class="op">&gt;</span> utilities.mean())</span>
-<span id="cb8-235"><a href="#cb8-235"></a>draw_surface()</span>
-<span id="cb8-236"><a href="#cb8-236"></a>plt.scatter(items[:, <span class="dv">0</span>], items[:, <span class="dv">1</span>], c<span class="op">=</span>y, cmap<span class="op">=</span><span class="st">'coolwarm'</span>, alpha<span class="op">=</span><span class="fl">0.5</span>)</span>
-<span id="cb8-237"><a href="#cb8-237"></a>plt.show()</span>
-<span id="cb8-238"><a href="#cb8-238"></a><span class="in">```</span></span>
-<span id="cb8-239"><a href="#cb8-239"></a></span>
-<span id="cb8-240"><a href="#cb8-240"></a>*Rating-scale sampling*, such as the Likert scale, is a method in which participants rate items on a fixed-point scale (e.g., 1 to 5, "Strongly Disagree" to "Strongly Agree") to measure levels of preference towards items <span class="co">[</span><span class="ot">@harpe2015</span><span class="co">]</span>. Participants can also mark a point on a continuous rating scale to indicate their preference or attitude. Commonly used in surveys, product reviews, and psychological assessments, this method provides a more nuanced measure than discrete scales. Rating-scale sampling is simple for participants to understand and use, provides rich data on the intensity of preferences, and is flexible enough for various measurements (e.g., agreement, satisfaction). However, rating-scale sampling methods also have limitations. Ratings can be influenced by personal biases and interpretations of scales, leading to subjectivity. There is a central tendency bias, where participants may avoid extreme ratings, resulting in clustering responses around the middle. Different participants might interpret scale points differently, and fixed-point scales may not capture the full nuance of participants' preferences or attitudes.</span>
-<span id="cb8-241"><a href="#cb8-241"></a></span>
-<span id="cb8-242"><a href="#cb8-242"></a>::: {.callout-note title="code"}</span>
-<span id="cb8-243"><a href="#cb8-243"></a><span class="in">```{pyodide-python}</span></span>
-<span id="cb8-244"><a href="#cb8-244"></a><span class="in">from matplotlib.colors import LinearSegmentedColormap</span></span>
-<span id="cb8-245"><a href="#cb8-245"></a><span class="in">likert_cmap = LinearSegmentedColormap.from_list("likert_scale", ["red", "blue"], N=5)</span></span>
-<span id="cb8-246"><a href="#cb8-246"></a><span class="in">normalized = (utilities - utilities.min()) / (utilities.max() - utilities.min())</span></span>
-<span id="cb8-247"><a href="#cb8-247"></a><span class="in">ratings = np.round(normalized * 4).squeeze()</span></span>
-<span id="cb8-248"><a href="#cb8-248"></a></span>
-<span id="cb8-249"><a href="#cb8-249"></a><span class="in">draw_surface()</span></span>
-<span id="cb8-250"><a href="#cb8-250"></a><span class="in">scatter = plt.scatter(items[:, 0], items[:, 1], c=ratings, cmap=likert_cmap, alpha=0.5)</span></span>
-<span id="cb8-251"><a href="#cb8-251"></a><span class="in">plt.show()</span></span>
-<span id="cb8-252"><a href="#cb8-252"></a><span class="in">```</span></span>
-<span id="cb8-253"><a href="#cb8-253"></a>:::</span>
-<span id="cb8-254"><a href="#cb8-254"></a></span>
-<span id="cb8-257"><a href="#cb8-257"></a><span class="in">```{python}</span></span>
-<span id="cb8-258"><a href="#cb8-258"></a><span class="im">from</span> matplotlib.colors <span class="im">import</span> LinearSegmentedColormap</span>
-<span id="cb8-259"><a href="#cb8-259"></a>likert_cmap <span class="op">=</span> LinearSegmentedColormap.from_list(<span class="st">"likert_scale"</span>, [<span class="st">"red"</span>, <span class="st">"blue"</span>], N<span class="op">=</span><span class="dv">5</span>)</span>
-<span id="cb8-260"><a href="#cb8-260"></a>normalized <span class="op">=</span> (utilities <span class="op">-</span> utilities.<span class="bu">min</span>()) <span class="op">/</span> (utilities.<span class="bu">max</span>() <span class="op">-</span> utilities.<span class="bu">min</span>())</span>
-<span id="cb8-261"><a href="#cb8-261"></a>ratings <span class="op">=</span> np.<span class="bu">round</span>(normalized <span class="op">*</span> <span class="dv">4</span>).squeeze()</span>
-<span id="cb8-262"><a href="#cb8-262"></a></span>
-<span id="cb8-263"><a href="#cb8-263"></a>draw_surface()</span>
-<span id="cb8-264"><a href="#cb8-264"></a>scatter <span class="op">=</span> plt.scatter(items[:, <span class="dv">0</span>], items[:, <span class="dv">1</span>], c<span class="op">=</span>ratings, cmap<span class="op">=</span>likert_cmap, alpha<span class="op">=</span><span class="fl">0.5</span>)</span>
-<span id="cb8-265"><a href="#cb8-265"></a>plt.show()</span>
-<span id="cb8-266"><a href="#cb8-266"></a><span class="in">```</span></span>
-<span id="cb8-267"><a href="#cb8-267"></a></span>
-<span id="cb8-268"><a href="#cb8-268"></a>In *pairwise sampling*, participants compare two options to determine which is preferred. One of the major advantage of this method is low cognitive demand for rater. Its disavantage is the limited amount of information content elicited by a sample. Below is a survey based on pairwise sampling:</span>
-<span id="cb8-269"><a href="#cb8-269"></a></span>
-<span id="cb8-270"><a href="#cb8-270"></a>::: {.content-visible when-format="html"}</span>
-<span id="cb8-271"><a href="#cb8-271"></a>&lt;iframe</span>
-<span id="cb8-272"><a href="#cb8-272"></a>  src="https://app.opinionx.co/6bef4ca1-82f5-4c1d-8c5a-2274509f22e2"</span>
-<span id="cb8-273"><a href="#cb8-273"></a>  style="width:100%; height:450px;"</span>
-<span id="cb8-274"><a href="#cb8-274"></a>&gt;&lt;/iframe&gt;</span>
-<span id="cb8-275"><a href="#cb8-275"></a>:::</span>
-<span id="cb8-276"><a href="#cb8-276"></a></span>
-<span id="cb8-277"><a href="#cb8-277"></a>::: {.callout-note title="code"}</span>
-<span id="cb8-278"><a href="#cb8-278"></a><span class="in">```{pyodide-python}</span></span>
-<span id="cb8-279"><a href="#cb8-279"></a><span class="in">n_pairs = 10000</span></span>
-<span id="cb8-280"><a href="#cb8-280"></a><span class="in">pair_indices = np.random.randint(0, n_items, size=(n_pairs, 2))</span></span>
-<span id="cb8-281"><a href="#cb8-281"></a><span class="in"># Exclude pairs where both indices are the same</span></span>
-<span id="cb8-282"><a href="#cb8-282"></a><span class="in">mask = pair_indices[:, 0] != pair_indices[:, 1]</span></span>
-<span id="cb8-283"><a href="#cb8-283"></a><span class="in">pair_indices = pair_indices[mask]</span></span>
-<span id="cb8-284"><a href="#cb8-284"></a></span>
-<span id="cb8-285"><a href="#cb8-285"></a><span class="in">scores = np.zeros(n_items, dtype=int)</span></span>
-<span id="cb8-286"><a href="#cb8-286"></a><span class="in">wins = utilities[pair_indices[:, 0]] &gt; utilities[pair_indices[:, 1]]</span></span>
-<span id="cb8-287"><a href="#cb8-287"></a></span>
-<span id="cb8-288"><a href="#cb8-288"></a><span class="in"># For pairs where the first item wins:</span></span>
-<span id="cb8-289"><a href="#cb8-289"></a><span class="in">#   - Increase score for the first item by 1</span></span>
-<span id="cb8-290"><a href="#cb8-290"></a><span class="in">#   - Decrease score for the second item by 1</span></span>
-<span id="cb8-291"><a href="#cb8-291"></a><span class="in">np.add.at(scores, pair_indices[wins, 0], 1)</span></span>
-<span id="cb8-292"><a href="#cb8-292"></a><span class="in">np.add.at(scores, pair_indices[wins, 1], -1)</span></span>
-<span id="cb8-293"><a href="#cb8-293"></a></span>
-<span id="cb8-294"><a href="#cb8-294"></a><span class="in"># For pairs where the second item wins or it's a tie:</span></span>
-<span id="cb8-295"><a href="#cb8-295"></a><span class="in">#   - Decrease score for the first item by 1</span></span>
-<span id="cb8-296"><a href="#cb8-296"></a><span class="in">#   - Increase score for the second item by 1</span></span>
-<span id="cb8-297"><a href="#cb8-297"></a><span class="in">np.add.at(scores, pair_indices[~wins, 0], -1)</span></span>
-<span id="cb8-298"><a href="#cb8-298"></a><span class="in">np.add.at(scores, pair_indices[~wins, 1], 1)</span></span>
-<span id="cb8-299"><a href="#cb8-299"></a></span>
-<span id="cb8-300"><a href="#cb8-300"></a><span class="in"># Determine preferred and non-preferred items based on scores</span></span>
-<span id="cb8-301"><a href="#cb8-301"></a><span class="in">preferred = scores &gt; 0</span></span>
-<span id="cb8-302"><a href="#cb8-302"></a><span class="in">non_preferred = scores &lt; 0</span></span>
-<span id="cb8-303"><a href="#cb8-303"></a></span>
-<span id="cb8-304"><a href="#cb8-304"></a><span class="in">draw_surface()</span></span>
-<span id="cb8-305"><a href="#cb8-305"></a><span class="in">plt.scatter(items[preferred, 0], items[preferred, 1], c='blue', label='Preferred', alpha=0.5)</span></span>
-<span id="cb8-306"><a href="#cb8-306"></a><span class="in">plt.scatter(items[non_preferred, 0], items[non_preferred, 1], c='purple', label='Non-preferred', alpha=0.5)</span></span>
-<span id="cb8-307"><a href="#cb8-307"></a><span class="in">plt.legend()</span></span>
-<span id="cb8-308"><a href="#cb8-308"></a><span class="in">plt.show()</span></span>
-<span id="cb8-309"><a href="#cb8-309"></a><span class="in">```</span></span>
-<span id="cb8-310"><a href="#cb8-310"></a>:::</span>
-<span id="cb8-311"><a href="#cb8-311"></a></span>
-<span id="cb8-314"><a href="#cb8-314"></a><span class="in">```{python}</span></span>
-<span id="cb8-315"><a href="#cb8-315"></a>n_pairs <span class="op">=</span> <span class="dv">10000</span></span>
-<span id="cb8-316"><a href="#cb8-316"></a>pair_indices <span class="op">=</span> np.random.randint(<span class="dv">0</span>, n_items, size<span class="op">=</span>(n_pairs, <span class="dv">2</span>))</span>
-<span id="cb8-317"><a href="#cb8-317"></a><span class="co"># Exclude pairs where both indices are the same</span></span>
-<span id="cb8-318"><a href="#cb8-318"></a>mask <span class="op">=</span> pair_indices[:, <span class="dv">0</span>] <span class="op">!=</span> pair_indices[:, <span class="dv">1</span>]</span>
-<span id="cb8-319"><a href="#cb8-319"></a>pair_indices <span class="op">=</span> pair_indices[mask]</span>
-<span id="cb8-320"><a href="#cb8-320"></a></span>
-<span id="cb8-321"><a href="#cb8-321"></a>scores <span class="op">=</span> np.zeros(n_items, dtype<span class="op">=</span><span class="bu">int</span>)</span>
-<span id="cb8-322"><a href="#cb8-322"></a>wins <span class="op">=</span> utilities[pair_indices[:, <span class="dv">0</span>]] <span class="op">&gt;</span> utilities[pair_indices[:, <span class="dv">1</span>]]</span>
-<span id="cb8-323"><a href="#cb8-323"></a></span>
-<span id="cb8-324"><a href="#cb8-324"></a><span class="co"># For pairs where the first item wins:</span></span>
-<span id="cb8-325"><a href="#cb8-325"></a><span class="co">#   - Increase score for the first item by 1</span></span>
-<span id="cb8-326"><a href="#cb8-326"></a><span class="co">#   - Decrease score for the second item by 1</span></span>
-<span id="cb8-327"><a href="#cb8-327"></a>np.add.at(scores, pair_indices[wins, <span class="dv">0</span>], <span class="dv">1</span>)</span>
-<span id="cb8-328"><a href="#cb8-328"></a>np.add.at(scores, pair_indices[wins, <span class="dv">1</span>], <span class="op">-</span><span class="dv">1</span>)</span>
-<span id="cb8-329"><a href="#cb8-329"></a></span>
-<span id="cb8-330"><a href="#cb8-330"></a><span class="co"># For pairs where the second item wins or it's a tie:</span></span>
-<span id="cb8-331"><a href="#cb8-331"></a><span class="co">#   - Decrease score for the first item by 1</span></span>
-<span id="cb8-332"><a href="#cb8-332"></a><span class="co">#   - Increase score for the second item by 1</span></span>
-<span id="cb8-333"><a href="#cb8-333"></a>np.add.at(scores, pair_indices[<span class="op">~</span>wins, <span class="dv">0</span>], <span class="op">-</span><span class="dv">1</span>)</span>
-<span id="cb8-334"><a href="#cb8-334"></a>np.add.at(scores, pair_indices[<span class="op">~</span>wins, <span class="dv">1</span>], <span class="dv">1</span>)</span>
-<span id="cb8-335"><a href="#cb8-335"></a></span>
-<span id="cb8-336"><a href="#cb8-336"></a><span class="co"># Determine preferred and non-preferred items based on scores</span></span>
-<span id="cb8-337"><a href="#cb8-337"></a>preferred <span class="op">=</span> scores <span class="op">&gt;</span> <span class="dv">0</span></span>
-<span id="cb8-338"><a href="#cb8-338"></a>non_preferred <span class="op">=</span> scores <span class="op">&lt;</span> <span class="dv">0</span></span>
-<span id="cb8-339"><a href="#cb8-339"></a></span>
-<span id="cb8-340"><a href="#cb8-340"></a>draw_surface()</span>
-<span id="cb8-341"><a href="#cb8-341"></a>plt.scatter(items[preferred, <span class="dv">0</span>], items[preferred, <span class="dv">1</span>], c<span class="op">=</span><span class="st">'blue'</span>, label<span class="op">=</span><span class="st">'Preferred'</span>, alpha<span class="op">=</span><span class="fl">0.5</span>)</span>
-<span id="cb8-342"><a href="#cb8-342"></a>plt.scatter(items[non_preferred, <span class="dv">0</span>], items[non_preferred, <span class="dv">1</span>], c<span class="op">=</span><span class="st">'purple'</span>, label<span class="op">=</span><span class="st">'Non-preferred'</span>, alpha<span class="op">=</span><span class="fl">0.5</span>)</span>
-<span id="cb8-343"><a href="#cb8-343"></a>plt.legend()</span>
-<span id="cb8-344"><a href="#cb8-344"></a>plt.show()</span>
-<span id="cb8-345"><a href="#cb8-345"></a><span class="in">```</span></span>
+<span id="cb8-159"><a href="#cb8-159"></a></span>
+<span id="cb8-160"><a href="#cb8-160"></a><span class="in">def draw_surface():</span></span>
+<span id="cb8-161"><a href="#cb8-161"></a><span class="in">    inps = np.linspace(-2, 2, 100)</span></span>
+<span id="cb8-162"><a href="#cb8-162"></a><span class="in">    X, Y = np.meshgrid(inps, inps)</span></span>
+<span id="cb8-163"><a href="#cb8-163"></a><span class="in">    grid = np.column_stack([X.ravel(), Y.ravel()])</span></span>
+<span id="cb8-164"><a href="#cb8-164"></a><span class="in">    Z = ackley(grid).reshape(X.shape)</span></span>
+<span id="cb8-165"><a href="#cb8-165"></a><span class="in">    </span></span>
+<span id="cb8-166"><a href="#cb8-166"></a><span class="in">    plt.figure(figsize=(6, 5))</span></span>
+<span id="cb8-167"><a href="#cb8-167"></a><span class="in">    contour = plt.contourf(X, Y, Z, 50, cmap=ccmap)</span></span>
+<span id="cb8-168"><a href="#cb8-168"></a><span class="in">    plt.contour(X, Y, Z, levels=15, colors='black', linewidths=0.5, alpha=0.6)</span></span>
+<span id="cb8-169"><a href="#cb8-169"></a><span class="in">    plt.colorbar(contour, label=r'$f(x)$', ticks=[0, 3, 6])</span></span>
+<span id="cb8-170"><a href="#cb8-170"></a><span class="in">    plt.xlim(-2, 2)</span></span>
+<span id="cb8-171"><a href="#cb8-171"></a><span class="in">    plt.ylim(-2, 2)</span></span>
+<span id="cb8-172"><a href="#cb8-172"></a><span class="in">    plt.xticks([-2, 0, 2])</span></span>
+<span id="cb8-173"><a href="#cb8-173"></a><span class="in">    plt.yticks([-2, 0, 2])</span></span>
+<span id="cb8-174"><a href="#cb8-174"></a><span class="in">    plt.xlabel(r'$x_1$')</span></span>
+<span id="cb8-175"><a href="#cb8-175"></a><span class="in">    plt.ylabel(r'$x_2$')</span></span>
+<span id="cb8-176"><a href="#cb8-176"></a><span class="in">```</span></span>
+<span id="cb8-177"><a href="#cb8-177"></a>:::</span>
+<span id="cb8-180"><a href="#cb8-180"></a><span class="in">```{python}</span></span>
+<span id="cb8-181"><a href="#cb8-181"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb8-182"><a href="#cb8-182"></a><span class="im">from</span> matplotlib.colors <span class="im">import</span> LinearSegmentedColormap</span>
+<span id="cb8-183"><a href="#cb8-183"></a>ccmap <span class="op">=</span> LinearSegmentedColormap.from_list(<span class="st">"ackley"</span>, [<span class="st">"#f76a05"</span>, <span class="st">"#FFF2C9"</span>])</span>
+<span id="cb8-184"><a href="#cb8-184"></a>plt.rcParams.update({</span>
+<span id="cb8-185"><a href="#cb8-185"></a>    <span class="st">"font.size"</span>: <span class="dv">14</span>,</span>
+<span id="cb8-186"><a href="#cb8-186"></a>    <span class="st">"axes.labelsize"</span>: <span class="dv">16</span>,</span>
+<span id="cb8-187"><a href="#cb8-187"></a>    <span class="st">"xtick.labelsize"</span>: <span class="dv">14</span>,</span>
+<span id="cb8-188"><a href="#cb8-188"></a>    <span class="st">"ytick.labelsize"</span>: <span class="dv">14</span>,</span>
+<span id="cb8-189"><a href="#cb8-189"></a>    <span class="st">"legend.fontsize"</span>: <span class="dv">14</span>,</span>
+<span id="cb8-190"><a href="#cb8-190"></a>    <span class="st">"axes.titlesize"</span>: <span class="dv">16</span>,</span>
+<span id="cb8-191"><a href="#cb8-191"></a>})</span>
+<span id="cb8-192"><a href="#cb8-192"></a>plt.rcParams[<span class="st">'text.usetex'</span>] <span class="op">=</span> <span class="va">True</span></span>
+<span id="cb8-193"><a href="#cb8-193"></a></span>
+<span id="cb8-194"><a href="#cb8-194"></a><span class="kw">def</span> draw_surface():</span>
+<span id="cb8-195"><a href="#cb8-195"></a>    inps <span class="op">=</span> np.linspace(<span class="op">-</span><span class="dv">2</span>, <span class="dv">2</span>, <span class="dv">100</span>)</span>
+<span id="cb8-196"><a href="#cb8-196"></a>    X, Y <span class="op">=</span> np.meshgrid(inps, inps)</span>
+<span id="cb8-197"><a href="#cb8-197"></a>    grid <span class="op">=</span> np.column_stack([X.ravel(), Y.ravel()])</span>
+<span id="cb8-198"><a href="#cb8-198"></a>    Z <span class="op">=</span> ackley(grid).reshape(X.shape)</span>
+<span id="cb8-199"><a href="#cb8-199"></a>    </span>
+<span id="cb8-200"><a href="#cb8-200"></a>    plt.figure(figsize<span class="op">=</span>(<span class="dv">6</span>, <span class="dv">5</span>))</span>
+<span id="cb8-201"><a href="#cb8-201"></a>    contour <span class="op">=</span> plt.contourf(X, Y, Z, <span class="dv">50</span>, cmap<span class="op">=</span>ccmap)</span>
+<span id="cb8-202"><a href="#cb8-202"></a>    plt.contour(X, Y, Z, levels<span class="op">=</span><span class="dv">15</span>, colors<span class="op">=</span><span class="st">'black'</span>, linewidths<span class="op">=</span><span class="fl">0.5</span>, alpha<span class="op">=</span><span class="fl">0.6</span>)</span>
+<span id="cb8-203"><a href="#cb8-203"></a>    plt.colorbar(contour, label<span class="op">=</span><span class="vs">r'$f(x)$'</span>, ticks<span class="op">=</span>[<span class="dv">0</span>, <span class="dv">3</span>, <span class="dv">6</span>])</span>
+<span id="cb8-204"><a href="#cb8-204"></a>    plt.xlim(<span class="op">-</span><span class="dv">2</span>, <span class="dv">2</span>)</span>
+<span id="cb8-205"><a href="#cb8-205"></a>    plt.ylim(<span class="op">-</span><span class="dv">2</span>, <span class="dv">2</span>)</span>
+<span id="cb8-206"><a href="#cb8-206"></a>    plt.xticks([<span class="op">-</span><span class="dv">2</span>, <span class="dv">0</span>, <span class="dv">2</span>])</span>
+<span id="cb8-207"><a href="#cb8-207"></a>    plt.yticks([<span class="op">-</span><span class="dv">2</span>, <span class="dv">0</span>, <span class="dv">2</span>])</span>
+<span id="cb8-208"><a href="#cb8-208"></a>    plt.xlabel(<span class="vs">r'$x_1$'</span>)</span>
+<span id="cb8-209"><a href="#cb8-209"></a>    plt.ylabel(<span class="vs">r'$x_2$'</span>)</span>
+<span id="cb8-210"><a href="#cb8-210"></a><span class="in">```</span></span>
+<span id="cb8-211"><a href="#cb8-211"></a></span>
+<span id="cb8-212"><a href="#cb8-212"></a>In the surface below, blue and red points corresponds to accept or reject points.</span>
+<span id="cb8-213"><a href="#cb8-213"></a></span>
+<span id="cb8-214"><a href="#cb8-214"></a>::: {.callout-note title="code"}</span>
+<span id="cb8-215"><a href="#cb8-215"></a><span class="in">```{pyodide-python}</span></span>
+<span id="cb8-216"><a href="#cb8-216"></a><span class="in">d = 2</span></span>
+<span id="cb8-217"><a href="#cb8-217"></a><span class="in">n_items = 800</span></span>
+<span id="cb8-218"><a href="#cb8-218"></a><span class="in">items = np.random.randn(n_items, d)*0.5 + np.ones((n_items, d))*0.5</span></span>
+<span id="cb8-219"><a href="#cb8-219"></a><span class="in">utilities = ackley(items)</span></span>
+<span id="cb8-220"><a href="#cb8-220"></a><span class="in">y = (utilities &gt; utilities.mean())</span></span>
+<span id="cb8-221"><a href="#cb8-221"></a><span class="in">draw_surface()</span></span>
+<span id="cb8-222"><a href="#cb8-222"></a><span class="in">plt.scatter(items[:, 0], items[:, 1], c=y, cmap='coolwarm', alpha=0.5)</span></span>
+<span id="cb8-223"><a href="#cb8-223"></a><span class="in">plt.show()</span></span>
+<span id="cb8-224"><a href="#cb8-224"></a><span class="in">```</span></span>
+<span id="cb8-225"><a href="#cb8-225"></a>:::</span>
+<span id="cb8-228"><a href="#cb8-228"></a><span class="in">```{python}</span></span>
+<span id="cb8-229"><a href="#cb8-229"></a>d <span class="op">=</span> <span class="dv">2</span></span>
+<span id="cb8-230"><a href="#cb8-230"></a>n_items <span class="op">=</span> <span class="dv">800</span></span>
+<span id="cb8-231"><a href="#cb8-231"></a>items <span class="op">=</span> np.random.randn(n_items, d)<span class="op">*</span><span class="fl">0.5</span> <span class="op">+</span> np.ones((n_items, d))<span class="op">*</span><span class="fl">0.5</span></span>
+<span id="cb8-232"><a href="#cb8-232"></a>utilities <span class="op">=</span> ackley(items)</span>
+<span id="cb8-233"><a href="#cb8-233"></a>y <span class="op">=</span> (utilities <span class="op">&gt;</span> utilities.mean())</span>
+<span id="cb8-234"><a href="#cb8-234"></a>draw_surface()</span>
+<span id="cb8-235"><a href="#cb8-235"></a>plt.scatter(items[:, <span class="dv">0</span>], items[:, <span class="dv">1</span>], c<span class="op">=</span>y, cmap<span class="op">=</span><span class="st">'coolwarm'</span>, alpha<span class="op">=</span><span class="fl">0.5</span>)</span>
+<span id="cb8-236"><a href="#cb8-236"></a>plt.show()</span>
+<span id="cb8-237"><a href="#cb8-237"></a><span class="in">```</span></span>
+<span id="cb8-238"><a href="#cb8-238"></a></span>
+<span id="cb8-239"><a href="#cb8-239"></a>*Rating-scale sampling*, such as the Likert scale, is a method in which participants rate items on a fixed-point scale (e.g., 1 to 5, "Strongly Disagree" to "Strongly Agree") to measure levels of preference towards items <span class="co">[</span><span class="ot">@harpe2015</span><span class="co">]</span>. Participants can also mark a point on a continuous rating scale to indicate their preference or attitude. Commonly used in surveys, product reviews, and psychological assessments, this method provides a more nuanced measure than discrete scales. Rating-scale sampling is simple for participants to understand and use, provides rich data on the intensity of preferences, and is flexible enough for various measurements (e.g., agreement, satisfaction). However, rating-scale sampling methods also have limitations. Ratings can be influenced by personal biases and interpretations of scales, leading to subjectivity. There is a central tendency bias, where participants may avoid extreme ratings, resulting in clustering responses around the middle. Different participants might interpret scale points differently, and fixed-point scales may not capture the full nuance of participants' preferences or attitudes.</span>
+<span id="cb8-240"><a href="#cb8-240"></a></span>
+<span id="cb8-241"><a href="#cb8-241"></a>::: {.callout-note title="code"}</span>
+<span id="cb8-242"><a href="#cb8-242"></a><span class="in">```{pyodide-python}</span></span>
+<span id="cb8-243"><a href="#cb8-243"></a><span class="in">from matplotlib.colors import LinearSegmentedColormap</span></span>
+<span id="cb8-244"><a href="#cb8-244"></a><span class="in">likert_cmap = LinearSegmentedColormap.from_list("likert_scale", ["red", "blue"], N=5)</span></span>
+<span id="cb8-245"><a href="#cb8-245"></a><span class="in">normalized = (utilities - utilities.min()) / (utilities.max() - utilities.min())</span></span>
+<span id="cb8-246"><a href="#cb8-246"></a><span class="in">ratings = np.round(normalized * 4).squeeze()</span></span>
+<span id="cb8-247"><a href="#cb8-247"></a></span>
+<span id="cb8-248"><a href="#cb8-248"></a><span class="in">draw_surface()</span></span>
+<span id="cb8-249"><a href="#cb8-249"></a><span class="in">scatter = plt.scatter(items[:, 0], items[:, 1], c=ratings, cmap=likert_cmap, alpha=0.5)</span></span>
+<span id="cb8-250"><a href="#cb8-250"></a><span class="in">plt.show()</span></span>
+<span id="cb8-251"><a href="#cb8-251"></a><span class="in">```</span></span>
+<span id="cb8-252"><a href="#cb8-252"></a>:::</span>
+<span id="cb8-253"><a href="#cb8-253"></a></span>
+<span id="cb8-256"><a href="#cb8-256"></a><span class="in">```{python}</span></span>
+<span id="cb8-257"><a href="#cb8-257"></a><span class="im">from</span> matplotlib.colors <span class="im">import</span> LinearSegmentedColormap</span>
+<span id="cb8-258"><a href="#cb8-258"></a>likert_cmap <span class="op">=</span> LinearSegmentedColormap.from_list(<span class="st">"likert_scale"</span>, [<span class="st">"red"</span>, <span class="st">"blue"</span>], N<span class="op">=</span><span class="dv">5</span>)</span>
+<span id="cb8-259"><a href="#cb8-259"></a>normalized <span class="op">=</span> (utilities <span class="op">-</span> utilities.<span class="bu">min</span>()) <span class="op">/</span> (utilities.<span class="bu">max</span>() <span class="op">-</span> utilities.<span class="bu">min</span>())</span>
+<span id="cb8-260"><a href="#cb8-260"></a>ratings <span class="op">=</span> np.<span class="bu">round</span>(normalized <span class="op">*</span> <span class="dv">4</span>).squeeze()</span>
+<span id="cb8-261"><a href="#cb8-261"></a></span>
+<span id="cb8-262"><a href="#cb8-262"></a>draw_surface()</span>
+<span id="cb8-263"><a href="#cb8-263"></a>scatter <span class="op">=</span> plt.scatter(items[:, <span class="dv">0</span>], items[:, <span class="dv">1</span>], c<span class="op">=</span>ratings, cmap<span class="op">=</span>likert_cmap, alpha<span class="op">=</span><span class="fl">0.5</span>)</span>
+<span id="cb8-264"><a href="#cb8-264"></a>plt.show()</span>
+<span id="cb8-265"><a href="#cb8-265"></a><span class="in">```</span></span>
+<span id="cb8-266"><a href="#cb8-266"></a></span>
+<span id="cb8-267"><a href="#cb8-267"></a>In *pairwise sampling*, participants compare two options to determine which is preferred. One of the major advantage of this method is low cognitive demand for rater. Its disavantage is the limited amount of information content elicited by a sample. Below is a survey based on pairwise sampling:</span>
+<span id="cb8-268"><a href="#cb8-268"></a></span>
+<span id="cb8-269"><a href="#cb8-269"></a>::: {.content-visible when-format="html"}</span>
+<span id="cb8-270"><a href="#cb8-270"></a>&lt;iframe</span>
+<span id="cb8-271"><a href="#cb8-271"></a>  src="https://app.opinionx.co/6bef4ca1-82f5-4c1d-8c5a-2274509f22e2"</span>
+<span id="cb8-272"><a href="#cb8-272"></a>  style="width:100%; height:450px;"</span>
+<span id="cb8-273"><a href="#cb8-273"></a>&gt;&lt;/iframe&gt;</span>
+<span id="cb8-274"><a href="#cb8-274"></a>:::</span>
+<span id="cb8-275"><a href="#cb8-275"></a></span>
+<span id="cb8-276"><a href="#cb8-276"></a>::: {.callout-note title="code"}</span>
+<span id="cb8-277"><a href="#cb8-277"></a><span class="in">```{pyodide-python}</span></span>
+<span id="cb8-278"><a href="#cb8-278"></a><span class="in">n_pairs = 10000</span></span>
+<span id="cb8-279"><a href="#cb8-279"></a><span class="in">pair_indices = np.random.randint(0, n_items, size=(n_pairs, 2))</span></span>
+<span id="cb8-280"><a href="#cb8-280"></a><span class="in"># Exclude pairs where both indices are the same</span></span>
+<span id="cb8-281"><a href="#cb8-281"></a><span class="in">mask = pair_indices[:, 0] != pair_indices[:, 1]</span></span>
+<span id="cb8-282"><a href="#cb8-282"></a><span class="in">pair_indices = pair_indices[mask]</span></span>
+<span id="cb8-283"><a href="#cb8-283"></a></span>
+<span id="cb8-284"><a href="#cb8-284"></a><span class="in">scores = np.zeros(n_items, dtype=int)</span></span>
+<span id="cb8-285"><a href="#cb8-285"></a><span class="in">wins = utilities[pair_indices[:, 0]] &gt; utilities[pair_indices[:, 1]]</span></span>
+<span id="cb8-286"><a href="#cb8-286"></a></span>
+<span id="cb8-287"><a href="#cb8-287"></a><span class="in"># For pairs where the first item wins:</span></span>
+<span id="cb8-288"><a href="#cb8-288"></a><span class="in">#   - Increase score for the first item by 1</span></span>
+<span id="cb8-289"><a href="#cb8-289"></a><span class="in">#   - Decrease score for the second item by 1</span></span>
+<span id="cb8-290"><a href="#cb8-290"></a><span class="in">np.add.at(scores, pair_indices[wins, 0], 1)</span></span>
+<span id="cb8-291"><a href="#cb8-291"></a><span class="in">np.add.at(scores, pair_indices[wins, 1], -1)</span></span>
+<span id="cb8-292"><a href="#cb8-292"></a></span>
+<span id="cb8-293"><a href="#cb8-293"></a><span class="in"># For pairs where the second item wins or it's a tie:</span></span>
+<span id="cb8-294"><a href="#cb8-294"></a><span class="in">#   - Decrease score for the first item by 1</span></span>
+<span id="cb8-295"><a href="#cb8-295"></a><span class="in">#   - Increase score for the second item by 1</span></span>
+<span id="cb8-296"><a href="#cb8-296"></a><span class="in">np.add.at(scores, pair_indices[~wins, 0], -1)</span></span>
+<span id="cb8-297"><a href="#cb8-297"></a><span class="in">np.add.at(scores, pair_indices[~wins, 1], 1)</span></span>
+<span id="cb8-298"><a href="#cb8-298"></a></span>
+<span id="cb8-299"><a href="#cb8-299"></a><span class="in"># Determine preferred and non-preferred items based on scores</span></span>
+<span id="cb8-300"><a href="#cb8-300"></a><span class="in">preferred = scores &gt; 0</span></span>
+<span id="cb8-301"><a href="#cb8-301"></a><span class="in">non_preferred = scores &lt; 0</span></span>
+<span id="cb8-302"><a href="#cb8-302"></a></span>
+<span id="cb8-303"><a href="#cb8-303"></a><span class="in">draw_surface()</span></span>
+<span id="cb8-304"><a href="#cb8-304"></a><span class="in">plt.scatter(items[preferred, 0], items[preferred, 1], c='blue', label='Preferred', alpha=0.5)</span></span>
+<span id="cb8-305"><a href="#cb8-305"></a><span class="in">plt.scatter(items[non_preferred, 0], items[non_preferred, 1], c='purple', label='Non-preferred', alpha=0.5)</span></span>
+<span id="cb8-306"><a href="#cb8-306"></a><span class="in">plt.legend()</span></span>
+<span id="cb8-307"><a href="#cb8-307"></a><span class="in">plt.show()</span></span>
+<span id="cb8-308"><a href="#cb8-308"></a><span class="in">```</span></span>
+<span id="cb8-309"><a href="#cb8-309"></a>:::</span>
+<span id="cb8-310"><a href="#cb8-310"></a></span>
+<span id="cb8-313"><a href="#cb8-313"></a><span class="in">```{python}</span></span>
+<span id="cb8-314"><a href="#cb8-314"></a>n_pairs <span class="op">=</span> <span class="dv">10000</span></span>
+<span id="cb8-315"><a href="#cb8-315"></a>pair_indices <span class="op">=</span> np.random.randint(<span class="dv">0</span>, n_items, size<span class="op">=</span>(n_pairs, <span class="dv">2</span>))</span>
+<span id="cb8-316"><a href="#cb8-316"></a><span class="co"># Exclude pairs where both indices are the same</span></span>
+<span id="cb8-317"><a href="#cb8-317"></a>mask <span class="op">=</span> pair_indices[:, <span class="dv">0</span>] <span class="op">!=</span> pair_indices[:, <span class="dv">1</span>]</span>
+<span id="cb8-318"><a href="#cb8-318"></a>pair_indices <span class="op">=</span> pair_indices[mask]</span>
+<span id="cb8-319"><a href="#cb8-319"></a></span>
+<span id="cb8-320"><a href="#cb8-320"></a>scores <span class="op">=</span> np.zeros(n_items, dtype<span class="op">=</span><span class="bu">int</span>)</span>
+<span id="cb8-321"><a href="#cb8-321"></a>wins <span class="op">=</span> utilities[pair_indices[:, <span class="dv">0</span>]] <span class="op">&gt;</span> utilities[pair_indices[:, <span class="dv">1</span>]]</span>
+<span id="cb8-322"><a href="#cb8-322"></a></span>
+<span id="cb8-323"><a href="#cb8-323"></a><span class="co"># For pairs where the first item wins:</span></span>
+<span id="cb8-324"><a href="#cb8-324"></a><span class="co">#   - Increase score for the first item by 1</span></span>
+<span id="cb8-325"><a href="#cb8-325"></a><span class="co">#   - Decrease score for the second item by 1</span></span>
+<span id="cb8-326"><a href="#cb8-326"></a>np.add.at(scores, pair_indices[wins, <span class="dv">0</span>], <span class="dv">1</span>)</span>
+<span id="cb8-327"><a href="#cb8-327"></a>np.add.at(scores, pair_indices[wins, <span class="dv">1</span>], <span class="op">-</span><span class="dv">1</span>)</span>
+<span id="cb8-328"><a href="#cb8-328"></a></span>
+<span id="cb8-329"><a href="#cb8-329"></a><span class="co"># For pairs where the second item wins or it's a tie:</span></span>
+<span id="cb8-330"><a href="#cb8-330"></a><span class="co">#   - Decrease score for the first item by 1</span></span>
+<span id="cb8-331"><a href="#cb8-331"></a><span class="co">#   - Increase score for the second item by 1</span></span>
+<span id="cb8-332"><a href="#cb8-332"></a>np.add.at(scores, pair_indices[<span class="op">~</span>wins, <span class="dv">0</span>], <span class="op">-</span><span class="dv">1</span>)</span>
+<span id="cb8-333"><a href="#cb8-333"></a>np.add.at(scores, pair_indices[<span class="op">~</span>wins, <span class="dv">1</span>], <span class="dv">1</span>)</span>
+<span id="cb8-334"><a href="#cb8-334"></a></span>
+<span id="cb8-335"><a href="#cb8-335"></a><span class="co"># Determine preferred and non-preferred items based on scores</span></span>
+<span id="cb8-336"><a href="#cb8-336"></a>preferred <span class="op">=</span> scores <span class="op">&gt;</span> <span class="dv">0</span></span>
+<span id="cb8-337"><a href="#cb8-337"></a>non_preferred <span class="op">=</span> scores <span class="op">&lt;</span> <span class="dv">0</span></span>
+<span id="cb8-338"><a href="#cb8-338"></a></span>
+<span id="cb8-339"><a href="#cb8-339"></a>draw_surface()</span>
+<span id="cb8-340"><a href="#cb8-340"></a>plt.scatter(items[preferred, <span class="dv">0</span>], items[preferred, <span class="dv">1</span>], c<span class="op">=</span><span class="st">'blue'</span>, label<span class="op">=</span><span class="st">'Preferred'</span>, alpha<span class="op">=</span><span class="fl">0.5</span>)</span>
+<span id="cb8-341"><a href="#cb8-341"></a>plt.scatter(items[non_preferred, <span class="dv">0</span>], items[non_preferred, <span class="dv">1</span>], c<span class="op">=</span><span class="st">'purple'</span>, label<span class="op">=</span><span class="st">'Non-preferred'</span>, alpha<span class="op">=</span><span class="fl">0.5</span>)</span>
+<span id="cb8-342"><a href="#cb8-342"></a>plt.legend()</span>
+<span id="cb8-343"><a href="#cb8-343"></a>plt.show()</span>
+<span id="cb8-344"><a href="#cb8-344"></a><span class="in">```</span></span>
+<span id="cb8-345"><a href="#cb8-345"></a></span>
 <span id="cb8-346"><a href="#cb8-346"></a></span>
-<span id="cb8-347"><a href="#cb8-347"></a></span>
-<span id="cb8-348"><a href="#cb8-348"></a>Next, we will see that we can trading cognitive demand for rater to elicit more nuance preference information. For example, *Rank-order sampling* captures human preferences by having participants rank items from most to least preferred. Used in voting, market research, and psychology, it provides rich preference data but is more complex and cognitively demanding than pairwise comparisons, especially for large item sets. Participants may also rank inconsistently <span class="co">[</span><span class="ot">@ragain2019</span><span class="co">]</span>. </span>
-<span id="cb8-349"><a href="#cb8-349"></a></span>
-<span id="cb8-350"><a href="#cb8-350"></a>*In Best-worst scaling* (BWS), participants are presented with items and asked to identify the most and least preferred options. The primary objective of BWS is to discern the relative importance or preference of items, making it widely applicable in various fields such as market research, health economics, and social sciences <span class="co">[</span><span class="ot">@campbell2015</span><span class="co">]</span>. BWS provides rich data on the relative importance of items, helps clarify preferences, reduces biases found in traditional rating scales, and results in utility scores that are easy to interpret. However, BWS also has limitations, including potential scale interpretation differences among participants, and design challenges to avoid biases, such as the order effect or the context in which items are presented.</span>
-<span id="cb8-351"><a href="#cb8-351"></a></span>
-<span id="cb8-352"><a href="#cb8-352"></a>*Multiple-choice sampling* involve participants selecting one option from a set of alternatives. Multiple-choice sampling is simple for participants to understand and reflect on realistic decision-making scenarios where individuals choose one option from many. It is beneficial in complex choice scenarios, such as modes of transportation, where choices are not independent <span class="co">[</span><span class="ot">@bolt2009</span><span class="co">]</span>. Multiple-choice sampling often relies on simplistic assumptions such as the independence of irrelevant alternatives (IIA), which may not always hold true. This method may also fail to capture the variation in preferences among different individuals, as it typically records only the most preferred choice without accounting for the relative importance of other options.</span>
-<span id="cb8-353"><a href="#cb8-353"></a></span>
-<span id="cb8-354"><a href="#cb8-354"></a><span class="fu">## Models of Choices {#sec-models}</span></span>
-<span id="cb8-355"><a href="#cb8-355"></a></span>
-<span id="cb8-356"><a href="#cb8-356"></a><span class="fu">### Binary Choice Model {#binary-choice-model}</span></span>
-<span id="cb8-357"><a href="#cb8-357"></a></span>
-<span id="cb8-358"><a href="#cb8-358"></a>Binary choice model is centered around one item. The model predicts, for that option, after observing user choices in the past, whether that option will be chosen or not. We use binary variable $y \in <span class="sc">\{</span>0, 1<span class="sc">\}</span>$ to represent whether that choice will be picked by the user in the next phase of selection. We denote $P = \mathbb{P}(y = 1)$. We can formally model $y$ as a function of the utility of the positive choice: $y = \mathbb{I}<span class="co">[</span><span class="ot">U&gt;0</span><span class="co">]</span>$. We explore two cases based on the noise distribution. $\psi$ is the logistic function or the standard normal cummulative distribution function if noise follows logistic distribution and the standard normal distribution, repsectively:</span>
-<span id="cb8-359"><a href="#cb8-359"></a>$$</span>
-<span id="cb8-360"><a href="#cb8-360"></a>\mathbb{P}(u_{i,j} &gt; 0) = \mathbb{P}(u_{i,j}^* + \epsilon &gt; 0) = 1 - \mathbb{P}( \epsilon &lt; -u_{i,j}^*) = \psi(u_{i,j}^*).</span>
-<span id="cb8-361"><a href="#cb8-361"></a>$$</span>
-<span id="cb8-362"><a href="#cb8-362"></a></span>
-<span id="cb8-363"><a href="#cb8-363"></a><span class="fu">### Bradley-Terry Model {#bradley-terry-model}</span></span>
-<span id="cb8-364"><a href="#cb8-364"></a></span>
-<span id="cb8-365"><a href="#cb8-365"></a>The Bradley-Terry model compares the utility of choice over all others <span class="co">[</span><span class="ot">@bradley-terry-model</span><span class="co">]</span> in the set of $J$ choices $i \in <span class="sc">\{</span>1, 2, \dots, J<span class="sc">\}</span>$. Each choice can also have its unique random noise variable representing the unobserved factor, although we can also choose to have all choices' unobserved factors follow the same distribution (e.g. independent and identically distributed, IID). The noise is represented as an extreme value distribution, although we can choose alternatives such as a multivariate Gaussian distribution: $\epsilon \sim \mathcal{N}(0, \Sigma)$. If $\Sigma$ is not a diagonal matrix, we effectively model correlations in the noise across choices, enabling us to avoid the IID assumption. In the case of the extreme value distribution, we model the probability of a user preferring choice $i$, which we denote as $P_i = Z^{-1}\exp(u_{i,j}^*)$ where $Z = \sum_{j = 1}^{J} \exp(u_{i,j}^*)$.</span>
-<span id="cb8-366"><a href="#cb8-366"></a></span>
-<span id="cb8-367"><a href="#cb8-367"></a><span class="fu">### Ordered Preferences Model {#ordered-preferences-model}</span></span>
-<span id="cb8-368"><a href="#cb8-368"></a></span>
-<span id="cb8-369"><a href="#cb8-369"></a>Previous models do not leverage information about ordering of the available options a human can choose from: all choices were treated as independent by the model. The model aims to capture how an individual chooses between them. However, in many cases, we may introduce an inductive bias based on information about the options. For example, in a study for stated preferences, a user may be able to choose from intricately dependent options such as very poor, poor, fair, good, and great. In this case, it can be useful to include this bias in our model to represent a human's decision-making process better. Instead of comparing choices against alternatives, we can focus on a single example and use additional parameters to define classification criteria based on the utility determined by the model. Let us suppose we have a single example with attributes $z_i$, and wish to know which of $J$ predefined options an individual will choose from. We can define $J - 1$ parameters, which act as thresholds on the utility computed by $u_i = u_{i,j}^*$ to classify the predicted choice between these options. For example, if there are 3 predefined options, we can define parameters $a, b \in \mathbb{R}$ such that</span>
-<span id="cb8-370"><a href="#cb8-370"></a></span>
-<span id="cb8-371"><a href="#cb8-371"></a>$$</span>
-<span id="cb8-372"><a href="#cb8-372"></a>y_i =</span>
-<span id="cb8-373"><a href="#cb8-373"></a>\begin{cases} </span>
-<span id="cb8-374"><a href="#cb8-374"></a>    1 &amp; u &lt; a <span class="sc">\\</span></span>
-<span id="cb8-375"><a href="#cb8-375"></a>    2 &amp; a \le u &lt; b <span class="sc">\\</span></span>
-<span id="cb8-376"><a href="#cb8-376"></a>    3 &amp; \text{else}</span>
-<span id="cb8-377"><a href="#cb8-377"></a>\end{cases}</span>
-<span id="cb8-378"><a href="#cb8-378"></a>$$</span>
-<span id="cb8-379"><a href="#cb8-379"></a></span>
-<span id="cb8-380"><a href="#cb8-380"></a>By assuming the noise distribution to be either logistic or standard normal, we have </span>
-<span id="cb8-381"><a href="#cb8-381"></a>$$</span>
-<span id="cb8-382"><a href="#cb8-382"></a>\begin{split}</span>
-<span id="cb8-383"><a href="#cb8-383"></a>    \mathbb{P}(y_i = 1) &amp; = \mathbb{P}(u &lt; a) = \mathbb{P}(u_{i,j}^* + \epsilon &lt; a) = \psi(a-u_{i,j}^*) <span class="sc">\\</span></span>
-<span id="cb8-384"><a href="#cb8-384"></a>    \mathbb{P}(y_i = 2) &amp; = \mathbb{P}(a \le u &lt; b) = \mathbb{P}(a - u_{i,j}^* \le \epsilon &lt; b - u_{i,j}^*) = \psi(b-u_{i,j}^*)  - \psi(u_{i,j}^*-a) <span class="sc">\\</span></span>
-<span id="cb8-385"><a href="#cb8-385"></a>    \mathbb{P}(y_i = 3) &amp; = \mathbb{P}(u &gt; b) = \mathbb{P}(u_{i,j}^* + \epsilon &gt; b ) = \mathbb{P}( \epsilon &gt; b - u_{i,j}^*) = \psi(b-u_{i,j}^*)</span>
-<span id="cb8-386"><a href="#cb8-386"></a>\end{split}</span>
-<span id="cb8-387"><a href="#cb8-387"></a>$$</span>
-<span id="cb8-388"><a href="#cb8-388"></a></span>
-<span id="cb8-389"><a href="#cb8-389"></a><span class="fu">### Plackett-Luce Model {#plackett-luce-model}</span></span>
-<span id="cb8-390"><a href="#cb8-390"></a></span>
-<span id="cb8-391"><a href="#cb8-391"></a>We can model an open-ended ranking of the available options with the Plackett-Luce model, in which we jointly model the full sequence of choice ordering <span class="co">[</span><span class="ot">@plackett_luce</span><span class="co">]</span>. The general form models the joint distribution as the product of conditional probabilities, where each is conditioned on the preceding ranking terms. Given an ordering of $J$ choices $<span class="sc">\{</span>y_1, \dots, y_J<span class="sc">\}</span>$, we factorize the joint probability into conditionals. Each conditional follows the Bradley-Terry model:</span>
-<span id="cb8-392"><a href="#cb8-392"></a>$$</span>
-<span id="cb8-393"><a href="#cb8-393"></a>\mathbb{P}(y_1, \dots, y_J) = \mathbb{P}(y_1) \cdot \mathbb{P}(y_2 | y_1) \cdot \dots \cdot \mathbb{P}(y_J | y_1, y_2, \dots y_{J - 1}) = \prod_{i = 1}^J \frac{\exp(u_{i,j}^*)}{\sum_{j \ge i} \exp(u_{i,j}^*)}</span>
-<span id="cb8-394"><a href="#cb8-394"></a>$$</span>
-<span id="cb8-395"><a href="#cb8-395"></a></span>
-<span id="cb8-396"><a href="#cb8-396"></a><span class="fu">### Ideal Point Model {#ideal-point-model}</span></span>
-<span id="cb8-397"><a href="#cb8-397"></a></span>
-<span id="cb8-398"><a href="#cb8-398"></a>The ideal point model uses distance functions to compute utility for individual-choice pairs <span class="co">[</span><span class="ot">@huber1976ideal</span><span class="co">]</span>. Given vector representation $z_i$ of choice $i$ and a vector $v_n$ representing an individual $n$, we can use a distance function to model a stochastic utility function with the unobserved factors following a specified distribution: $u_{n, i} = \texttt{dist}(z_i, v_n) + \epsilon_{n, i}$. We assume human preferences follow the choice with maximum utility: $y_{n, i} = \mathbb{I}<span class="co">[</span><span class="ot">u_{n, i} &gt; u_{n, j} \ \forall i \ne j</span><span class="co">]</span>$. The intuition is that vectors exist in a shared $n$-dimensional space, and as such we can use geometry to match choices whose representations are closest to that of a given individual. This model can often result in faster learning compared to non-geometric approaches <span class="co">[</span><span class="ot">@ideal_point; @tatli2022distancepreferences</span><span class="co">]</span> when equipped with a distance metric. Certain distance metrics, such as Euclidian distance or inner product, can easily be biased by the scale of vectors. A distance measure such as cosine similarity, which compensates for scale by normalizing the inner product of two vectors by the product of their magnitudes, can mitigate this bias yet may discard valuable information encoded by the length of the vectors. Beyond the distance metric alone, this model places a strong inductive bias that the individual and choice representations all share a common embedding space. In some contexts, this can be a robust bias to add to the model <span class="co">[</span><span class="ot">@idealpoints</span><span class="co">]</span>, but it is a key factor one must take into account before employing such a model, and is a key design choice for modeling.</span>
-<span id="cb8-399"><a href="#cb8-399"></a></span>
-<span id="cb8-400"><a href="#cb8-400"></a><span class="fu">## Choices Aggregation {#sec-choices-aggregation}</span></span>
-<span id="cb8-401"><a href="#cb8-401"></a></span>
-<span id="cb8-402"><a href="#cb8-402"></a>In many applications, human preferences must be aggregated across multiple individuals to determine a collective decision or ranking. This process is central to social choice theory, which provides a mathematical foundation for preference aggregation. Unlike individual preference modeling, which focuses on understanding how a single person makes decisions, social choice theory addresses the challenge of combining multiple preference profiles into a single, coherent outcome. One of the most widely used approaches to aggregating preferences is voting. A **voting rule** is a function that maps a set of individual preference rankings to a collective decision. The outcome of a vote is determined by a **social choice function (SCF)**, which selects a winner based on the aggregated preferences. Several voting rules exist, each with different properties:</span>
-<span id="cb8-403"><a href="#cb8-403"></a></span>
-<span id="cb8-404"><a href="#cb8-404"></a><span class="ss">- </span>**Plurality Rule:** Each voter assigns one point to their top choice, and the alternative with the most points wins.</span>
-<span id="cb8-405"><a href="#cb8-405"></a><span class="ss">- </span>**Borda Count:** Voters rank all alternatives, and points are assigned based on the position in each ranking.</span>
-<span id="cb8-406"><a href="#cb8-406"></a><span class="ss">- </span>**Single Transferable Vote (STV):** Voters rank choices, and rounds of elimination occur until a candidate has a majority.</span>
-<span id="cb8-407"><a href="#cb8-407"></a><span class="ss">- </span>**Condorcet Methods:** The **Condorcet winner** is the option that would win in all pairwise comparisons against other alternatives (if one exists).</span>
-<span id="cb8-408"><a href="#cb8-408"></a></span>
-<span id="cb8-409"><a href="#cb8-409"></a>However, preference aggregation is not always straightforward. The **Condorcet Paradox** illustrates that no single alternative may be a clear winner due to cycles in majority preferences, violating transitivity. Additionally, different voting rules can yield different winners, highlighting the importance of selecting an appropriate aggregation method. A fundamental result in social choice theory is **Arrow’s Impossibility Theorem**, which states that when there are three or more alternatives, no voting system can simultaneously satisfy the following fairness criteria:</span>
-<span id="cb8-410"><a href="#cb8-410"></a></span>
-<span id="cb8-411"><a href="#cb8-411"></a><span class="ss">1. </span>**Unanimity (Pareto efficiency):** If all individuals prefer one option over another, the group ranking should reflect this.</span>
-<span id="cb8-412"><a href="#cb8-412"></a><span class="ss">2. </span>**Independence of Irrelevant Alternatives (IIA):** The relative ranking of two options should not be influenced by a third, unrelated option.</span>
-<span id="cb8-413"><a href="#cb8-413"></a><span class="ss">3. </span>**Non-dictatorship:** No single individual's preference should always determine the group's outcome.</span>
-<span id="cb8-414"><a href="#cb8-414"></a></span>
-<span id="cb8-415"><a href="#cb8-415"></a>Arrow’s theorem suggests that every fair aggregation method must compromise on at least one of these desirable properties. Additionally, the **Gibbard-Satterthwaite Theorem** proves that any deterministic voting rule that selects a single winner is either **dictatorial** (one person always determines the result) or **manipulable** (voters can strategically misrepresent their preferences to achieve a better outcome). While manipulation is theoretically possible, certain voting rules, such as STV, introduce computational complexity that makes strategic voting impractical in real-world scenarios.</span>
-<span id="cb8-416"><a href="#cb8-416"></a></span>
-<span id="cb8-417"><a href="#cb8-417"></a>Preference aggregation is also critical in reinforcement learning from human feedback (RLHF), where human judgments guide model training. Aggregating human preferences in RLHF faces challenges similar to traditional voting, such as inconsistencies in preferences and strategic bias. Several approaches address these challenges:</span>
-<span id="cb8-418"><a href="#cb8-418"></a></span>
-<span id="cb8-419"><a href="#cb8-419"></a><span class="ss">- </span>**Majority Voting:** Simple aggregation by selecting the most preferred response.</span>
-<span id="cb8-420"><a href="#cb8-420"></a><span class="ss">- </span>**Weighted Voting:** Adjusting vote weights based on expertise or trustworthiness.</span>
-<span id="cb8-421"><a href="#cb8-421"></a><span class="ss">- </span>**Jury Learning:** A method that integrates dissenting opinions, ensuring that minority perspectives are not entirely disregarded.</span>
-<span id="cb8-422"><a href="#cb8-422"></a><span class="ss">- </span>**Social Choice in AI Alignment:** Incorporating diverse human feedback to align AI behavior with a broad spectrum of human values.</span>
-<span id="cb8-423"><a href="#cb8-423"></a></span>
-<span id="cb8-424"><a href="#cb8-424"></a>These approaches highlight the interplay between human preference modeling and machine learning, where designing aggregation mechanisms that reflect collective human values is an ongoing research challenge.</span>
-<span id="cb8-425"><a href="#cb8-425"></a></span>
-<span id="cb8-426"><a href="#cb8-426"></a>While traditional social choice methods focus on aggregation, recent work in pluralistic alignment suggests alternative frameworks that preserve the diversity of human preferences rather than collapsing them into a single decision. Pluralistic AI systems aim to:</span>
-<span id="cb8-427"><a href="#cb8-427"></a></span>
-<span id="cb8-428"><a href="#cb8-428"></a><span class="ss">1. </span>**Present a spectrum of reasonable responses** instead of forcing a single choice.</span>
-<span id="cb8-429"><a href="#cb8-429"></a><span class="ss">2. </span>**Allow steering towards specific perspectives** while maintaining fairness.</span>
-<span id="cb8-430"><a href="#cb8-430"></a><span class="ss">3. </span>**Ensure distributional pluralism**, calibrating AI systems to diverse human viewpoints.</span>
-<span id="cb8-431"><a href="#cb8-431"></a></span>
-<span id="cb8-432"><a href="#cb8-432"></a>This perspective is particularly relevant in generative AI, where models trained on aggregated preferences may fail to capture the nuances of diverse human values.</span>
-<span id="cb8-433"><a href="#cb8-433"></a></span>
-<span id="cb8-434"><a href="#cb8-434"></a>Aggregating human preferences is a complex task, influenced by both mathematical constraints and strategic considerations. Voting-based methods provide well-studied mechanisms for aggregation, but they face fundamental limitations as outlined by Arrow’s and Gibbard-Satterthwaite’s theorems. Beyond traditional aggregation, emerging approaches in reinforcement learning and AI alignment seek to balance fairness, robustness, and pluralism. As machine learning systems increasingly interact with human preferences, designing aggregation frameworks that capture the richness of human decision-making remains an active and critical area of research.</span>
-<span id="cb8-435"><a href="#cb8-435"></a></span>
-<span id="cb8-436"><a href="#cb8-436"></a><span class="fu">## Inferences </span></span>
+<span id="cb8-347"><a href="#cb8-347"></a>Next, we will see that we can trading cognitive demand for rater to elicit more nuance preference information. For example, *Rank-order sampling* captures human preferences by having participants rank items from most to least preferred. Used in voting, market research, and psychology, it provides rich preference data but is more complex and cognitively demanding than pairwise comparisons, especially for large item sets. Participants may also rank inconsistently <span class="co">[</span><span class="ot">@ragain2019</span><span class="co">]</span>. </span>
+<span id="cb8-348"><a href="#cb8-348"></a></span>
+<span id="cb8-349"><a href="#cb8-349"></a>*In Best-worst scaling* (BWS), participants are presented with items and asked to identify the most and least preferred options. The primary objective of BWS is to discern the relative importance or preference of items, making it widely applicable in various fields such as market research, health economics, and social sciences <span class="co">[</span><span class="ot">@campbell2015</span><span class="co">]</span>. BWS provides rich data on the relative importance of items, helps clarify preferences, reduces biases found in traditional rating scales, and results in utility scores that are easy to interpret. However, BWS also has limitations, including potential scale interpretation differences among participants, and design challenges to avoid biases, such as the order effect or the context in which items are presented.</span>
+<span id="cb8-350"><a href="#cb8-350"></a></span>
+<span id="cb8-351"><a href="#cb8-351"></a>*Multiple-choice sampling* involve participants selecting one option from a set of alternatives. Multiple-choice sampling is simple for participants to understand and reflect on realistic decision-making scenarios where individuals choose one option from many. It is beneficial in complex choice scenarios, such as modes of transportation, where choices are not independent <span class="co">[</span><span class="ot">@bolt2009</span><span class="co">]</span>. Multiple-choice sampling often relies on simplistic assumptions such as the independence of irrelevant alternatives (IIA), which may not always hold true. This method may also fail to capture the variation in preferences among different individuals, as it typically records only the most preferred choice without accounting for the relative importance of other options.</span>
+<span id="cb8-352"><a href="#cb8-352"></a></span>
+<span id="cb8-353"><a href="#cb8-353"></a><span class="fu">## Models of Choices {#sec-models}</span></span>
+<span id="cb8-354"><a href="#cb8-354"></a></span>
+<span id="cb8-355"><a href="#cb8-355"></a><span class="fu">### Binary Choice Model {#binary-choice-model}</span></span>
+<span id="cb8-356"><a href="#cb8-356"></a></span>
+<span id="cb8-357"><a href="#cb8-357"></a>Binary choice model is centered around one item. The model predicts, for that option, after observing user choices in the past, whether that option will be chosen or not. We use binary variable $y \in <span class="sc">\{</span>0, 1<span class="sc">\}</span>$ to represent whether that choice will be picked by the user in the next phase of selection. We denote $P = \mathbb{P}(y = 1)$. We can formally model $y$ as a function of the utility of the positive choice: $y = \mathbb{I}<span class="co">[</span><span class="ot">U&gt;0</span><span class="co">]</span>$. We explore two cases based on the noise distribution. $\psi$ is the logistic function or the standard normal cummulative distribution function if noise follows logistic distribution and the standard normal distribution, repsectively:</span>
+<span id="cb8-358"><a href="#cb8-358"></a>$$</span>
+<span id="cb8-359"><a href="#cb8-359"></a>\mathbb{P}(u_{i,j} &gt; 0) = \mathbb{P}(u_{i,j}^* + \epsilon &gt; 0) = 1 - \mathbb{P}( \epsilon &lt; -u_{i,j}^*) = \psi(u_{i,j}^*).</span>
+<span id="cb8-360"><a href="#cb8-360"></a>$$</span>
+<span id="cb8-361"><a href="#cb8-361"></a></span>
+<span id="cb8-362"><a href="#cb8-362"></a><span class="fu">### Bradley-Terry Model {#bradley-terry-model}</span></span>
+<span id="cb8-363"><a href="#cb8-363"></a></span>
+<span id="cb8-364"><a href="#cb8-364"></a>The Bradley-Terry model compares the utility of choice over all others <span class="co">[</span><span class="ot">@bradley-terry-model</span><span class="co">]</span> in the set of $J$ choices $i \in <span class="sc">\{</span>1, 2, \dots, J<span class="sc">\}</span>$. Each choice can also have its unique random noise variable representing the unobserved factor, although we can also choose to have all choices' unobserved factors follow the same distribution (e.g. independent and identically distributed, IID). The noise is represented as an extreme value distribution, although we can choose alternatives such as a multivariate Gaussian distribution: $\epsilon \sim \mathcal{N}(0, \Sigma)$. If $\Sigma$ is not a diagonal matrix, we effectively model correlations in the noise across choices, enabling us to avoid the IID assumption. In the case of the extreme value distribution, we model the probability of a user preferring choice $i$, which we denote as $P_i = Z^{-1}\exp(u_{i,j}^*)$ where $Z = \sum_{j = 1}^{J} \exp(u_{i,j}^*)$.</span>
+<span id="cb8-365"><a href="#cb8-365"></a></span>
+<span id="cb8-366"><a href="#cb8-366"></a><span class="fu">### Ordered Preferences Model {#ordered-preferences-model}</span></span>
+<span id="cb8-367"><a href="#cb8-367"></a></span>
+<span id="cb8-368"><a href="#cb8-368"></a>Previous models do not leverage information about ordering of the available options a human can choose from: all choices were treated as independent by the model. The model aims to capture how an individual chooses between them. However, in many cases, we may introduce an inductive bias based on information about the options. For example, in a study for stated preferences, a user may be able to choose from intricately dependent options such as very poor, poor, fair, good, and great. In this case, it can be useful to include this bias in our model to represent a human's decision-making process better. Instead of comparing choices against alternatives, we can focus on a single example and use additional parameters to define classification criteria based on the utility determined by the model. Let us suppose we have a single example with attributes $z_i$, and wish to know which of $J$ predefined options an individual will choose from. We can define $J - 1$ parameters, which act as thresholds on the utility computed by $u_i = u_{i,j}^*$ to classify the predicted choice between these options. For example, if there are 3 predefined options, we can define parameters $a, b \in \mathbb{R}$ such that</span>
+<span id="cb8-369"><a href="#cb8-369"></a></span>
+<span id="cb8-370"><a href="#cb8-370"></a>$$</span>
+<span id="cb8-371"><a href="#cb8-371"></a>y_i =</span>
+<span id="cb8-372"><a href="#cb8-372"></a>\begin{cases} </span>
+<span id="cb8-373"><a href="#cb8-373"></a>    1 &amp; u &lt; a <span class="sc">\\</span></span>
+<span id="cb8-374"><a href="#cb8-374"></a>    2 &amp; a \le u &lt; b <span class="sc">\\</span></span>
+<span id="cb8-375"><a href="#cb8-375"></a>    3 &amp; \text{else}</span>
+<span id="cb8-376"><a href="#cb8-376"></a>\end{cases}</span>
+<span id="cb8-377"><a href="#cb8-377"></a>$$</span>
+<span id="cb8-378"><a href="#cb8-378"></a></span>
+<span id="cb8-379"><a href="#cb8-379"></a>By assuming the noise distribution to be either logistic or standard normal, we have </span>
+<span id="cb8-380"><a href="#cb8-380"></a>$$</span>
+<span id="cb8-381"><a href="#cb8-381"></a>\begin{split}</span>
+<span id="cb8-382"><a href="#cb8-382"></a>    \mathbb{P}(y_i = 1) &amp; = \mathbb{P}(u &lt; a) = \mathbb{P}(u_{i,j}^* + \epsilon &lt; a) = \psi(a-u_{i,j}^*) <span class="sc">\\</span></span>
+<span id="cb8-383"><a href="#cb8-383"></a>    \mathbb{P}(y_i = 2) &amp; = \mathbb{P}(a \le u &lt; b) = \mathbb{P}(a - u_{i,j}^* \le \epsilon &lt; b - u_{i,j}^*) = \psi(b-u_{i,j}^*)  - \psi(u_{i,j}^*-a) <span class="sc">\\</span></span>
+<span id="cb8-384"><a href="#cb8-384"></a>    \mathbb{P}(y_i = 3) &amp; = \mathbb{P}(u &gt; b) = \mathbb{P}(u_{i,j}^* + \epsilon &gt; b ) = \mathbb{P}( \epsilon &gt; b - u_{i,j}^*) = \psi(b-u_{i,j}^*)</span>
+<span id="cb8-385"><a href="#cb8-385"></a>\end{split}</span>
+<span id="cb8-386"><a href="#cb8-386"></a>$$</span>
+<span id="cb8-387"><a href="#cb8-387"></a></span>
+<span id="cb8-388"><a href="#cb8-388"></a><span class="fu">### Plackett-Luce Model {#plackett-luce-model}</span></span>
+<span id="cb8-389"><a href="#cb8-389"></a></span>
+<span id="cb8-390"><a href="#cb8-390"></a>We can model an open-ended ranking of the available options with the Plackett-Luce model, in which we jointly model the full sequence of choice ordering <span class="co">[</span><span class="ot">@plackett_luce</span><span class="co">]</span>. The general form models the joint distribution as the product of conditional probabilities, where each is conditioned on the preceding ranking terms. Given an ordering of $J$ choices $<span class="sc">\{</span>y_1, \dots, y_J<span class="sc">\}</span>$, we factorize the joint probability into conditionals. Each conditional follows the Bradley-Terry model:</span>
+<span id="cb8-391"><a href="#cb8-391"></a>$$</span>
+<span id="cb8-392"><a href="#cb8-392"></a>\mathbb{P}(y_1, \dots, y_J) = \mathbb{P}(y_1) \cdot \mathbb{P}(y_2 | y_1) \cdot \dots \cdot \mathbb{P}(y_J | y_1, y_2, \dots y_{J - 1}) = \prod_{i = 1}^J \frac{\exp(u_{i,j}^*)}{\sum_{j \ge i} \exp(u_{i,j}^*)}</span>
+<span id="cb8-393"><a href="#cb8-393"></a>$$</span>
+<span id="cb8-394"><a href="#cb8-394"></a></span>
+<span id="cb8-395"><a href="#cb8-395"></a><span class="fu">### Ideal Point Model {#ideal-point-model}</span></span>
+<span id="cb8-396"><a href="#cb8-396"></a></span>
+<span id="cb8-397"><a href="#cb8-397"></a>The ideal point model uses distance functions to compute utility for individual-choice pairs <span class="co">[</span><span class="ot">@huber1976ideal</span><span class="co">]</span>. Given vector representation $z_i$ of choice $i$ and a vector $v_n$ representing an individual $n$, we can use a distance function to model a stochastic utility function with the unobserved factors following a specified distribution: $u_{n, i} = \texttt{dist}(z_i, v_n) + \epsilon_{n, i}$. We assume human preferences follow the choice with maximum utility: $y_{n, i} = \mathbb{I}<span class="co">[</span><span class="ot">u_{n, i} &gt; u_{n, j} \ \forall i \ne j</span><span class="co">]</span>$. The intuition is that vectors exist in a shared $n$-dimensional space, and as such we can use geometry to match choices whose representations are closest to that of a given individual. This model can often result in faster learning compared to non-geometric approaches <span class="co">[</span><span class="ot">@ideal_point; @tatli2022distancepreferences</span><span class="co">]</span> when equipped with a distance metric. Certain distance metrics, such as Euclidian distance or inner product, can easily be biased by the scale of vectors. A distance measure such as cosine similarity, which compensates for scale by normalizing the inner product of two vectors by the product of their magnitudes, can mitigate this bias yet may discard valuable information encoded by the length of the vectors. Beyond the distance metric alone, this model places a strong inductive bias that the individual and choice representations all share a common embedding space. In some contexts, this can be a robust bias to add to the model <span class="co">[</span><span class="ot">@idealpoints</span><span class="co">]</span>, but it is a key factor one must take into account before employing such a model, and is a key design choice for modeling.</span>
+<span id="cb8-398"><a href="#cb8-398"></a></span>
+<span id="cb8-399"><a href="#cb8-399"></a><span class="fu">## Choices Aggregation {#sec-choices-aggregation}</span></span>
+<span id="cb8-400"><a href="#cb8-400"></a></span>
+<span id="cb8-401"><a href="#cb8-401"></a>In many applications, human preferences must be aggregated across multiple individuals to determine a collective decision or ranking. This process is central to social choice theory, which provides a mathematical foundation for preference aggregation. Unlike individual preference modeling, which focuses on understanding how a single person makes decisions, social choice theory addresses the challenge of combining multiple preference profiles into a single, coherent outcome. One of the most widely used approaches to aggregating preferences is voting. A **voting rule** is a function that maps a set of individual preference rankings to a collective decision. The outcome of a vote is determined by a **social choice function (SCF)**, which selects a winner based on the aggregated preferences. Several voting rules exist, each with different properties:</span>
+<span id="cb8-402"><a href="#cb8-402"></a></span>
+<span id="cb8-403"><a href="#cb8-403"></a><span class="ss">- </span>**Plurality Rule:** Each voter assigns one point to their top choice, and the alternative with the most points wins.</span>
+<span id="cb8-404"><a href="#cb8-404"></a><span class="ss">- </span>**Borda Count:** Voters rank all alternatives, and points are assigned based on the position in each ranking.</span>
+<span id="cb8-405"><a href="#cb8-405"></a><span class="ss">- </span>**Single Transferable Vote (STV):** Voters rank choices, and rounds of elimination occur until a candidate has a majority.</span>
+<span id="cb8-406"><a href="#cb8-406"></a><span class="ss">- </span>**Condorcet Methods:** The **Condorcet winner** is the option that would win in all pairwise comparisons against other alternatives (if one exists).</span>
+<span id="cb8-407"><a href="#cb8-407"></a></span>
+<span id="cb8-408"><a href="#cb8-408"></a>However, preference aggregation is not always straightforward. The **Condorcet Paradox** illustrates that no single alternative may be a clear winner due to cycles in majority preferences, violating transitivity. Additionally, different voting rules can yield different winners, highlighting the importance of selecting an appropriate aggregation method. A fundamental result in social choice theory is **Arrow’s Impossibility Theorem**, which states that when there are three or more alternatives, no voting system can simultaneously satisfy the following fairness criteria:</span>
+<span id="cb8-409"><a href="#cb8-409"></a></span>
+<span id="cb8-410"><a href="#cb8-410"></a><span class="ss">1. </span>**Unanimity (Pareto efficiency):** If all individuals prefer one option over another, the group ranking should reflect this.</span>
+<span id="cb8-411"><a href="#cb8-411"></a><span class="ss">2. </span>**Independence of Irrelevant Alternatives (IIA):** The relative ranking of two options should not be influenced by a third, unrelated option.</span>
+<span id="cb8-412"><a href="#cb8-412"></a><span class="ss">3. </span>**Non-dictatorship:** No single individual's preference should always determine the group's outcome.</span>
+<span id="cb8-413"><a href="#cb8-413"></a></span>
+<span id="cb8-414"><a href="#cb8-414"></a>Arrow’s theorem suggests that every fair aggregation method must compromise on at least one of these desirable properties. Additionally, the **Gibbard-Satterthwaite Theorem** proves that any deterministic voting rule that selects a single winner is either **dictatorial** (one person always determines the result) or **manipulable** (voters can strategically misrepresent their preferences to achieve a better outcome). While manipulation is theoretically possible, certain voting rules, such as STV, introduce computational complexity that makes strategic voting impractical in real-world scenarios.</span>
+<span id="cb8-415"><a href="#cb8-415"></a></span>
+<span id="cb8-416"><a href="#cb8-416"></a>Preference aggregation is also critical in reinforcement learning from human feedback (RLHF), where human judgments guide model training. Aggregating human preferences in RLHF faces challenges similar to traditional voting, such as inconsistencies in preferences and strategic bias. Several approaches address these challenges:</span>
+<span id="cb8-417"><a href="#cb8-417"></a></span>
+<span id="cb8-418"><a href="#cb8-418"></a><span class="ss">- </span>**Majority Voting:** Simple aggregation by selecting the most preferred response.</span>
+<span id="cb8-419"><a href="#cb8-419"></a><span class="ss">- </span>**Weighted Voting:** Adjusting vote weights based on expertise or trustworthiness.</span>
+<span id="cb8-420"><a href="#cb8-420"></a><span class="ss">- </span>**Jury Learning:** A method that integrates dissenting opinions, ensuring that minority perspectives are not entirely disregarded.</span>
+<span id="cb8-421"><a href="#cb8-421"></a><span class="ss">- </span>**Social Choice in AI Alignment:** Incorporating diverse human feedback to align AI behavior with a broad spectrum of human values.</span>
+<span id="cb8-422"><a href="#cb8-422"></a></span>
+<span id="cb8-423"><a href="#cb8-423"></a>These approaches highlight the interplay between human preference modeling and machine learning, where designing aggregation mechanisms that reflect collective human values is an ongoing research challenge.</span>
+<span id="cb8-424"><a href="#cb8-424"></a></span>
+<span id="cb8-425"><a href="#cb8-425"></a>While traditional social choice methods focus on aggregation, recent work in pluralistic alignment suggests alternative frameworks that preserve the diversity of human preferences rather than collapsing them into a single decision. Pluralistic AI systems aim to:</span>
+<span id="cb8-426"><a href="#cb8-426"></a></span>
+<span id="cb8-427"><a href="#cb8-427"></a><span class="ss">1. </span>**Present a spectrum of reasonable responses** instead of forcing a single choice.</span>
+<span id="cb8-428"><a href="#cb8-428"></a><span class="ss">2. </span>**Allow steering towards specific perspectives** while maintaining fairness.</span>
+<span id="cb8-429"><a href="#cb8-429"></a><span class="ss">3. </span>**Ensure distributional pluralism**, calibrating AI systems to diverse human viewpoints.</span>
+<span id="cb8-430"><a href="#cb8-430"></a></span>
+<span id="cb8-431"><a href="#cb8-431"></a>This perspective is particularly relevant in generative AI, where models trained on aggregated preferences may fail to capture the nuances of diverse human values.</span>
+<span id="cb8-432"><a href="#cb8-432"></a></span>
+<span id="cb8-433"><a href="#cb8-433"></a>Aggregating human preferences is a complex task, influenced by both mathematical constraints and strategic considerations. Voting-based methods provide well-studied mechanisms for aggregation, but they face fundamental limitations as outlined by Arrow’s and Gibbard-Satterthwaite’s theorems. Beyond traditional aggregation, emerging approaches in reinforcement learning and AI alignment seek to balance fairness, robustness, and pluralism. As machine learning systems increasingly interact with human preferences, designing aggregation frameworks that capture the richness of human decision-making remains an active and critical area of research.</span>
+<span id="cb8-434"><a href="#cb8-434"></a></span>
+<span id="cb8-435"><a href="#cb8-435"></a><span class="fu">## Inferences </span></span>
+<span id="cb8-436"><a href="#cb8-436"></a></span>
 <span id="cb8-437"><a href="#cb8-437"></a></span>
-<span id="cb8-438"><a href="#cb8-438"></a></span>
-<span id="cb8-439"><a href="#cb8-439"></a><span class="in">```{pyodide-python}</span></span>
-<span id="cb8-440"><a href="#cb8-440"></a><span class="in">import numpy as np</span></span>
-<span id="cb8-441"><a href="#cb8-441"></a><span class="in">from scipy.optimize import minimize</span></span>
-<span id="cb8-442"><a href="#cb8-442"></a><span class="in">from sklearn.metrics import roc_auc_score</span></span>
-<span id="cb8-443"><a href="#cb8-443"></a><span class="in">from tqdm import tqdm</span></span>
-<span id="cb8-444"><a href="#cb8-444"></a></span>
-<span id="cb8-445"><a href="#cb8-445"></a><span class="in"># Set random seed for reproducibility (optional)</span></span>
-<span id="cb8-446"><a href="#cb8-446"></a><span class="in">np.random.seed(42)</span></span>
-<span id="cb8-447"><a href="#cb8-447"></a></span>
-<span id="cb8-448"><a href="#cb8-448"></a><span class="in"># Number of users and items</span></span>
-<span id="cb8-449"><a href="#cb8-449"></a><span class="in">num_users = 50</span></span>
-<span id="cb8-450"><a href="#cb8-450"></a><span class="in">num_items = 100</span></span>
-<span id="cb8-451"><a href="#cb8-451"></a></span>
-<span id="cb8-452"><a href="#cb8-452"></a><span class="in"># Generate user-specific and item-specific utilities</span></span>
-<span id="cb8-453"><a href="#cb8-453"></a><span class="in">theta_true = np.random.randn(num_users)</span></span>
-<span id="cb8-454"><a href="#cb8-454"></a><span class="in">z_true = np.random.randn(num_items)</span></span>
-<span id="cb8-455"><a href="#cb8-455"></a></span>
-<span id="cb8-456"><a href="#cb8-456"></a><span class="in"># Define the logistic (sigmoid) function</span></span>
-<span id="cb8-457"><a href="#cb8-457"></a><span class="in">def sigmoid(x):</span></span>
-<span id="cb8-458"><a href="#cb8-458"></a><span class="in">    return 1.0 / (1.0 + np.exp(-x))</span></span>
-<span id="cb8-459"><a href="#cb8-459"></a></span>
-<span id="cb8-460"><a href="#cb8-460"></a><span class="in"># Generate observed choices using the logistic function</span></span>
-<span id="cb8-461"><a href="#cb8-461"></a><span class="in"># Compute probability matrix: shape (num_users, num_items)</span></span>
-<span id="cb8-462"><a href="#cb8-462"></a><span class="in">probs = sigmoid(theta_true[:, None] - z_true[None, :])</span></span>
-<span id="cb8-463"><a href="#cb8-463"></a><span class="in"># Sample binary responses (0 or 1) from a Bernoulli distribution</span></span>
-<span id="cb8-464"><a href="#cb8-464"></a><span class="in">data = np.random.binomial(1, probs)</span></span>
-<span id="cb8-465"><a href="#cb8-465"></a></span>
-<span id="cb8-466"><a href="#cb8-466"></a><span class="in"># Mask out a fraction of the response matrix (80% observed, 20% missing)</span></span>
-<span id="cb8-467"><a href="#cb8-467"></a><span class="in">mask = np.random.rand(num_users, num_items) &gt; 0.2  # boolean mask</span></span>
-<span id="cb8-468"><a href="#cb8-468"></a><span class="in"># Create a version of the data with missing values (not needed for optimization, but for reference)</span></span>
-<span id="cb8-469"><a href="#cb8-469"></a><span class="in">data_masked = data.copy().astype(float)</span></span>
-<span id="cb8-470"><a href="#cb8-470"></a><span class="in">data_masked[~mask] = np.nan</span></span>
-<span id="cb8-471"><a href="#cb8-471"></a></span>
-<span id="cb8-472"><a href="#cb8-472"></a><span class="in"># Count of observed entries (used for averaging)</span></span>
-<span id="cb8-473"><a href="#cb8-473"></a><span class="in">observed_count = np.sum(mask)</span></span>
-<span id="cb8-474"><a href="#cb8-474"></a></span>
-<span id="cb8-475"><a href="#cb8-475"></a><span class="in"># We will optimize over parameters theta and z.</span></span>
-<span id="cb8-476"><a href="#cb8-476"></a><span class="in"># Initialize estimates (random starting points)</span></span>
-<span id="cb8-477"><a href="#cb8-477"></a><span class="in">theta_init = np.random.randn(num_users)</span></span>
-<span id="cb8-478"><a href="#cb8-478"></a><span class="in">z_init = np.random.randn(num_items)</span></span>
-<span id="cb8-479"><a href="#cb8-479"></a></span>
-<span id="cb8-480"><a href="#cb8-480"></a><span class="in"># Pack parameters into a single vector for the optimizer.</span></span>
-<span id="cb8-481"><a href="#cb8-481"></a><span class="in"># First num_users elements are theta_est, next num_items are z_est.</span></span>
-<span id="cb8-482"><a href="#cb8-482"></a><span class="in">params_init = np.concatenate([theta_init, z_init])</span></span>
-<span id="cb8-483"><a href="#cb8-483"></a></span>
-<span id="cb8-484"><a href="#cb8-484"></a><span class="in">def objective(params):</span></span>
-<span id="cb8-485"><a href="#cb8-485"></a><span class="in">    """</span></span>
-<span id="cb8-486"><a href="#cb8-486"></a><span class="in">    Computes the loss and gradient for the current parameters.</span></span>
-<span id="cb8-487"><a href="#cb8-487"></a><span class="in">    Loss is defined as the negative log likelihood (averaged over observed entries).</span></span>
-<span id="cb8-488"><a href="#cb8-488"></a><span class="in">    """</span></span>
-<span id="cb8-489"><a href="#cb8-489"></a><span class="in">    # Unpack parameters</span></span>
-<span id="cb8-490"><a href="#cb8-490"></a><span class="in">    theta = params[:num_users]</span></span>
-<span id="cb8-491"><a href="#cb8-491"></a><span class="in">    z = params[num_users:]</span></span>
-<span id="cb8-492"><a href="#cb8-492"></a><span class="in">    </span></span>
-<span id="cb8-493"><a href="#cb8-493"></a><span class="in">    # Compute difference and estimated probabilities</span></span>
-<span id="cb8-494"><a href="#cb8-494"></a><span class="in">    diff = theta[:, None] - z[None, :]  # shape: (num_users, num_items)</span></span>
-<span id="cb8-495"><a href="#cb8-495"></a><span class="in">    sigma = sigmoid(diff)</span></span>
-<span id="cb8-496"><a href="#cb8-496"></a><span class="in">    </span></span>
-<span id="cb8-497"><a href="#cb8-497"></a><span class="in">    # To avoid log(0), clip probabilities a little bit</span></span>
-<span id="cb8-498"><a href="#cb8-498"></a><span class="in">    eps = 1e-8</span></span>
-<span id="cb8-499"><a href="#cb8-499"></a><span class="in">    sigma = np.clip(sigma, eps, 1 - eps)</span></span>
-<span id="cb8-500"><a href="#cb8-500"></a><span class="in">    </span></span>
-<span id="cb8-501"><a href="#cb8-501"></a><span class="in">    # Compute negative log likelihood only on observed entries</span></span>
-<span id="cb8-502"><a href="#cb8-502"></a><span class="in">    # For each observed entry: if data == 1 then -log(sigma) else -log(1-sigma)</span></span>
-<span id="cb8-503"><a href="#cb8-503"></a><span class="in">    log_likelihood = data * np.log(sigma) + (1 - data) * np.log(1 - sigma)</span></span>
-<span id="cb8-504"><a href="#cb8-504"></a><span class="in">    loss = -np.sum(mask * log_likelihood) / observed_count</span></span>
-<span id="cb8-505"><a href="#cb8-505"></a><span class="in">    </span></span>
-<span id="cb8-506"><a href="#cb8-506"></a><span class="in">    # Compute gradient with respect to the difference x = theta_i - z_j</span></span>
-<span id="cb8-507"><a href="#cb8-507"></a><span class="in">    # d(loss)/d(x) = sigma - data  (for observed entries, zero otherwise)</span></span>
-<span id="cb8-508"><a href="#cb8-508"></a><span class="in">    diff_grad = (sigma - data) * mask  # shape: (num_users, num_items)</span></span>
-<span id="cb8-509"><a href="#cb8-509"></a><span class="in">    </span></span>
-<span id="cb8-510"><a href="#cb8-510"></a><span class="in">    # Gradients for theta: sum over items (axis 1)</span></span>
-<span id="cb8-511"><a href="#cb8-511"></a><span class="in">    grad_theta = np.sum(diff_grad, axis=1) / observed_count</span></span>
-<span id="cb8-512"><a href="#cb8-512"></a><span class="in">    # Gradients for z: negative sum over users (axis 0)</span></span>
-<span id="cb8-513"><a href="#cb8-513"></a><span class="in">    grad_z = -np.sum(diff_grad, axis=0) / observed_count</span></span>
-<span id="cb8-514"><a href="#cb8-514"></a><span class="in">    </span></span>
-<span id="cb8-515"><a href="#cb8-515"></a><span class="in">    # Pack gradients back into a single vector</span></span>
-<span id="cb8-516"><a href="#cb8-516"></a><span class="in">    grad = np.concatenate([grad_theta, grad_z])</span></span>
-<span id="cb8-517"><a href="#cb8-517"></a><span class="in">    return loss, grad</span></span>
-<span id="cb8-518"><a href="#cb8-518"></a></span>
-<span id="cb8-519"><a href="#cb8-519"></a><span class="in"># Callback to track progress (optional)</span></span>
-<span id="cb8-520"><a href="#cb8-520"></a><span class="in">iteration_progress = tqdm()</span></span>
-<span id="cb8-521"><a href="#cb8-521"></a></span>
-<span id="cb8-522"><a href="#cb8-522"></a><span class="in">def callback(xk):</span></span>
-<span id="cb8-523"><a href="#cb8-523"></a><span class="in">    iteration_progress.update(1)</span></span>
-<span id="cb8-524"><a href="#cb8-524"></a></span>
-<span id="cb8-525"><a href="#cb8-525"></a><span class="in"># Optimize using L-BFGS-B</span></span>
-<span id="cb8-526"><a href="#cb8-526"></a><span class="in">result = minimize(</span></span>
-<span id="cb8-527"><a href="#cb8-527"></a><span class="in">    fun=lambda params: objective(params),</span></span>
-<span id="cb8-528"><a href="#cb8-528"></a><span class="in">    x0=params_init,</span></span>
-<span id="cb8-529"><a href="#cb8-529"></a><span class="in">    method="L-BFGS-B",</span></span>
-<span id="cb8-530"><a href="#cb8-530"></a><span class="in">    jac=True,</span></span>
-<span id="cb8-531"><a href="#cb8-531"></a><span class="in">    callback=callback,</span></span>
-<span id="cb8-532"><a href="#cb8-532"></a><span class="in">    options={"maxiter": 100, "disp": True}</span></span>
-<span id="cb8-533"><a href="#cb8-533"></a><span class="in">)</span></span>
-<span id="cb8-534"><a href="#cb8-534"></a><span class="in">iteration_progress.close()</span></span>
-<span id="cb8-535"><a href="#cb8-535"></a></span>
-<span id="cb8-536"><a href="#cb8-536"></a><span class="in"># Extract the estimated parameters</span></span>
-<span id="cb8-537"><a href="#cb8-537"></a><span class="in">theta_est = result.x[:num_users]</span></span>
-<span id="cb8-538"><a href="#cb8-538"></a><span class="in">z_est = result.x[num_users:]</span></span>
-<span id="cb8-539"><a href="#cb8-539"></a></span>
-<span id="cb8-540"><a href="#cb8-540"></a><span class="in"># Compute final estimated probabilities</span></span>
-<span id="cb8-541"><a href="#cb8-541"></a><span class="in">probs_final = sigmoid(theta_est[:, None] - z_est[None, :])</span></span>
-<span id="cb8-542"><a href="#cb8-542"></a></span>
-<span id="cb8-543"><a href="#cb8-543"></a><span class="in"># Compute AUC ROC on observed (training) and missing (test) entries</span></span>
-<span id="cb8-544"><a href="#cb8-544"></a><span class="in">train_probs = probs_final[mask]</span></span>
-<span id="cb8-545"><a href="#cb8-545"></a><span class="in">test_probs = probs_final[~mask]</span></span>
-<span id="cb8-546"><a href="#cb8-546"></a><span class="in">train_labels = data[mask]</span></span>
-<span id="cb8-547"><a href="#cb8-547"></a><span class="in">test_labels = data[~mask]</span></span>
-<span id="cb8-548"><a href="#cb8-548"></a></span>
-<span id="cb8-549"><a href="#cb8-549"></a><span class="in">auc_train = roc_auc_score(train_labels, train_probs)</span></span>
-<span id="cb8-550"><a href="#cb8-550"></a><span class="in">auc_test = roc_auc_score(test_labels, test_probs)</span></span>
-<span id="cb8-551"><a href="#cb8-551"></a></span>
-<span id="cb8-552"><a href="#cb8-552"></a><span class="in">print(f"Train AUC: {auc_train:.4f}")</span></span>
-<span id="cb8-553"><a href="#cb8-553"></a><span class="in">print(f"Test AUC: {auc_test:.4f}")</span></span>
-<span id="cb8-554"><a href="#cb8-554"></a></span>
-<span id="cb8-555"><a href="#cb8-555"></a><span class="in">```</span></span>
-<span id="cb8-556"><a href="#cb8-556"></a></span>
-<span id="cb8-559"><a href="#cb8-559"></a><span class="in">```{python}</span></span>
-<span id="cb8-560"><a href="#cb8-560"></a><span class="im">import</span> torch</span>
-<span id="cb8-561"><a href="#cb8-561"></a><span class="im">import</span> torch.nn <span class="im">as</span> nn</span>
-<span id="cb8-562"><a href="#cb8-562"></a><span class="im">import</span> torch.optim <span class="im">as</span> optim</span>
-<span id="cb8-563"><a href="#cb8-563"></a><span class="im">from</span> torch.distributions <span class="im">import</span> Bernoulli</span>
-<span id="cb8-564"><a href="#cb8-564"></a><span class="im">from</span> tqdm <span class="im">import</span> tqdm</span>
-<span id="cb8-565"><a href="#cb8-565"></a></span>
-<span id="cb8-566"><a href="#cb8-566"></a><span class="co"># Set device</span></span>
-<span id="cb8-567"><a href="#cb8-567"></a>device <span class="op">=</span> torch.device(<span class="st">"cuda"</span> <span class="cf">if</span> torch.cuda.is_available() <span class="cf">else</span> <span class="st">"cpu"</span>)</span>
-<span id="cb8-568"><a href="#cb8-568"></a></span>
-<span id="cb8-569"><a href="#cb8-569"></a><span class="co"># Number of users and items</span></span>
-<span id="cb8-570"><a href="#cb8-570"></a>num_users <span class="op">=</span> <span class="dv">50</span></span>
-<span id="cb8-571"><a href="#cb8-571"></a>num_items <span class="op">=</span> <span class="dv">100</span></span>
-<span id="cb8-572"><a href="#cb8-572"></a></span>
-<span id="cb8-573"><a href="#cb8-573"></a><span class="co"># Generate user-specific and item-specific utilities</span></span>
-<span id="cb8-574"><a href="#cb8-574"></a>theta <span class="op">=</span> torch.randn(num_users, device<span class="op">=</span>device, requires_grad<span class="op">=</span><span class="va">True</span>)</span>
-<span id="cb8-575"><a href="#cb8-575"></a>z <span class="op">=</span> torch.randn(num_items, device<span class="op">=</span>device, requires_grad<span class="op">=</span><span class="va">True</span>)</span>
-<span id="cb8-576"><a href="#cb8-576"></a></span>
-<span id="cb8-577"><a href="#cb8-577"></a><span class="co"># Generate observed choices using logistic function</span></span>
-<span id="cb8-578"><a href="#cb8-578"></a>probs <span class="op">=</span> torch.sigmoid(theta[:, <span class="va">None</span>] <span class="op">-</span> z[<span class="va">None</span>, :])</span>
-<span id="cb8-579"><a href="#cb8-579"></a>data <span class="op">=</span> Bernoulli(probs<span class="op">=</span>probs).sample()</span>
-<span id="cb8-580"><a href="#cb8-580"></a></span>
-<span id="cb8-581"><a href="#cb8-581"></a><span class="co"># Mask out a fraction of the response matrix</span></span>
-<span id="cb8-582"><a href="#cb8-582"></a>mask <span class="op">=</span> torch.rand_like(data) <span class="op">&gt;</span> <span class="fl">0.2</span>  <span class="co"># 80% observed, 20% missing</span></span>
-<span id="cb8-583"><a href="#cb8-583"></a>data_masked <span class="op">=</span> data.clone()</span>
-<span id="cb8-584"><a href="#cb8-584"></a>data_masked[<span class="op">~</span>mask] <span class="op">=</span> <span class="bu">float</span>(<span class="st">'nan'</span>)</span>
-<span id="cb8-585"><a href="#cb8-585"></a></span>
-<span id="cb8-586"><a href="#cb8-586"></a><span class="co"># Initialize parameters for EM algorithm</span></span>
-<span id="cb8-587"><a href="#cb8-587"></a>theta_est <span class="op">=</span> torch.randn(num_users, device<span class="op">=</span>device, requires_grad<span class="op">=</span><span class="va">True</span>)</span>
-<span id="cb8-588"><a href="#cb8-588"></a>z_est <span class="op">=</span> torch.randn(num_items, device<span class="op">=</span>device, requires_grad<span class="op">=</span><span class="va">True</span>)</span>
-<span id="cb8-589"><a href="#cb8-589"></a></span>
-<span id="cb8-590"><a href="#cb8-590"></a><span class="co"># Optimizer</span></span>
-<span id="cb8-591"><a href="#cb8-591"></a>optimizer <span class="op">=</span> optim.LBFGS([theta_est, z_est], lr<span class="op">=</span><span class="fl">0.1</span>, max_iter<span class="op">=</span><span class="dv">20</span>, history_size<span class="op">=</span><span class="dv">10</span>, line_search_fn<span class="op">=</span><span class="st">"strong_wolfe"</span>)</span>
-<span id="cb8-592"><a href="#cb8-592"></a></span>
-<span id="cb8-593"><a href="#cb8-593"></a><span class="kw">def</span> closure():</span>
-<span id="cb8-594"><a href="#cb8-594"></a>    optimizer.zero_grad()</span>
-<span id="cb8-595"><a href="#cb8-595"></a>    probs_est <span class="op">=</span> torch.sigmoid(theta_est[:, <span class="va">None</span>] <span class="op">-</span> z_est[<span class="va">None</span>, :])</span>
-<span id="cb8-596"><a href="#cb8-596"></a>    loss <span class="op">=</span> <span class="op">-</span>(Bernoulli(probs<span class="op">=</span>probs_est).log_prob(data) <span class="op">*</span> mask).mean()</span>
-<span id="cb8-597"><a href="#cb8-597"></a>    loss.backward()</span>
-<span id="cb8-598"><a href="#cb8-598"></a>    <span class="cf">return</span> loss</span>
-<span id="cb8-599"><a href="#cb8-599"></a></span>
-<span id="cb8-600"><a href="#cb8-600"></a><span class="co"># EM Algorithm</span></span>
-<span id="cb8-601"><a href="#cb8-601"></a>pbar <span class="op">=</span> tqdm(<span class="bu">range</span>(<span class="dv">100</span>))</span>
-<span id="cb8-602"><a href="#cb8-602"></a><span class="cf">for</span> iteration <span class="kw">in</span> pbar:</span>
-<span id="cb8-603"><a href="#cb8-603"></a>    <span class="cf">if</span> iteration <span class="op">&gt;</span> <span class="dv">0</span>:</span>
-<span id="cb8-604"><a href="#cb8-604"></a>        previous_theta <span class="op">=</span> theta_est.clone()</span>
-<span id="cb8-605"><a href="#cb8-605"></a>        previous_z <span class="op">=</span> z_est.clone()</span>
-<span id="cb8-606"><a href="#cb8-606"></a>        previous_loss <span class="op">=</span> loss.clone()</span>
-<span id="cb8-607"><a href="#cb8-607"></a>    </span>
-<span id="cb8-608"><a href="#cb8-608"></a>    loss <span class="op">=</span> optimizer.step(closure)</span>
-<span id="cb8-609"><a href="#cb8-609"></a>    </span>
-<span id="cb8-610"><a href="#cb8-610"></a>    <span class="cf">if</span> iteration <span class="op">&gt;</span> <span class="dv">0</span>:</span>
-<span id="cb8-611"><a href="#cb8-611"></a>        d_loss <span class="op">=</span> (previous_loss <span class="op">-</span> loss).item()</span>
-<span id="cb8-612"><a href="#cb8-612"></a>        d_theta <span class="op">=</span> torch.norm(previous_theta <span class="op">-</span> theta_est, p<span class="op">=</span><span class="dv">2</span>).item()</span>
-<span id="cb8-613"><a href="#cb8-613"></a>        d_z <span class="op">=</span> torch.norm(previous_z <span class="op">-</span> z_est, p<span class="op">=</span><span class="dv">2</span>).item()</span>
-<span id="cb8-614"><a href="#cb8-614"></a>        grad_norm <span class="op">=</span> torch.norm(optimizer.param_groups[<span class="dv">0</span>][<span class="st">"params"</span>][<span class="dv">0</span>].grad, p<span class="op">=</span><span class="dv">2</span>).item()</span>
-<span id="cb8-615"><a href="#cb8-615"></a>        grad_norm <span class="op">+=</span> torch.norm(optimizer.param_groups[<span class="dv">0</span>][<span class="st">"params"</span>][<span class="dv">1</span>].grad, p<span class="op">=</span><span class="dv">2</span>).item()</span>
-<span id="cb8-616"><a href="#cb8-616"></a>        pbar.set_postfix({<span class="st">"grad_norm"</span>: grad_norm, <span class="st">"d_theta"</span>: d_theta, <span class="st">"d_z"</span>: d_z, <span class="st">"d_loss"</span>: d_loss})</span>
-<span id="cb8-617"><a href="#cb8-617"></a>        <span class="cf">if</span> d_loss <span class="op">&lt;</span> <span class="fl">1e-5</span> <span class="kw">and</span> d_theta <span class="op">&lt;</span> <span class="fl">1e-5</span> <span class="kw">and</span> d_z <span class="op">&lt;</span> <span class="fl">1e-5</span> <span class="kw">and</span> grad_norm <span class="op">&lt;</span> <span class="fl">1e-5</span>:</span>
-<span id="cb8-618"><a href="#cb8-618"></a>            <span class="cf">break</span></span>
-<span id="cb8-619"><a href="#cb8-619"></a></span>
-<span id="cb8-620"><a href="#cb8-620"></a><span class="co"># Compute AUC ROC on observed and inferred data</span></span>
-<span id="cb8-621"><a href="#cb8-621"></a><span class="im">from</span> torchmetrics <span class="im">import</span> AUROC</span>
-<span id="cb8-622"><a href="#cb8-622"></a>auroc <span class="op">=</span> AUROC(task<span class="op">=</span><span class="st">"binary"</span>)</span>
-<span id="cb8-623"><a href="#cb8-623"></a>probs_final <span class="op">=</span> torch.sigmoid(theta_est[:, <span class="va">None</span>] <span class="op">-</span> z_est[<span class="va">None</span>, :])</span>
-<span id="cb8-624"><a href="#cb8-624"></a>train_probs <span class="op">=</span> probs_final[mask]</span>
-<span id="cb8-625"><a href="#cb8-625"></a>test_probs <span class="op">=</span> probs_final[<span class="op">~</span>mask]</span>
-<span id="cb8-626"><a href="#cb8-626"></a>train_labels <span class="op">=</span> data[mask]</span>
-<span id="cb8-627"><a href="#cb8-627"></a>test_labels <span class="op">=</span> data[<span class="op">~</span>mask]</span>
-<span id="cb8-628"><a href="#cb8-628"></a>auc_train <span class="op">=</span> auroc(train_probs, train_labels)</span>
-<span id="cb8-629"><a href="#cb8-629"></a>auc_test <span class="op">=</span> auroc(test_probs, test_labels)</span>
-<span id="cb8-630"><a href="#cb8-630"></a><span class="bu">print</span>(<span class="ss">f"train auc: </span><span class="sc">{</span>auc_train<span class="sc">}</span><span class="ss">"</span>)</span>
-<span id="cb8-631"><a href="#cb8-631"></a><span class="bu">print</span>(<span class="ss">f"test auc: </span><span class="sc">{</span>auc_test<span class="sc">}</span><span class="ss">"</span>)</span>
-<span id="cb8-632"><a href="#cb8-632"></a><span class="in">```</span></span>
+<span id="cb8-438"><a href="#cb8-438"></a><span class="in">```{pyodide-python}</span></span>
+<span id="cb8-439"><a href="#cb8-439"></a><span class="in">import numpy as np</span></span>
+<span id="cb8-440"><a href="#cb8-440"></a><span class="in">from scipy.optimize import minimize</span></span>
+<span id="cb8-441"><a href="#cb8-441"></a><span class="in">from sklearn.metrics import roc_auc_score</span></span>
+<span id="cb8-442"><a href="#cb8-442"></a><span class="in">from tqdm import tqdm</span></span>
+<span id="cb8-443"><a href="#cb8-443"></a></span>
+<span id="cb8-444"><a href="#cb8-444"></a><span class="in"># Set random seed for reproducibility (optional)</span></span>
+<span id="cb8-445"><a href="#cb8-445"></a><span class="in">np.random.seed(42)</span></span>
+<span id="cb8-446"><a href="#cb8-446"></a></span>
+<span id="cb8-447"><a href="#cb8-447"></a><span class="in"># Number of users and items</span></span>
+<span id="cb8-448"><a href="#cb8-448"></a><span class="in">num_users = 50</span></span>
+<span id="cb8-449"><a href="#cb8-449"></a><span class="in">num_items = 100</span></span>
+<span id="cb8-450"><a href="#cb8-450"></a></span>
+<span id="cb8-451"><a href="#cb8-451"></a><span class="in"># Generate user-specific and item-specific utilities</span></span>
+<span id="cb8-452"><a href="#cb8-452"></a><span class="in">theta_true = np.random.randn(num_users)</span></span>
+<span id="cb8-453"><a href="#cb8-453"></a><span class="in">z_true = np.random.randn(num_items)</span></span>
+<span id="cb8-454"><a href="#cb8-454"></a></span>
+<span id="cb8-455"><a href="#cb8-455"></a><span class="in"># Define the logistic (sigmoid) function</span></span>
+<span id="cb8-456"><a href="#cb8-456"></a><span class="in">def sigmoid(x):</span></span>
+<span id="cb8-457"><a href="#cb8-457"></a><span class="in">    return 1.0 / (1.0 + np.exp(-x))</span></span>
+<span id="cb8-458"><a href="#cb8-458"></a></span>
+<span id="cb8-459"><a href="#cb8-459"></a><span class="in"># Generate observed choices using the logistic function</span></span>
+<span id="cb8-460"><a href="#cb8-460"></a><span class="in"># Compute probability matrix: shape (num_users, num_items)</span></span>
+<span id="cb8-461"><a href="#cb8-461"></a><span class="in">probs = sigmoid(theta_true[:, None] - z_true[None, :])</span></span>
+<span id="cb8-462"><a href="#cb8-462"></a><span class="in"># Sample binary responses (0 or 1) from a Bernoulli distribution</span></span>
+<span id="cb8-463"><a href="#cb8-463"></a><span class="in">data = np.random.binomial(1, probs)</span></span>
+<span id="cb8-464"><a href="#cb8-464"></a></span>
+<span id="cb8-465"><a href="#cb8-465"></a><span class="in"># Mask out a fraction of the response matrix (80% observed, 20% missing)</span></span>
+<span id="cb8-466"><a href="#cb8-466"></a><span class="in">mask = np.random.rand(num_users, num_items) &gt; 0.2  # boolean mask</span></span>
+<span id="cb8-467"><a href="#cb8-467"></a><span class="in"># Create a version of the data with missing values (not needed for optimization, but for reference)</span></span>
+<span id="cb8-468"><a href="#cb8-468"></a><span class="in">data_masked = data.copy().astype(float)</span></span>
+<span id="cb8-469"><a href="#cb8-469"></a><span class="in">data_masked[~mask] = np.nan</span></span>
+<span id="cb8-470"><a href="#cb8-470"></a></span>
+<span id="cb8-471"><a href="#cb8-471"></a><span class="in"># Count of observed entries (used for averaging)</span></span>
+<span id="cb8-472"><a href="#cb8-472"></a><span class="in">observed_count = np.sum(mask)</span></span>
+<span id="cb8-473"><a href="#cb8-473"></a></span>
+<span id="cb8-474"><a href="#cb8-474"></a><span class="in"># We will optimize over parameters theta and z.</span></span>
+<span id="cb8-475"><a href="#cb8-475"></a><span class="in"># Initialize estimates (random starting points)</span></span>
+<span id="cb8-476"><a href="#cb8-476"></a><span class="in">theta_init = np.random.randn(num_users)</span></span>
+<span id="cb8-477"><a href="#cb8-477"></a><span class="in">z_init = np.random.randn(num_items)</span></span>
+<span id="cb8-478"><a href="#cb8-478"></a></span>
+<span id="cb8-479"><a href="#cb8-479"></a><span class="in"># Pack parameters into a single vector for the optimizer.</span></span>
+<span id="cb8-480"><a href="#cb8-480"></a><span class="in"># First num_users elements are theta_est, next num_items are z_est.</span></span>
+<span id="cb8-481"><a href="#cb8-481"></a><span class="in">params_init = np.concatenate([theta_init, z_init])</span></span>
+<span id="cb8-482"><a href="#cb8-482"></a></span>
+<span id="cb8-483"><a href="#cb8-483"></a><span class="in">def objective(params):</span></span>
+<span id="cb8-484"><a href="#cb8-484"></a><span class="in">    """</span></span>
+<span id="cb8-485"><a href="#cb8-485"></a><span class="in">    Computes the loss and gradient for the current parameters.</span></span>
+<span id="cb8-486"><a href="#cb8-486"></a><span class="in">    Loss is defined as the negative log likelihood (averaged over observed entries).</span></span>
+<span id="cb8-487"><a href="#cb8-487"></a><span class="in">    """</span></span>
+<span id="cb8-488"><a href="#cb8-488"></a><span class="in">    # Unpack parameters</span></span>
+<span id="cb8-489"><a href="#cb8-489"></a><span class="in">    theta = params[:num_users]</span></span>
+<span id="cb8-490"><a href="#cb8-490"></a><span class="in">    z = params[num_users:]</span></span>
+<span id="cb8-491"><a href="#cb8-491"></a><span class="in">    </span></span>
+<span id="cb8-492"><a href="#cb8-492"></a><span class="in">    # Compute difference and estimated probabilities</span></span>
+<span id="cb8-493"><a href="#cb8-493"></a><span class="in">    diff = theta[:, None] - z[None, :]  # shape: (num_users, num_items)</span></span>
+<span id="cb8-494"><a href="#cb8-494"></a><span class="in">    sigma = sigmoid(diff)</span></span>
+<span id="cb8-495"><a href="#cb8-495"></a><span class="in">    </span></span>
+<span id="cb8-496"><a href="#cb8-496"></a><span class="in">    # To avoid log(0), clip probabilities a little bit</span></span>
+<span id="cb8-497"><a href="#cb8-497"></a><span class="in">    eps = 1e-8</span></span>
+<span id="cb8-498"><a href="#cb8-498"></a><span class="in">    sigma = np.clip(sigma, eps, 1 - eps)</span></span>
+<span id="cb8-499"><a href="#cb8-499"></a><span class="in">    </span></span>
+<span id="cb8-500"><a href="#cb8-500"></a><span class="in">    # Compute negative log likelihood only on observed entries</span></span>
+<span id="cb8-501"><a href="#cb8-501"></a><span class="in">    # For each observed entry: if data == 1 then -log(sigma) else -log(1-sigma)</span></span>
+<span id="cb8-502"><a href="#cb8-502"></a><span class="in">    log_likelihood = data * np.log(sigma) + (1 - data) * np.log(1 - sigma)</span></span>
+<span id="cb8-503"><a href="#cb8-503"></a><span class="in">    loss = -np.sum(mask * log_likelihood) / observed_count</span></span>
+<span id="cb8-504"><a href="#cb8-504"></a><span class="in">    </span></span>
+<span id="cb8-505"><a href="#cb8-505"></a><span class="in">    # Compute gradient with respect to the difference x = theta_i - z_j</span></span>
+<span id="cb8-506"><a href="#cb8-506"></a><span class="in">    # d(loss)/d(x) = sigma - data  (for observed entries, zero otherwise)</span></span>
+<span id="cb8-507"><a href="#cb8-507"></a><span class="in">    diff_grad = (sigma - data) * mask  # shape: (num_users, num_items)</span></span>
+<span id="cb8-508"><a href="#cb8-508"></a><span class="in">    </span></span>
+<span id="cb8-509"><a href="#cb8-509"></a><span class="in">    # Gradients for theta: sum over items (axis 1)</span></span>
+<span id="cb8-510"><a href="#cb8-510"></a><span class="in">    grad_theta = np.sum(diff_grad, axis=1) / observed_count</span></span>
+<span id="cb8-511"><a href="#cb8-511"></a><span class="in">    # Gradients for z: negative sum over users (axis 0)</span></span>
+<span id="cb8-512"><a href="#cb8-512"></a><span class="in">    grad_z = -np.sum(diff_grad, axis=0) / observed_count</span></span>
+<span id="cb8-513"><a href="#cb8-513"></a><span class="in">    </span></span>
+<span id="cb8-514"><a href="#cb8-514"></a><span class="in">    # Pack gradients back into a single vector</span></span>
+<span id="cb8-515"><a href="#cb8-515"></a><span class="in">    grad = np.concatenate([grad_theta, grad_z])</span></span>
+<span id="cb8-516"><a href="#cb8-516"></a><span class="in">    return loss, grad</span></span>
+<span id="cb8-517"><a href="#cb8-517"></a></span>
+<span id="cb8-518"><a href="#cb8-518"></a><span class="in"># Callback to track progress (optional)</span></span>
+<span id="cb8-519"><a href="#cb8-519"></a><span class="in">iteration_progress = tqdm()</span></span>
+<span id="cb8-520"><a href="#cb8-520"></a></span>
+<span id="cb8-521"><a href="#cb8-521"></a><span class="in">def callback(xk):</span></span>
+<span id="cb8-522"><a href="#cb8-522"></a><span class="in">    iteration_progress.update(1)</span></span>
+<span id="cb8-523"><a href="#cb8-523"></a></span>
+<span id="cb8-524"><a href="#cb8-524"></a><span class="in"># Optimize using L-BFGS-B</span></span>
+<span id="cb8-525"><a href="#cb8-525"></a><span class="in">result = minimize(</span></span>
+<span id="cb8-526"><a href="#cb8-526"></a><span class="in">    fun=lambda params: objective(params),</span></span>
+<span id="cb8-527"><a href="#cb8-527"></a><span class="in">    x0=params_init,</span></span>
+<span id="cb8-528"><a href="#cb8-528"></a><span class="in">    method="L-BFGS-B",</span></span>
+<span id="cb8-529"><a href="#cb8-529"></a><span class="in">    jac=True,</span></span>
+<span id="cb8-530"><a href="#cb8-530"></a><span class="in">    callback=callback,</span></span>
+<span id="cb8-531"><a href="#cb8-531"></a><span class="in">    options={"maxiter": 100, "disp": True}</span></span>
+<span id="cb8-532"><a href="#cb8-532"></a><span class="in">)</span></span>
+<span id="cb8-533"><a href="#cb8-533"></a><span class="in">iteration_progress.close()</span></span>
+<span id="cb8-534"><a href="#cb8-534"></a></span>
+<span id="cb8-535"><a href="#cb8-535"></a><span class="in"># Extract the estimated parameters</span></span>
+<span id="cb8-536"><a href="#cb8-536"></a><span class="in">theta_est = result.x[:num_users]</span></span>
+<span id="cb8-537"><a href="#cb8-537"></a><span class="in">z_est = result.x[num_users:]</span></span>
+<span id="cb8-538"><a href="#cb8-538"></a></span>
+<span id="cb8-539"><a href="#cb8-539"></a><span class="in"># Compute final estimated probabilities</span></span>
+<span id="cb8-540"><a href="#cb8-540"></a><span class="in">probs_final = sigmoid(theta_est[:, None] - z_est[None, :])</span></span>
+<span id="cb8-541"><a href="#cb8-541"></a></span>
+<span id="cb8-542"><a href="#cb8-542"></a><span class="in"># Compute AUC ROC on observed (training) and missing (test) entries</span></span>
+<span id="cb8-543"><a href="#cb8-543"></a><span class="in">train_probs = probs_final[mask]</span></span>
+<span id="cb8-544"><a href="#cb8-544"></a><span class="in">test_probs = probs_final[~mask]</span></span>
+<span id="cb8-545"><a href="#cb8-545"></a><span class="in">train_labels = data[mask]</span></span>
+<span id="cb8-546"><a href="#cb8-546"></a><span class="in">test_labels = data[~mask]</span></span>
+<span id="cb8-547"><a href="#cb8-547"></a></span>
+<span id="cb8-548"><a href="#cb8-548"></a><span class="in">auc_train = roc_auc_score(train_labels, train_probs)</span></span>
+<span id="cb8-549"><a href="#cb8-549"></a><span class="in">auc_test = roc_auc_score(test_labels, test_probs)</span></span>
+<span id="cb8-550"><a href="#cb8-550"></a></span>
+<span id="cb8-551"><a href="#cb8-551"></a><span class="in">print(f"Train AUC: {auc_train:.4f}")</span></span>
+<span id="cb8-552"><a href="#cb8-552"></a><span class="in">print(f"Test AUC: {auc_test:.4f}")</span></span>
+<span id="cb8-553"><a href="#cb8-553"></a></span>
+<span id="cb8-554"><a href="#cb8-554"></a><span class="in">```</span></span>
+<span id="cb8-555"><a href="#cb8-555"></a></span>
+<span id="cb8-558"><a href="#cb8-558"></a><span class="in">```{python}</span></span>
+<span id="cb8-559"><a href="#cb8-559"></a><span class="im">import</span> torch</span>
+<span id="cb8-560"><a href="#cb8-560"></a><span class="im">import</span> torch.nn <span class="im">as</span> nn</span>
+<span id="cb8-561"><a href="#cb8-561"></a><span class="im">import</span> torch.optim <span class="im">as</span> optim</span>
+<span id="cb8-562"><a href="#cb8-562"></a><span class="im">from</span> torch.distributions <span class="im">import</span> Bernoulli</span>
+<span id="cb8-563"><a href="#cb8-563"></a><span class="im">from</span> tqdm <span class="im">import</span> tqdm</span>
+<span id="cb8-564"><a href="#cb8-564"></a></span>
+<span id="cb8-565"><a href="#cb8-565"></a><span class="co"># Set device</span></span>
+<span id="cb8-566"><a href="#cb8-566"></a>device <span class="op">=</span> torch.device(<span class="st">"cuda"</span> <span class="cf">if</span> torch.cuda.is_available() <span class="cf">else</span> <span class="st">"cpu"</span>)</span>
+<span id="cb8-567"><a href="#cb8-567"></a></span>
+<span id="cb8-568"><a href="#cb8-568"></a><span class="co"># Number of users and items</span></span>
+<span id="cb8-569"><a href="#cb8-569"></a>num_users <span class="op">=</span> <span class="dv">50</span></span>
+<span id="cb8-570"><a href="#cb8-570"></a>num_items <span class="op">=</span> <span class="dv">100</span></span>
+<span id="cb8-571"><a href="#cb8-571"></a></span>
+<span id="cb8-572"><a href="#cb8-572"></a><span class="co"># Generate user-specific and item-specific utilities</span></span>
+<span id="cb8-573"><a href="#cb8-573"></a>theta <span class="op">=</span> torch.randn(num_users, device<span class="op">=</span>device, requires_grad<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb8-574"><a href="#cb8-574"></a>z <span class="op">=</span> torch.randn(num_items, device<span class="op">=</span>device, requires_grad<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb8-575"><a href="#cb8-575"></a></span>
+<span id="cb8-576"><a href="#cb8-576"></a><span class="co"># Generate observed choices using logistic function</span></span>
+<span id="cb8-577"><a href="#cb8-577"></a>probs <span class="op">=</span> torch.sigmoid(theta[:, <span class="va">None</span>] <span class="op">-</span> z[<span class="va">None</span>, :])</span>
+<span id="cb8-578"><a href="#cb8-578"></a>data <span class="op">=</span> Bernoulli(probs<span class="op">=</span>probs).sample()</span>
+<span id="cb8-579"><a href="#cb8-579"></a></span>
+<span id="cb8-580"><a href="#cb8-580"></a><span class="co"># Mask out a fraction of the response matrix</span></span>
+<span id="cb8-581"><a href="#cb8-581"></a>mask <span class="op">=</span> torch.rand_like(data) <span class="op">&gt;</span> <span class="fl">0.2</span>  <span class="co"># 80% observed, 20% missing</span></span>
+<span id="cb8-582"><a href="#cb8-582"></a>data_masked <span class="op">=</span> data.clone()</span>
+<span id="cb8-583"><a href="#cb8-583"></a>data_masked[<span class="op">~</span>mask] <span class="op">=</span> <span class="bu">float</span>(<span class="st">'nan'</span>)</span>
+<span id="cb8-584"><a href="#cb8-584"></a></span>
+<span id="cb8-585"><a href="#cb8-585"></a><span class="co"># Initialize parameters for EM algorithm</span></span>
+<span id="cb8-586"><a href="#cb8-586"></a>theta_est <span class="op">=</span> torch.randn(num_users, device<span class="op">=</span>device, requires_grad<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb8-587"><a href="#cb8-587"></a>z_est <span class="op">=</span> torch.randn(num_items, device<span class="op">=</span>device, requires_grad<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb8-588"><a href="#cb8-588"></a></span>
+<span id="cb8-589"><a href="#cb8-589"></a><span class="co"># Optimizer</span></span>
+<span id="cb8-590"><a href="#cb8-590"></a>optimizer <span class="op">=</span> optim.LBFGS([theta_est, z_est], lr<span class="op">=</span><span class="fl">0.1</span>, max_iter<span class="op">=</span><span class="dv">20</span>, history_size<span class="op">=</span><span class="dv">10</span>, line_search_fn<span class="op">=</span><span class="st">"strong_wolfe"</span>)</span>
+<span id="cb8-591"><a href="#cb8-591"></a></span>
+<span id="cb8-592"><a href="#cb8-592"></a><span class="kw">def</span> closure():</span>
+<span id="cb8-593"><a href="#cb8-593"></a>    optimizer.zero_grad()</span>
+<span id="cb8-594"><a href="#cb8-594"></a>    probs_est <span class="op">=</span> torch.sigmoid(theta_est[:, <span class="va">None</span>] <span class="op">-</span> z_est[<span class="va">None</span>, :])</span>
+<span id="cb8-595"><a href="#cb8-595"></a>    loss <span class="op">=</span> <span class="op">-</span>(Bernoulli(probs<span class="op">=</span>probs_est).log_prob(data) <span class="op">*</span> mask).mean()</span>
+<span id="cb8-596"><a href="#cb8-596"></a>    loss.backward()</span>
+<span id="cb8-597"><a href="#cb8-597"></a>    <span class="cf">return</span> loss</span>
+<span id="cb8-598"><a href="#cb8-598"></a></span>
+<span id="cb8-599"><a href="#cb8-599"></a><span class="co"># EM Algorithm</span></span>
+<span id="cb8-600"><a href="#cb8-600"></a>pbar <span class="op">=</span> tqdm(<span class="bu">range</span>(<span class="dv">100</span>))</span>
+<span id="cb8-601"><a href="#cb8-601"></a><span class="cf">for</span> iteration <span class="kw">in</span> pbar:</span>
+<span id="cb8-602"><a href="#cb8-602"></a>    <span class="cf">if</span> iteration <span class="op">&gt;</span> <span class="dv">0</span>:</span>
+<span id="cb8-603"><a href="#cb8-603"></a>        previous_theta <span class="op">=</span> theta_est.clone()</span>
+<span id="cb8-604"><a href="#cb8-604"></a>        previous_z <span class="op">=</span> z_est.clone()</span>
+<span id="cb8-605"><a href="#cb8-605"></a>        previous_loss <span class="op">=</span> loss.clone()</span>
+<span id="cb8-606"><a href="#cb8-606"></a>    </span>
+<span id="cb8-607"><a href="#cb8-607"></a>    loss <span class="op">=</span> optimizer.step(closure)</span>
+<span id="cb8-608"><a href="#cb8-608"></a>    </span>
+<span id="cb8-609"><a href="#cb8-609"></a>    <span class="cf">if</span> iteration <span class="op">&gt;</span> <span class="dv">0</span>:</span>
+<span id="cb8-610"><a href="#cb8-610"></a>        d_loss <span class="op">=</span> (previous_loss <span class="op">-</span> loss).item()</span>
+<span id="cb8-611"><a href="#cb8-611"></a>        d_theta <span class="op">=</span> torch.norm(previous_theta <span class="op">-</span> theta_est, p<span class="op">=</span><span class="dv">2</span>).item()</span>
+<span id="cb8-612"><a href="#cb8-612"></a>        d_z <span class="op">=</span> torch.norm(previous_z <span class="op">-</span> z_est, p<span class="op">=</span><span class="dv">2</span>).item()</span>
+<span id="cb8-613"><a href="#cb8-613"></a>        grad_norm <span class="op">=</span> torch.norm(optimizer.param_groups[<span class="dv">0</span>][<span class="st">"params"</span>][<span class="dv">0</span>].grad, p<span class="op">=</span><span class="dv">2</span>).item()</span>
+<span id="cb8-614"><a href="#cb8-614"></a>        grad_norm <span class="op">+=</span> torch.norm(optimizer.param_groups[<span class="dv">0</span>][<span class="st">"params"</span>][<span class="dv">1</span>].grad, p<span class="op">=</span><span class="dv">2</span>).item()</span>
+<span id="cb8-615"><a href="#cb8-615"></a>        pbar.set_postfix({<span class="st">"grad_norm"</span>: grad_norm, <span class="st">"d_theta"</span>: d_theta, <span class="st">"d_z"</span>: d_z, <span class="st">"d_loss"</span>: d_loss})</span>
+<span id="cb8-616"><a href="#cb8-616"></a>        <span class="cf">if</span> d_loss <span class="op">&lt;</span> <span class="fl">1e-5</span> <span class="kw">and</span> d_theta <span class="op">&lt;</span> <span class="fl">1e-5</span> <span class="kw">and</span> d_z <span class="op">&lt;</span> <span class="fl">1e-5</span> <span class="kw">and</span> grad_norm <span class="op">&lt;</span> <span class="fl">1e-5</span>:</span>
+<span id="cb8-617"><a href="#cb8-617"></a>            <span class="cf">break</span></span>
+<span id="cb8-618"><a href="#cb8-618"></a></span>
+<span id="cb8-619"><a href="#cb8-619"></a><span class="co"># Compute AUC ROC on observed and inferred data</span></span>
+<span id="cb8-620"><a href="#cb8-620"></a><span class="im">from</span> torchmetrics <span class="im">import</span> AUROC</span>
+<span id="cb8-621"><a href="#cb8-621"></a>auroc <span class="op">=</span> AUROC(task<span class="op">=</span><span class="st">"binary"</span>)</span>
+<span id="cb8-622"><a href="#cb8-622"></a>probs_final <span class="op">=</span> torch.sigmoid(theta_est[:, <span class="va">None</span>] <span class="op">-</span> z_est[<span class="va">None</span>, :])</span>
+<span id="cb8-623"><a href="#cb8-623"></a>train_probs <span class="op">=</span> probs_final[mask]</span>
+<span id="cb8-624"><a href="#cb8-624"></a>test_probs <span class="op">=</span> probs_final[<span class="op">~</span>mask]</span>
+<span id="cb8-625"><a href="#cb8-625"></a>train_labels <span class="op">=</span> data[mask]</span>
+<span id="cb8-626"><a href="#cb8-626"></a>test_labels <span class="op">=</span> data[<span class="op">~</span>mask]</span>
+<span id="cb8-627"><a href="#cb8-627"></a>auc_train <span class="op">=</span> auroc(train_probs, train_labels)</span>
+<span id="cb8-628"><a href="#cb8-628"></a>auc_test <span class="op">=</span> auroc(test_probs, test_labels)</span>
+<span id="cb8-629"><a href="#cb8-629"></a><span class="bu">print</span>(<span class="ss">f"train auc: </span><span class="sc">{</span>auc_train<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb8-630"><a href="#cb8-630"></a><span class="bu">print</span>(<span class="ss">f"test auc: </span><span class="sc">{</span>auc_test<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb8-631"><a href="#cb8-631"></a><span class="in">```</span></span>
 </code><button title="Copy to Clipboard" class="code-copy-button" data-in-quarto-modal=""><i class="bi"></i></button></pre></div>
 </div></div></div></div></div>
 </div> <!-- /content -->

@@ -395,9 +395,9 @@
 \theoremstyle{definition}
 \newtheorem{definition}{Definition}[chapter]
 \theoremstyle{plain}
-\newtheorem{theorem}{Theorem}[chapter]
-\theoremstyle{plain}
 \newtheorem{proposition}{Proposition}[chapter]
+\theoremstyle{plain}
+\newtheorem{theorem}{Theorem}[chapter]
 \theoremstyle{remark}
 \AtBeginDocument{\renewcommand*{\proofname}{Proof}}
 \newtheorem*{remark}{Remark}
@@ -888,7 +888,6 @@ We next define a function to visualize the surface:
 \NormalTok{    "legend.fontsize": 14,}
 \NormalTok{    "axes.titlesize": 16,}
 \NormalTok{\})}
-\NormalTok{plt.rcParams[\textquotesingle{}text.usetex\textquotesingle{}] = True}
 
 \NormalTok{def draw\_surface():}
 \NormalTok{    inps = np.linspace({-}2, 2, 100)}
