@@ -140,3 +140,7 @@ book:
     - src/004-optim.qmd
     - src/005-align.qmd
     - src/006-conclusion.qmd
+
+# Set default options for every webpage that may or may not include Pyodide.
+pyodide: 
+  show-startup-message: false     # Display status of Pyodide initialization

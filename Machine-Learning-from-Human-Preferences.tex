@@ -395,9 +395,9 @@
 \theoremstyle{definition}
 \newtheorem{definition}{Definition}[chapter]
 \theoremstyle{plain}
-\newtheorem{proposition}{Proposition}[chapter]
-\theoremstyle{plain}
 \newtheorem{theorem}{Theorem}[chapter]
+\theoremstyle{plain}
+\newtheorem{proposition}{Proposition}[chapter]
 \theoremstyle{remark}
 \AtBeginDocument{\renewcommand*{\proofname}{Proof}}
 \newtheorem*{remark}{Remark}
@@ -440,7 +440,7 @@
 
 \title{Machine Learning from Human Preferences}
 \author{Sang T. Truong \and Sanmi Koyejo}
-\date{2025-03-10}
+\date{2025-03-18}
 
 \begin{document}
 \newgeometry{}
@@ -450,17 +450,19 @@
 
 \begin{titlepage}
   \centering
-  {\usekomafont{title}\scshape\Huge Machine Learning\\from Human Preferences}\clearpage
+  {\usekomafont{title}\scshape\Huge Machine Learning from Human
+Preferences\par}\clearpage
 \end{titlepage}
 
 \begin{titlepage}
   \begin{center}
-    {\usekomafont{title}\scshape\Huge Machine Learning\\from Human Preferences}
+    {\usekomafont{title}\scshape\Huge Machine Learning from Human
+Preferences\par}
     \vskip 1em
     {\usekomafont{subtitle}\LARGE \par}
     \vskip 1em
     \setstretch{1.5}
-    {\usekomafont{author} Sang T. Truong and Sanmi Koyejo}
+    {\usekomafont{author} Sang T. Truong,  and~Sanmi Koyejo \par}
     \vfill
     {\rmfamily\large Stanford University\\Stanford, CA}
   \end{center}
@@ -498,7 +500,7 @@
 
 \bookmarksetup{startatroot}
 
-\chapter{Introduction}\label{ch-introduction}
+\chapter{Introduction}\label{introduction}
 
 Machine learning is increasingly shaping various aspects of our lives,
 from education and healthcare to scientific discovery. A key challenge
@@ -579,14 +581,15 @@ eliciting preference. We review the relevant foundations in
 microeconomics, psychology, marketing, statistics, and other disciplines
 and explore their applications to various domains, such as language,
 robotics, logistics, and more. We adopt the machine learning perspective
-for modeling, estimating, and evaluating the learning processes.
+for modeling, estimating, and evaluating the learning processes. This
+book is used at Stanford University for a quarter-long class CS329H:
+Machine Learning from Human Preferences. We include the lecture slides
+and homework at the begining and end of each chapter, respectively.
 
 \bookmarksetup{startatroot}
 
 \chapter{Models of Preferences and
-Decisions}\label{ch-human-decision-making-choice-models}
-
-\section{Introduction}\label{introduction}
+Decisions}\label{models-of-preferences-and-decisions}
 
 Human preference modeling aims to capture humans' decision making
 processes in a probabilistic framework. Many problems would benefit from
@@ -597,7 +600,7 @@ models, how one can optimize these models given data, and considerations
 one should understand to create such systems. We describe these
 assumptions in Section~\ref{sec-foundations}.
 
-\section{Foundations of Preference Models}\label{sec-foundations}
+\section{The Construction of Preference}\label{sec-foundations}
 
 \subsection{Axiom 1: Construction of Choices
 Set}\label{axiom-1-preference-models-model-choice}
@@ -805,20 +808,177 @@ control of the decision-making process.
 \section{Methods for Collecting Preference Data}\label{sec-collect}
 
 Next, we explore various mechanisms by which humans can express their
-preferences, including pairwise sampling, rank-order sampling,
-rating-scale sampling, best-worst scaling, and multiple-choice samples.
-In \emph{pairwise sampling}, participants compare two options to
-determine which is preferred. One of the major advantage of this method
-is low cognitive demand for rater. Its disavantage is the limited amount
-of information content elicited by a sample. Next, we will see that we
-can trading cognitive demand for rater to elicit more nuance preference
-information. For example, \emph{Rank-order sampling} captures human
-preferences by having participants rank items from most to least
-preferred. Used in voting, market research, and psychology, it provides
-rich preference data but is more complex and cognitively demanding than
-pairwise comparisons, especially for large item sets. Participants may
-also rank inconsistently (\citeproc{ref-ragain2019}{Ragain and Ugander
-2019}).
+preferences, including accept-reject sampling, pairwise sampling,
+rank-order sampling, rating-scale sampling, best-worst scaling, and
+multiple-choice samples. In accept-reject sampling, the user consider
+one item at a time and decide if they like it or not. Below is an
+example survey using accept-reject sampling:
+
+We will familiarize ourselves with accept-reject sampling through a
+simulation. Each item \(i\) is represented by a \(d=2\) dimentional
+vector \(x^i\). There is only one user in the simulation, and they have
+a latent utility function \(f\) that they use to compute the latent
+utility of item from the features. Here, the latent utility function is
+the Ackley function \cite{ackley1987}.
+
+\begin{tcolorbox}[colframe=.grey, title=\faCode \enspace Code]
+
+\begin{Shaded}
+\begin{Highlighting}[numbers=left,,]
+\NormalTok{import numpy as np}
+\NormalTok{np.random.seed(0)}
+
+\NormalTok{def ackley(X, a=20, b=0.2, c=2*np.pi):}
+\NormalTok{    """}
+\NormalTok{    Compute the Ackley function.}
+\NormalTok{    Parameters:}
+\NormalTok{      X: A NumPy array of shape (n, d) where each row is a d{-}dimensional point.}
+\NormalTok{      a, b, c: Parameters of the Ackley function.}
+\NormalTok{    Returns:}
+\NormalTok{      A NumPy array of function values.}
+\NormalTok{    """}
+\NormalTok{    X = np.atleast\_2d(X)}
+\NormalTok{    d = X.shape[1]}
+\NormalTok{    sum\_sq = np.sum(X ** 2, axis=1)}
+\NormalTok{    term1 = {-}a * np.exp({-}b * np.sqrt(sum\_sq / d))}
+\NormalTok{    term2 = {-}np.exp(np.sum(np.cos(c * X), axis=1) / d)}
+\NormalTok{    return term1 + term2 + a + np.e}
+\end{Highlighting}
+\end{Shaded}
+
+\end{tcolorbox}
+
+\begin{Shaded}
+\begin{Highlighting}[numbers=left,,]
+\ImportTok{import}\NormalTok{ numpy }\ImportTok{as}\NormalTok{ np}
+\NormalTok{np.random.seed(}\DecValTok{0}\NormalTok{)}
+
+\KeywordTok{def}\NormalTok{ ackley(X, a}\OperatorTok{=}\DecValTok{20}\NormalTok{, b}\OperatorTok{=}\FloatTok{0.2}\NormalTok{, c}\OperatorTok{=}\DecValTok{2}\OperatorTok{*}\NormalTok{np.pi):}
+    \CommentTok{"""}
+\CommentTok{    Compute the Ackley function.}
+\CommentTok{    Parameters:}
+\CommentTok{      X: A NumPy array of shape (n, d) where each row is a d{-}dimensional point.}
+\CommentTok{      a, b, c: Parameters of the Ackley function.}
+\CommentTok{    Returns:}
+\CommentTok{      A NumPy array of function values.}
+\CommentTok{    """}
+\NormalTok{    X }\OperatorTok{=}\NormalTok{ np.atleast\_2d(X)}
+\NormalTok{    d }\OperatorTok{=}\NormalTok{ X.shape[}\DecValTok{1}\NormalTok{]}
+\NormalTok{    sum\_sq }\OperatorTok{=}\NormalTok{ np.}\BuiltInTok{sum}\NormalTok{(X }\OperatorTok{**} \DecValTok{2}\NormalTok{, axis}\OperatorTok{=}\DecValTok{1}\NormalTok{)}
+\NormalTok{    term1 }\OperatorTok{=} \OperatorTok{{-}}\NormalTok{a }\OperatorTok{*}\NormalTok{ np.exp(}\OperatorTok{{-}}\NormalTok{b }\OperatorTok{*}\NormalTok{ np.sqrt(sum\_sq }\OperatorTok{/}\NormalTok{ d))}
+\NormalTok{    term2 }\OperatorTok{=} \OperatorTok{{-}}\NormalTok{np.exp(np.}\BuiltInTok{sum}\NormalTok{(np.cos(c }\OperatorTok{*}\NormalTok{ X), axis}\OperatorTok{=}\DecValTok{1}\NormalTok{) }\OperatorTok{/}\NormalTok{ d)}
+    \ControlFlowTok{return}\NormalTok{ term1 }\OperatorTok{+}\NormalTok{ term2 }\OperatorTok{+}\NormalTok{ a }\OperatorTok{+}\NormalTok{ np.e}
+\end{Highlighting}
+\end{Shaded}
+
+We next define a function to visualize the surface:
+
+\begin{tcolorbox}[colframe=.grey, title=\faCode \enspace Code]
+
+\begin{Shaded}
+\begin{Highlighting}[numbers=left,,]
+\NormalTok{import matplotlib.pyplot as plt}
+\NormalTok{from matplotlib.colors import LinearSegmentedColormap}
+\NormalTok{ccmap = LinearSegmentedColormap.from\_list("ackley", ["\#f76a05", "\#FFF2C9"])}
+\NormalTok{plt.rcParams.update(\{}
+\NormalTok{    "font.size": 14,}
+\NormalTok{    "axes.labelsize": 16,}
+\NormalTok{    "xtick.labelsize": 14,}
+\NormalTok{    "ytick.labelsize": 14,}
+\NormalTok{    "legend.fontsize": 14,}
+\NormalTok{    "axes.titlesize": 16,}
+\NormalTok{\})}
+\NormalTok{plt.rcParams[\textquotesingle{}text.usetex\textquotesingle{}] = True}
+
+\NormalTok{def draw\_surface():}
+\NormalTok{    inps = np.linspace({-}2, 2, 100)}
+\NormalTok{    X, Y = np.meshgrid(inps, inps)}
+\NormalTok{    grid = np.column\_stack([X.ravel(), Y.ravel()])}
+\NormalTok{    Z = ackley(grid).reshape(X.shape)}
+    
+\NormalTok{    plt.figure(figsize=(6, 5))}
+\NormalTok{    contour = plt.contourf(X, Y, Z, 50, cmap=ccmap)}
+\NormalTok{    plt.contour(X, Y, Z, levels=15, colors=\textquotesingle{}black\textquotesingle{}, linewidths=0.5, alpha=0.6)}
+\NormalTok{    plt.colorbar(contour, label=r\textquotesingle{}$f(x)$\textquotesingle{}, ticks=[0, 3, 6])}
+\NormalTok{    plt.xlim({-}2, 2)}
+\NormalTok{    plt.ylim({-}2, 2)}
+\NormalTok{    plt.xticks([{-}2, 0, 2])}
+\NormalTok{    plt.yticks([{-}2, 0, 2])}
+\NormalTok{    plt.xlabel(r\textquotesingle{}$x\_1$\textquotesingle{})}
+\NormalTok{    plt.ylabel(r\textquotesingle{}$x\_2$\textquotesingle{})}
+\end{Highlighting}
+\end{Shaded}
+
+\end{tcolorbox}
+
+\begin{Shaded}
+\begin{Highlighting}[numbers=left,,]
+\ImportTok{import}\NormalTok{ matplotlib.pyplot }\ImportTok{as}\NormalTok{ plt}
+\ImportTok{from}\NormalTok{ matplotlib.colors }\ImportTok{import}\NormalTok{ LinearSegmentedColormap}
+\NormalTok{ccmap }\OperatorTok{=}\NormalTok{ LinearSegmentedColormap.from\_list(}\StringTok{"ackley"}\NormalTok{, [}\StringTok{"\#f76a05"}\NormalTok{, }\StringTok{"\#FFF2C9"}\NormalTok{])}
+\NormalTok{plt.rcParams.update(\{}
+    \StringTok{"font.size"}\NormalTok{: }\DecValTok{14}\NormalTok{,}
+    \StringTok{"axes.labelsize"}\NormalTok{: }\DecValTok{16}\NormalTok{,}
+    \StringTok{"xtick.labelsize"}\NormalTok{: }\DecValTok{14}\NormalTok{,}
+    \StringTok{"ytick.labelsize"}\NormalTok{: }\DecValTok{14}\NormalTok{,}
+    \StringTok{"legend.fontsize"}\NormalTok{: }\DecValTok{14}\NormalTok{,}
+    \StringTok{"axes.titlesize"}\NormalTok{: }\DecValTok{16}\NormalTok{,}
+\NormalTok{\})}
+\NormalTok{plt.rcParams[}\StringTok{\textquotesingle{}text.usetex\textquotesingle{}}\NormalTok{] }\OperatorTok{=} \VariableTok{True}
+
+\KeywordTok{def}\NormalTok{ draw\_surface():}
+\NormalTok{    inps }\OperatorTok{=}\NormalTok{ np.linspace(}\OperatorTok{{-}}\DecValTok{2}\NormalTok{, }\DecValTok{2}\NormalTok{, }\DecValTok{100}\NormalTok{)}
+\NormalTok{    X, Y }\OperatorTok{=}\NormalTok{ np.meshgrid(inps, inps)}
+\NormalTok{    grid }\OperatorTok{=}\NormalTok{ np.column\_stack([X.ravel(), Y.ravel()])}
+\NormalTok{    Z }\OperatorTok{=}\NormalTok{ ackley(grid).reshape(X.shape)}
+    
+\NormalTok{    plt.figure(figsize}\OperatorTok{=}\NormalTok{(}\DecValTok{6}\NormalTok{, }\DecValTok{5}\NormalTok{))}
+\NormalTok{    contour }\OperatorTok{=}\NormalTok{ plt.contourf(X, Y, Z, }\DecValTok{50}\NormalTok{, cmap}\OperatorTok{=}\NormalTok{ccmap)}
+\NormalTok{    plt.contour(X, Y, Z, levels}\OperatorTok{=}\DecValTok{15}\NormalTok{, colors}\OperatorTok{=}\StringTok{\textquotesingle{}black\textquotesingle{}}\NormalTok{, linewidths}\OperatorTok{=}\FloatTok{0.5}\NormalTok{, alpha}\OperatorTok{=}\FloatTok{0.6}\NormalTok{)}
+\NormalTok{    plt.colorbar(contour, label}\OperatorTok{=}\VerbatimStringTok{r\textquotesingle{}$f(x)$\textquotesingle{}}\NormalTok{, ticks}\OperatorTok{=}\NormalTok{[}\DecValTok{0}\NormalTok{, }\DecValTok{3}\NormalTok{, }\DecValTok{6}\NormalTok{])}
+\NormalTok{    plt.xlim(}\OperatorTok{{-}}\DecValTok{2}\NormalTok{, }\DecValTok{2}\NormalTok{)}
+\NormalTok{    plt.ylim(}\OperatorTok{{-}}\DecValTok{2}\NormalTok{, }\DecValTok{2}\NormalTok{)}
+\NormalTok{    plt.xticks([}\OperatorTok{{-}}\DecValTok{2}\NormalTok{, }\DecValTok{0}\NormalTok{, }\DecValTok{2}\NormalTok{])}
+\NormalTok{    plt.yticks([}\OperatorTok{{-}}\DecValTok{2}\NormalTok{, }\DecValTok{0}\NormalTok{, }\DecValTok{2}\NormalTok{])}
+\NormalTok{    plt.xlabel(}\VerbatimStringTok{r\textquotesingle{}$x\_1$\textquotesingle{}}\NormalTok{)}
+\NormalTok{    plt.ylabel(}\VerbatimStringTok{r\textquotesingle{}$x\_2$\textquotesingle{}}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+In the surface below, blue and red points corresponds to accept or
+reject points.
+
+\begin{tcolorbox}[colframe=.grey, title=\faCode \enspace Code]
+
+\begin{Shaded}
+\begin{Highlighting}[numbers=left,,]
+\NormalTok{d = 2}
+\NormalTok{n\_items = 800}
+\NormalTok{items = np.random.randn(n\_items, d)*0.5 + np.ones((n\_items, d))*0.5}
+\NormalTok{utilities = ackley(items)}
+\NormalTok{y = (utilities \textgreater{} utilities.mean())}
+\NormalTok{draw\_surface()}
+\NormalTok{plt.scatter(items[:, 0], items[:, 1], c=y, cmap=\textquotesingle{}coolwarm\textquotesingle{}, alpha=0.5)}
+\NormalTok{plt.show()}
+\end{Highlighting}
+\end{Shaded}
+
+\end{tcolorbox}
+
+\begin{Shaded}
+\begin{Highlighting}[numbers=left,,]
+\NormalTok{d }\OperatorTok{=} \DecValTok{2}
+\NormalTok{n\_items }\OperatorTok{=} \DecValTok{800}
+\NormalTok{items }\OperatorTok{=}\NormalTok{ np.random.randn(n\_items, d)}\OperatorTok{*}\FloatTok{0.5} \OperatorTok{+}\NormalTok{ np.ones((n\_items, d))}\OperatorTok{*}\FloatTok{0.5}
+\NormalTok{utilities }\OperatorTok{=}\NormalTok{ ackley(items)}
+\NormalTok{y }\OperatorTok{=}\NormalTok{ (utilities }\OperatorTok{\textgreater{}}\NormalTok{ utilities.mean())}
+\NormalTok{draw\_surface()}
+\NormalTok{plt.scatter(items[:, }\DecValTok{0}\NormalTok{], items[:, }\DecValTok{1}\NormalTok{], c}\OperatorTok{=}\NormalTok{y, cmap}\OperatorTok{=}\StringTok{\textquotesingle{}coolwarm\textquotesingle{}}\NormalTok{, alpha}\OperatorTok{=}\FloatTok{0.5}\NormalTok{)}
+\NormalTok{plt.show()}
+\end{Highlighting}
+\end{Shaded}
+
+\pandocbounded{\includegraphics[keepaspectratio]{src/001-preference_decision_model_files/figure-pdf/cell-4-output-1.pdf}}
 
 \emph{Rating-scale sampling}, such as the Likert scale, is a method in
 which participants rate items on a fixed-point scale (e.g., 1 to 5,
@@ -830,15 +990,137 @@ reviews, and psychological assessments, this method provides a more
 nuanced measure than discrete scales. Rating-scale sampling is simple
 for participants to understand and use, provides rich data on the
 intensity of preferences, and is flexible enough for various
-measurements (e.g., agreement, satisfaction)
-(\citeproc{ref-harpe2015}{Harpe 2015}). However, rating-scale sampling
-methods also have limitations. Ratings can be influenced by personal
-biases and interpretations of scales, leading to subjectivity. There is
-a central tendency bias, where participants may avoid extreme ratings,
-resulting in clustering responses around the middle. Different
+measurements (e.g., agreement, satisfaction). However, rating-scale
+sampling methods also have limitations. Ratings can be influenced by
+personal biases and interpretations of scales, leading to subjectivity.
+There is a central tendency bias, where participants may avoid extreme
+ratings, resulting in clustering responses around the middle. Different
 participants might interpret scale points differently, and fixed-point
 scales may not capture the full nuance of participants' preferences or
-attitudes (\citeproc{ref-harpe2015}{Harpe 2015}).
+attitudes.
+
+\begin{tcolorbox}[colframe=.grey, title=\faCode \enspace Code]
+
+\begin{Shaded}
+\begin{Highlighting}[numbers=left,,]
+\NormalTok{from matplotlib.colors import LinearSegmentedColormap}
+\NormalTok{likert\_cmap = LinearSegmentedColormap.from\_list("likert\_scale", ["red", "blue"], N=5)}
+\NormalTok{normalized = (utilities {-} utilities.min()) / (utilities.max() {-} utilities.min())}
+\NormalTok{ratings = np.round(normalized * 4).squeeze()}
+
+\NormalTok{draw\_surface()}
+\NormalTok{scatter = plt.scatter(items[:, 0], items[:, 1], c=ratings, cmap=likert\_cmap, alpha=0.5)}
+\NormalTok{plt.show()}
+\end{Highlighting}
+\end{Shaded}
+
+\end{tcolorbox}
+
+\begin{Shaded}
+\begin{Highlighting}[numbers=left,,]
+\ImportTok{from}\NormalTok{ matplotlib.colors }\ImportTok{import}\NormalTok{ LinearSegmentedColormap}
+\NormalTok{likert\_cmap }\OperatorTok{=}\NormalTok{ LinearSegmentedColormap.from\_list(}\StringTok{"likert\_scale"}\NormalTok{, [}\StringTok{"red"}\NormalTok{, }\StringTok{"blue"}\NormalTok{], N}\OperatorTok{=}\DecValTok{5}\NormalTok{)}
+\NormalTok{normalized }\OperatorTok{=}\NormalTok{ (utilities }\OperatorTok{{-}}\NormalTok{ utilities.}\BuiltInTok{min}\NormalTok{()) }\OperatorTok{/}\NormalTok{ (utilities.}\BuiltInTok{max}\NormalTok{() }\OperatorTok{{-}}\NormalTok{ utilities.}\BuiltInTok{min}\NormalTok{())}
+\NormalTok{ratings }\OperatorTok{=}\NormalTok{ np.}\BuiltInTok{round}\NormalTok{(normalized }\OperatorTok{*} \DecValTok{4}\NormalTok{).squeeze()}
+
+\NormalTok{draw\_surface()}
+\NormalTok{scatter }\OperatorTok{=}\NormalTok{ plt.scatter(items[:, }\DecValTok{0}\NormalTok{], items[:, }\DecValTok{1}\NormalTok{], c}\OperatorTok{=}\NormalTok{ratings, cmap}\OperatorTok{=}\NormalTok{likert\_cmap, alpha}\OperatorTok{=}\FloatTok{0.5}\NormalTok{)}
+\NormalTok{plt.show()}
+\end{Highlighting}
+\end{Shaded}
+
+\pandocbounded{\includegraphics[keepaspectratio]{src/001-preference_decision_model_files/figure-pdf/cell-5-output-1.pdf}}
+
+In \emph{pairwise sampling}, participants compare two options to
+determine which is preferred. One of the major advantage of this method
+is low cognitive demand for rater. Its disavantage is the limited amount
+of information content elicited by a sample. Below is a survey based on
+pairwise sampling:
+
+\begin{tcolorbox}[colframe=.grey, title=\faCode \enspace Code]
+
+\begin{Shaded}
+\begin{Highlighting}[numbers=left,,]
+\NormalTok{n\_pairs = 10000}
+\NormalTok{pair\_indices = np.random.randint(0, n\_items, size=(n\_pairs, 2))}
+\NormalTok{\# Exclude pairs where both indices are the same}
+\NormalTok{mask = pair\_indices[:, 0] != pair\_indices[:, 1]}
+\NormalTok{pair\_indices = pair\_indices[mask]}
+
+\NormalTok{scores = np.zeros(n\_items, dtype=int)}
+\NormalTok{wins = utilities[pair\_indices[:, 0]] \textgreater{} utilities[pair\_indices[:, 1]]}
+
+\NormalTok{\# For pairs where the first item wins:}
+\NormalTok{\#   {-} Increase score for the first item by 1}
+\NormalTok{\#   {-} Decrease score for the second item by 1}
+\NormalTok{np.add.at(scores, pair\_indices[wins, 0], 1)}
+\NormalTok{np.add.at(scores, pair\_indices[wins, 1], {-}1)}
+
+\NormalTok{\# For pairs where the second item wins or it\textquotesingle{}s a tie:}
+\NormalTok{\#   {-} Decrease score for the first item by 1}
+\NormalTok{\#   {-} Increase score for the second item by 1}
+\NormalTok{np.add.at(scores, pair\_indices[\textasciitilde{}wins, 0], {-}1)}
+\NormalTok{np.add.at(scores, pair\_indices[\textasciitilde{}wins, 1], 1)}
+
+\NormalTok{\# Determine preferred and non{-}preferred items based on scores}
+\NormalTok{preferred = scores \textgreater{} 0}
+\NormalTok{non\_preferred = scores \textless{} 0}
+
+\NormalTok{draw\_surface()}
+\NormalTok{plt.scatter(items[preferred, 0], items[preferred, 1], c=\textquotesingle{}blue\textquotesingle{}, label=\textquotesingle{}Preferred\textquotesingle{}, alpha=0.5)}
+\NormalTok{plt.scatter(items[non\_preferred, 0], items[non\_preferred, 1], c=\textquotesingle{}purple\textquotesingle{}, label=\textquotesingle{}Non{-}preferred\textquotesingle{}, alpha=0.5)}
+\NormalTok{plt.legend()}
+\NormalTok{plt.show()}
+\end{Highlighting}
+\end{Shaded}
+
+\end{tcolorbox}
+
+\begin{Shaded}
+\begin{Highlighting}[numbers=left,,]
+\NormalTok{n\_pairs }\OperatorTok{=} \DecValTok{10000}
+\NormalTok{pair\_indices }\OperatorTok{=}\NormalTok{ np.random.randint(}\DecValTok{0}\NormalTok{, n\_items, size}\OperatorTok{=}\NormalTok{(n\_pairs, }\DecValTok{2}\NormalTok{))}
+\CommentTok{\# Exclude pairs where both indices are the same}
+\NormalTok{mask }\OperatorTok{=}\NormalTok{ pair\_indices[:, }\DecValTok{0}\NormalTok{] }\OperatorTok{!=}\NormalTok{ pair\_indices[:, }\DecValTok{1}\NormalTok{]}
+\NormalTok{pair\_indices }\OperatorTok{=}\NormalTok{ pair\_indices[mask]}
+
+\NormalTok{scores }\OperatorTok{=}\NormalTok{ np.zeros(n\_items, dtype}\OperatorTok{=}\BuiltInTok{int}\NormalTok{)}
+\NormalTok{wins }\OperatorTok{=}\NormalTok{ utilities[pair\_indices[:, }\DecValTok{0}\NormalTok{]] }\OperatorTok{\textgreater{}}\NormalTok{ utilities[pair\_indices[:, }\DecValTok{1}\NormalTok{]]}
+
+\CommentTok{\# For pairs where the first item wins:}
+\CommentTok{\#   {-} Increase score for the first item by 1}
+\CommentTok{\#   {-} Decrease score for the second item by 1}
+\NormalTok{np.add.at(scores, pair\_indices[wins, }\DecValTok{0}\NormalTok{], }\DecValTok{1}\NormalTok{)}
+\NormalTok{np.add.at(scores, pair\_indices[wins, }\DecValTok{1}\NormalTok{], }\OperatorTok{{-}}\DecValTok{1}\NormalTok{)}
+
+\CommentTok{\# For pairs where the second item wins or it\textquotesingle{}s a tie:}
+\CommentTok{\#   {-} Decrease score for the first item by 1}
+\CommentTok{\#   {-} Increase score for the second item by 1}
+\NormalTok{np.add.at(scores, pair\_indices[}\OperatorTok{\textasciitilde{}}\NormalTok{wins, }\DecValTok{0}\NormalTok{], }\OperatorTok{{-}}\DecValTok{1}\NormalTok{)}
+\NormalTok{np.add.at(scores, pair\_indices[}\OperatorTok{\textasciitilde{}}\NormalTok{wins, }\DecValTok{1}\NormalTok{], }\DecValTok{1}\NormalTok{)}
+
+\CommentTok{\# Determine preferred and non{-}preferred items based on scores}
+\NormalTok{preferred }\OperatorTok{=}\NormalTok{ scores }\OperatorTok{\textgreater{}} \DecValTok{0}
+\NormalTok{non\_preferred }\OperatorTok{=}\NormalTok{ scores }\OperatorTok{\textless{}} \DecValTok{0}
+
+\NormalTok{draw\_surface()}
+\NormalTok{plt.scatter(items[preferred, }\DecValTok{0}\NormalTok{], items[preferred, }\DecValTok{1}\NormalTok{], c}\OperatorTok{=}\StringTok{\textquotesingle{}blue\textquotesingle{}}\NormalTok{, label}\OperatorTok{=}\StringTok{\textquotesingle{}Preferred\textquotesingle{}}\NormalTok{, alpha}\OperatorTok{=}\FloatTok{0.5}\NormalTok{)}
+\NormalTok{plt.scatter(items[non\_preferred, }\DecValTok{0}\NormalTok{], items[non\_preferred, }\DecValTok{1}\NormalTok{], c}\OperatorTok{=}\StringTok{\textquotesingle{}purple\textquotesingle{}}\NormalTok{, label}\OperatorTok{=}\StringTok{\textquotesingle{}Non{-}preferred\textquotesingle{}}\NormalTok{, alpha}\OperatorTok{=}\FloatTok{0.5}\NormalTok{)}
+\NormalTok{plt.legend()}
+\NormalTok{plt.show()}
+\end{Highlighting}
+\end{Shaded}
+
+\pandocbounded{\includegraphics[keepaspectratio]{src/001-preference_decision_model_files/figure-pdf/cell-6-output-1.pdf}}
+
+Next, we will see that we can trading cognitive demand for rater to
+elicit more nuance preference information. For example, \emph{Rank-order
+sampling} captures human preferences by having participants rank items
+from most to least preferred. Used in voting, market research, and
+psychology, it provides rich preference data but is more complex and
+cognitively demanding than pairwise comparisons, especially for large
+item sets. Participants may also rank inconsistently
+(\citeproc{ref-ragain2019}{Ragain and Ugander 2019}).
 
 \emph{In Best-worst scaling} (BWS), participants are presented with
 items and asked to identify the most and least preferred options. The
@@ -1115,6 +1397,125 @@ active and critical area of research.
 
 \begin{Shaded}
 \begin{Highlighting}[numbers=left,,]
+\NormalTok{import numpy as np}
+\NormalTok{from scipy.optimize import minimize}
+\NormalTok{from sklearn.metrics import roc\_auc\_score}
+\NormalTok{from tqdm import tqdm}
+
+\NormalTok{\# Set random seed for reproducibility (optional)}
+\NormalTok{np.random.seed(42)}
+
+\NormalTok{\# Number of users and items}
+\NormalTok{num\_users = 50}
+\NormalTok{num\_items = 100}
+
+\NormalTok{\# Generate user{-}specific and item{-}specific utilities}
+\NormalTok{theta\_true = np.random.randn(num\_users)}
+\NormalTok{z\_true = np.random.randn(num\_items)}
+
+\NormalTok{\# Define the logistic (sigmoid) function}
+\NormalTok{def sigmoid(x):}
+\NormalTok{    return 1.0 / (1.0 + np.exp({-}x))}
+
+\NormalTok{\# Generate observed choices using the logistic function}
+\NormalTok{\# Compute probability matrix: shape (num\_users, num\_items)}
+\NormalTok{probs = sigmoid(theta\_true[:, None] {-} z\_true[None, :])}
+\NormalTok{\# Sample binary responses (0 or 1) from a Bernoulli distribution}
+\NormalTok{data = np.random.binomial(1, probs)}
+
+\NormalTok{\# Mask out a fraction of the response matrix (80\% observed, 20\% missing)}
+\NormalTok{mask = np.random.rand(num\_users, num\_items) \textgreater{} 0.2  \# boolean mask}
+\NormalTok{\# Create a version of the data with missing values (not needed for optimization, but for reference)}
+\NormalTok{data\_masked = data.copy().astype(float)}
+\NormalTok{data\_masked[\textasciitilde{}mask] = np.nan}
+
+\NormalTok{\# Count of observed entries (used for averaging)}
+\NormalTok{observed\_count = np.sum(mask)}
+
+\NormalTok{\# We will optimize over parameters theta and z.}
+\NormalTok{\# Initialize estimates (random starting points)}
+\NormalTok{theta\_init = np.random.randn(num\_users)}
+\NormalTok{z\_init = np.random.randn(num\_items)}
+
+\NormalTok{\# Pack parameters into a single vector for the optimizer.}
+\NormalTok{\# First num\_users elements are theta\_est, next num\_items are z\_est.}
+\NormalTok{params\_init = np.concatenate([theta\_init, z\_init])}
+
+\NormalTok{def objective(params):}
+\NormalTok{    """}
+\NormalTok{    Computes the loss and gradient for the current parameters.}
+\NormalTok{    Loss is defined as the negative log likelihood (averaged over observed entries).}
+\NormalTok{    """}
+\NormalTok{    \# Unpack parameters}
+\NormalTok{    theta = params[:num\_users]}
+\NormalTok{    z = params[num\_users:]}
+    
+\NormalTok{    \# Compute difference and estimated probabilities}
+\NormalTok{    diff = theta[:, None] {-} z[None, :]  \# shape: (num\_users, num\_items)}
+\NormalTok{    sigma = sigmoid(diff)}
+    
+\NormalTok{    \# To avoid log(0), clip probabilities a little bit}
+\NormalTok{    eps = 1e{-}8}
+\NormalTok{    sigma = np.clip(sigma, eps, 1 {-} eps)}
+    
+\NormalTok{    \# Compute negative log likelihood only on observed entries}
+\NormalTok{    \# For each observed entry: if data == 1 then {-}log(sigma) else {-}log(1{-}sigma)}
+\NormalTok{    log\_likelihood = data * np.log(sigma) + (1 {-} data) * np.log(1 {-} sigma)}
+\NormalTok{    loss = {-}np.sum(mask * log\_likelihood) / observed\_count}
+    
+\NormalTok{    \# Compute gradient with respect to the difference x = theta\_i {-} z\_j}
+\NormalTok{    \# d(loss)/d(x) = sigma {-} data  (for observed entries, zero otherwise)}
+\NormalTok{    diff\_grad = (sigma {-} data) * mask  \# shape: (num\_users, num\_items)}
+    
+\NormalTok{    \# Gradients for theta: sum over items (axis 1)}
+\NormalTok{    grad\_theta = np.sum(diff\_grad, axis=1) / observed\_count}
+\NormalTok{    \# Gradients for z: negative sum over users (axis 0)}
+\NormalTok{    grad\_z = {-}np.sum(diff\_grad, axis=0) / observed\_count}
+    
+\NormalTok{    \# Pack gradients back into a single vector}
+\NormalTok{    grad = np.concatenate([grad\_theta, grad\_z])}
+\NormalTok{    return loss, grad}
+
+\NormalTok{\# Callback to track progress (optional)}
+\NormalTok{iteration\_progress = tqdm()}
+
+\NormalTok{def callback(xk):}
+\NormalTok{    iteration\_progress.update(1)}
+
+\NormalTok{\# Optimize using L{-}BFGS{-}B}
+\NormalTok{result = minimize(}
+\NormalTok{    fun=lambda params: objective(params),}
+\NormalTok{    x0=params\_init,}
+\NormalTok{    method="L{-}BFGS{-}B",}
+\NormalTok{    jac=True,}
+\NormalTok{    callback=callback,}
+\NormalTok{    options=\{"maxiter": 100, "disp": True\}}
+\NormalTok{)}
+\NormalTok{iteration\_progress.close()}
+
+\NormalTok{\# Extract the estimated parameters}
+\NormalTok{theta\_est = result.x[:num\_users]}
+\NormalTok{z\_est = result.x[num\_users:]}
+
+\NormalTok{\# Compute final estimated probabilities}
+\NormalTok{probs\_final = sigmoid(theta\_est[:, None] {-} z\_est[None, :])}
+
+\NormalTok{\# Compute AUC ROC on observed (training) and missing (test) entries}
+\NormalTok{train\_probs = probs\_final[mask]}
+\NormalTok{test\_probs = probs\_final[\textasciitilde{}mask]}
+\NormalTok{train\_labels = data[mask]}
+\NormalTok{test\_labels = data[\textasciitilde{}mask]}
+
+\NormalTok{auc\_train = roc\_auc\_score(train\_labels, train\_probs)}
+\NormalTok{auc\_test = roc\_auc\_score(test\_labels, test\_probs)}
+
+\NormalTok{print(f"Train AUC: \{auc\_train:.4f\}")}
+\NormalTok{print(f"Test AUC: \{auc\_test:.4f\}")}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[numbers=left,,]
 \ImportTok{import}\NormalTok{ torch}
 \ImportTok{import}\NormalTok{ torch.nn }\ImportTok{as}\NormalTok{ nn}
 \ImportTok{import}\NormalTok{ torch.optim }\ImportTok{as}\NormalTok{ optim}
@@ -1191,8 +1592,8 @@ active and critical area of research.
 \end{Shaded}
 
 \begin{verbatim}
-train auc: 0.8329640626907349
-test auc: 0.7955405712127686
+train auc: 0.825813889503479
+test auc: 0.8238877654075623
 \end{verbatim}
 
 \section*{References}\label{bibliography-2}

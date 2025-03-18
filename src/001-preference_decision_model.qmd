@@ -3,6 +3,11 @@ title: Models of Preferences and Decisions
 format: html
 filters:
   - pyodide
+execute:
+  engine: pyodide
+  pyodide:
+    auto: true
+
 ---
 
 ::: {.content-visible when-format="html"}
@@ -80,20 +85,22 @@ Stated preferences are those individuals explicitly indicate in potentially expe
 
 ## Methods for Collecting Preference Data {#sec-collect}
 
-Next, we explore various mechanisms by which humans can express their preferences, including pairwise sampling, rank-order sampling, rating-scale sampling, best-worst scaling, and multiple-choice samples. In *pairwise sampling*, participants compare two options to determine which is preferred. One of the major advantage of this method is low cognitive demand for rater. Its disavantage is the limited amount of information content elicited by a sample. We will familiarize ourselves with pairwise sampling through a simulation. Each item $i$ is represented by a $d$ dimentional vector $x_i$. The user has a latent utility function $f$ that they use to compute the latent utility of item from the features. In this simulation, the latent utility function is the Ackley function \cite{ackley1987}. In the surface below, blue and red points corresponds to accept or reject points.
+Next, we explore various mechanisms by which humans can express their preferences, including accept-reject sampling, pairwise sampling, rank-order sampling, rating-scale sampling, best-worst scaling, and multiple-choice samples. In accept-reject sampling, the user consider one item at a time and decide if they like it or not. Below is an example survey using accept-reject sampling:
 
+::: {.content-visible when-format="html"}
+<iframe
+  src="https://app.opinionx.co/5f30e903-c7b2-42e3-821a-e65271144bd9"
+  style="width:100%; height:450px;"
+></iframe>
+:::
+
+We will familiarize ourselves with accept-reject sampling through a simulation. Each item $i$ is represented by a $d=2$ dimentional vector $x^i$. There is only one user in the simulation, and they have a latent utility function $f$ that they use to compute the latent utility of item from the features. Here, the latent utility function is the Ackley function \cite{ackley1987}.
+
+::: {.callout-note title="code"}
 ```{pyodide-python}
 import numpy as np
-import matplotlib.pyplot as plt
-from matplotlib.colors import LinearSegmentedColormap
-
-# Create a custom colormap
-custom_cmap = LinearSegmentedColormap.from_list("custom_ackley", ["#F89B28", "#FFF2C9"], N=100)
-
-# Set a random seed for reproducibility
 np.random.seed(0)
 
-# Define the Ackley function for a d-dimensional input.
 def ackley(X, a=20, b=0.2, c=2*np.pi):
     """
     Compute the Ackley function.
@@ -109,31 +116,36 @@ def ackley(X, a=20, b=0.2, c=2*np.pi):
     term1 = -a * np.exp(-b * np.sqrt(sum_sq / d))
     term2 = -np.exp(np.sum(np.cos(c * X), axis=1) / d)
     return term1 + term2 + a + np.e
+```
+:::
+```{python}
+import numpy as np
+np.random.seed(0)
 
-# Generate a surface plot for the Ackley function.
-def draw_surface():
-    x = np.linspace(-6, 6, 100)
-    y = np.linspace(-6, 6, 100)
-    X, Y = np.meshgrid(x, y)
-    # Stack X and Y coordinates to create a grid of 2D points.
-    grid = np.column_stack([X.ravel(), Y.ravel()])
-    Z = ackley(grid).reshape(X.shape)
-    
-    plt.figure(figsize=(6, 4.5))
-    contour = plt.contourf(X, Y, Z, 50, cmap=custom_cmap)
-    plt.contour(X, Y, Z, levels=15, colors='black', linewidths=0.5, alpha=0.6)
-    plt.colorbar(contour, label=r'$f(x)$')
-    plt.xlabel(r'$x_1$')
-    plt.ylabel(r'$x_2$')
-    return X, Y, Z
+def ackley(X, a=20, b=0.2, c=2*np.pi):
+    """
+    Compute the Ackley function.
+    Parameters:
+      X: A NumPy array of shape (n, d) where each row is a d-dimensional point.
+      a, b, c: Parameters of the Ackley function.
+    Returns:
+      A NumPy array of function values.
+    """
+    X = np.atleast_2d(X)
+    d = X.shape[1]
+    sum_sq = np.sum(X ** 2, axis=1)
+    term1 = -a * np.exp(-b * np.sqrt(sum_sq / d))
+    term2 = -np.exp(np.sum(np.cos(c * X), axis=1) / d)
+    return term1 + term2 + a + np.e
+```
 
-# Generate random items and compute their utility values.
-d = 2
-n_items = 400
-items = np.random.randn(n_items, d) + np.ones((n_items, d))
-utilities = ackley(items)
+We next define a function to visualize the surface:
 
-# Optionally, adjust global plot settings (font sizes, etc.)
+::: {.callout-note title="code"}
+```{pyodide-python}
+import matplotlib.pyplot as plt
+from matplotlib.colors import LinearSegmentedColormap
+ccmap = LinearSegmentedColormap.from_list("ackley", ["#f76a05", "#FFF2C9"])
 plt.rcParams.update({
     "font.size": 14,
     "axes.labelsize": 16,
@@ -142,119 +154,188 @@ plt.rcParams.update({
     "legend.fontsize": 14,
     "axes.titlesize": 16,
 })
+plt.rcParams['text.usetex'] = True
 
-# Draw the Ackley function surface and overlay the random items.
+def draw_surface():
+    inps = np.linspace(-2, 2, 100)
+    X, Y = np.meshgrid(inps, inps)
+    grid = np.column_stack([X.ravel(), Y.ravel()])
+    Z = ackley(grid).reshape(X.shape)
+    
+    plt.figure(figsize=(6, 5))
+    contour = plt.contourf(X, Y, Z, 50, cmap=ccmap)
+    plt.contour(X, Y, Z, levels=15, colors='black', linewidths=0.5, alpha=0.6)
+    plt.colorbar(contour, label=r'$f(x)$', ticks=[0, 3, 6])
+    plt.xlim(-2, 2)
+    plt.ylim(-2, 2)
+    plt.xticks([-2, 0, 2])
+    plt.yticks([-2, 0, 2])
+    plt.xlabel(r'$x_1$')
+    plt.ylabel(r'$x_2$')
+```
+:::
+```{python}
+import matplotlib.pyplot as plt
+from matplotlib.colors import LinearSegmentedColormap
+ccmap = LinearSegmentedColormap.from_list("ackley", ["#f76a05", "#FFF2C9"])
+plt.rcParams.update({
+    "font.size": 14,
+    "axes.labelsize": 16,
+    "xtick.labelsize": 14,
+    "ytick.labelsize": 14,
+    "legend.fontsize": 14,
+    "axes.titlesize": 16,
+})
+plt.rcParams['text.usetex'] = True
+
+def draw_surface():
+    inps = np.linspace(-2, 2, 100)
+    X, Y = np.meshgrid(inps, inps)
+    grid = np.column_stack([X.ravel(), Y.ravel()])
+    Z = ackley(grid).reshape(X.shape)
+    
+    plt.figure(figsize=(6, 5))
+    contour = plt.contourf(X, Y, Z, 50, cmap=ccmap)
+    plt.contour(X, Y, Z, levels=15, colors='black', linewidths=0.5, alpha=0.6)
+    plt.colorbar(contour, label=r'$f(x)$', ticks=[0, 3, 6])
+    plt.xlim(-2, 2)
+    plt.ylim(-2, 2)
+    plt.xticks([-2, 0, 2])
+    plt.yticks([-2, 0, 2])
+    plt.xlabel(r'$x_1$')
+    plt.ylabel(r'$x_2$')
+```
+
+In the surface below, blue and red points corresponds to accept or reject points.
+
+::: {.callout-note title="code"}
+```{pyodide-python}
+d = 2
+n_items = 800
+items = np.random.randn(n_items, d)*0.5 + np.ones((n_items, d))*0.5
+utilities = ackley(items)
+y = (utilities > utilities.mean())
 draw_surface()
-plt.scatter(items[:, 0], items[:, 1], c=utilities, cmap=custom_cmap, edgecolors='k')
+plt.scatter(items[:, 0], items[:, 1], c=y, cmap='coolwarm', alpha=0.5)
+plt.show()
+```
+:::
+```{python}
+d = 2
+n_items = 800
+items = np.random.randn(n_items, d)*0.5 + np.ones((n_items, d))*0.5
+utilities = ackley(items)
+y = (utilities > utilities.mean())
+draw_surface()
+plt.scatter(items[:, 0], items[:, 1], c=y, cmap='coolwarm', alpha=0.5)
 plt.show()
 ```
 
-```{python}
-import torch
-from botorch.test_functions.synthetic import Ackley
-import matplotlib.pyplot as plt
-import numpy as np
+*Rating-scale sampling*, such as the Likert scale, is a method in which participants rate items on a fixed-point scale (e.g., 1 to 5, "Strongly Disagree" to "Strongly Agree") to measure levels of preference towards items [@harpe2015]. Participants can also mark a point on a continuous rating scale to indicate their preference or attitude. Commonly used in surveys, product reviews, and psychological assessments, this method provides a more nuanced measure than discrete scales. Rating-scale sampling is simple for participants to understand and use, provides rich data on the intensity of preferences, and is flexible enough for various measurements (e.g., agreement, satisfaction). However, rating-scale sampling methods also have limitations. Ratings can be influenced by personal biases and interpretations of scales, leading to subjectivity. There is a central tendency bias, where participants may avoid extreme ratings, resulting in clustering responses around the middle. Different participants might interpret scale points differently, and fixed-point scales may not capture the full nuance of participants' preferences or attitudes.
+
+::: {.callout-note title="code"}
+```{pyodide-python}
 from matplotlib.colors import LinearSegmentedColormap
-custom_cmap = LinearSegmentedColormap.from_list("custom_ackley", ["#F89B28", "#FFF2C9"], N=100)
-torch.manual_seed(0)
-from tueplots import bundles
-bundles.icml2024()
-plot_config = bundles.icml2024(usetex=True, family="serif")
-plot_config.update({
-    "font.size": 14,         # Increase base font size
-    "axes.labelsize": 16,    # Increase axis label font size
-    "xtick.labelsize": 14,   # Increase x-axis tick labels
-    "ytick.labelsize": 14,   # Increase y-axis tick labels
-    "legend.fontsize": 14,   # Increase legend font size
-    "axes.titlesize": 16,    # Increase title font size
-})
-
-# Visualize the Ackley function as a heat map
-def draw_surface():
-    x = np.linspace(-6, 6, 100)
-    y = np.linspace(-6, 6, 100)
-    X, Y = np.meshgrid(x, y)
-    Z = utility_fn(torch.tensor(np.c_[X.ravel(), Y.ravel()])).reshape(X.shape)
-    plt.figure(figsize=(6, 4.5))
-    contour = plt.contourf(X, Y, Z.numpy(), 50, cmap=custom_cmap)
-    plt.contour(X, Y, Z.numpy(), levels=15, colors='black', linewidths=0.5, alpha=0.6)
-    plt.colorbar(contour, label=r'$f(x)$')
-    plt.xlabel(r'$x_1$')
-    plt.ylabel(r'$x_2$')
-
-d = 2
-n_items = 400
-utility_fn = Ackley(dim=d)
-items = torch.randn(n_items, d) + torch.ones(n_items, d)
-utilities = utility_fn(items).numpy()
-```
-
-```{python}
-preference = (utilities > utilities.mean())
-with plt.rc_context(plot_config):
-    draw_surface()
-    plt.scatter(items[:, 0], items[:, 1], c=preference, cmap='coolwarm', s=5, alpha=0.5)
-    plt.show()
-```
-
-*Rating-scale sampling*, such as the Likert scale, is a method in which participants rate items on a fixed-point scale (e.g., 1 to 5, "Strongly Disagree" to "Strongly Agree") to measure levels of preference towards items [@harpe2015]. Participants can also mark a point on a continuous rating scale to indicate their preference or attitude. Commonly used in surveys, product reviews, and psychological assessments, this method provides a more nuanced measure than discrete scales. Rating-scale sampling is simple for participants to understand and use, provides rich data on the intensity of preferences, and is flexible enough for various measurements (e.g., agreement, satisfaction) [@harpe2015]. However, rating-scale sampling methods also have limitations. Ratings can be influenced by personal biases and interpretations of scales, leading to subjectivity. There is a central tendency bias, where participants may avoid extreme ratings, resulting in clustering responses around the middle. Different participants might interpret scale points differently, and fixed-point scales may not capture the full nuance of participants' preferences or attitudes [@harpe2015].
-
-```{python}
-# Custom discrete colormap: red for lowest rating (0) to blue for highest rating (4)
 likert_cmap = LinearSegmentedColormap.from_list("likert_scale", ["red", "blue"], N=5)
+normalized = (utilities - utilities.min()) / (utilities.max() - utilities.min())
+ratings = np.round(normalized * 4).squeeze()
 
-# Normalize utilities to get ratings from 0 to 4
-min_util, max_util = utilities.min(), utilities.max()
-# Avoid division by zero in case all utilities are equal
-if max_util - min_util > 0:
-    normalized = (utilities - min_util) / (max_util - min_util)
-else:
-    normalized = torch.zeros_like(utilities)
-ratings = np.round(normalized * 4).squeeze()  # discrete ratings 0,1,2,3,4
-
-with plt.rc_context(plot_config):
-    draw_surface()
-    # Plot items with their Likert rating
-    scatter = plt.scatter(
-        items[:, 0], items[:, 1], c=ratings, cmap=likert_cmap,
-        s=40, edgecolor='k', label='Item Rating'
-    )
-    
-    # Create a colorbar with discrete ticks for ratings 0 to 4
-    cbar = plt.colorbar(scatter, ticks=[0, 1, 2, 3, 4])
-    cbar.set_label('Likert Rating (0 = most hate, 4 = most liked)')    
-    plt.legend()
-    plt.show()
-
+draw_surface()
+scatter = plt.scatter(items[:, 0], items[:, 1], c=ratings, cmap=likert_cmap, alpha=0.5)
+plt.show()
 ```
-
-Next, we will see that we can trading cognitive demand for rater to elicit more nuance preference information. For example, *Rank-order sampling* captures human preferences by having participants rank items from most to least preferred. Used in voting, market research, and psychology, it provides rich preference data but is more complex and cognitively demanding than pairwise comparisons, especially for large item sets. Participants may also rank inconsistently [@ragain2019]. 
+:::
 
 ```{python}
-n_pairs = 10000  # number of random pair comparisons
-pair_indices = torch.randint(0, n_items, (n_pairs, 2))
+from matplotlib.colors import LinearSegmentedColormap
+likert_cmap = LinearSegmentedColormap.from_list("likert_scale", ["red", "blue"], N=5)
+normalized = (utilities - utilities.min()) / (utilities.max() - utilities.min())
+ratings = np.round(normalized * 4).squeeze()
+
+draw_surface()
+scatter = plt.scatter(items[:, 0], items[:, 1], c=ratings, cmap=likert_cmap, alpha=0.5)
+plt.show()
+```
+
+In *pairwise sampling*, participants compare two options to determine which is preferred. One of the major advantage of this method is low cognitive demand for rater. Its disavantage is the limited amount of information content elicited by a sample. Below is a survey based on pairwise sampling:
+
+::: {.content-visible when-format="html"}
+<iframe
+  src="https://app.opinionx.co/6bef4ca1-82f5-4c1d-8c5a-2274509f22e2"
+  style="width:100%; height:450px;"
+></iframe>
+:::
+
+::: {.callout-note title="code"}
+```{pyodide-python}
+n_pairs = 10000
+pair_indices = np.random.randint(0, n_items, size=(n_pairs, 2))
+# Exclude pairs where both indices are the same
 mask = pair_indices[:, 0] != pair_indices[:, 1]
 pair_indices = pair_indices[mask]
 
-scores = torch.zeros(n_items)
-for i, j in pair_indices:
-    if utilities[i] > utilities[j]:
-        scores[i] += 1  # win for point i
-        scores[j] -= 1  # loss for point j
-    else:
-        scores[i] -= 1  # loss for point i
-        scores[j] += 1  # win for point j
+scores = np.zeros(n_items, dtype=int)
+wins = utilities[pair_indices[:, 0]] > utilities[pair_indices[:, 1]]
 
+# For pairs where the first item wins:
+#   - Increase score for the first item by 1
+#   - Decrease score for the second item by 1
+np.add.at(scores, pair_indices[wins, 0], 1)
+np.add.at(scores, pair_indices[wins, 1], -1)
+
+# For pairs where the second item wins or it's a tie:
+#   - Decrease score for the first item by 1
+#   - Increase score for the second item by 1
+np.add.at(scores, pair_indices[~wins, 0], -1)
+np.add.at(scores, pair_indices[~wins, 1], 1)
+
+# Determine preferred and non-preferred items based on scores
 preferred = scores > 0
 non_preferred = scores < 0
 
-with plt.rc_context(plot_config):
-    draw_surface()
-    plt.scatter(items[preferred, 0], items[preferred, 1], marker='+', c='blue', s=40, label='Preferred')
-    plt.scatter(items[non_preferred, 0], items[non_preferred, 1], marker='_', c='red', s=40, label='Non-preferred')
-    plt.legend()
-    plt.show()
+draw_surface()
+plt.scatter(items[preferred, 0], items[preferred, 1], c='blue', label='Preferred', alpha=0.5)
+plt.scatter(items[non_preferred, 0], items[non_preferred, 1], c='purple', label='Non-preferred', alpha=0.5)
+plt.legend()
+plt.show()
 ```
+:::
+
+```{python}
+n_pairs = 10000
+pair_indices = np.random.randint(0, n_items, size=(n_pairs, 2))
+# Exclude pairs where both indices are the same
+mask = pair_indices[:, 0] != pair_indices[:, 1]
+pair_indices = pair_indices[mask]
+
+scores = np.zeros(n_items, dtype=int)
+wins = utilities[pair_indices[:, 0]] > utilities[pair_indices[:, 1]]
+
+# For pairs where the first item wins:
+#   - Increase score for the first item by 1
+#   - Decrease score for the second item by 1
+np.add.at(scores, pair_indices[wins, 0], 1)
+np.add.at(scores, pair_indices[wins, 1], -1)
+
+# For pairs where the second item wins or it's a tie:
+#   - Decrease score for the first item by 1
+#   - Increase score for the second item by 1
+np.add.at(scores, pair_indices[~wins, 0], -1)
+np.add.at(scores, pair_indices[~wins, 1], 1)
+
+# Determine preferred and non-preferred items based on scores
+preferred = scores > 0
+non_preferred = scores < 0
+
+draw_surface()
+plt.scatter(items[preferred, 0], items[preferred, 1], c='blue', label='Preferred', alpha=0.5)
+plt.scatter(items[non_preferred, 0], items[non_preferred, 1], c='purple', label='Non-preferred', alpha=0.5)
+plt.legend()
+plt.show()
+```
+
+
+Next, we will see that we can trading cognitive demand for rater to elicit more nuance preference information. For example, *Rank-order sampling* captures human preferences by having participants rank items from most to least preferred. Used in voting, market research, and psychology, it provides rich preference data but is more complex and cognitively demanding than pairwise comparisons, especially for large item sets. Participants may also rank inconsistently [@ragain2019]. 
 
 *In Best-worst scaling* (BWS), participants are presented with items and asked to identify the most and least preferred options. The primary objective of BWS is to discern the relative importance or preference of items, making it widely applicable in various fields such as market research, health economics, and social sciences [@campbell2015]. BWS provides rich data on the relative importance of items, helps clarify preferences, reduces biases found in traditional rating scales, and results in utility scores that are easy to interpret. However, BWS also has limitations, including potential scale interpretation differences among participants, and design challenges to avoid biases, such as the order effect or the context in which items are presented.
 
@@ -343,6 +424,125 @@ This perspective is particularly relevant in generative AI, where models trained
 Aggregating human preferences is a complex task, influenced by both mathematical constraints and strategic considerations. Voting-based methods provide well-studied mechanisms for aggregation, but they face fundamental limitations as outlined by Arrow’s and Gibbard-Satterthwaite’s theorems. Beyond traditional aggregation, emerging approaches in reinforcement learning and AI alignment seek to balance fairness, robustness, and pluralism. As machine learning systems increasingly interact with human preferences, designing aggregation frameworks that capture the richness of human decision-making remains an active and critical area of research.
 
 ## Inferences 
+
+
+```{pyodide-python}
+import numpy as np
+from scipy.optimize import minimize
+from sklearn.metrics import roc_auc_score
+from tqdm import tqdm
+
+# Set random seed for reproducibility (optional)
+np.random.seed(42)
+
+# Number of users and items
+num_users = 50
+num_items = 100
+
+# Generate user-specific and item-specific utilities
+theta_true = np.random.randn(num_users)
+z_true = np.random.randn(num_items)
+
+# Define the logistic (sigmoid) function
+def sigmoid(x):
+    return 1.0 / (1.0 + np.exp(-x))
+
+# Generate observed choices using the logistic function
+# Compute probability matrix: shape (num_users, num_items)
+probs = sigmoid(theta_true[:, None] - z_true[None, :])
+# Sample binary responses (0 or 1) from a Bernoulli distribution
+data = np.random.binomial(1, probs)
+
+# Mask out a fraction of the response matrix (80% observed, 20% missing)
+mask = np.random.rand(num_users, num_items) > 0.2  # boolean mask
+# Create a version of the data with missing values (not needed for optimization, but for reference)
+data_masked = data.copy().astype(float)
+data_masked[~mask] = np.nan
+
+# Count of observed entries (used for averaging)
+observed_count = np.sum(mask)
+
+# We will optimize over parameters theta and z.
+# Initialize estimates (random starting points)
+theta_init = np.random.randn(num_users)
+z_init = np.random.randn(num_items)
+
+# Pack parameters into a single vector for the optimizer.
+# First num_users elements are theta_est, next num_items are z_est.
+params_init = np.concatenate([theta_init, z_init])
+
+def objective(params):
+    """
+    Computes the loss and gradient for the current parameters.
+    Loss is defined as the negative log likelihood (averaged over observed entries).
+    """
+    # Unpack parameters
+    theta = params[:num_users]
+    z = params[num_users:]
+    
+    # Compute difference and estimated probabilities
+    diff = theta[:, None] - z[None, :]  # shape: (num_users, num_items)
+    sigma = sigmoid(diff)
+    
+    # To avoid log(0), clip probabilities a little bit
+    eps = 1e-8
+    sigma = np.clip(sigma, eps, 1 - eps)
+    
+    # Compute negative log likelihood only on observed entries
+    # For each observed entry: if data == 1 then -log(sigma) else -log(1-sigma)
+    log_likelihood = data * np.log(sigma) + (1 - data) * np.log(1 - sigma)
+    loss = -np.sum(mask * log_likelihood) / observed_count
+    
+    # Compute gradient with respect to the difference x = theta_i - z_j
+    # d(loss)/d(x) = sigma - data  (for observed entries, zero otherwise)
+    diff_grad = (sigma - data) * mask  # shape: (num_users, num_items)
+    
+    # Gradients for theta: sum over items (axis 1)
+    grad_theta = np.sum(diff_grad, axis=1) / observed_count
+    # Gradients for z: negative sum over users (axis 0)
+    grad_z = -np.sum(diff_grad, axis=0) / observed_count
+    
+    # Pack gradients back into a single vector
+    grad = np.concatenate([grad_theta, grad_z])
+    return loss, grad
+
+# Callback to track progress (optional)
+iteration_progress = tqdm()
+
+def callback(xk):
+    iteration_progress.update(1)
+
+# Optimize using L-BFGS-B
+result = minimize(
+    fun=lambda params: objective(params),
+    x0=params_init,
+    method="L-BFGS-B",
+    jac=True,
+    callback=callback,
+    options={"maxiter": 100, "disp": True}
+)
+iteration_progress.close()
+
+# Extract the estimated parameters
+theta_est = result.x[:num_users]
+z_est = result.x[num_users:]
+
+# Compute final estimated probabilities
+probs_final = sigmoid(theta_est[:, None] - z_est[None, :])
+
+# Compute AUC ROC on observed (training) and missing (test) entries
+train_probs = probs_final[mask]
+test_probs = probs_final[~mask]
+train_labels = data[mask]
+test_labels = data[~mask]
+
+auc_train = roc_auc_score(train_labels, train_probs)
+auc_test = roc_auc_score(test_labels, test_probs)
+
+print(f"Train AUC: {auc_train:.4f}")
+print(f"Test AUC: {auc_test:.4f}")
+
+```
 
 ```{python}
 import torch
