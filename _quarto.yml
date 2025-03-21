@@ -134,12 +134,12 @@ book:
   # cookie-consent: true
   chapters:
     - index.qmd
-    - src/001-preference_decision_model.qmd
-    - src/002-reward_model.qmd
-    - src/003-measure.qmd
-    - src/004-optim.qmd
-    - src/005-align.qmd
-    - src/006-conclusion.qmd
+    - src/chap1.qmd
+    - src/chap2.qmd
+    # - src/002-reward_model.qmd
+    - src/chap3.qmd
+    - src/chap4.qmd
+    - src/ack.qmd
 
 # Set default options for every webpage that may or may not include Pyodide.
 pyodide: 
