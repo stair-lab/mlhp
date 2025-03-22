@@ -392,12 +392,12 @@
 \floatname{codelisting}{Listing}
 \newcommand*\listoflistings{\listof{codelisting}{List of Listings}}
 \usepackage{amsthm}
-\theoremstyle{plain}
-\newtheorem{theorem}{Theorem}[chapter]
 \theoremstyle{definition}
 \newtheorem{definition}{Definition}[chapter]
 \theoremstyle{plain}
 \newtheorem{proposition}{Proposition}[chapter]
+\theoremstyle{plain}
+\newtheorem{theorem}{Theorem}[chapter]
 \theoremstyle{remark}
 \AtBeginDocument{\renewcommand*{\proofname}{Proof}}
 \newtheorem*{remark}{Remark}
@@ -440,7 +440,7 @@
 
 \title{Machine Learning from Human Preferences}
 \author{Sang T. Truong \and Sanmi Koyejo}
-\date{2025-03-21}
+\date{2025-03-22}
 
 \begin{document}
 \newgeometry{}
@@ -1488,6 +1488,31 @@ mixing coefficients to be uniform on a \(M - 1\) simplex to ensure that
 they add up to 1. Then, we can use maximum likelihood estimation to
 compute the parameters with the simplified posterior.
 
+Another example setting multimodal preference is negotiations
+(\citeproc{ref-kwon2021targeted}{Kwon et al. 2021}). Let's say there are
+some shared items and two people with different utilities and desires
+for items, where each person only knows their utility. In a specific
+case of \textbf{?@fig-negotiation}, Bob as a proposing agent and Alice
+as a controlled agent who has many different ways of responding to Bob's
+proposals. Different methods can be used to design Alice as an AI agent.
+The first idea is reinforcement learning, where multiple rounds of
+negotiations are done, the model simulates game theory and sees how Bob
+reacts. Authors of this setting (\citeproc{ref-kwon2021targeted}{Kwon et
+al. 2021}) show that over time the model learns to ask for the same
+thing over and over again, as Alice is not trained to be human-like or
+negotiable, and just tries to maximize Alice's utility. The second
+approach is supervised learning, where the model can be trained on some
+dataset, learning the history of negotiations. This results in Alice
+being very agreeable, which demonstrates two polar results of the two
+approaches, and it would be ideal to find a middle ground and combine
+both of them. The authors proposed the Targeted acquisition approach,
+which is based on active learning ideas. The model asks diverse
+questions at different cases and stages of negotiations like humans,
+determining which questions are more valuable to be asked throughout
+learning. Such an approach ended up in more fair and optimal results
+than supervised or reinforcement learning
+(\citeproc{ref-kwon2021targeted}{Kwon et al. 2021}).
+
 \subsection{Single Objective and Multi-Objective
 Utility}\label{single-objective-and-multi-objective-utility}
 
@@ -1730,118 +1755,6 @@ distribution, such as generations from a completely different LLM. Last
 but not least, training RMs can be unstable and prone to overfitting,
 especially with multiple training epochs. It's generally advisable to
 limit the number of epochs during RM training to avoid this issue.
-
-\section{Choices Aggregation}\label{sec-choices-aggregation}
-
-In many applications, human preferences must be aggregated across
-multiple individuals to determine a collective decision or ranking. This
-process is central to social choice theory, which provides a
-mathematical foundation for preference aggregation. Unlike individual
-preference modeling, which focuses on understanding how a single person
-makes decisions, social choice theory addresses the challenge of
-combining multiple preference profiles into a single, coherent outcome.
-One of the most widely used approaches to aggregating preferences is
-voting. A voting rule is a function that maps a set of individual
-preference rankings to a collective decision. The outcome of a vote is
-determined by a social choice function (SCF), which selects a winner
-based on the aggregated preferences. Several voting rules exist, each
-with different properties:
-
-\begin{itemize}
-\tightlist
-\item
-  Plurality Rule: Each voter assigns one point to their top choice, and
-  the alternative with the most points wins.
-\item
-  Borda Count: Voters rank all alternatives, and points are assigned
-  based on the position in each ranking.
-\item
-  Single Transferable Vote (STV): Voters rank choices, and rounds of
-  elimination occur until a candidate has a majority.
-\item
-  Condorcet Methods: The Condorcet winner is the item that would win in
-  all pairwise comparisons against other alternatives (if one exists).
-\end{itemize}
-
-However, preference aggregation is not always straightforward. The
-Condorcet Paradox illustrates that no single alternative may be a clear
-winner due to cycles in majority preferences, violating transitivity.
-Additionally, different voting rules can yield different winners,
-highlighting the importance of selecting an appropriate aggregation
-method. A fundamental result in social choice theory is Arrow's
-Impossibility Theorem, which states that when there are three or more
-alternatives, no voting system can simultaneously satisfy the following
-fairness criteria:
-
-\begin{enumerate}
-\def\labelenumi{\arabic{enumi}.}
-\tightlist
-\item
-  Unanimity (Pareto efficiency): If all individuals prefer one item over
-  another, the group ranking should reflect this.
-\item
-  Independence of Irrelevant Alternatives: The relative ranking of two
-  items should not be influenced by another unrelated item.
-\item
-  Non-dictatorship: No single individual's preference should always
-  determine the group's outcome.
-\end{enumerate}
-
-Arrow's theorem suggests that every fair aggregation method must
-compromise on at least one of these desirable properties. Additionally,
-the Gibbard-Satterthwaite Theorem proves that any deterministic voting
-rule that selects a single winner is either dictatorial (one person
-always determines the result) or manipulable (voters can strategically
-misrepresent their preferences to achieve a better outcome). While
-manipulation is theoretically possible, certain voting rules, such as
-STV, introduce computational complexity that makes strategic voting
-impractical in real-world scenarios.
-
-Preference aggregation is also critical in RLHF, where human judgments
-guide model training. Aggregating human preferences in RLHF faces
-challenges similar to traditional voting, such as inconsistencies in
-preferences and strategic bias. Several approaches address these
-challenges. For example, Majority Voting simply aggregates by selecting
-the most preferred response. Weighted Voting adjusts vote weights based
-on expertise or trustworthiness. Jury Learning is a method that
-integrates dissenting opinions, ensuring that minority perspectives are
-not entirely disregarded. Lastly, Social Choice in AI Alignment
-incorporates diverse human feedback to align AI behavior with a broad
-spectrum of human values. These approaches highlight the interplay
-between human preference modeling and machine learning. Designing
-aggregation mechanisms that reflect collective human values is an
-ongoing research challenge. While traditional social choice methods
-focus on aggregation, recent work in pluralistic alignment suggests
-alternative frameworks that preserve the diversity of human preferences
-rather than collapsing them into a single decision. Pluralistic AI
-systems aim to:
-
-\begin{enumerate}
-\def\labelenumi{\arabic{enumi}.}
-\tightlist
-\item
-  Present a spectrum of reasonable responses instead of forcing a single
-  choice.
-\item
-  Allow steering towards specific perspectives while maintaining
-  fairness.
-\item
-  Ensure distributional pluralism, calibrating AI systems to diverse
-  human viewpoints.
-\end{enumerate}
-
-This perspective is particularly relevant in generative AI, where models
-trained on aggregated preferences may fail to capture the nuances of
-diverse human values. Aggregating human preferences is a complex task
-influenced by mathematical constraints and strategic considerations.
-Voting-based methods provide well-studied mechanisms for aggregation,
-but they face fundamental limitations, as Arrow's and
-Gibbard-Satterthwaite's theorems outlined. Beyond traditional
-aggregation, emerging approaches in RL and AI alignment seek to balance
-fairness, robustness, and pluralism. As machine learning systems
-increasingly interact with human preferences, designing aggregation
-frameworks that capture the richness of human decision-making remains an
-active and critical area of research.
 
 \section{Exercises}\label{exercises}
 
@@ -2705,6 +2618,11 @@ Processing Systems}, edited by J. Shawe-Taylor, R. Zemel, P. Bartlett,
 F. Pereira, and K. Q. Weinberger. Vol. 24. Curran Associates, Inc.
 \url{https://proceedings.neurips.cc/paper_files/paper/2011/file/6c14da109e294d1e8155be8aa4b1ce8e-Paper.pdf}.
 
+\bibitem[\citeproctext]{ref-kwon2021targeted}
+Kwon, Minae, Siddharth Karamcheti, Mariano-Florentino Cuellar, and Dorsa
+Sadigh. 2021. {``Targeted Data Acquisition for Evolving Negotiation
+Agents.''} \url{https://arxiv.org/abs/2106.07728}.
+
 \bibitem[\citeproctext]{ref-lee2021pebble}
 Lee, Kimin, Laura Smith, and Pieter Abbeel. 2021. {``Pebble:
 Feedback-Efficient Interactive Reinforcement Learning via Relabeling
@@ -2785,25 +2703,21 @@ Representations}.
 
 \bookmarksetup{startatroot}
 
-\chapter{Model-Based Preference Optimization}\label{ch-model-based}
+\chapter{Active Learning of Preference
+Models}\label{active-learning-of-preference-models}
 
-\section{Active Preference Learning}\label{active-preference-learning}
+\section{Motivation}\label{motivation}
 
-\subsection{Introduction to Active
-Learning}\label{introduction-to-active-learning}
-
-In real-world scenarios, data is often scarce, and acquiring labeled
-data can be expensive. Active learning is a machine learning paradigm
-that aims to reduce the amount of labeled data required to train a model
-to achieve high accuracy. Active learning algorithms iteratively select
-an input datapoint for an oracle (e.g., a human annotator) to label such
-that when the label is observed, the model improves the most. The goal
-of AL algorithms is to minimize the number of labels required to achieve
-a desired level of performance. This technique is particularly useful in
+Data is often scarce, and acquiring labeled data can be expensive.
+Active learning is a machine learning paradigm that aims to reduce the
+amount of labeled data required to train a model to achieve high
+accuracy. Active learning algorithms iteratively select an input
+datapoint for an oracle (e.g., a human annotator) to label such that
+when the label is observed, the model improves the most. The goal of AL
+algorithms is to minimize the number of labels required to achieve a
+desired level of performance. This technique is particularly useful in
 situations where labeling data is expensive, time-consuming, or requires
-domain expertise.
-
-There are two primary setups in active learning:
+domain expertise. There are two primary setups in active learning:
 
 \begin{itemize}
 \item
@@ -2819,40 +2733,14 @@ There are two primary setups in active learning:
   are valuable enough to label.
 \end{itemize}
 
-A common AL process is shown in Figure~\ref{fig-schema}:
-
-\begin{itemize}
-\item
-  Current model trained on current dataset \(\mathcal{D}\), potential
-  points \(\tilde{x}_1 \dots \tilde{x}_m\) are being investigated. AL
-  will choose one of them to add to the dataset.
-\item
-  Relative to the model, a proxy highlights the relative value of each
-  point to model improvement \((v(\tilde{x}_1) \dots v(\tilde{x}_m) )\).
-  A naive proxy is the model's uncertainty about the point.
-\item
-  The cycle repeats until we collect enough data or the model is good
-  enough.
-\end{itemize}
-
-\begin{figure}
-
-\centering{
-
-\includegraphics[width=0.4\linewidth,height=\textheight,keepaspectratio]{src/Figures/active_learning_schema.png}
-
-}
-
-\caption{\label{fig-schema}The current model is trained on the current
-data set \(\mathcal{D}\). Potential points
-\(\tilde{x}_1, \ldots, \tilde{x}_m\) are being investigated, and one of
-them will be chosen and added to the data set. A proxy highlights the
-relative value of each point in terms of improving the model, denoted by
-\(v(\tilde{x}_1), \ldots, v(\tilde{x}_m)\). The point with the highest
-value is selected and added to \(\mathcal{D}\). This cycle repeats until
-enough data has been collected or the model is good enough.}
-
-\end{figure}%
+A common AL process iterates between two steps: (1) Current model
+trained on current dataset \(\mathcal{D}\), potential points
+\(\tilde{x}_1 \dots \tilde{x}_m\) are being investigated. AL will choose
+one of them to add to the dataset; and (2) Relative to the model, a
+proxy highlights the relative value of each point to model improvement
+\((v(\tilde{x}_1) \dots v(\tilde{x}_m) )\). A naive proxy is the model's
+uncertainty about the point. The cycle repeats until we collect enough
+data or the model is good enough.
 
 Active learning has been successfully applied to various domains to
 enhance real-world systems, including computer vision, natural language
@@ -2881,9 +2769,6 @@ might want an LLM to solve. Often, instead of defining a task via a
 dataset of examples, it may be easier for a human to interact with the
 LLM for a specific use case, identify gaps in the model, and address
 those using active learning.
-
-\subsection{Introduction to Active Preference
-Learning}\label{introduction-to-active-preference-learning}
 
 Consider the scenario where a robot is being trained to assist
 individuals with feeding. How can such a robot be effectively taught to
@@ -2915,31 +2800,30 @@ Additionally, we will examine the role of LLMs in assisting robots
 through corrective feedback and highlight the applications of these
 techniques.
 
-\subsection{Uncertainty Qualification}\label{uncertainty-qualification}
+\section{Probabilistic Reward Models}\label{probabilistic-reward-models}
 
-\textbf{Problem Setup}: In this section, we consider a binary
-classification problem. The model is trained on a small labeled dataset
+In this section, we consider a binary classification problem. The model
+is trained on a small labeled dataset
 \(\mathcal{D} = \{(x_1, y_1), \ldots, (x_n, y_n)\}\), where \(x_i\)
 represents the input data and \(y_i\) is the corresponding label. The
 model is uncertain about the class labels of some data points and can
 query an oracle to obtain the true labels of these data points. The goal
 is to minimize the number of queries to the oracle while maximizing the
-model's performance.
-
-Uncertainty quantification (UQ) is a critical aspect of active learning
-that allows models to evaluate the informativeness of new data points.
-In machine learning (ML), two primary types of uncertainty are often
-considered: epistemic and aleatoric uncertainty. \textbf{Epistemic
-uncertainty}, or model uncertainty, arises from a lack of knowledge and
-can be reduced by acquiring more data. This type of uncertainty is
-especially significant when the model lacks confidence due to
-insufficient or incomplete information in its training set. On the other
-hand, \textbf{aleatoric uncertainty}, or data uncertainty, stems from
-the inherent randomness within the data itself. Unlike epistemic
-uncertainty, aleatoric uncertainty cannot be reduced, even with
-additional data, as it reflects noise or unpredictability in the real
-data-generating process. Several approaches exist to quantify
-uncertainty in active learning, each with its strengths and limitations.
+model's performance. Uncertainty quantification (UQ) is a critical
+aspect of active learning that allows models to evaluate the
+informativeness of new data points. In machine learning (ML), two
+primary types of uncertainty are often considered: epistemic and
+aleatoric uncertainty. \textbf{Epistemic uncertainty}, or model
+uncertainty, arises from a lack of knowledge and can be reduced by
+acquiring more data. This type of uncertainty is especially significant
+when the model lacks confidence due to insufficient or incomplete
+information in its training set. On the other hand, \textbf{aleatoric
+uncertainty}, or data uncertainty, stems from the inherent randomness
+within the data itself. Unlike epistemic uncertainty, aleatoric
+uncertainty cannot be reduced, even with additional data, as it reflects
+noise or unpredictability in the real data-generating process. Several
+approaches exist to quantify uncertainty in active learning, each with
+its strengths and limitations.
 
 \textbf{Bayesian methods}, such as Bayesian Neural Networks (BNNs) and
 Gaussian Processes (GPs), offer a principled way of estimating
@@ -2947,27 +2831,24 @@ uncertainty by incorporating prior knowledge into the model. These
 approaches can generate meaningful uncertainty estimates that aid in
 choosing informative samples for labeling. However, they can become
 computationally prohibitive, especially for large and complex models,
-limiting their applicability in some practical scenarios.
-
-Another common technique for uncertainty quantification is the use of
-\textbf{ensemble methods}, such as Random Forests or Gradient Boosting
-Machines. These methods involve training multiple models and combining
-their predictions to provide an estimate of uncertainty. Ensemble
-methods are relatively easy to implement and can give valuable insights
-into model uncertainty. However, they can be computationally expensive
-and may not always produce well-calibrated uncertainty estimates.
-Moreover, they do not integrate prior knowledge, which can be a
-disadvantage in certain applications.
-
-\textbf{Conformal prediction methods} also provide a framework for
-estimating uncertainty by offering a measure of confidence in
-predictions based on the conformity of a given instance with the
+limiting their applicability in some practical scenarios. Another common
+technique for uncertainty quantification is the use of \textbf{ensemble
+methods}, such as Random Forests or Gradient Boosting Machines. These
+methods involve training multiple models and combining their predictions
+to provide an estimate of uncertainty. Ensemble methods are relatively
+easy to implement and can give valuable insights into model uncertainty.
+However, they can be computationally expensive and may not always
+produce well-calibrated uncertainty estimates. Moreover, they do not
+integrate prior knowledge, which can be a disadvantage in certain
+applications. \textbf{Conformal prediction methods} also provide a
+framework for estimating uncertainty by offering a measure of confidence
+in predictions based on the conformity of a given instance with the
 training data. While these methods are useful in some contexts, this
 book focuses primarily on the Bayesian approach due to its theoretical
 robustness and capacity to quantify uncertainty in a more comprehensive
 manner.
 
-\subsection{Acquisition Function}\label{acquisition-function}
+\section{Acquisition Function}\label{acquisition-function}
 
 Uncertainty quantification plays a vital role in \textbf{acquisition
 functions}, which are central to active learning strategies. These
@@ -3040,9 +2921,6 @@ include:
   optimize both the correction of mispredictions and the diversity of
   the selected data.
 \end{itemize}
-
-\subsubsection*{Uncertainty Sampling}\label{uncertainty-sampling}
-\addcontentsline{toc}{subsubsection}{Uncertainty Sampling}
 
 Uncertainty sampling (\citeproc{ref-AL_uncertainty}{Zhu et al. 2010}) is
 a widely used acquisition function in active learning that selects data
@@ -3147,9 +3025,6 @@ struggles with the most. By focusing on these uncertain samples, the
 model can more efficiently improve its performance, making uncertainty
 sampling a key tool in active learning.
 
-\subsubsection*{Query-by-Committee}\label{query-by-committee}
-\addcontentsline{toc}{subsubsection}{Query-by-Committee}
-
 Query-by-Committee (\citeproc{ref-AL_committee}{Beluch et al. 2018}) is
 an active learning strategy where a committee of models selects samples
 for labeling based on the level of disagreement among the committee
@@ -3180,10 +3055,10 @@ framework to quantify the disagreement:
   committee.
 \end{itemize}
 
-\textbf{Example:} Consider a binary classification problem with two
-classes \(y_1\) and \(y_2\). We have three committee members and three
-samples: \(x_1\), \(x_2\), and \(x_3\). The predictive distributions for
-each committee member are given below:
+Consider a binary classification problem with two classes \(y_1\) and
+\(y_2\). We have three committee members and three samples: \(x_1\),
+\(x_2\), and \(x_3\). The predictive distributions for each committee
+member are given below:
 
 \begin{longtable}[]{@{}
   >{\raggedright\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.0382}}
@@ -3274,11 +3149,6 @@ Next, we compute the entropy of these consensus probabilities:
 Thus, \(x_1\) would be selected for labeling as it has the highest
 consensus entropy, indicating the highest level of disagreement among
 the committee members.
-
-\subsubsection*{Bayesian Active Learning by
-Disagreement}\label{bayesian-active-learning-by-disagreement}
-\addcontentsline{toc}{subsubsection}{Bayesian Active Learning by
-Disagreement}
 
 Bayesian Active Learning by Disagreement (BALD)
 (\citeproc{ref-AL_BALD}{Houlsby et al. 2011}) selects the samples for
@@ -3431,9 +3301,6 @@ For \(x_2\):
 We would select \(x_1\) for labeling since it has the highest BALD
 score, indicating that labeling \(x_1\) will provide the most
 information gain for the model.
-
-\subsection{Active Learning by Variance
-Reduction}\label{active-learning-by-variance-reduction}
 
 Active Learning by Variance Reduction (\citeproc{ref-AL_variance}{Cohn,
 Ghahramani, and Jordan 1996}) is an algorithm designed to select the
@@ -3615,7 +3482,7 @@ we observe a related decrease in the mean square error (MSE) of both
 models as the dataset size increases. This is a notable outcome because
 the expected learner variance for these models can be computed
 accurately and efficiently relative to a new point. When integrated into
-the general active learning loop (Figure~\ref{fig-schema}), this
+the general active learning loop (\textbf{?@fig-schema}), this
 significantly enhances model performance.
 
 In the case of the locally-weighted regression model
@@ -4573,8 +4440,6 @@ environments heralds a new era in robotic manipulation, where language
 and vision coalesce to create more intelligent, adaptable, and capable
 robotic systems.
 
-\subsection{Conclusion}\label{conclusion}
-
 On the note of applying active learning to RL and environment settings,
 there have been many recent papers that have attempted to extend this to
 more modern RL environments. For example, the paper "When to Ask for
@@ -4623,75 +4488,63 @@ data for every data point, potentially revolutionizing fields like
 medical image analysis. There is an ongoing need for methods that
 combine self/semi-supervised learning with active learning.
 
-\textbf{Algorithm Scalability:}
+\textbf{Algorithm Scalability:} Scalability is a critical concern for
+online AL algorithms, particularly when dealing with large datasets and
+high-velocity data streams. The computational demands of AL can become
+prohibitive as data volume increases, posing challenges for practical
+deployment. Issues of catastrophic forgetting and model plasticity
+further complicate scalability, requiring careful consideration in
+algorithm design.
 
-Scalability is a critical concern for online AL algorithms, particularly
-when dealing with large datasets and high-velocity data streams. The
-computational demands of AL can become prohibitive as data volume
-increases, posing challenges for practical deployment. Issues of
-catastrophic forgetting and model plasticity further complicate
-scalability, requiring careful consideration in algorithm design.
+\textbf{Labeling Quality Assurance:} The effectiveness of most online AL
+strategies hinges on the quality of labeled data. Ensuring labeling
+accuracy in real-world scenarios is challenging, with human annotators
+prone to errors, biases, and diverse interpretations. Addressing
+imperfections in labeling through considerations of oracle imperfections
+becomes essential in real-life AL applications. Solutions for cleaning
+up data and verifying its quality need to be more aggressively pursued.
 
-\textbf{Labeling Quality Assurance:}
+\textbf{Data Drift Challenges:} Real-world settings introduce data
+drift, where distributions shift over time, challenging models to adapt
+for accurate predictions. These shifts can impact the quality of labeled
+data acquired in the AL process. For example, the criterion or proxy
+used for selecting informative instances may be thrown off when the
+distribution a model is trained on, and the distribution we want it to
+perform well on, are too far away from one another.
 
-The effectiveness of most online AL strategies hinges on the quality of
-labeled data. Ensuring labeling accuracy in real-world scenarios is
-challenging, with human annotators prone to errors, biases, and diverse
-interpretations. Addressing imperfections in labeling through
-considerations of oracle imperfections becomes essential in real-life AL
-applications. Solutions for cleaning up data and verifying its quality
-need to be more aggressively pursued.
-
-\textbf{Data Drift Challenges:}
-
-Real-world settings introduce data drift, where distributions shift over
-time, challenging models to adapt for accurate predictions. These shifts
-can impact the quality of labeled data acquired in the AL process. For
-example, the criterion or proxy used for selecting informative instances
-may be thrown off when the distribution a model is trained on, and the
-distribution we want it to perform well on, are too far away from one
-another.
-
-\textbf{Evaluation in Real-Life Scenarios}:
-
-While AL methods are often evaluated assuming access to ground-truth
-labels, the real motivation for AL lies in label scarcity. Assessing the
-effectiveness of AL strategies becomes challenging in real-life
-scenarios where ground-truth labels may be limited. In other words, one
-may verify the goodness of an AL algorithm within the lab, but once the
-algorithm is deployed for improving all sorts of models on all sorts of
-data distributions, verifying whether AL is actually improving a model
-is tricky, especially when collecting and labeling data from the target
-distribution is expensive and defeats the purpose of using AL in the
-first place.
+\textbf{Evaluation in Real-Life Scenarios}: While AL methods are often
+evaluated assuming access to ground-truth labels, the real motivation
+for AL lies in label scarcity. Assessing the effectiveness of AL
+strategies becomes challenging in real-life scenarios where ground-truth
+labels may be limited. In other words, one may verify the goodness of an
+AL algorithm within the lab, but once the algorithm is deployed for
+improving all sorts of models on all sorts of data distributions,
+verifying whether AL is actually improving a model is tricky, especially
+when collecting and labeling data from the target distribution is
+expensive and defeats the purpose of using AL in the first place.
 
 By systematically addressing these challenges, the field of active
 learning in AI can progress towards more effective and practical
-applications.
-
-In summary, active learning is a promising modern tool to model training
-that presents potential benefits. As was mentioned at the start, there
-are numerous approaches that can be employed by active learning,
-starting from reducing error of model's prediction, reducing variance,
-to more conformal predictions. The flavor of active learning heavily
-depends on the applications, which include robotics, LLM, autonomous
-vehicles, and more. We discussed in more detail how to perform active
-learning for variance reduction in the case of predicting kinematics of
-the robotic arms, which showed decrease in MSE as well as more stable
-reduction in it. Next we talked about using active learning for reducing
-the number of comparisons required to create a ranking of objects, and
-the examples discussed were able to achieve that but with some loss in
-the prediction accuracy. Finally, we discussed how active learning can
-be used for modeling of reward functions within a dynamical system,
-which demonstrated improvements in performance and time required to
-achieve it. For a more hands-on experience with active learning and
+applications. In summary, active learning is a promising modern tool to
+model training that presents potential benefits. As was mentioned at the
+start, there are numerous approaches that can be employed by active
+learning, starting from reducing error of model's prediction, reducing
+variance, to more conformal predictions. The flavor of active learning
+heavily depends on the applications, which include robotics, LLM,
+autonomous vehicles, and more. We discussed in more detail how to
+perform active learning for variance reduction in the case of predicting
+kinematics of the robotic arms, which showed decrease in MSE as well as
+more stable reduction in it. Next we talked about using active learning
+for reducing the number of comparisons required to create a ranking of
+objects, and the examples discussed were able to achieve that but with
+some loss in the prediction accuracy. Finally, we discussed how active
+learning can be used for modeling of reward functions within a dynamical
+system, which demonstrated improvements in performance and time required
+to achieve it. For a more hands-on experience with active learning and
 demonstrated example, we encourage the readers to explore a blogpost by
 Max Halford (\citeproc{ref-max_halford}{Halford 2023}).
 
 \section{Metric Elicitation}\label{sec-metric-elicitation}
-
-\subsection{Introduction to Performance Metric
-Elicitation}\label{introduction-to-performance-metric-elicitation}
 
 In binary classification problems, selecting an appropriate performance
 metric that aligns with the real-world task is crucial. The problem of
@@ -4703,27 +4556,18 @@ appropriateness of a treatment, trade-offs are made for incorrect
 decisions. Not administering a treatment could lead to the worsening of
 a disease (a false negative), whereas delivering the wrong treatment
 could cause adverse side effects worse than not treating the condition
-(a false positive).
-
-Rather than choosing from a limited set of default choices like the
-F1-score or weighted accuracy, metric elicitation considers the process
-of devising a metric that best matches the preferences of practitioners
-or users. This is achieved by querying an ``oracle'' who provides
-feedback on proposed potential metrics through pairwise comparisons.
-Since queries to humans are often expensive, the goal is to minimize the
-number of comparisons needed.
-
-\textbf{Note:} Contents in this section are derived from ``Performance
-Metric Elicitation from Pairwise Classifier Comparisons'' by
-(\citeproc{ref-pmlr-v89-hiranandani19a}{Hiranandani et al. 2019a}),
-which introduced the problem of metric elicitation and the framework for
-binary-class metric elicitation from pairwise comparisons. This section
-aims to present their work expository while providing additional
-motivation and intuitive explanations to supplement their work.
+(a false positive). Rather than choosing from a limited set of default
+choices like the F1-score or weighted accuracy, metric elicitation
+considers the process of devising a metric that best matches the
+preferences of practitioners or users. This is achieved by querying an
+``oracle'' who provides feedback on proposed potential metrics through
+pairwise comparisons. Since queries to humans are often expensive, the
+goal is to minimize the number of comparisons needed.
 
 The motivation for the pairwise comparison aspect of metric elicitation
-stems from a rich history of literature in psychology, economics, and
-computer science (\citeproc{ref-pref1}{Samuelson 1938};
+(\citeproc{ref-pmlr-v89-hiranandani19a}{Hiranandani et al. 2019a}) stems
+from a rich history of literature in psychology, economics, and computer
+science (\citeproc{ref-pref1}{Samuelson 1938};
 \citeproc{ref-pref2}{Mas-Colell 1977}; \citeproc{ref-pref3}{Varian
 2006}; \citeproc{ref-pref4}{Braziunas and Boutilier 2012};
 \citeproc{ref-ab}{Tamburrelli and Margara 2014}), demonstrating that
@@ -5955,17 +5799,16 @@ turns out that indeed most active learning algorithms (purposefully
 selecting queries) over time converge with the performance of the random
 query selection, so in long term the performance is similar. However,
 what is different is that active learning achieves better performance
-earlier, which in time-sensitive tasks can be a critical factor.
-
-One example of such a setting can be exoskeletons for humans as part of
-the rehabilitation after surgery (\citeproc{ref-Li_2021}{Li et al.
-2021}). Different people have significantly different walking patterns
-as well as rehabilitation requirements, so the exoskeleton needs to
-adapt to the human as soon as possible for a more successful
-rehabilitation. Figure Figure~\ref{fig-robotics} demonstrates the
-difference in the time needed between the two approaches. In general, in
-robotics, the time differences that might seem small to a human might be
-detrimental to the final performance.
+earlier, which in time-sensitive tasks can be a critical factor. One
+example of such a setting can be exoskeletons for humans as part of the
+rehabilitation after surgery (\citeproc{ref-Li_2021}{Li et al. 2021}).
+Different people have significantly different walking patterns as well
+as rehabilitation requirements, so the exoskeleton needs to adapt to the
+human as soon as possible for a more successful rehabilitation. Figure
+Figure~\ref{fig-robotics} demonstrates the difference in the time needed
+between the two approaches. In general, in robotics, the time
+differences that might seem small to a human might be detrimental to the
+final performance.
 
 \begin{figure}
 
@@ -5981,64 +5824,6 @@ human preferences. (\citeproc{ref-Li_2021}{Li et al. 2021})}
 
 \end{figure}%
 
-\subsubsection*{Multi-Modal Reward Functions for Pairwise
-Comparisons}\label{multi-modal-reward-functions-for-pairwise-comparisons}
-\addcontentsline{toc}{subsubsection}{Multi-Modal Reward Functions for
-Pairwise Comparisons}
-
-What if one is working with multiple people and their responses to the
-queries for comparisons? It will be impossible to recover the different
-personalities based on the answers, and it might be necessary to conduct
-a full ranking before it is clear which responses belonged to which
-person, but the underlying theory for the number of comparisons is
-non-trivial. For that, the researchers
-(\citeproc{ref-myers2021learning}{Myers et al. 2021}) have used
-multi-modal models for reward function learning, which allows to account
-for different types of valid behaviours and trajectories that can come
-from different humans.
-
-\begin{figure}
-
-\centering{
-
-\includegraphics[width=0.8\linewidth,height=\textheight,keepaspectratio]{src/Figures/negotiation.png}
-
-}
-
-\caption{\label{fig-negotiation}The negotiation setting with two people
-and three shared items. Each person has a desired number of items
-indicated in their utility box. Alice is the controlled agent that has
-many different response options that are illustrated by the approaches
-different models might take. (\citeproc{ref-kwon2021targeted}{Kwon et
-al. 2021})}
-
-\end{figure}%
-
-An example setting for such type of problem is negotiations
-(\citeproc{ref-kwon2021targeted}{Kwon et al. 2021}). Let's say there are
-some shared items and two people with different utilities and desires
-for items, where each person only knows their utility. In a specific
-case of Figure~\ref{fig-negotiation}, Bob as a proposing agent and Alice
-as a controlled agent who has many different ways of responding to Bob's
-proposals. Different methods can be used to design Alice as an AI agent.
-The first idea is reinforcement learning, where multiple rounds of
-negotiations are done, the model simulates game theory and sees how Bob
-reacts. Authors of this setting (\citeproc{ref-kwon2021targeted}{Kwon et
-al. 2021}) show that over time the model learns to ask for the same
-thing over and over again, as Alice is not trained to be human-like or
-negotiable, and just tries to maximize Alice's utility. The second
-approach is supervised learning, where the model can be trained on some
-dataset, learning the history of negotiations. This results in Alice
-being very agreeable, which demonstrates two polar results of the two
-approaches, and it would be ideal to find a middle ground and combine
-both of them. The authors proposed the Targeted acquisition approach,
-which is based on active learning ideas. The model asks diverse
-questions at different cases and stages of negotiations like humans,
-determining which questions are more valuable to be asked throughout
-learning. Such an approach ended up in more fair and optimal results
-than supervised or reinforcement learning
-(\citeproc{ref-kwon2021targeted}{Kwon et al. 2021}).
-
 In conclusion, pairwise comparisons show to be a great way of learning
 linear reward functions, but at times present challenges or
 incapabilities that can be further improved with additional
@@ -6046,507 +5831,6 @@ incorporations of approaches like Active Learning. That improves many
 applications in terms of time spent getting to the result in case of
 exoskeleton adjustments, as well as getting to a middle ground between
 polar behaviors in applications like negotiations.
-
-\subsection{Truthful Preference Elicitation with
-Adversary}\label{truthful-preference-elicitation-with-adversary}
-
-In our study of social choice models in Chapter
-\hyperref[2human-decision-making-choice-models]{{[}2model{]}}, we study
-how axiomatic properties are implemented to prevent strategic
-manipulation of a population. This brings us onto the field of
-\textbf{mechanism design}. At its core, mechanism design is the science
-of making rules. The intent in this field is to design systems so that
-the strategic behaviour of individuals leads to desirable outcomes. Just
-thinking about services on the Internet -- file sharing, reputation
-systems, web search, web advertising, email, Internet auctions,
-congestion control -- all have to be set up so that an individual's
-selfish behavior leads to better outcomes for the entire community. A
-more specific example of this is the phenomenon of ``bid-sniping'' that
-was present on eBay in the early 2000s. When people could bid on E-bay,
-the rule was that the highest bidder by the end of some specified time
-period would get the item. As a result, people would just wait until the
-very last minute to bid in order to not raise the price of the item too
-early. On the other hand, when Amazon still allowed bidding, they had a
-rule that any time a bid was placed it would extend the time of the bid
-by ten minutes. This simple difference had drastic effects on bidding
-prices over time. Mechanism design develops the theoretical framework
-for learning social choices and eliciting truthful preference.
-
-We will cover frameworks that model several scenarios that mechanism
-design is usefully applied to: recommendation systems (where users will
-selfishly try to stick to their preferences while a planner encourages
-exploration); auctions (where bidders will try to maximise their reward
-compared to others); and peer grading (where truthful reporting is not
-necessarily an incentive for students).
-
-\subsubsection*{Auction Theory}\label{auction-theory}
-\addcontentsline{toc}{subsubsection}{Auction Theory}
-
-\paragraph*{Single-Item Auctions}\label{single-item-auctions}
-\addcontentsline{toc}{paragraph}{Single-Item Auctions}
-
-The first problem within auction theory we will consider is the
-\emph{single-item auction}. The premise of this problem is that there is
-a single item to sell, \(n\) bidders (with unknown private valuations of
-the item \(v_1\), ..., \(v_n\)). The bidder's individual objective is to
-maximize utility: the value \(v_i\) of the item subtracted by the price
-paid for the item. The auction procedure is standard in the sense that
-bids are solicited and the highest bid will win the auction. While the
-objective of the individual bidder is clear, there could be a plethora
-of different objectives for the auction as a whole. One option could be
-to maximize social surplus, meaning the goal is to maximize the value of
-the winner. Another objective could be to maximize seller profit which
-is the payment of the winner. For simplicity, we can focus on the first
-objective where the goal is to maximize social surplus. If we want to
-maximize social surplus it turns out that a great way to do this is the
-``second-price auction''.
-
-\subparagraph*{Maximizing Social
-Surplus}\label{maximizing-social-surplus}
-\addcontentsline{toc}{subparagraph}{Maximizing Social Surplus}
-
-In the second-price auction, we will operate under slightly different
-conditions. In the second-price auction we 1) solicit sealed bids, 2)
-have the winner be the highest bidder, and 3) charger winner the
-second-highest bid price. As an example, if the solicited bids are
-\(b = (2, 6, 4, 1)\) the winner will be that who bid \(6\), but will pay
-a price of \(4\). From here, we can do some equilibrium analysis to try
-and learn what the optimal bidding strategy is for each bidder. Let the
-amount bidder \(i\) bids to be \(b_i\), so we have bids
-\(b_1, b_2, ..., b_n\). How much should bidder \(i\) bid? To analyze
-this, let us define \(t_i = max_{j \neq i} b_j\) which represents the
-max of the bids that is not from bidder \(i\). There are now two cases
-to consider: if \(b_i\) \textgreater{} \(t_i\) and if \(b_i\)
-\textless{} \(t_i\). In the first case the bidder \(i\) wins, and if the
-bidder bid \(b_i = v_i\), they are guaranteed to have a positive return
-on bid. In the other case, they lose the bid and the net loss is 0
-because they don't have to pay. From this we can conclude that bidder
-\(i\)'s dominant strategy is to just bid \(b_i = v_i\). Rigorously
-proving this is a little bit trickier, but it was shown from Vickrey in
-1961 {[}cite{]} that truthful bidding is the dominant strategy in
-second-price auctions. A corollary of this is that we are maximizing
-social surplus since bids are values and the winner is the bidder with
-highest valuation.
-
-\subparagraph*{Maximize Seller Profit}\label{maximize-seller-profit}
-\addcontentsline{toc}{subparagraph}{Maximize Seller Profit}
-
-If we want to look at things from the perspective of a seller trying to
-maximize their profit we need to treat the bidder's bids as uniform
-random variables. Consider the example scenario where we have two
-bidders each bidding uniformly between 0 and 1. What is the seller's
-expected profit? (in this case profit and revenue for the seller are the
-same because we assume the seller throws away the item if it doesn't
-sell/has no valuation for it).
-
-From there the question now becomes, can we get more expected profit
-from the seller's perspective? It turns out there is a design where we
-can add a reserve price of \(r\) to the second-price auction. The way
-this works is we can 1) Insert seller-bid at \(r\), 2) solicit bids, 3)
-pick the highest bidder, and 3) charge the 2nd-highest bid. In effect,
-this is just the second-price auction but with a bid from the seller as
-well, at a price of \(r\). A lemma, that we won't prove here, is that
-the second-price auction with reserve price \(r\) still has a dominant
-strategy of just being truthful.
-
-Let's now consider what the profit of a second-price auction would be
-with two bidders that uniformly bid between 0 and 1 -- but this time we
-have a reserve price of \(1/2\). To calculate the expected profit we
-break down the situation into 3 cases:
-
-\begin{itemize}
-\item
-  Case 1:
-  \(1/2 > v_1 > v_2 \rightarrow 1/4 \text{ probability} \rightarrow  E[\text{profit}] = 0\)
-\item
-  Case 2:
-  \(v_1 > v_2 > 1/2 \rightarrow 1/4 \text{probability} \rightarrow E[v2 | case 2] = 2/3\)
-\item
-  Case 3:
-  \(v_1 > 1/2 > v_2 \rightarrow 1/2 \text{ probability} \rightarrow 1/2\)
-\end{itemize}
-
-Why is \(E[v2 | case 2] = 2/3\)? If \(v_1\) and \(v_2\) are greater than
-\(1/2\), they are evenly spread across the interval, meaning the
-expectation will be 1/2 + 1/6 = 2/3. Adding up all these cases we get
-\(E[profit] = 5/12\). It turns out that second-price auctions with
-reserve actually maximize profit in general (for symmetric bidders)!
-
-In the previous section we conclude that second-price auctions with
-reserve maximize profit for the seller. In order to prove this, we now
-move to the more general topic of asking how should a monopolist divide
-good across separate markets. We can make the assumption that the demand
-model is a concave revenue \(R(q)\) in quantity \(q\). Under this
-assumption, we can just divide supply into \(q = q_a + q_b\) such that
-\(R'_a(q_a) = R'_b(q_b)\). The idea from here is a theorem from Myerson
-in 1981 that states an optimal action maximizes "marginal revenue".
-Consider an example where we have two bidders bidding a uniform value
-between 0 and 1. Our revenue curve can now be derived from the offering
-price \(V(q) = 1 - q\) like so: \(R(q) = qV(q) = q - q^2\). Taking the
-derivative gives us the marginal revenue \(R'(q) = 1-2q\). This means
-two things: 1) we want to sell to bidder \(i\) with the highest
-\(R'(q_i)\) and 2) we want to sell to bidder \(i\) with value at least
-\(1/2\) (if we want a positive \(R'(q_i)\). But this is just a
-second-price auction with reserve \(1/2\)! This means that for symmetric
-bidders, a second price with reserve is the optimal auction.
-
-\subparagraph*{What good are auctions?}\label{what-good-are-auctions}
-\addcontentsline{toc}{subparagraph}{What good are auctions?}
-
-An interesting topic to discuss is what benefits auctions bring to the
-table as opposed to just standard pricing. Online auctions used to be a
-lot more popular in the early 2000s and have been completely replaced by
-standard online pricing, even on sites like e-bay. While auctions are
-slower and have added inherent complexities, they are actually optimal
-on paper. Standard pricing on the other is non-optimal; although it is
-fast and simpler for buyers. There is actually a way to quantify this:
-for pricing \(k\) units, the loss is at most \(1 / \sqrt{2\pi k}\) of
-optimal profit.
-
-Let's consider applications in duopoly platform design. We know that the
-optimal auction is second-price with reserve, but what happens when we
-introduce competition between two auction platforms? Some important
-details related to the revenue of a second-price auction is that a
-second-price auction with no reserve and n bidders leads to larger
-revenue having an optimal reserve and n - 1 bidders
-(\citeproc{ref-bulow-klemperer1996}{Bulow and Klemperer 1996}).
-Additionally, with an entry cost, no reserve is the optimal strategy for
-maximizing revenue (\citeproc{ref-mcafee-87}{McAfee and McMillan 1987}).
-Let's consider an example of a competing auction system which is Google
-ads vs Bing ads. How should an advertiser divide the budget between
-Google and Bing? They should give the same budget to both companies.
-What happens if Bing raises their prices? Then, the advertising company
-moves more of its budget to Google from Bing.
-
-\subsubsection*{Prior-Independent
-Auctions}\label{prior-independent-auctions}
-\addcontentsline{toc}{subsubsection}{Prior-Independent Auctions}
-
-The Bulow-Klemperer theorem demonstrates that increased competition can
-be more valuable than perfect knowledge of bidders' valuation
-distributions. This result provides insight into the potential of
-simple, prior-independent auctions to approach the performance of
-optimal auctions. The theorem states that for a single-item auction with
-bidders' valuations drawn independently from a regular distribution
-\(F\):
-
-\begin{tcolorbox}[colframe=.grey, title=\faPenSquare \enspace Theorem]
-
-\begin{theorem}[]\protect\hypertarget{thm-bulow-klemperer}{}\label{thm-bulow-klemperer}
-
-Let \(F\) be a regular distribution and \(n\) a positive integer. Then:
-\begin{equation}\phantomsection\label{eq-eq3.64}{E_{v_1,\ldots,v_{n+1} \sim F}[\text{Rev(VA)}(n+1 \text{ bidders})] \geq E_{v_1,\ldots,v_n \sim F}[\text{Rev(OPT}_F)(n \text{ bidders})]}\end{equation}
-where VA denotes the Vickrey auction and \(\text{OPT}_F\) denotes the
-optimal auction for \(F\).
-
-\end{theorem}
-
-\end{tcolorbox}
-
-This shows that running a simple Vickrey auction with one extra bidder
-outperforms the revenue-optimal auction that requires precise knowledge
-of the distribution. It suggests that in practice, effort spent on
-recruiting additional bidders may be more fruitful than fine-tuning
-auction parameters.
-
-\paragraph*{The VCG Mechanism}\label{the-vcg-mechanism}
-\addcontentsline{toc}{paragraph}{The VCG Mechanism}
-
-The VCG mechanism is a cornerstone of mechanism design theory, providing
-a general solution for welfare maximization in multi-parameter
-environments. The key result is:
-
-\begin{tcolorbox}[colframe=.grey, title=\faPenSquare \enspace Theorem]
-
-\begin{theorem}[]\protect\hypertarget{thm-VCG}{}\label{thm-VCG}
-
-\phantomsection\label{thm:VCG}{} In every general mechanism design
-environment, there is a dominant-strategy incentive-compatible (DSIC)
-welfare-maximizing mechanism.
-
-\end{theorem}
-
-\end{tcolorbox}
-
-The VCG mechanism operates as follows:
-
-\begin{enumerate}
-\def\labelenumi{\arabic{enumi}.}
-\item
-  Given bids \(b_1, \ldots, b_n\), where each \(b_i\) is indexed by the
-  outcome set \(\Omega\), the allocation rule is:
-
-  \begin{equation}\phantomsection\label{eq-eq3.65}{x(b) = \arg \max_{\omega \in \Omega} \sum_{i=1}^n b_i(\omega)}\end{equation}
-\item
-  The payment rule for each agent \(i\) is:
-
-  \begin{equation}\phantomsection\label{eq-eq3.66}{p_i(b) = \max_{\omega \in \Omega} \sum_{j \neq i} b_j(\omega) - \sum_{j \neq i} b_j(\omega^*)}\end{equation}
-
-  where \(\omega^* = x(b)\) is the chosen outcome.
-\end{enumerate}
-
-The key insight is to charge each agent its ``externality'' - the
-welfare loss inflicted on other agents by its presence. This payment
-rule, coupled with the welfare-maximizing allocation rule, yields a DSIC
-mechanism.
-
-The VCG mechanism can be interpreted as having each agent pay its bid
-minus a "rebate" equal to the increase in welfare attributable to its
-presence:
-
-\begin{equation}\phantomsection\label{eq-eq3.67}{p_i(b) = b_i(\omega^*) - \left[ \sum_{j=1}^n b_j(\omega^*) - \max_{\omega \in \Omega} \sum_{j \neq i} b_j(\omega) \right]}\end{equation}
-
-While the VCG mechanism provides a theoretical solution for DSIC
-welfare-maximization in general environments, it can be challenging to
-implement in practice due to computational and communication
-complexities.
-
-\paragraph*{Combinatorial Auctions}\label{combinatorial-auctions}
-\addcontentsline{toc}{paragraph}{Combinatorial Auctions}
-
-Combinatorial auctions are an important class of multi-parameter
-mechanism design problems, with applications ranging from spectrum
-auctions to airport slot allocation. In a combinatorial auction:
-
-\begin{itemize}
-\item
-  There are \(n\) bidders and a set \(M\) of \(m\) items.
-\item
-  The outcome set \(\Omega\) consists of allocations
-  \((S_1, \ldots, S_n)\), where \(S_i\) is the bundle allocated to
-  bidder \(i\).
-\item
-  Each bidder \(i\) has a private valuation \(v_i(S)\) for each bundle
-  \(S \subseteq M\).
-\end{itemize}
-
-While the VCG mechanism theoretically solves the welfare-maximization
-problem, combinatorial auctions face several major challenges in
-practice:
-
-\begin{enumerate}
-\def\labelenumi{\arabic{enumi}.}
-\item
-  Preference Elicitation: Each bidder has \(2^m - 1\) private
-  parameters, making direct revelation infeasible for even moderate
-  numbers of items. This necessitates the use of indirect mechanisms
-  that elicit information on a "need-to-know" basis.
-\item
-  Computational Complexity: Even when preference elicitation is not an
-  issue, welfare-maximization can be an intractable problem. In
-  practice, approximations are often used, hoping to achieve reasonably
-  good welfare.
-\item
-  VCG Limitations: The VCG mechanism can exhibit bad revenue and
-  incentive properties in combinatorial settings. For example, adding
-  bidders can sometimes decrease revenue to zero, and the mechanism can
-  be vulnerable to collusion and false-name bids.
-\item
-  Strategic Behavior in Iterative Auctions: Most practical combinatorial
-  auctions are iterative, comprising multiple rounds. This introduces
-  new opportunities for strategic behavior, such as using bids to signal
-  intentions to other bidders.
-\end{enumerate}
-
-These challenges make combinatorial auctions a rich and complex area of
-study, requiring careful design to balance theoretical guarantees with
-practical considerations.
-
-\paragraph*{Spectrum Auctions}\label{spectrum-auctions}
-\addcontentsline{toc}{paragraph}{Spectrum Auctions}
-
-Spectrum auctions represent a complex application of combinatorial
-auction theory. With n bidders and m non-identical items, each bidder
-has a private valuation for every possible bundle of items, making it
-impractical to directly elicit all preferences. This necessitates the
-use of indirect, iterative mechanisms that query bidders for valuation
-information on a ``need-to-know'' basis, sacrificing some of the
-desirable properties of direct mechanisms like dominant strategy
-incentive compatibility (DSIC) and full welfare maximization.
-
-The fundamental challenge in spectrum auctions lies in the nature of the
-items being sold. There is a dichotomy between items that are
-substitutes (where \(v(AB) \leq v(A) + v(B))\) and those that are
-complements (where \(v(AB) > v(A) + v(B))\). Substitute items, such as
-licenses for the same area with equal-sized frequency ranges, are
-generally easier to handle. When items are substitutes, welfare
-maximization is computationally tractable, and the VCG mechanism avoids
-many undesirable properties. However, complementary items, which arise
-naturally in spectrum auctions when bidders want adjacent licenses,
-present significant challenges.
-
-Early attempts at spectrum auctions revealed the pitfalls of naive
-approaches. Sequential auctions, where items are sold one after another,
-proved problematic as demonstrated by a Swiss auction in 2000. Bidders
-struggled to bid intelligently without knowing future prices, leading to
-unpredictable outcomes and potential revenue loss. Similarly,
-simultaneous sealed-bid auctions, as used in New Zealand in 1990,
-created difficulties for bidders in coordinating their bids across
-multiple items, resulting in severely suboptimal outcomes.
-
-The Simultaneous Ascending Auction (SAA) emerged as a solution to these
-issues and has formed the basis of most spectrum auctions over the past
-two decades. In an SAA, multiple items are auctioned simultaneously in
-rounds, with bidders placing bids on any subset of items subject to an
-activity rule. This format facilitates price discovery, allowing bidders
-to adjust their strategies as they learn about others' valuations. It
-also allows bidders to determine valuations on a need-to-know basis,
-reducing the cognitive burden compared to direct-revelation auctions.
-
-Despite its advantages, the SAA is not without vulnerabilities. Demand
-reduction, where bidders strategically reduce their demand to lower
-prices, can lead to inefficient outcomes even when items are
-substitutes. The exposure problem arises with complementary items, where
-bidders risk winning only a subset of desired items at unfavorable
-prices. These issues highlight the ongoing challenges in designing
-effective spectrum auctions, balancing theoretical guarantees with
-practical considerations.
-
-\paragraph*{Case study: Classroom Peer
-Grading}\label{case-study-classroom-peer-grading}
-\addcontentsline{toc}{paragraph}{Case study: Classroom Peer Grading}
-
-This chapter discusses work by Jason Hartline, Yingkai Li, Liren Shan,
-and Yifan Wu at Northwestern University, where researchers examined
-mechanism design for the classroom, specifically in terms of the
-optimization of scoring rules. They explored peer grading in the
-classroom and how to construct a peer grading system that optimizes the
-objectives for each stakeholder in the system, including those being
-graded, the peer graders, the TAs of the class, and the professor.
-
-Firstly, let's think of the classroom like a computer. We can think of
-students as local optimizers; their incentive is to minimize the amount
-of work they need to do and maximize the grades that they receive. The
-graders are imprecise operators, which means that there is some
-uncertainty in their ability to grade the work completed by the
-students. The syllabus can be thought of as the rules that map the
-actions of the students to the grade they end up receiving in the class.
-Our overall goals for this classroom based on these definitions is to
-minimize work, maximize learning, and fairly assess the students for the
-work that they do (\citeproc{ref-jasonH2020}{Hartline et al. 2020}).
-
-One basic question that we can examine, is what is the best syllabus
-that maximizes our objectives for our classroom design. Some components
-of this could include grading randomized exams, grading with partial
-credit, group projects, and finally, peer grading, which is the
-component that we will be taking a deeper dive into.
-
-The general situation of the peer grading problem is that proper scoring
-rules make peer grades horrible (\citeproc{ref-jasonH2020}{Hartline et
-al. 2020}). So we want to be able to optimize scoring rules and make
-sure that we are optimizing each component of the peer grading pipeline.
-
-The main algorithms focused on in this peer grading design paper were
-matching peers and TAs to submissions and the grading of those
-submissions from the TAs and the peer reviews
-(\citeproc{ref-jasonH2020}{Hartline et al. 2020}). There are quite a
-number of advantages to peer grading including that peers are able to
-learn from reviewing other people's work, it reduces the work for the
-teacher, and improves the turnaround time for assignment feedback (which
-are all part of our overarching goals for our mechanism design for the
-classroom). But, it is also important to acknowledge the potential
-disadvantages of the peer grading system: it is possible that the peer
-graders present inaccurate grades and there is student unrest. This
-presents us with a challenge: being able to incentivize accurate peer
-reviews.
-
-One problem that we run into, when we use the proper scoring rule to
-score peer reviews, if the peer graders use the lazy peer strategy,
-which means that they always report 80\(\%\) for their peer reviews,
-they get graded very well using the proper scoring rule algorithm. In
-fact, the proper scoring rule says that their peer review is 96\(\%\)
-accurate (\citeproc{ref-jasonH2023}{Hartline et al. 2023}). So how do we
-incentivize effort in reviews from peer graders? We use a scoring rule
-that maximizes the difference in score between effort or no effort
-reviews as indicated by the peer reviewers
-(\citeproc{ref-jasonH2023}{Hartline et al. 2023}). So overall, the
-analysis of datasets leads to decision optimizations and, eventually,
-payoff from those decisions.
-
-To conclude our mechanism design in the classroom discussion, we have
-two key takeaways: scoring rules are essential in being able to
-understand and analyze data thoroughly, and optimal scoring rules for
-binary effort allow us to understand the setting independent of the
-dataset (\citeproc{ref-jasonH2023}{Hartline et al. 2023}).
-
-\subsubsection*{Mutual Information
-Paradigm}\label{mutual-information-paradigm}
-\addcontentsline{toc}{subsubsection}{Mutual Information Paradigm}
-
-In this section we discuss an influential new framework for designing
-peer prediction mechanisms, the Mutual Information Paradigm (MIP)
-introduced by Kong and Schoenebeck
-(\citeproc{ref-kongschoenebeck2019}{Kong and Schoenebeck 2019}).
-Traditional peer prediction approaches typically rely on scoring rules
-and correlation between agents' signals. However, these methods often
-struggle with issues like uninformed equilibria, where agents can
-coordinate on uninformative strategies that yield higher payoffs than
-truth-telling. The core idea is to reward agents based on the mutual
-information between their report and the reports of other agents.
-
-We consider a setting with \(n\) agents, each possessing a private
-signal \(\Psi_i\) drawn from some set \(\Sigma\). The mechanism asks
-each agent to report their signal, which we denote as \(\hat{\Psi}_i\).
-For each agent \(i\), the mechanism randomly selects a reference agent
-\(j \neq i\). Agent \(i\)'s payment is then calculated as:
-\begin{equation}\phantomsection\label{eq-eq3.68}{MI(\hat{\Psi}_i; \hat{\Psi}_j)}\end{equation}
-where \(MI\) is an information-monotone mutual information measure. An
-information-monotone \(MI\) measure must satisfy the following
-properties:
-
-\begin{itemize}
-\item
-  \textbf{Symmetry}: \(MI(X; Y) = MI(Y; X)\).
-\item
-  \textbf{Non-negativity}: \(MI(X; Y) \geq 0\), with equality if and
-  only if \(X\) and \(Y\) are independent.
-\item
-  \textbf{Data processing inequality}: For any transition probability
-  \(M\), if \(Y\) is independent of \(M(X)\) conditioned on \(X\), then
-  \(MI(M(X); Y) \leq MI(X; Y)\).
-\end{itemize}
-
-Two important families of mutual information measures that satisfy these
-properties are \(f\)-mutual information and Bregman mutual information.
-The \(f\)-mutual information is defined as:
-\begin{equation}\phantomsection\label{eq-eq3.69}{MI_f(X; Y) = D_f(U_{X,Y}, V_{X,Y})}\end{equation}
-where \(D_f\) is an \(f\)-divergence, \(U_{X,Y}\) is the joint
-distribution of \(X\) and \(Y\), and \(V_{X,Y}\) is the product of their
-marginal distributions. The Bregman mutual information is defined as:
-\begin{equation}\phantomsection\label{eq-eq3.70}{BMI_{PS}(X; Y) = \mathbb{E}_{X} [D{PS}(U_{Y|X}, U_Y)]}\end{equation}
-where \(D_{PS}\) is a Bregman divergence based on a proper scoring rule
-\(PS\), \(U_{Y|X}\) is the conditional distribution of \(Y\) given
-\(X\), and \(U_Y\) is the marginal distribution of \(Y\).
-
-The MIP framework can be applied in both single-question and
-multi-question settings. In the multi-question setting, the mechanism
-can estimate the mutual information empirically from multiple questions.
-In the single-question setting, additional techniques like asking for
-predictions about other agents' reports are used to estimate the mutual
-information.
-
-A key theoretical result of the MIP framework is that when the chosen
-mutual information measure is strictly information-monotone with respect
-to agents' priors, the resulting mechanism is both dominantly truthful
-and strongly truthful. This means that truth-telling is a dominant
-strategy for each agent and that the truth-telling equilibrium yields
-strictly higher payoffs than any other non-permutation strategy profile.
-
-As research continues to address practical implementation challenges of
-designing truthful mechanisms, MIP-based approaches have significant
-potential to improve preference elicitation and aggregation in
-real-world applications lacking verifiable ground truth.
-
-\subsubsection*{Auction Theory 2}\label{auction-theory-2}
-\addcontentsline{toc}{subsubsection}{Auction Theory 2}
-
-\paragraph*{Single-Item Auctions}\label{single-item-auctions-1}
-\addcontentsline{toc}{paragraph}{Single-Item Auctions}
-
-The first problem within auction we will consider is the
-\emph{single-item auction}. In this problem setup, there is a single
-item to sell and \(n\) bidders each with unknown private valuations of
-the item \(v_1, \ldots, v_n\),
 
 \subsection{Application: Guiding Human Demonstrations in
 Robotics}\label{application-guiding-human-demonstrations-in-robotics}
@@ -6563,11 +5847,9 @@ single, optimal method for performing the task, which a robot could
 learn to mimic. Conversely, \emph{multimodality}, the presence of
 multiple optimal methods in the demonstration set, is challenging for
 imitation learning since it has to learn from contradicting information
-for how to accomplish a task.
-
-A common reason for multimodality is the fact that different people
-often subconsciously choose different paths for execution, as
-illustrated in Figure~\ref{fig-multimodalexecution}.
+for how to accomplish a task. A common reason for multimodality is the
+fact that different people often subconsciously choose different paths
+for execution, as illustrated in Figure~\ref{fig-multimodalexecution}.
 
 \begin{figure}
 
@@ -6590,7 +5872,6 @@ offer an active elicitation interface to guide humans to provide better
 demonstrations in interactive imitation learning. Their key motivation
 is to allow multiple users to contribute demonstrations over the course
 of data collection by guiding users towards compatible demonstrations.
-
 To identify whether a demonstration is ``compatible'' with a base policy
 trained with prior demonstrations, the researchers measure the
 \emph{likelihood} of demonstrated actions under the base policy, and the
@@ -6599,10 +5880,9 @@ low novelty demonstrations should be excluded since they represent
 conflicting modes of behavior on states that the robot can already
 handle, and are therefore incompatible. This concept of compatibility is
 used for filtering a new set of demonstrations and actively eliciting
-compatible demonstrations.
-
-In the following subsections, we describe the process of estimating
-compatibility and active elicitation in more detal.
+compatible demonstrations. In the following subsections, we describe the
+process of estimating compatibility and active elicitation in more
+detal.
 
 \subsubsection*{Estimating Compatiblity}\label{estimating-compatiblity}
 \addcontentsline{toc}{subsubsection}{Estimating Compatiblity}
@@ -6612,22 +5892,17 @@ estimates the performance of policy \(\pi_{base}\) that is retrained on
 a union of \(\mathcal{D}_{base}\), the known base dataset, and
 \(\mathcal{D}_{new}\), the newly collected dataset. To define this
 compatibility measure in a way that is easy to compute, we can use two
-interpretable metrics: likelihood and novelty.
+interpretable metrics: likelihood and novelty. The likelihood of actions
+\(a_{new}\) in \(\mathcal{D}_{new}\) is measured as the negative mean
+squared error between actions predicted by the base policy and this
+proposed action:
 
-The likelihood of actions \(a_{new}\) in \(\mathcal{D}_{new}\) is
-measured as the negative mean squared error between actions predicted by
-the base policy and this proposed action:
-
-\begin{equation}\phantomsection\label{eq-eq3.61}{\begin{aligned}
-    likelihood(s_{new}, a_{new}) = -\mathbb{E}[|| \pi_{base}(s_{new}) - a_{new} ||^2_2].
-\end{aligned}}\end{equation}
+\begin{equation}\phantomsection\label{eq-eq3.61}{likelihood(s_{new}, a_{new}) = -\mathbb{E}[|| \pi_{base}(s_{new}) - a_{new} ||^2_2].}\end{equation}
 
 The novelty of the state \(s_{new}\) in \(\mathcal{D}_{new}\) is the
 standard deviation in the predicted actions under base policy:
 
-\begin{equation}\phantomsection\label{eq-eq3.62}{\begin{aligned}
-    novelty(s_{new}) = \mathrm{Var}[\pi_{base}(s_{new})].
-\end{aligned}}\end{equation}
+\begin{equation}\phantomsection\label{eq-eq3.62}{novelty(s_{new}) = \mathrm{Var}[\pi_{base}(s_{new})].}\end{equation}
 
 We can plot likelihood and novelty on a 2D plane, as shown in
 Figure~\ref{fig-likelihood_novelty}, and identify thresholds on
@@ -6817,7 +6092,7 @@ Looking forward, active elicitation provides a foundation for allowing
 robots to query humans about the type of data needed, enabling more
 efficient data collection through transparency.
 
-\subsection{Conclusion}\label{conclusion-1}
+\subsection{Conclusion}\label{conclusion}
 
 In summary, this chapter has explored the complexities and innovations
 in interactive learning as applied to large models within robotics. It
@@ -8562,11 +7837,6 @@ Krzysztof Choromanski, Tianli Ding, et al. 2023. {``RT-2:
 Vision-Language-Action Models Transfer Web Knowledge to Robotic
 Control.''} \url{https://arxiv.org/abs/2307.15818}.
 
-\bibitem[\citeproctext]{ref-bulow-klemperer1996}
-Bulow, Jeremy, and Paul Klemperer. 1996. {``Auctions Versus
-Negotiations.''} \emph{The American Economic Review} 86 (1): 180--94.
-\url{http://www.jstor.org/stable/2118262}.
-
 \bibitem[\citeproctext]{ref-AL_expmodelchange}
 Cai, Wenbin, Ya Zhang, and Jun Zhou. 2013. {``Maximizing Expected Model
 Change for Active Learning in Regression.''} In \emph{2013 IEEE 13th
@@ -8618,19 +7888,6 @@ Covering with Adversarial Noise.''} \emph{ICML}.
 
 \bibitem[\citeproctext]{ref-max_halford}
 Halford, Max. 2023. {``Online Active Learning in 80 Lines of Python.''}
-
-\bibitem[\citeproctext]{ref-jasonH2020}
-Hartline, Jason D., Yingkai Li, Liren Shan, and Yifan Wu. 2020.
-{``Optimization of Scoring Rules.''} \emph{CoRR} abs/2007.02905.
-\url{https://arxiv.org/abs/2007.02905}.
-
-\bibitem[\citeproctext]{ref-jasonH2023}
-Hartline, Jason D., Liren Shan, Yingkai Li, and Yifan Wu. 2023.
-{``Optimal Scoring Rules for Multi-Dimensional Effort.''} In
-\emph{Proceedings of Thirty Sixth Conference on Learning Theory}, edited
-by Gergely Neu and Lorenzo Rosasco, 195:2624--50. Proceedings of Machine
-Learning Research. PMLR.
-\url{https://proceedings.mlr.press/v195/hartline23a.html}.
 
 \bibitem[\citeproctext]{ref-he2020momentum}
 He, Kaiming, Haoqi Fan, Yuxin Wu, Saining Xie, and Ross Girshick. 2020.
@@ -8685,17 +7942,6 @@ Finn, Dorsa Sadigh, and Percy Liang. 2023. {``Language-Driven
 Representation Learning for Robotics.''}
 \url{https://arxiv.org/abs/2302.12766}.
 
-\bibitem[\citeproctext]{ref-kongschoenebeck2019}
-Kong, Yuqing, and Grant Schoenebeck. 2019. {``An Information Theoretic
-Framework for Designing Information Elicitation Mechanisms That Reward
-Truth-Telling.''} \emph{ACM Trans. Econ. Comput.} 7 (1).
-\url{https://doi.org/10.1145/3296670}.
-
-\bibitem[\citeproctext]{ref-kwon2021targeted}
-Kwon, Minae, Siddharth Karamcheti, Mariano-Florentino Cuellar, and Dorsa
-Sadigh. 2021. {``Targeted Data Acquisition for Evolving Negotiation
-Agents.''} \url{https://arxiv.org/abs/2106.07728}.
-
 \bibitem[\citeproctext]{ref-Li_2021}
 Li, Kejun, Maegan Tucker, Erdem Biyik, Ellen Novoseller, Joel W.
 Burdick, Yanan Sui, Dorsa Sadigh, Yisong Yue, and Aaron D. Ames. 2021.
@@ -8728,20 +7974,10 @@ Mas-Colell, Andreu. 1977. {``The Recoverability of Consumers'
 Preferences from Market Demand Behavior.''} \emph{Econometrica} 45 (6):
 1409--30. \url{http://www.jstor.org/stable/1912308}.
 
-\bibitem[\citeproctext]{ref-mcafee-87}
-McAfee, R. Preston, and John McMillan. 1987. {``Auctions and Bidding.''}
-\emph{Journal of Economic Literature} 25 (2): 699--738.
-\url{http://www.jstor.org/stable/2726107}.
-
 \bibitem[\citeproctext]{ref-AL_experrorredn}
 Mussmann, Stephen, Julia Reisler, Daniel Tsai, Ehsan Mousavi, Shayne
 O'Brien, and Moises Goldszmidt. 2022. {``Active Learning with Expected
 Error Reduction.''} \url{https://arxiv.org/abs/2211.09283}.
-
-\bibitem[\citeproctext]{ref-myers2021learning}
-Myers, Vivek, Erdem Bıyık, Nima Anari, and Dorsa Sadigh. 2021.
-{``Learning Multimodal Rewards from Rankings.''}
-\url{https://arxiv.org/abs/2109.12750}.
 
 \bibitem[\citeproctext]{ref-nair2022r3m}
 Nair, Suraj, Aravind Rajeswaran, Vikash Kumar, Chelsea Finn, and Abhinav
@@ -8838,13 +8074,10 @@ Language Processing} 18:1323--31.
 
 \bookmarksetup{startatroot}
 
-\chapter{Model-Free Preference Optimization}\label{sec-model-free}
+\chapter{Alignment of Policy with
+Preferences}\label{alignment-of-policy-with-preferences}
 
-\section{Individual Preference Optimization via Dueling
-Bandit}\label{individual-preference-optimization-via-dueling-bandit}
-
-\subsection{Introduction to Dueling Bandit Problem and Its
-Extension}\label{introduction-to-dueling-bandit-problem-and-its-extension}
+\section{Dueling Bandit}\label{dueling-bandit}
 
 The multi-armed bandit (MAB) problem involves a gambler deciding which
 lever to pull on an MAB machine to maximize the winning rate, despite
@@ -9676,301 +8909,6 @@ systems can create a sense of novelty and interest, prompting even the
 most transient or self-interested users to engage in exploration,
 thereby enhancing the system's overall knowledge base and recommendation
 quality.
-
-\subsection{Incentive-Compatible Online
-Learning}\label{incentive-compatible-online-learning}
-
-To address this problem, we seek to create a model. But first, it is
-useful to outline the key criteria that our model must achieve.
-
-\begin{itemize}
-\item
-  The \emph{core} of the model revolves around repeated interactions
-  between a planner (the system) and multiple agents (the users). Each
-  agent, upon arrival in the system, is presented with a set of
-  available options to choose from. These options could vary widely
-  depending on the application of the model, such as routes in a
-  transportation network, a selection of hotels in a travel booking
-  system, or even entertainment choices in a streaming service.
-\item
-  The \emph{interaction process} is straightforward but crucial: agents
-  arrive, select an action from the provided options, and then report
-  feedback based on their experience. This feedback is vital as it forms
-  the basis upon which the planner improves and evolves its
-  recommendations. The agents in this model are considered strategic;
-  they aim to maximize their reward based on the information available
-  to them. This aspect of the model acknowledges the real-world scenario
-  where users are typically self-interested and seek to optimize their
-  own outcomes.
-\item
-  The \emph{planner}, on the other hand, has a broader objective. It
-  aims to learn which alternatives are best in a given context and works
-  to maximize the overall welfare of all agents. This involves a complex
-  balancing act: the planner must accurately interpret feedback from a
-  diverse set of agents, each with their own preferences and biases, and
-  use this information to refine and improve the set of options
-  available. The ultimate goal of the planner is to create a dynamic,
-  responsive system that not only caters to the immediate needs of
-  individual agents but also enhances the collective experience over
-  time, leading to a continually improving recommendation ecosystem.
-\end{itemize}
-
-Let's break this up into a set of tangible research questions that we
-seek to answer in the rest of this chapter.
-
-\begin{itemize}
-\item
-  \textbf{Planner Limitations}: We seek to address the inherent
-  limitations faced by the planner, particularly in scenarios where
-  monetary transfers are not an option, and the only tool at its
-  disposal is the control over the flow of information between agents.
-  This inquiry aims to understand the extent to which these limitations
-  impact the planner's ability to effectively guide and influence agent
-  behavior.
-\item
-  \textbf{Inducing Exploration}: A critical question is whether the
-  planner can successfully induce exploration among agents, especially
-  in the absence of financial incentives. This involves investigating
-  strategies to encourage users to try less obvious or popular options,
-  thus broadening the scope of feedback and enhancing the system's
-  ability to learn and identify the best alternatives.
-\item
-  \textbf{Rate of Learning}: Another essential research area is
-  understanding the rate at which the planner learns from agent
-  interactions. This encompasses examining how different agent
-  incentives, their willingness to explore, and their feedback impact
-  the speed and efficiency with which the planner can identify optimal
-  recommendations.
-\item
-  \textbf{Model Extensions}: The model can be extended in several
-  directions, each raising its own set of questions.
-
-  \begin{enumerate}
-  \def\labelenumi{\arabic{enumi}.}
-  \item
-    Multiple Agents with Interconnected Payoffs: When multiple agents
-    arrive simultaneously, their choices and payoffs become
-    interconnected, resembling a game. The research question here
-    focuses on how these interdependencies affect individual and
-    collective decision-making.
-  \item
-    Planner with Arbitrary Objective Function: Investigating scenarios
-    where the planner operates under an arbitrary objective function,
-    which might not align with maximizing overall welfare or learning
-    the best alternative.
-  \item
-    Observed Heterogeneity Among Agents: This involves situations where
-    differences among agents are observable and known, akin to
-    contextual bandits in machine learning. The research question
-    revolves around how these observable traits can be used to tailor
-    recommendations more effectively.
-  \item
-    Unobserved Heterogeneity Among Agents: This aspect delves into
-    scenarios where differences among agents are not directly
-    observable, necessitating the use of causal inference techniques to
-    understand and cater to diverse user needs.
-  \end{enumerate}
-\end{itemize}
-
-\subsubsection*{Bayesian Incentive-Compatible Bandit
-Model}\label{bayesian-incentive-compatible-bandit-model}
-\addcontentsline{toc}{subsubsection}{Bayesian Incentive-Compatible
-Bandit Model}
-
-In this section, we introduce the main model of study in this chapter
-(\citeproc{ref-mansour2019bayesianincentivecompatiblebanditexploration}{Mansour,
-Slivkins, and Syrgkanis 2019};
-\citeproc{ref-mansour2021bayesianexplorationincentivizingexploration}{Mansour
-et al. 2021}). In our setup, there is a ``planner," which aims to
-increase exploration, and many independent''agents," which will act
-selfishly (in a way that they believe will maximize their individual
-reward).
-
-Under our model shown in Figure \hyperref[fig-planner-agent]{1.1}, there
-are \(K\) possible actions that all users can take, and each action has
-some mean reward \(\mu_i \in [0, 1]\). In addition, there is a common
-prior belief on each \(\mu_i\) across all users.. The \(T\) agents, or
-users, will arrive sequentially. As the \(t\)'th user arrives, they are
-recommended an action \(I_t\) by the planner, which they are free to
-follow or not follow. After taking whichever action they choose, the
-user experiences some realized reward \(r_i \in [0, 1]\), which is
-stochastic i.i.d. with mean \(\mu_i\), and reports this reward back to
-the planner.
-
-\begin{figure}
-
-\centering{
-
-\includegraphics[width=0.6\linewidth,height=\textheight,keepaspectratio]{src/Figures/planner-agent-setup.png}
-
-}
-
-\caption{\label{fig-planner-agent}Planner-agent setup}
-
-\end{figure}%
-
-So far, the model we have defined is equivalent to a multi-armed bandit
-model, which we have seen earlier in this chapter
-(\hyperref[4optim]{1}). Under this model, well-known results in
-economics, operations research and computer science show that
-\(O(\sqrt{T})\) regret is achievable
-(\citeproc{ref-russo2015informationtheoreticanalysisthompsonsampling}{Russo
-and Roy 2015}; \citeproc{ref-auer_cesa-bianchi_fischer_2002}{Auer,
-Cesa-Bianchi, and Fischer 2002}; \citeproc{ref-LAI19854}{Lai and Robbins
-1985}) with algorithms such as Thompson sampling and UCB.
-
-However, our agents are strategic and aim to maximize their own rewards.
-If they observe the rewards gained from actions taken by other previous
-users, they will simply take the action they believe will yield the
-highest reward given the previous actions; they would prefer to benefit
-from exploration done by other users rather than take the risk of
-exploring themselves. Therefore, exploration on an individual level,
-which the planner would like to facilitate, is not guaranteed under this
-paradigm.
-
-In light of this, we also require that our model satisfy
-\textbf{incentive compatibility}, or that taking the action recommended
-by the planner has an expected utility that is as high as any other
-action the agent could take. Formally,
-\[\forall i : \, E[\mu_i | I_t = i] \geq E[\mu_{i'} | I_t = i].\] Note
-that this incentivizes the agents to actually take the actions
-recommended by the planner; if incentive compatibility is not satisfied,
-agents would simply ignore the planner and take whatever action they
-think will lead to the highest reward.
-
-At a high level, the key to achieving incentive compatibility while
-still creating a policy for the planner that facilitates exploration is
-information asymmetry. Under this paradigm, the users only have access
-to their previous recommendations, actions, and rewards, and not to the
-recommendations, actions, and rewards of other users. Therefore, they
-are unsure of whether, after other users take certain actions and
-receive certain rewards, arms that they might have initially considered
-worse in practice outperform arms that they initially considered better.
-Only the planner has access to the previous actions and rewards of all
-users; the user only has access to their own recommendations and overall
-knowledge of the planner's policy.
-
-The main question we aim to answer for the rest of this section is,
-given this new constraint of incentive compatibility, is \(O(\sqrt{T})\)
-regret still achievable? We illustrate such an algorithm in the
-following.
-
-\subsubsection*{Black-box Reduction
-Algorithm}\label{black-box-reduction-algorithm}
-\addcontentsline{toc}{subsubsection}{Black-box Reduction Algorithm}
-
-The main result for this chapter is a \textbf{black-box reduction}
-algorithm to turn any bandit algorithm into an \emph{incentive
-compatible} one, with only a constant increase in Bayesian regret.
-Since, as mentioned earlier, there are bandit algorithms with
-\(O(\sqrt{T})\) Bayesian regret, black-box reduction will also allow us
-to get incentive-compatible algorithms with \(O(\sqrt{T})\) regret. The
-idea of black-box reduction will be to simulate \(T\) steps of any
-bandit algorithm in an incentive-compatible way in \(c T\) steps. This
-allows us to design incentive-compatible recommendation systems by using
-any bandit algorithm and then adapting it.
-
-Consider the following setting: there are two possible actions, \(A_1\)
-and \(A_2\). Assume the setting of \textbf{deterministic rewards}, where
-action 1 has reward \(\mu_1\) with prior \(U[1/3, 1]\) and mean
-\(\mathbb{E}[\mu_1] = 2/3\), and action 2 has reward \(\mu_2\) with
-prior \(U[0, 1]\) and mean \(\mathbb{E}[\mu_2] = 1/2\). Without the
-planner intervention and with full observability, users would simply
-always pick \(A_1\), so how can the planner \emph{incentivize} users to
-play \(A_2\)?
-
-\begin{figure}
-
-\centering{
-
-\pandocbounded{\includegraphics[keepaspectratio]{src/Figures/guinea_pig_fig.png}}
-
-}
-
-\caption{\label{fig-deterministic-guinea-pig}Illustration of black-box
-reduction algorithm when we have deterministic rewards.}
-
-\end{figure}%
-
-The key insight is going to be to \emph{hide exploration in a pool of
-exploitation}. The users are only going to receive a recommendation from
-the planner, and no other observations. After deterministically
-recommending the action with the highest expected reward (\(A_1\)), the
-planner will pick one \textbf{guinea pig} to recommend the exploratory
-action of \(A_2\). The users don't know whether they are the guinea pig,
-so intuitively, as long as the planner picks guinea pigs uniformly at
-random and at low enough frequencies, the optimal decision for the users
-is still to follow the planner's recommendation, even if it might go
-against their interest.
-
-The planner will pick the user who will be recommended the exploratory
-action uniformly at random from the \(L\) users that come after the
-first one (which deterministically gets recommended the exploitation
-action). Under this setting (illustrated in Figure
-\hyperref[fig-deterministic-guinea-pig]{1.2}), it is optimal for users
-to always follow the option that is recommended for them. More formally,
-if \(I_t\) is the recommendation that a user receives at time \(t\),
-then we have that: \[\begin{split}
-    \mathbb{E}[\mu_1 - \mu_2 | I_t = 2] Pr[I_t = 2] &= \frac{1}{L} (\mu_1 - \mu_2) \quad \text{(Gains if you are the unlucky guinea pig)}\\
-    &+ (1 - \frac{1}{L}) \mathbb{E}[\mu_1 - \mu_2 | \mu_1 < \mu_2] Pr[\mu_1 < \mu_2] \quad \text{(Loss if you are not and $\mu_1 < \mu_2$)}\\
-    &\leq 0
-\end{split}\] This holds when \(L \geq 12\). It means that the gains
-from not taking the recommended action are \emph{negative}, which
-implies that users should always take the recommendation.
-
-So far we have considered the case where rewards are deterministic, but
-what about \textbf{stochastic rewards}? We are now going to consider the
-case where rewards are independent and identically distributed from some
-distribution, and where each action \(A_i\) has some reward distribution
-\(r_i^t \sim D_i, \mathbb{E}[r_i^t] = \mu_i\). Back to the case where
-there are only two actions, we are going to adapt the prior algorithm of
-guinea pig-picking to the stochastic reward setting. Since one reward
-observation is not enough to fully know \(\mu_1\) anymore, we'll instead
-observe the outcome of the first action \(M\) times to form a strong
-posterior \(\mathbb{E}[\mu_1 | r_1^1, \ldots r_1^M]\).
-
-\begin{figure}
-
-\centering{
-
-\pandocbounded{\includegraphics[keepaspectratio]{src/Figures/stochastic_guinea_pig.png}}
-
-}
-
-\caption{\label{fig-stochastic-guinea-pig}Illustration of black-box
-reduction algorithm when we have stochastic rewards.}
-
-\end{figure}%
-
-Figure \hyperref[fig-stochastic-guinea-pig]{1.3} illustrates the
-algorithm that we can use with stochastic rewards when there are two
-actions. Similarly, as before, we pick one guinea pig uniformly at
-random from the next \(L\) users and use the reward we get as the
-exploratory signal.\\
-In a very similar manner, we can generalize this algorithm from always
-having two actions to the general multi-armed bandit problem. Now
-suppose we have a general multi-armed bandit algorithm \(A\). We will
-wrap this algorithm around our black box reduction algorithm to make it
-incentive-compatible.
-
-\begin{figure}
-
-\centering{
-
-\pandocbounded{\includegraphics[keepaspectratio]{src/Figures/multi-armed-guinea-pig.png}}
-
-}
-
-\caption{\label{fig-multi-armed-guinea-pig}Illustration of black-box
-reduction algorithm for the general multi-armed bandit case.}
-
-\end{figure}%
-
-As Figure \hyperref[fig-multi-armed-guinea-pig]{1.4} shows, we wrap
-every decision that \(A\) would make by exactly \(L-1\) recommendations
-of the action believed to be the best so far. This guarantees that the
-expected rewards for the users that are not chosen as guinea pigs are at
-least as good as \(A\)'s reward at phase \(n\).
 
 \section{Preferential Bayesian
 Optimization}\label{preferential-bayesian-optimization}
@@ -12089,11 +11027,6 @@ Astudillo, Raul, Zhiyuan Jerry Lin, Eytan Bakshy, and Peter I. Frazier.
 Preferential Bayesian Optimization.''}
 \url{https://arxiv.org/abs/2303.15746}.
 
-\bibitem[\citeproctext]{ref-auer_cesa-bianchi_fischer_2002}
-Auer, Peter, Nicolò Cesa-Bianchi, and Paul Fischer. 2002. {``Finite-Time
-Analysis of the Multiarmed Bandit Problem.''} \emph{Machine Learning} 47
-(2). \url{https://doi.org/10.1023/A:1013689704352}.
-
 \bibitem[\citeproctext]{ref-bastani2020online}
 Bastani, Hamsa, and Mohsen Bayati. 2020. {``Online Decision Making with
 High-Dimensional Covariates.''} \emph{Operations Research} 68 (1):
@@ -12137,12 +11070,6 @@ Kahneman, Daniel, and Amos Tversky. 1979. {``Prospect Theory: Analysis
 of Decision Under Risk.''} \emph{Econometrica} 47 (2).
 \url{https://doi.org/10.2307/1914185}.
 
-\bibitem[\citeproctext]{ref-LAI19854}
-Lai, T. L, and Herbert Robbins. 1985. {``Asymptotically Efficient
-Adaptive Allocation Rules.''} \emph{Advances in Applied Mathematics} 6
-(1): 4--22.
-https://doi.org/\url{https://doi.org/10.1016/0196-8858(85)90002-8}.
-
 \bibitem[\citeproctext]{ref-liu2018customized}
 Liu, Bing, Tong Yu, Ian Lane, and Ole J. Mengshoel. 2018. {``Customized
 Nonlinear Bandits for Online Response Selection in Neural Conversation
@@ -12151,16 +11078,6 @@ Artificial Intelligence and Thirtieth Innovative Applications of
 Artificial Intelligence Conference and Eighth AAAI Symposium on
 Educational Advances in Artificial Intelligence}.
 AAAI'18/IAAI'18/EAAI'18. New Orleans, Louisiana, USA: AAAI Press.
-
-\bibitem[\citeproctext]{ref-mansour2019bayesianincentivecompatiblebanditexploration}
-Mansour, Yishay, Aleksandrs Slivkins, and Vasilis Syrgkanis. 2019.
-{``Bayesian Incentive-Compatible Bandit Exploration.''}
-\url{https://arxiv.org/abs/1502.04147}.
-
-\bibitem[\citeproctext]{ref-mansour2021bayesianexplorationincentivizingexploration}
-Mansour, Yishay, Aleksandrs Slivkins, Vasilis Syrgkanis, and Zhiwei
-Steven Wu. 2021. {``Bayesian Exploration: Incentivizing Exploration in
-Bayesian Games.''} \url{https://arxiv.org/abs/1602.07570}.
 
 \bibitem[\citeproctext]{ref-misra2019dynamic}
 Misra, Kanishka, Eric M. Schwartz, and Jacob Abernethy. 2019. {``Dynamic
@@ -12172,10 +11089,6 @@ Experiments.''} \emph{Marketing Science} 38 (2): 226--52.
 perez, julien, and Tomi Silander. 2018. {``Contextual Memory Bandit for
 Pro-Active Dialog Engagement.''}
 \url{https://openreview.net/forum?id=SJiHOSeR-}.
-
-\bibitem[\citeproctext]{ref-russo2015informationtheoreticanalysisthompsonsampling}
-Russo, Daniel, and Benjamin Van Roy. 2015. {``An Information-Theoretic
-Analysis of Thompson Sampling.''} \url{https://arxiv.org/abs/1403.5341}.
 
 \bibitem[\citeproctext]{ref-shen2015portfolio}
 Shen, Weiwei, Jun Wang, Yu-Gang Jiang, and Hongyuan Zha. 2015.
@@ -12227,6 +11140,723 @@ Bandit Approaches for Recommender Systems.''} In \emph{Neural
 Information Processing}, edited by Derong Liu, Shengli Xie, Yuanqing Li,
 Dongbin Zhao, and El-Sayed M. El-Alfy, 811--21. Cham: Springer
 International Publishing.
+
+\end{CSLReferences}
+
+\bookmarksetup{startatroot}
+
+\chapter{Aggregation of Preferences}\label{aggregation-of-preferences}
+
+\section{Social Choice Theory}\label{sec-choices-aggregation}
+
+In many applications, human preferences must be aggregated across
+multiple individuals to determine a collective decision or ranking. This
+process is central to social choice theory, which provides a
+mathematical foundation for preference aggregation. Unlike individual
+preference modeling, which focuses on understanding how a single person
+makes decisions, social choice theory addresses the challenge of
+combining multiple preference profiles into a single, coherent outcome.
+One of the most widely used approaches to aggregating preferences is
+voting. A voting rule is a function that maps a set of individual
+preference rankings to a collective decision. The outcome of a vote is
+determined by a social choice function (SCF), which selects a winner
+based on the aggregated preferences. Several voting rules exist, each
+with different properties:
+
+\begin{itemize}
+\tightlist
+\item
+  Plurality Rule: Each voter assigns one point to their top choice, and
+  the alternative with the most points wins.
+\item
+  Borda Count: Voters rank all alternatives, and points are assigned
+  based on the position in each ranking.
+\item
+  Single Transferable Vote (STV): Voters rank choices, and rounds of
+  elimination occur until a candidate has a majority.
+\item
+  Condorcet Methods: The Condorcet winner is the item that would win in
+  all pairwise comparisons against other alternatives (if one exists).
+\end{itemize}
+
+However, preference aggregation is not always straightforward. The
+Condorcet Paradox illustrates that no single alternative may be a clear
+winner due to cycles in majority preferences, violating transitivity.
+Additionally, different voting rules can yield different winners,
+highlighting the importance of selecting an appropriate aggregation
+method. A fundamental result in social choice theory is Arrow's
+Impossibility Theorem, which states that when there are three or more
+alternatives, no voting system can simultaneously satisfy the following
+fairness criteria:
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  Unanimity (Pareto efficiency): If all individuals prefer one item over
+  another, the group ranking should reflect this.
+\item
+  Independence of Irrelevant Alternatives: The relative ranking of two
+  items should not be influenced by another unrelated item.
+\item
+  Non-dictatorship: No single individual's preference should always
+  determine the group's outcome.
+\end{enumerate}
+
+Arrow's theorem suggests that every fair aggregation method must
+compromise on at least one of these desirable properties. Additionally,
+the Gibbard-Satterthwaite Theorem proves that any deterministic voting
+rule that selects a single winner is either dictatorial (one person
+always determines the result) or manipulable (voters can strategically
+misrepresent their preferences to achieve a better outcome). While
+manipulation is theoretically possible, certain voting rules, such as
+STV, introduce computational complexity that makes strategic voting
+impractical in real-world scenarios.
+
+Preference aggregation is also critical in RLHF, where human judgments
+guide model training. Aggregating human preferences in RLHF faces
+challenges similar to traditional voting, such as inconsistencies in
+preferences and strategic bias. Several approaches address these
+challenges. For example, Majority Voting simply aggregates by selecting
+the most preferred response. Weighted Voting adjusts vote weights based
+on expertise or trustworthiness. Jury Learning is a method that
+integrates dissenting opinions, ensuring that minority perspectives are
+not entirely disregarded. Lastly, Social Choice in AI Alignment
+incorporates diverse human feedback to align AI behavior with a broad
+spectrum of human values. These approaches highlight the interplay
+between human preference modeling and machine learning. Designing
+aggregation mechanisms that reflect collective human values is an
+ongoing research challenge. While traditional social choice methods
+focus on aggregation, recent work in pluralistic alignment suggests
+alternative frameworks that preserve the diversity of human preferences
+rather than collapsing them into a single decision. Pluralistic AI
+systems aim to:
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  Present a spectrum of reasonable responses instead of forcing a single
+  choice.
+\item
+  Allow steering towards specific perspectives while maintaining
+  fairness.
+\item
+  Ensure distributional pluralism, calibrating AI systems to diverse
+  human viewpoints.
+\end{enumerate}
+
+This perspective is particularly relevant in generative AI, where models
+trained on aggregated preferences may fail to capture the nuances of
+diverse human values. Aggregating human preferences is a complex task
+influenced by mathematical constraints and strategic considerations.
+Voting-based methods provide well-studied mechanisms for aggregation,
+but they face fundamental limitations, as Arrow's and
+Gibbard-Satterthwaite's theorems outlined. Beyond traditional
+aggregation, emerging approaches in RL and AI alignment seek to balance
+fairness, robustness, and pluralism. As machine learning systems
+increasingly interact with human preferences, designing aggregation
+frameworks that capture the richness of human decision-making remains an
+active and critical area of research.
+
+\section{Auction Theory}\label{single-item-auctions}
+
+The first problem within auction theory we will consider is the
+\emph{single-item auction}. The premise of this problem is that there is
+a single item to sell, \(n\) bidders (with unknown private valuations of
+the item \(v_1\), ..., \(v_n\)). The bidder's individual objective is to
+maximize utility: the value \(v_i\) of the item subtracted by the price
+paid for the item. The auction procedure is standard in the sense that
+bids are solicited and the highest bid will win the auction. While the
+objective of the individual bidder is clear, there could be a plethora
+of different objectives for the auction as a whole. One option could be
+to maximize social surplus, meaning the goal is to maximize the value of
+the winner. Another objective could be to maximize seller profit which
+is the payment of the winner. For simplicity, we can focus on the first
+objective where the goal is to maximize social surplus. If we want to
+maximize social surplus it turns out that a great way to do this is the
+``second-price auction''.
+
+In the second-price auction, we will operate under slightly different
+conditions. In the second-price auction we (1) solicit sealed bids, (2)
+have the winner be the highest bidder, and (3) charger winner the
+second-highest bid price. As an example, if the solicited bids are
+\(b = (2, 6, 4, 1)\) the winner will be that who bid \(6\), but will pay
+a price of \(4\). From here, we can do some equilibrium analysis to try
+and learn what the optimal bidding strategy is for each bidder. Let the
+amount bidder \(i\) bids to be \(b_i\), so we have bids
+\(b_1, b_2, ..., b_n\). How much should bidder \(i\) bid? To analyze
+this, let us define \(t_i = max_{j \neq i} b_j\) which represents the
+max of the bids that is not from bidder \(i\). There are now two cases
+to consider: if \(b_i\) \textgreater{} \(t_i\) and if \(b_i\)
+\textless{} \(t_i\). In the first case the bidder \(i\) wins, and if the
+bidder bid \(b_i = v_i\), they are guaranteed to have a positive return
+on bid. In the other case, they lose the bid and the net loss is 0
+because they don't have to pay. From this we can conclude that bidder
+\(i\)'s dominant strategy is to just bid \(b_i = v_i\). Rigorously
+proving this is a little bit trickier, but it was shown from Vickrey in
+1961 {[}cite{]} that truthful bidding is the dominant strategy in
+second-price auctions. A corollary of this is that we are maximizing
+social surplus since bids are values and the winner is the bidder with
+highest valuation.
+
+If we want to look at things from the perspective of a seller trying to
+maximize their profit we need to treat the bidder's bids as uniform
+random variables. Consider the example scenario where we have two
+bidders each bidding uniformly between 0 and 1. What is the seller's
+expected profit? (in this case profit and revenue for the seller are the
+same because we assume the seller throws away the item if it doesn't
+sell/has no valuation for it). From there the question now becomes, can
+we get more expected profit from the seller's perspective? It turns out
+there is a design where we can add a reserve price of \(r\) to the
+second-price auction. The way this works is we can (1) Insert seller-bid
+at \(r\), (2) solicit bids, (3) pick the highest bidder, and 3) charge
+the 2nd-highest bid. In effect, this is just the second-price auction
+but with a bid from the seller as well, at a price of \(r\). A lemma,
+that we won't prove here, is that the second-price auction with reserve
+price \(r\) still has a dominant strategy of just being truthful. Let's
+now consider what the profit of a second-price auction would be with two
+bidders that uniformly bid between 0 and 1 -- but this time we have a
+reserve price of \(1/2\). To calculate the expected profit we break down
+the situation into 3 cases:
+
+\begin{itemize}
+\item
+  Case 1:
+  \(1/2 > v_1 > v_2 \rightarrow 1/4 \text{ probability} \rightarrow  \mathbb{E}[\text{profit}] = 0\)
+\item
+  Case 2:
+  \(v_1 > v_2 > 1/2 \rightarrow 1/4 \text{probability} \rightarrow \mathbb{E}[v_2 | \text{case 2}] = 2/3\)
+\item
+  Case 3:
+  \(v_1 > 1/2 > v_2 \rightarrow 1/2 \text{ probability} \rightarrow 1/2\)
+\end{itemize}
+
+Why is \(E[v2 | case 2] = 2/3\)? If \(v_1\) and \(v_2\) are greater than
+\(1/2\), they are evenly spread across the interval, meaning the
+expectation will be 1/2 + 1/6 = 2/3. Adding up all these cases we get
+\(E[profit] = 5/12\). It turns out that second-price auctions with
+reserve actually maximize profit in general (for symmetric bidders)! In
+the previous section we conclude that second-price auctions with reserve
+maximize profit for the seller. In order to prove this, we now move to
+the more general topic of asking how should a monopolist divide good
+across separate markets. We can make the assumption that the demand
+model is a concave revenue \(R(q)\) in quantity \(q\). Under this
+assumption, we can just divide supply into \(q = q_a + q_b\) such that
+\(R'_a(q_a) = R'_b(q_b)\). The idea from here is a theorem from Myerson
+in 1981 that states an optimal action maximizes ``marginal revenue''.
+Consider an example where we have two bidders bidding a uniform value
+between 0 and 1. Our revenue curve can now be derived from the offering
+price \(V(q) = 1 - q\) like so: \(R(q) = qV(q) = q - q^2\). Taking the
+derivative gives us the marginal revenue \(R'(q) = 1-2q\). This means
+two things: 1) we want to sell to bidder \(i\) with the highest
+\(R'(q_i)\) and 2) we want to sell to bidder \(i\) with value at least
+\(1/2\) (if we want a positive \(R'(q_i)\). But this is just a
+second-price auction with reserve \(1/2\)! This means that for symmetric
+bidders, a second price with reserve is the optimal auction.
+
+An interesting topic to discuss is what benefits auctions bring to the
+table as opposed to just standard pricing. Online auctions used to be a
+lot more popular in the early 2000s and have been completely replaced by
+standard online pricing, even on sites like e-bay. While auctions are
+slower and have added inherent complexities, they are actually optimal
+on paper. Standard pricing on the other is non-optimal; although it is
+fast and simpler for buyers. There is actually a way to quantify this:
+for pricing \(k\) units, the loss is at most \(1 / \sqrt{2\pi k}\) of
+optimal profit. Let's consider applications in duopoly platform design.
+We know that the optimal auction is second-price with reserve, but what
+happens when we introduce competition between two auction platforms?
+Some important details related to the revenue of a second-price auction
+is that a second-price auction with no reserve and n bidders leads to
+larger revenue having an optimal reserve and n - 1 bidders
+(\citeproc{ref-bulow-klemperer1996}{Bulow and Klemperer 1996}).
+Additionally, with an entry cost, no reserve is the optimal strategy for
+maximizing revenue (\citeproc{ref-mcafee-87}{McAfee and McMillan 1987}).
+Let's consider an example of a competing auction system which is Google
+ads vs Bing ads. How should an advertiser divide the budget between
+Google and Bing? They should give the same budget to both companies.
+What happens if Bing raises their prices? Then, the advertising company
+moves more of its budget to Google from Bing.
+
+The Bulow-Klemperer theorem demonstrates that increased competition can
+be more valuable than perfect knowledge of bidders' valuation
+distributions. This result provides insight into the potential of
+simple, prior-independent auctions to approach the performance of
+optimal auctions. The theorem states that for a single-item auction with
+bidders' valuations drawn independently from a regular distribution
+\(F\). Let \(F\) be a regular distribution and \(n\) a positive integer.
+Then:
+\begin{equation}\phantomsection\label{eq-eq3.64}{E_{v_1,\ldots,v_{n+1} \sim F}[\text{Rev(VA)}(n+1 \text{ bidders})] \geq E_{v_1,\ldots,v_n \sim F}[\text{Rev(OPT}_F)(n \text{ bidders})]}\end{equation}
+where VA denotes the Vickrey auction and \(\text{OPT}_F\) denotes the
+optimal auction for \(F\). This shows that running a simple Vickrey
+auction with one extra bidder outperforms the revenue-optimal auction
+that requires precise knowledge of the distribution. It suggests that in
+practice, effort spent on recruiting additional bidders may be more
+fruitful than fine-tuning auction parameters.
+
+The VCG mechanism is a cornerstone of mechanism design, providing a
+general solution for welfare maximization in multi-parameter
+environments. The key result is that in every general mechanism design
+environment, there is a dominant-strategy incentive-compatible (DSIC)
+welfare-maximizing mechanism. According to VCG, given bids
+\(b_1, \ldots, b_n\), where each \(b_i\) is indexed by the outcome set
+\(\Omega\), the allocation rule is
+\(x(b) = \arg \max_{\omega \in \Omega} \sum_{i=1}^n b_i(\omega)\). The
+payment rule for each agent \(i\) is
+\(p_i(b) = \max_{\omega \in \Omega} \sum_{j \neq i} b_j(\omega) - \sum_{j \neq i} b_j(\omega^*)\)
+where \(\omega^* = x(b)\) is the chosen outcome. The key insight is to
+charge each agent its ``externality'' - the welfare loss inflicted on
+other agents by its presence. This payment rule, coupled with the
+welfare-maximizing allocation rule, yields a DSIC mechanism. The VCG
+mechanism can be interpreted as having each agent pay its bid minus a
+``rebate'' equal to the increase in welfare attributable to its
+presence:
+
+\begin{equation}\phantomsection\label{eq-eq3.67}{p_i(b) = b_i(\omega^*) - \left[ \sum_{j=1}^n b_j(\omega^*) - \max_{\omega \in \Omega} \sum_{j \neq i} b_j(\omega) \right]}\end{equation}
+
+While the VCG mechanism provides a theoretical solution for DSIC
+welfare-maximization in general environments, it can be challenging to
+implement in practice due to computational and communication
+complexities.
+
+Combinatorial auctions are an important class of multi-parameter
+mechanism design problems, with applications ranging from spectrum
+auctions to airport slot allocation. In a combinatorial auction, there
+are \(n\) bidders and a set \(M\) of \(m\) items. The outcome set
+\(\Omega\) consists of allocations \((S_1, \ldots, S_n)\), where \(S_i\)
+is the bundle allocated to bidder \(i\). Each bidder \(i\) has a private
+valuation \(v_i(S)\) for each bundle \(S \subseteq M\). While the VCG
+mechanism theoretically solves the welfare-maximization problem,
+combinatorial auctions face several major challenges in practice. First,
+each bidder has \(2^m - 1\) private parameters, making direct revelation
+infeasible for even moderate numbers of items. This necessitates the use
+of indirect mechanisms that elicit information on a ``need-to-know''
+basis. In addition, even when preference elicitation is not an issue,
+welfare-maximization can be an intractable problem. In practice,
+approximations are often used, hoping to achieve reasonably good
+welfare. The VCG mechanism can exhibit bad revenue and incentive
+properties in combinatorial settings. For example, adding bidders can
+sometimes decrease revenue to zero, and the mechanism can be vulnerable
+to collusion and false-name bids. Last but not least, strategic Behavior
+in Iterative Auctions: Most practical combinatorial auctions are
+iterative, comprising multiple rounds. This introduces new opportunities
+for strategic behavior, such as using bids to signal intentions to other
+bidders. These challenges make combinatorial auctions a rich and complex
+area of study, requiring careful design to balance theoretical
+guarantees with practical considerations.
+
+Spectrum auctions represent a complex application of combinatorial
+auction theory. With n bidders and m non-identical items, each bidder
+has a private valuation for every possible bundle of items, making it
+impractical to directly elicit all preferences. This necessitates the
+use of indirect, iterative mechanisms that query bidders for valuation
+information on a ``need-to-know'' basis, sacrificing some of the
+desirable properties of direct mechanisms like dominant strategy
+incentive compatibility (DSIC) and full welfare maximization. The
+fundamental challenge in spectrum auctions lies in the nature of the
+items being sold. There is a dichotomy between items that are
+substitutes (where \(v(AB) \leq v(A) + v(B))\) and those that are
+complements (where \(v(AB) > v(A) + v(B))\). Substitute items, such as
+licenses for the same area with equal-sized frequency ranges, are
+generally easier to handle. When items are substitutes, welfare
+maximization is computationally tractable, and the VCG mechanism avoids
+many undesirable properties. However, complementary items, which arise
+naturally in spectrum auctions when bidders want adjacent licenses,
+present significant challenges. Early attempts at spectrum auctions
+revealed the pitfalls of naive approaches. Sequential auctions, where
+items are sold one after another, proved problematic as demonstrated by
+a Swiss auction in 2000. Bidders struggled to bid intelligently without
+knowing future prices, leading to unpredictable outcomes and potential
+revenue loss. Similarly, simultaneous sealed-bid auctions, as used in
+New Zealand in 1990, created difficulties for bidders in coordinating
+their bids across multiple items, resulting in severely suboptimal
+outcomes.
+
+The Simultaneous Ascending Auction (SAA) emerged as a solution to these
+issues and has formed the basis of most spectrum auctions over the past
+two decades. In an SAA, multiple items are auctioned simultaneously in
+rounds, with bidders placing bids on any subset of items subject to an
+activity rule. This format facilitates price discovery, allowing bidders
+to adjust their strategies as they learn about others' valuations. It
+also allows bidders to determine valuations on a need-to-know basis,
+reducing the cognitive burden compared to direct-revelation auctions.
+Despite its advantages, the SAA is not without vulnerabilities. Demand
+reduction, where bidders strategically reduce their demand to lower
+prices, can lead to inefficient outcomes even when items are
+substitutes. The exposure problem arises with complementary items, where
+bidders risk winning only a subset of desired items at unfavorable
+prices. These issues highlight the ongoing challenges in designing
+effective spectrum auctions, balancing theoretical guarantees with
+practical considerations.
+
+Case study: Classroom Peer Grading. This section discusses work by Jason
+Hartline, Yingkai Li, Liren Shan, and Yifan Wu at Northwestern
+University, where researchers examined mechanism design for the
+classroom, specifically in terms of the optimization of scoring rules.
+They explored peer grading in the classroom and how to construct a peer
+grading system that optimizes the objectives for each stakeholder in the
+system, including those being graded, the peer graders, the TAs of the
+class, and the professor. Firstly, let's think of the classroom like a
+computer. We can think of students as local optimizers; their incentive
+is to minimize the amount of work they need to do and maximize the
+grades that they receive. The graders are imprecise operators, which
+means that there is some uncertainty in their ability to grade the work
+completed by the students. The syllabus can be thought of as the rules
+that map the actions of the students to the grade they end up receiving
+in the class. Our overall goals for this classroom based on these
+definitions is to minimize work, maximize learning, and fairly assess
+the students for the work that they do
+(\citeproc{ref-jasonH2020}{Hartline et al. 2020}). One basic question
+that we can examine, is what is the best syllabus that maximizes our
+objectives for our classroom design. Some components of this could
+include grading randomized exams, grading with partial credit, group
+projects, and finally, peer grading, which is the component that we will
+be taking a deeper dive into. The general situation of the peer grading
+problem is that proper scoring rules make peer grades horrible
+(\citeproc{ref-jasonH2020}{Hartline et al. 2020}). So we want to be able
+to optimize scoring rules and make sure that we are optimizing each
+component of the peer grading pipeline.
+
+The main algorithms focused on in this peer grading design paper were
+matching peers and TAs to submissions and the grading of those
+submissions from the TAs and the peer reviews
+(\citeproc{ref-jasonH2020}{Hartline et al. 2020}). There are quite a
+number of advantages to peer grading including that peers are able to
+learn from reviewing other people's work, it reduces the work for the
+teacher, and improves the turnaround time for assignment feedback (which
+are all part of our overarching goals for our mechanism design for the
+classroom). But, it is also important to acknowledge the potential
+disadvantages of the peer grading system: it is possible that the peer
+graders present inaccurate grades and there is student unrest. This
+presents us with a challenge: being able to incentivize accurate peer
+reviews.
+
+One problem that we run into, when we use the proper scoring rule to
+score peer reviews, if the peer graders use the lazy peer strategy,
+which means that they always report 80\(\%\) for their peer reviews,
+they get graded very well using the proper scoring rule algorithm. In
+fact, the proper scoring rule says that their peer review is 96\(\%\)
+accurate (\citeproc{ref-jasonH2023}{Hartline et al. 2023}). So how do we
+incentivize effort in reviews from peer graders? We use a scoring rule
+that maximizes the difference in score between effort or no effort
+reviews as indicated by the peer reviewers
+(\citeproc{ref-jasonH2023}{Hartline et al. 2023}). So overall, the
+analysis of datasets leads to decision optimizations and, eventually,
+payoff from those decisions.
+
+In conclusion, scoring rules are essential in being able to understand
+and analyze data thoroughly, and optimal scoring rules for binary effort
+allow us to understand the setting independent of the dataset
+(\citeproc{ref-jasonH2023}{Hartline et al. 2023}).
+
+\section{Incentive-Compatible Online
+Learning}\label{incentive-compatible-online-learning}
+
+To address this problem, we seek to create a model. We first outline the
+key criteria that our model must achieve. The model revolves around
+repeated interactions between a planner (the system) and multiple agents
+(the users). Each agent, upon arrival in the system, is presented with a
+set of available options to choose from. These options could vary widely
+depending on the application of the model, such as routes in a
+transportation network, a selection of hotels in a travel booking
+system, or even entertainment choices in a streaming service. The
+\emph{interaction process} is straightforward but crucial: agents
+arrive, select an action from the provided options, and then report
+feedback based on their experience. This feedback is vital as it forms
+the basis upon which the planner improves and evolves its
+recommendations. The agents in this model are considered strategic; they
+aim to maximize their reward based on the information available to them.
+This aspect of the model acknowledges the real-world scenario where
+users are typically self-interested and seek to optimize their own
+outcomes. The \emph{planner}, on the other hand, has a broader
+objective. It aims to learn which alternatives are best in a given
+context and works to maximize the overall welfare of all agents. This
+involves a complex balancing act: the planner must accurately interpret
+feedback from a diverse set of agents, each with their own preferences
+and biases, and use this information to refine and improve the set of
+options available. The ultimate goal of the planner is to create a
+dynamic, responsive system that not only caters to the immediate needs
+of individual agents but also enhances the collective experience over
+time, leading to a continually improving recommendation ecosystem.
+
+Here, we seek to address the inherent limitations faced by the planner,
+particularly in scenarios where monetary transfers are not an option,
+and the only tool at its disposal is the control over the flow of
+information between agents. This inquiry aims to understand the extent
+to which these limitations impact the planner's ability to effectively
+guide and influence agent behavior. A critical question is whether the
+planner can successfully induce exploration among agents, especially in
+the absence of financial incentives. This involves investigating
+strategies to encourage users to try less obvious or popular options,
+thus broadening the scope of feedback and enhancing the system's ability
+to learn and identify the best alternatives. Another question is
+understanding the rate at which the planner learns from agent
+interactions. This encompasses examining how different agent incentives,
+their willingness to explore, and their feedback impact the speed and
+efficiency with which the planner can identify optimal recommendations.
+
+The model can be extended in several directions, each raising its own
+set of questions.
+
+\begin{verbatim}
+1.  Multiple Agents with Interconnected Payoffs: When multiple agents arrive simultaneously, their choices and payoffs become interconnected, resembling a game. The research question here focuses on how these interdependencies affect individual and collective decision-making.
+
+2.  Planner with Arbitrary Objective Function: Investigating scenarios where the planner operates under an arbitrary objective function, which might not align with maximizing overall welfare or learning the best alternative.
+
+3.  Observed Heterogeneity Among Agents: This involves situations where differences among agents are observable and known, akin to contextual bandits in machine learning. The research question revolves around how these observable traits can be used to tailor recommendations more effectively.
+
+4.  Unobserved Heterogeneity Among Agents: This aspect delves into scenarios where differences among agents are not directly observable, necessitating the use of causal inference techniques to understand and cater to diverse user needs.
+\end{verbatim}
+
+In our setup, there is a ``planner,'' which aims to increase
+exploration, and many independent ``agents,'' which will act selfishly
+(in a way that they believe will maximize their individual reward)
+(\citeproc{ref-mansour2019bayesianincentivecompatiblebanditexploration}{Mansour,
+Slivkins, and Syrgkanis 2019};
+\citeproc{ref-mansour2021bayesianexplorationincentivizingexploration}{Mansour
+et al. 2021}). Under our model shown in Figure
+\hyperref[fig-planner-agent]{1.1}, there are \(K\) possible actions that
+all users can take, and each action has some mean reward
+\(\mu_i \in [0, 1]\). In addition, there is a common prior belief on
+each \(\mu_i\) across all users.. The \(T\) agents, or users, will
+arrive sequentially. As the \(t\)'th user arrives, they are recommended
+an action \(I_t\) by the planner, which they are free to follow or not
+follow. After taking whichever action they choose, the user experiences
+some realized reward \(r_i \in [0, 1]\), which is stochastic i.i.d. with
+mean \(\mu_i\), and reports this reward back to the planner.
+
+So far, the model we have defined is equivalent to a multi-armed bandit
+model, which we have seen earlier in this chapter
+(\hyperref[4optim]{1}). Under this model, well-known results in
+economics, operations research and computer science show that
+\(O(\sqrt{T})\) regret is achievable
+(\citeproc{ref-russo2015informationtheoreticanalysisthompsonsampling}{Russo
+and Roy 2015}; \citeproc{ref-auer_cesa-bianchi_fischer_2002}{Auer,
+Cesa-Bianchi, and Fischer 2002}; \citeproc{ref-LAI19854}{Lai and Robbins
+1985}) with algorithms such as Thompson sampling and UCB. However, our
+agents are strategic and aim to maximize their own rewards. If they
+observe the rewards gained from actions taken by other previous users,
+they will simply take the action they believe will yield the highest
+reward given the previous actions; they would prefer to benefit from
+exploration done by other users rather than take the risk of exploring
+themselves. Therefore, exploration on an individual level, which the
+planner would like to facilitate, is not guaranteed under this paradigm.
+
+In light of this, we also require that our model satisfy
+\textbf{incentive compatibility}, or that taking the action recommended
+by the planner has an expected utility that is as high as any other
+action the agent could take. Formally,
+\(\forall i : \, E[\mu_i | I_t = i] \geq E[\mu_{i'} | I_t = i].\) Note
+that this incentivizes the agents to actually take the actions
+recommended by the planner; if incentive compatibility is not satisfied,
+agents would simply ignore the planner and take whatever action they
+think will lead to the highest reward.
+
+At a high level, the key to achieving incentive compatibility while
+still creating a policy for the planner that facilitates exploration is
+information asymmetry. Under this paradigm, the users only have access
+to their previous recommendations, actions, and rewards, and not to the
+recommendations, actions, and rewards of other users. Therefore, they
+are unsure of whether, after other users take certain actions and
+receive certain rewards, arms that they might have initially considered
+worse in practice outperform arms that they initially considered better.
+Only the planner has access to the previous actions and rewards of all
+users; the user only has access to their own recommendations and overall
+knowledge of the planner's policy. The main question we aim to answer
+for the rest of this section is, given this new constraint of incentive
+compatibility, is \(O(\sqrt{T})\) regret still achievable? We illustrate
+such an algorithm in the following.
+
+The main result here is a \textbf{black-box reduction} algorithm to turn
+any bandit algorithm into an \emph{incentive compatible} one, with only
+a constant increase in Bayesian regret. Since, as mentioned earlier,
+there are bandit algorithms with \(O(\sqrt{T})\) Bayesian regret,
+black-box reduction will also allow us to get incentive-compatible
+algorithms with \(O(\sqrt{T})\) regret. The idea of black-box reduction
+will be to simulate \(T\) steps of any bandit algorithm in an
+incentive-compatible way in \(c T\) steps. This allows us to design
+incentive-compatible recommendation systems by using any bandit
+algorithm and then adapting it. Consider the following setting: there
+are two possible actions, \(A_1\) and \(A_2\). Assume the setting of
+\textbf{deterministic rewards}, where action 1 has reward \(\mu_1\) with
+prior \(U[1/3, 1]\) and mean \(\mathbb{E}[\mu_1] = 2/3\), and action 2
+has reward \(\mu_2\) with prior \(U[0, 1]\) and mean
+\(\mathbb{E}[\mu_2] = 1/2\). Without the planner intervention and with
+full observability, users would simply always pick \(A_1\), so how can
+the planner \emph{incentivize} users to play \(A_2\)?
+
+The key insight is going to be to \emph{hide exploration in a pool of
+exploitation}. The users are only going to receive a recommendation from
+the planner, and no other observations. After deterministically
+recommending the action with the highest expected reward (\(A_1\)), the
+planner will pick one \textbf{guinea pig} to recommend the exploratory
+action of \(A_2\). The users don't know whether they are the guinea pig,
+so intuitively, as long as the planner picks guinea pigs uniformly at
+random and at low enough frequencies, the optimal decision for the users
+is still to follow the planner's recommendation, even if it might go
+against their interest. The planner will pick the user who will be
+recommended the exploratory action uniformly at random from the \(L\)
+users that come after the first one (which deterministically gets
+recommended the exploitation action). Under this setting (illustrated in
+Figure \hyperref[fig-deterministic-guinea-pig]{1.2}), it is optimal for
+users to always follow the option that is recommended for them. More
+formally, if \(I_t\) is the recommendation that a user receives at time
+\(t\), then we have that:
+
+\[
+\begin{split}
+    \mathbb{E}[\mu_1 - \mu_2 | I_t = 2] Pr[I_t = 2] &= \frac{1}{L} (\mu_1 - \mu_2) \quad \text{(Gains if you are the unlucky guinea pig)}\\
+    &+ (1 - \frac{1}{L}) \mathbb{E}[\mu_1 - \mu_2 | \mu_1 < \mu_2] \times p[\mu_1 < \mu_2] \quad \text{(Loss if you are not and $\mu_1 < \mu_2$)}\\
+    &\leq 0
+\end{split}
+\]
+
+This holds when \(L \geq 12\). It means that the gains from not taking
+the recommended action are \emph{negative}, which implies that users
+should always take the recommendation. So far we have considered the
+case where rewards are deterministic, but what about \textbf{stochastic
+rewards}? We are now going to consider the case where rewards are
+independent and identically distributed from some distribution, and
+where each action \(A_i\) has some reward distribution
+\(r_i^t \sim D_i, \mathbb{E}[r_i^t] = \mu_i\). Back to the case where
+there are only two actions, we are going to adapt the prior algorithm of
+guinea pig-picking to the stochastic reward setting. Since one reward
+observation is not enough to fully know \(\mu_1\) anymore, we'll instead
+observe the outcome of the first action \(M\) times to form a strong
+posterior \(\mathbb{E}[\mu_1 | r_1^1, \ldots r_1^M]\). We can use with
+stochastic rewards when there are two actions. Similarly, as before, we
+pick one guinea pig uniformly at random from the next \(L\) users and
+use the reward we get as the exploratory signal.~In a very similar
+manner, we can generalize this algorithm from always having two actions
+to the general multi-armed bandit problem. Now suppose we have a general
+multi-armed bandit algorithm \(A\). We will wrap this algorithm around
+our black box reduction algorithm to make it incentive-compatible. We
+wrap every decision that \(A\) would make by exactly \(L-1\)
+recommendations of the action believed to be the best so far. This
+guarantees that the expected rewards for the users that are not chosen
+as guinea pigs are at least as good as \(A\)'s reward at phase \(n\).
+
+\section{Mutual Information Paradigm}\label{mutual-information-paradigm}
+
+In this section we discuss an influential new framework for designing
+peer prediction mechanisms, the Mutual Information Paradigm (MIP)
+introduced by Kong and Schoenebeck
+(\citeproc{ref-kongschoenebeck2019}{Kong and Schoenebeck 2019}).
+Traditional peer prediction approaches typically rely on scoring rules
+and correlation between agents' signals. However, these methods often
+struggle with issues like uninformed equilibria, where agents can
+coordinate on uninformative strategies that yield higher payoffs than
+truth-telling. The core idea is to reward agents based on the mutual
+information between their report and the reports of other agents. We
+consider a setting with \(n\) agents, each possessing a private signal
+\(\Psi_i\) drawn from some set \(\Sigma\). The mechanism asks each agent
+to report their signal, which we denote as \(\hat{\Psi}_i\). For each
+agent \(i\), the mechanism randomly selects a reference agent
+\(j \neq i\). Agent \(i\)'s payment is then calculated as
+\(MI(\hat{\Psi}_i; \hat{\Psi}_j)\) where \(MI\) is an
+information-monotone mutual information measure. An information-monotone
+\(MI\) measure must satisfy the following properties:
+
+\begin{itemize}
+\item
+  \textbf{Symmetry}: \(MI(X; Y) = MI(Y; X)\).
+\item
+  \textbf{Non-negativity}: \(MI(X; Y) \geq 0\), with equality if and
+  only if \(X\) and \(Y\) are independent.
+\item
+  \textbf{Data processing inequality}: For any transition probability
+  \(M\), if \(Y\) is independent of \(M(X)\) conditioned on \(X\), then
+  \(MI(M(X); Y) \leq MI(X; Y)\).
+\end{itemize}
+
+Two important families of mutual information measures that satisfy these
+properties are \(f\)-mutual information and Bregman mutual information.
+The \(f\)-mutual information is defined as
+\(MI_f(X; Y) = D_f(U_{X,Y}, V_{X,Y})\), where \(D_f\) is an
+\(f\)-divergence, \(U_{X,Y}\) is the joint distribution of \(X\) and
+\(Y\), and \(V_{X,Y}\) is the product of their marginal distributions.
+The Bregman mutual information is defined as:
+\(BMI_{PS}(X; Y) = \mathbb{E}_{X} [D{PS}(U_{Y|X}, U_Y)]\), where
+\(D_{PS}\) is a Bregman divergence based on a proper scoring rule
+\(PS\), \(U_{Y|X}\) is the conditional distribution of \(Y\) given
+\(X\), and \(U_Y\) is the marginal distribution of \(Y\). The MIP
+framework can be applied in both single-question and multi-question
+settings. In the multi-question setting, the mechanism can estimate the
+mutual information empirically from multiple questions. In the
+single-question setting, additional techniques like asking for
+predictions about other agents' reports are used to estimate the mutual
+information. A key theoretical result of the MIP framework is that when
+the chosen mutual information measure is strictly information-monotone
+with respect to agents' priors, the resulting mechanism is both
+dominantly truthful and strongly truthful. This means that truth-telling
+is a dominant strategy for each agent and that the truth-telling
+equilibrium yields strictly higher payoffs than any other
+non-permutation strategy profile. As research continues to address
+practical implementation challenges of designing truthful mechanisms,
+MIP-based approaches have significant potential to improve preference
+elicitation and aggregation in real-world applications lacking
+verifiable ground truth.
+
+\section*{References}\label{bibliography-5}
+\addcontentsline{toc}{section}{References}
+
+\markright{References}
+
+\phantomsection\label{refs-5}
+\begin{CSLReferences}{1}{0}
+\bibitem[\citeproctext]{ref-auer_cesa-bianchi_fischer_2002}
+Auer, Peter, Nicolò Cesa-Bianchi, and Paul Fischer. 2002. {``Finite-Time
+Analysis of the Multiarmed Bandit Problem.''} \emph{Machine Learning} 47
+(2). \url{https://doi.org/10.1023/A:1013689704352}.
+
+\bibitem[\citeproctext]{ref-bulow-klemperer1996}
+Bulow, Jeremy, and Paul Klemperer. 1996. {``Auctions Versus
+Negotiations.''} \emph{The American Economic Review} 86 (1): 180--94.
+\url{http://www.jstor.org/stable/2118262}.
+
+\bibitem[\citeproctext]{ref-jasonH2020}
+Hartline, Jason D., Yingkai Li, Liren Shan, and Yifan Wu. 2020.
+{``Optimization of Scoring Rules.''} \emph{CoRR} abs/2007.02905.
+\url{https://arxiv.org/abs/2007.02905}.
+
+\bibitem[\citeproctext]{ref-jasonH2023}
+Hartline, Jason D., Liren Shan, Yingkai Li, and Yifan Wu. 2023.
+{``Optimal Scoring Rules for Multi-Dimensional Effort.''} In
+\emph{Proceedings of Thirty Sixth Conference on Learning Theory}, edited
+by Gergely Neu and Lorenzo Rosasco, 195:2624--50. Proceedings of Machine
+Learning Research. PMLR.
+\url{https://proceedings.mlr.press/v195/hartline23a.html}.
+
+\bibitem[\citeproctext]{ref-kongschoenebeck2019}
+Kong, Yuqing, and Grant Schoenebeck. 2019. {``An Information Theoretic
+Framework for Designing Information Elicitation Mechanisms That Reward
+Truth-Telling.''} \emph{ACM Trans. Econ. Comput.} 7 (1).
+\url{https://doi.org/10.1145/3296670}.
+
+\bibitem[\citeproctext]{ref-LAI19854}
+Lai, T. L, and Herbert Robbins. 1985. {``Asymptotically Efficient
+Adaptive Allocation Rules.''} \emph{Advances in Applied Mathematics} 6
+(1): 4--22.
+https://doi.org/\url{https://doi.org/10.1016/0196-8858(85)90002-8}.
+
+\bibitem[\citeproctext]{ref-mansour2019bayesianincentivecompatiblebanditexploration}
+Mansour, Yishay, Aleksandrs Slivkins, and Vasilis Syrgkanis. 2019.
+{``Bayesian Incentive-Compatible Bandit Exploration.''}
+\url{https://arxiv.org/abs/1502.04147}.
+
+\bibitem[\citeproctext]{ref-mansour2021bayesianexplorationincentivizingexploration}
+Mansour, Yishay, Aleksandrs Slivkins, Vasilis Syrgkanis, and Zhiwei
+Steven Wu. 2021. {``Bayesian Exploration: Incentivizing Exploration in
+Bayesian Games.''} \url{https://arxiv.org/abs/1602.07570}.
+
+\bibitem[\citeproctext]{ref-mcafee-87}
+McAfee, R. Preston, and John McMillan. 1987. {``Auctions and Bidding.''}
+\emph{Journal of Economic Literature} 25 (2): 699--738.
+\url{http://www.jstor.org/stable/2726107}.
+
+\bibitem[\citeproctext]{ref-russo2015informationtheoreticanalysisthompsonsampling}
+Russo, Daniel, and Benjamin Van Roy. 2015. {``An Information-Theoretic
+Analysis of Thompson Sampling.''} \url{https://arxiv.org/abs/1403.5341}.
 
 \end{CSLReferences}
 
@@ -14693,12 +14323,12 @@ tool to enhance their counseling skills effectively.
 
 \section{Practice Exercises}\label{practice-exercises}
 
-\section*{References}\label{bibliography-5}
+\section*{References}\label{bibliography-6}
 \addcontentsline{toc}{section}{References}
 
 \markright{References}
 
-\phantomsection\label{refs-5}
+\phantomsection\label{refs-6}
 \begin{CSLReferences}{1}{0}
 \bibitem[\citeproctext]{ref-amodei2016concrete}
 Amodei, Dario, Chris Olah, Jacob Steinhardt, Paul Christiano, John

@@ -136,9 +136,9 @@ book:
     - index.qmd
     - src/chap1.qmd
     - src/chap2.qmd
-    # - src/002-reward_model.qmd
     - src/chap3.qmd
     - src/chap4.qmd
+    - src/chap5.qmd
     - src/ack.qmd
 
 # Set default options for every webpage that may or may not include Pyodide.

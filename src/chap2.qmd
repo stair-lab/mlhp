@@ -1,4 +1,14 @@
-# Model-Based Preference Optimization {#ch-model-based}
+---
+title: Active Learning of Preference Models
+format: html
+filters:
+  - pyodide
+execute:
+  engine: pyodide
+  pyodide:
+    auto: true
+
+---
 
 ::: {.content-visible when-format="html"}
 
@@ -15,121 +25,31 @@
 
 :::
 
-## Active Preference Learning
-### Introduction to Active Learning
+## Motivation
 
-In real-world scenarios, data is often scarce, and acquiring labeled data can be expensive. 
-Active learning is a machine learning paradigm that aims to reduce the amount of labeled data 
-required to train a model to achieve high accuracy. Active learning algorithms iteratively 
-select an input datapoint for an oracle (e.g., a human annotator) to label such that when the 
-label is observed, the model improves the most. The goal of AL algorithms is to minimize the number of labels
-required to achieve a desired level of performance. This technique is particularly useful in
-situations where labeling data is expensive, time-consuming, or requires domain expertise.
+Data is often scarce, and acquiring labeled data can be expensive. Active learning is a machine learning paradigm that aims to reduce the amount of labeled data required to train a model to achieve high accuracy. Active learning algorithms iteratively select an input datapoint for an oracle (e.g., a human annotator) to label such that when the label is observed, the model improves the most. The goal of AL algorithms is to minimize the number of labels required to achieve a desired level of performance. This technique is particularly useful in situations where labeling data is expensive, time-consuming, or requires domain expertise. There are two primary setups in active learning:
 
-There are two primary setups in active learning:
+-   **Pool-based:** The model selects samples from a large unlabeled pool of data. For example, a model for text classification selects the most uncertain texts from a large pool to ask a human annotator to label.
 
--   **Pool-based:** The model selects samples from a large unlabeled pool of data. 
-  For example, a model for text classification selects the most uncertain texts from a large pool 
-  to ask a human annotator to label.
+-   **Stream-based:** The model receives samples sequentially (one sample at a time) and decides whether to label them. The data is gone if the decision maker decides not to label it. For example, a system monitoring sensor data decides on-the-fly whether new sensor readings are valuable enough to label.
 
--   **Stream-based:** The model receives samples sequentially (one sample at a time) and decides 
-  whether to label them. The data is gone if the decision maker decides not to label it. 
-  For example, a system monitoring sensor data decides on-the-fly whether new sensor readings are 
-  valuable enough to label.
+A common AL process iterates between two steps: (1) Current model trained on current dataset $\mathcal{D}$, potential points $\tilde{x}_1 \dots \tilde{x}_m$ 
+are being investigated. AL will choose one of them to add to the dataset; and (2) Relative to the model, a proxy highlights the relative value of each point to model improvement 
+$(v(\tilde{x}_1) \dots v(\tilde{x}_m) )$. A naive proxy is the model's uncertainty about the point. The cycle repeats until we collect enough data or the model is good enough.
 
-A common AL process is shown in @fig-schema:
+Active learning has been successfully applied to various domains to enhance real-world systems, including computer vision, natural language processing, and recommender systems. For example, active learning can improve the computer vision models used in autonomous vehicles [@AL_app_autonomous], here driving scenes can take infinitely many forms, making it impossible to gather an exhaustive dataset. Instead, probing a model to understand what type of data it would benefit from is more practical. In robotics, autonomous agents may query humans when unsure how to act or when facing new situations [@AL_app_robotics]. In this field, collecting data often incurs significant financial and time costs: the robot must act in real-time in the real world, and while parallelization is possible, being strategic about which examples to collect can best benefit the model. In meteorology, active learning can help decide where to place additional sensors for weather predictions [@AL_app_sensors]. Sensor placement involves deploying teams to remote locations and expensive construction for an extra data point. Choosing these locations and allocating resources wisely is of interest to governments and businesses. Active learning could also be employed to select data for fine-tuning large language models (LLMs) for specific downstream tasks [@AL_app_LLMs]. In this context, it might be difficult to fully describe an NLP task one might want an LLM to solve. Often, instead of defining a task via a dataset of examples, it may be easier for a human to interact with the LLM for a specific use case, identify gaps in the model, and address those using active learning.
 
--   Current model trained on current dataset $\mathcal{D}$, potential points $\tilde{x}_1 \dots \tilde{x}_m$ 
-are being investigated. AL will choose one of them to add to the dataset. 
+Consider the scenario where a robot is being trained to assist individuals with feeding. How can such a robot be effectively taught to perform necessary tasks, such as determining the appropriate distance to reach, detecting the location of a person's mouth, and, most importantly, understanding human preferences? Typically, robots learn by observing human demonstrations, replicating the ways a person performs the task. However, this method poses significant challenges. Expert demonstrations are often limited, and training a supervised learning model would require vast amounts of demonstration data, which is difficult to obtain at scale. Moreover, demonstrations tend to be variable, reflecting the actions of individual humans, making the data collection process inconsistent. To address these limitations, alternative approaches have been proposed, such as using pairwise comparisons, where humans evaluate two action trajectories to determine the superior one, or employing physical corrections, in which reward functions are learned through human-robot interactions, with humans guiding the robot’s actions during the task.
 
--   Relative to the model, a proxy highlights the relative value of each point to model improvement 
-$(v(\tilde{x}_1) \dots v(\tilde{x}_m) )$. A naive proxy is the model's uncertainty about the point.
+Active learning algorithms can be employed in preference learning tasks, such as the previously mentioned example, where the objective is to develop a model that aligns with human preferences while minimizing the need for extensive labeled data or reducing the high cost of annotations. This chapter will explore the theoretical foundations of pairwise comparisons and active preference learning, along with extensions to these methods that address known limitations. Practical examples where these approaches prove beneficial will also be discussed. Additionally, we will examine the role of LLMs in assisting robots through corrective feedback and highlight the applications of these techniques.
 
--   The cycle repeats until we collect enough data or the model is good enough.
+## Probabilistic Reward Models
 
-![The current model is trained on the current data set $\mathcal{D}$. 
-Potential points $\tilde{x}_1, \ldots, \tilde{x}_m$ are being investigated, 
-and one of them will be chosen and added to the data set. A proxy highlights 
-the relative value of each point in terms of improving the model, denoted by 
-$v(\tilde{x}_1), \ldots, v(\tilde{x}_m)$. The point with the highest value is 
-selected and added to $\mathcal{D}$. This cycle repeats until enough data has 
-been collected or the model is good enough.](Figures/active_learning_schema.png){#fig-schema width="40%"}
+In this section, we consider a binary classification problem. The model is trained on a small labeled dataset $\mathcal{D} = \{(x_1, y_1), \ldots, (x_n, y_n)\}$, where $x_i$ represents the input data and $y_i$ is the corresponding label. The model is uncertain about the class labels of some data points and can query an oracle to obtain the true labels of these data points. The goal is to minimize the number of queries to the oracle while maximizing the model's performance. Uncertainty quantification (UQ) is a critical aspect of active learning that allows models to evaluate the informativeness of new data points. In machine learning (ML), two primary types of uncertainty are often considered: epistemic and aleatoric uncertainty. **Epistemic uncertainty**, or model uncertainty, arises from a lack of knowledge and can be reduced by acquiring more data. This type of uncertainty is especially significant when the model lacks confidence due to insufficient or incomplete information in its training set. On the other hand, **aleatoric uncertainty**, or data uncertainty, stems from the inherent randomness within the data itself. Unlike epistemic uncertainty, aleatoric uncertainty cannot be reduced, even with additional data, as it reflects noise or unpredictability in the real data-generating process. Several approaches exist to quantify uncertainty in active learning, each with its strengths and limitations. 
 
-Active learning has been successfully applied to various domains to enhance real-world systems, 
-including computer vision, natural language processing, and recommender systems. For example, active 
-learning can improve the computer vision models used in autonomous vehicles [@AL_app_autonomous], 
-here driving scenes can take infinitely many forms, making it impossible to gather an exhaustive dataset. 
-Instead, probing a model to understand what type of data it would benefit from is more practical. 
-In robotics, autonomous agents may query humans when unsure how to act or when facing new situations 
-[@AL_app_robotics]. In this field, collecting data often incurs significant financial and time costs: 
-the robot must act in real-time in the real world, and while parallelization is possible, being strategic 
-about which examples to collect can best benefit the model. In meteorology, active learning can help decide 
-where to place additional sensors for weather predictions [@AL_app_sensors]. Sensor placement involves 
-deploying teams to remote locations and expensive construction for an extra data point. Choosing these 
-locations and allocating resources wisely is of interest to governments and businesses. Active learning 
-could also be employed to select data for fine-tuning large language models (LLMs) for specific downstream 
-tasks [@AL_app_LLMs]. In this context, it might be difficult to fully describe an NLP task one might want an 
-LLM to solve. Often, instead of defining a task via a dataset of examples, it may be easier for a human to 
-interact with the LLM for a specific use case, identify gaps in the model, and address those using active learning.
+**Bayesian methods**, such as Bayesian Neural Networks (BNNs) and Gaussian Processes (GPs), offer a principled way of estimating uncertainty by incorporating prior knowledge into the model. These approaches can generate meaningful uncertainty estimates that aid in choosing informative samples for labeling. However, they can become computationally prohibitive, especially for large and complex models, limiting their applicability in some practical scenarios. Another common technique for uncertainty quantification is the use of **ensemble methods**, such as Random Forests or Gradient Boosting Machines. These methods involve training multiple models and combining their predictions to provide an estimate of uncertainty. Ensemble methods are relatively easy to implement and can give valuable insights into model uncertainty. However, they can be computationally expensive and may not always produce well-calibrated uncertainty estimates. Moreover, they do not integrate prior knowledge, which can be a disadvantage in certain applications. **Conformal prediction methods** also provide a framework for estimating uncertainty by offering a measure of confidence in predictions based on the conformity of a given instance with the training data. While these methods are useful in some contexts, this book focuses primarily on the Bayesian approach due to its theoretical robustness and capacity to quantify uncertainty in a more comprehensive manner.
 
-
-### Introduction to Active Preference Learning
-
-Consider the scenario where a robot is being trained to assist individuals with feeding. How can such a robot be 
-effectively taught to perform necessary tasks, such as determining the appropriate distance to reach, detecting the 
-location of a person's mouth, and, most importantly, understanding human preferences? Typically, robots learn by 
-observing human demonstrations, replicating the ways a person performs the task. However, this method poses 
-significant challenges. Expert demonstrations are often limited, and training a supervised learning model would 
-require vast amounts of demonstration data, which is difficult to obtain at scale. Moreover, demonstrations tend 
-to be variable, reflecting the actions of individual humans, making the data collection process inconsistent. To 
-address these limitations, alternative approaches have been proposed, such as using pairwise comparisons, where 
-humans evaluate two action trajectories to determine the superior one, or employing physical corrections, in which 
-reward functions are learned through human-robot interactions, with humans guiding the robot’s actions during the task.
-
-Active learning algorithms can be employed in preference learning tasks, such as the previously mentioned example, 
-where the objective is to develop a model that aligns with human preferences while minimizing the need for extensive 
-labeled data or reducing the high cost of annotations. This chapter will explore the theoretical foundations of 
-pairwise comparisons and active preference learning, along with extensions to these methods that address known 
-limitations. Practical examples where these approaches prove beneficial will also be discussed. Additionally, we 
-will examine the role of LLMs in assisting robots through corrective feedback and highlight the applications of these techniques.
-
-
-### Uncertainty Qualification
-
-**Problem Setup**: In this section, we consider a binary classification problem. The model is trained on a small 
-labeled dataset $\mathcal{D} = \{(x_1, y_1), \ldots, (x_n, y_n)\}$, where $x_i$ represents the input data and $y_i$ 
-is the corresponding label. The model is uncertain about the class labels of some data points and can query an oracle 
-to obtain the true labels of these data points. The goal is to minimize the number of queries to the oracle while 
-maximizing the model's performance.
-
-Uncertainty quantification (UQ) is a critical aspect of active learning that allows models to evaluate the informativeness 
-of new data points. In machine learning (ML), two primary types of uncertainty are often considered: epistemic and 
-aleatoric uncertainty. **Epistemic uncertainty**, or model uncertainty, arises from a lack of knowledge and can be 
-reduced by acquiring more data. This type of uncertainty is especially significant when the model lacks confidence 
-due to insufficient or incomplete information in its training set. On the other hand, **aleatoric uncertainty**, or 
-data uncertainty, stems from the inherent randomness within the data itself. Unlike epistemic uncertainty, aleatoric 
-uncertainty cannot be reduced, even with additional data, as it reflects noise or unpredictability in the real 
-data-generating process. Several approaches exist to quantify uncertainty in active learning, each with its strengths and limitations. 
-
-**Bayesian methods**, such as Bayesian Neural Networks (BNNs) and Gaussian Processes (GPs), offer a principled way 
-of estimating uncertainty by incorporating prior knowledge into the model. These approaches can generate meaningful 
-uncertainty estimates that aid in choosing informative samples for labeling. However, they can become computationally 
-prohibitive, especially for large and complex models, limiting their applicability in some practical scenarios.
-
-Another common technique for uncertainty quantification is the use of **ensemble methods**, such as Random Forests or 
-Gradient Boosting Machines. These methods involve training multiple models and combining their predictions to provide 
-an estimate of uncertainty. Ensemble methods are relatively easy to implement and can give valuable insights into model 
-uncertainty. However, they can be computationally expensive and may not always produce well-calibrated uncertainty 
-estimates. Moreover, they do not integrate prior knowledge, which can be a disadvantage in certain applications.
-
-**Conformal prediction methods** also provide a framework for estimating uncertainty by offering a measure of confidence 
-in predictions based on the conformity of a given instance with the training data. While these methods are useful in 
-some contexts, this book focuses primarily on the Bayesian approach due to its theoretical robustness and capacity to 
-quantify uncertainty in a more comprehensive manner.
-
-
-### Acquisition Function
-
+## Acquisition Function
 Uncertainty quantification plays a vital role in **acquisition functions**, which are central to active learning strategies. 
 These functions determine which samples are most valuable to label by evaluating their utility based on the model's 
 current uncertainty estimates. Common acquisition functions include **uncertainty sampling** [@AL_uncertainty], 
@@ -170,7 +90,6 @@ Other acquisition functions that can be employed include:
     previously selected data, with preference given to those that are farthest away. The goal is to optimize both the 
     correction of mispredictions and the diversity of the selected data.
 
-#### Uncertainty Sampling {.unnumbered}
 Uncertainty sampling [@AL_uncertainty] is a widely used acquisition function in active learning that selects data 
 points for which the model exhibits the greatest uncertainty. This method aims to improve model performance by focusing 
 labeling efforts on ambiguous samples, where additional information is likely to yield the greatest benefit. Let $x$ 
@@ -223,7 +142,6 @@ In summary, uncertainty sampling methods, whether based on entropy, margin, or l
 points that the model struggles with the most. By focusing on these uncertain samples, the model can more efficiently 
 improve its performance, making uncertainty sampling a key tool in active learning.
 
-#### Query-by-Committee {.unnumbered}
 Query-by-Committee [@AL_committee] is an active learning strategy where a committee of models selects samples for 
 labeling based on the level of disagreement among the committee members. Several acquisition functions can be employed 
 under this framework to quantify the disagreement:
@@ -242,7 +160,7 @@ under this framework to quantify the disagreement:
     where $P_c(y|x)$ is the probability distribution of committee member $c$ and $P_C(y|x)$ is the average distribution 
     across the committee.
 
-**Example:** Consider a binary classification problem with two classes $y_1$ and $y_2$. We have three committee members and three samples: $x_1$, $x_2$, and $x_3$. The predictive distributions for each committee member are given below:
+Consider a binary classification problem with two classes $y_1$ and $y_2$. We have three committee members and three samples: $x_1$, $x_2$, and $x_3$. The predictive distributions for each committee member are given below:
 
 |   $x$ | $p_1(y_1 \vert \cdot)$  | $p_1(y_2 \vert \cdot)$ | $p_2(y_1 \vert \cdot)$ | $p_2(y_2 \vert \cdot)$ | $p_3(y_1 \vert \cdot)$ | $p_3(y_2 \vert \cdot)$ |
 | ----- | --------------------- | --------------------- | --------------------- | --------------------- | --------------------- | --------------------- |
@@ -274,8 +192,6 @@ Next, we compute the entropy of these consensus probabilities:
 
 Thus, $x_1$ would be selected for labeling as it has the highest consensus entropy, indicating the highest level of disagreement among the committee members.
 
-#### Bayesian Active Learning by Disagreement {.unnumbered}
-
 Bayesian Active Learning by Disagreement (BALD) [@AL_BALD] selects the samples for which the model expects to gain the most Shannon information when corresponding labels are observed:
 
 $$
@@ -283,7 +199,6 @@ $$
 $$ {#eq-eq3.2}
 
 where $\mathbb{H}[\cdot]$ denotes entropy. When there is significant disagreement among models, the predictive entropy (the first term) will be large, while the expected entropy (the second term) will be smaller. This difference represents the degree to which the models disagree. BALD selects points where this disagreement is maximized.
-
 
 -   To compute the first term, we can derive the following expression:
 
@@ -387,8 +302,6 @@ $$
 $$ {#eq-eq3.15}
 
 We would select $x_1$ for labeling since it has the highest BALD score, indicating that labeling $x_1$ will provide the most information gain for the model.
-
-### Active Learning by Variance Reduction
 
 Active Learning by Variance Reduction [@AL_variance] is an algorithm designed to select the next data point for labeling 
 based on the anticipated reduction in the model's variance. The objective is to identify the point $\tilde{x} \sim p(x)$ 
@@ -1227,8 +1140,6 @@ environments heralds a new era in robotic manipulation, where language
 and vision coalesce to create more intelligent, adaptable, and capable
 robotic systems.
 
-### Conclusion
-
 On the note of applying active learning to RL and environment settings,
 there have been many recent papers that have attempted to extend this to
 more modern RL environments. For example, the paper \"When to Ask for
@@ -1277,18 +1188,14 @@ data for every data point, potentially revolutionizing fields like
 medical image analysis. There is an ongoing need for methods that
 combine self/semi-supervised learning with active learning.
 
-**Algorithm Scalability:**
-
-Scalability is a critical concern for online AL algorithms, particularly
+**Algorithm Scalability:** Scalability is a critical concern for online AL algorithms, particularly
 when dealing with large datasets and high-velocity data streams. The
 computational demands of AL can become prohibitive as data volume
 increases, posing challenges for practical deployment. Issues of
 catastrophic forgetting and model plasticity further complicate
 scalability, requiring careful consideration in algorithm design.
 
-**Labeling Quality Assurance:**
-
-The effectiveness of most online AL strategies hinges on the quality of
+**Labeling Quality Assurance:** The effectiveness of most online AL strategies hinges on the quality of
 labeled data. Ensuring labeling accuracy in real-world scenarios is
 challenging, with human annotators prone to errors, biases, and diverse
 interpretations. Addressing imperfections in labeling through
@@ -1296,9 +1203,7 @@ considerations of oracle imperfections becomes essential in real-life AL
 applications. Solutions for cleaning up data and verifying its quality
 need to be more aggressively pursued.
 
-**Data Drift Challenges:**
-
-Real-world settings introduce data drift, where distributions shift over
+**Data Drift Challenges:** Real-world settings introduce data drift, where distributions shift over
 time, challenging models to adapt for accurate predictions. These shifts
 can impact the quality of labeled data acquired in the AL process. For
 example, the criterion or proxy used for selecting informative instances
@@ -1306,9 +1211,7 @@ may be thrown off when the distribution a model is trained on, and the
 distribution we want it to perform well on, are too far away from one
 another.
 
-**Evaluation in Real-Life Scenarios**:
-
-While AL methods are often evaluated assuming access to ground-truth
+**Evaluation in Real-Life Scenarios**: While AL methods are often evaluated assuming access to ground-truth
 labels, the real motivation for AL lies in label scarcity. Assessing the
 effectiveness of AL strategies becomes challenging in real-life
 scenarios where ground-truth labels may be limited. In other words, one
@@ -1321,9 +1224,7 @@ first place.
 
 By systematically addressing these challenges, the field of active
 learning in AI can progress towards more effective and practical
-applications.
-
-In summary, active learning is a promising modern tool to model training
+applications. In summary, active learning is a promising modern tool to model training
 that presents potential benefits. As was mentioned at the start, there
 are numerous approaches that can be employed by active learning,
 starting from reducing error of model's prediction, reducing variance,
@@ -1345,43 +1246,11 @@ Max Halford [@max_halford].
 
 ## Metric Elicitation {#sec-metric-elicitation}
 
-### Introduction to Performance Metric Elicitation
+In binary classification problems, selecting an appropriate performance metric that aligns with the real-world task is crucial. The problem of *metric elicitation* aims to characterize and discover the performance metric of a practitioner, reflecting the rewards or costs associated with correct or incorrect classification. For instance, in medical contexts such as diagnosing a disease or determining the appropriateness of a treatment, trade-offs are made for incorrect decisions. Not administering a treatment could lead to the worsening of a disease (a false negative), whereas delivering the wrong treatment could cause adverse side effects worse than not treating the condition (a false positive). Rather than choosing from a limited set of default choices like the F1-score or weighted accuracy, metric elicitation considers the process of devising a metric that best matches the preferences of practitioners or users. This is achieved by querying an "oracle" who provides feedback on proposed potential metrics through pairwise comparisons. Since queries to humans are often expensive, the goal is to minimize the number of comparisons needed.
 
-In binary classification problems, selecting an appropriate performance metric that aligns with the real-world 
-task is crucial. The problem of *metric elicitation* aims to characterize and discover the performance metric of a 
-practitioner, reflecting the rewards or costs associated with correct or incorrect classification. For instance, 
-in medical contexts such as diagnosing a disease or determining the appropriateness of a treatment, trade-offs are 
-made for incorrect decisions. Not administering a treatment could lead to the worsening of a disease (a false negative), 
-whereas delivering the wrong treatment could cause adverse side effects worse than not treating the condition (a false positive).
+The motivation for the pairwise comparison aspect of metric elicitation [@pmlr-v89-hiranandani19a] stems from a rich history of literature in psychology, economics, and computer science [@pref1; @pref2; @pref3; @pref4; @ab], demonstrating that humans are often ineffective at providing absolute feedback on aspects such as potential prices, user interfaces, or even ML model outputs (hence the comparison-based structure of RLHF, for instance). Additionally, confusion matrices accurately capture binary metrics such as accuracy, $F_\beta$, and Jaccard similarity by recording the number of false positives, true positives, false negatives, and true negatives obtained by a classifier. The main goal of this chapter is to introduce two binary-search procedures that can approximate the oracle's performance metric for two types of metrics (linear and linear-fractional performance metrics) by presenting the oracle with confusion matrices generated by various classifiers. Essentially, we are learning an optimal threshold for classification given a decision boundary for a binary classification problem.
 
-Rather than choosing from a limited set of default choices like the F1-score or weighted accuracy, metric elicitation 
-considers the process of devising a metric that best matches the preferences of practitioners or users. This is 
-achieved by querying an "oracle" who provides feedback on proposed potential metrics through pairwise comparisons. 
-Since queries to humans are often expensive, the goal is to minimize the number of comparisons needed.
-
-**Note:** Contents in this section are derived from "Performance Metric Elicitation from Pairwise 
-Classifier Comparisons" by [@pmlr-v89-hiranandani19a], which introduced the problem of metric 
-elicitation and the framework for binary-class metric elicitation from pairwise comparisons. This section aims to 
-present their work expository while providing additional motivation and intuitive explanations to supplement their work.
-
-The motivation for the pairwise comparison aspect of metric elicitation stems from a rich history of literature in 
-psychology, economics, and computer science [@pref1; @pref2; @pref3; @pref4; @ab], demonstrating that humans are often 
-ineffective at providing absolute feedback on aspects such as potential prices, user interfaces, or even ML model 
-outputs (hence the comparison-based structure of RLHF, for instance). Additionally, confusion matrices accurately 
-capture binary metrics such as accuracy, $F_\beta$, and Jaccard similarity by recording the number of false positives, 
-true positives, false negatives, and true negatives obtained by a classifier. The main goal of this chapter is to 
-introduce two binary-search procedures that can approximate the oracle's performance metric for two types of metrics 
-(linear and linear-fractional performance metrics) by presenting the oracle with confusion matrices generated by 
-various classifiers. Essentially, we are learning an optimal threshold for classification given a decision boundary 
-for a binary classification problem.
-
-First, we introduce some relevant notation that will later be used to formalize notions of oracle queries, 
-classifiers, and metrics. In this context, $X \in \mathcal{X}$ represents an input random variable, while 
-$Y \in \{0, 1\}$ denotes the output random variable. We learn from a dataset of size $n$, denoted by 
-$\{(x, y)_i\}^n_{i=1}$, which is generated independently and identically distributed (i.i.d.) from some 
-distribution $\mathbb{P}(X, Y)$. The conditional probability of the positive class, given some sample $x$, 
-is denoted by $\eta(\vec{x}) = \mathbb{P}(Y=1 | X=x)$. The marginal probability of the positive class 
-is represented by $\zeta = \mathbb{P}(Y=1)$. 
+First, we introduce some relevant notation that will later be used to formalize notions of oracle queries, classifiers, and metrics. In this context, $X \in \mathcal{X}$ represents an input random variable, while $Y \in \{0, 1\}$ denotes the output random variable. We learn from a dataset of size $n$, denoted by $\{(x, y)_i\}^n_{i=1}$, which is generated independently and identically distributed (i.i.d.) from some distribution $\mathbb{P}(X, Y)$. The conditional probability of the positive class, given some sample $x$, is denoted by $\eta(\vec{x}) = \mathbb{P}(Y=1 | X=x)$. The marginal probability of the positive class is represented by $\zeta = \mathbb{P}(Y=1)$. 
 
 The set of all potential classifiers is $\mathcal{H} = \{h : \mathcal{X} \rightarrow \{0,1\}\}$. The confusion 
 matrix for a classifier $h$ is $C(h, \mathbb{P}) \in \mathbb{R}^{2 \times 2}$, where $C_{ij}(h, \mathbb{P}) = \mathbb{P}(Y=i, h=j)$ 
@@ -2312,10 +2181,7 @@ follows the dynamics of the physical world.
 
 #### Driving Simulator Example {.unnumbered}
 
-The first real example of learning reward functions from pairwise
-comparisons is a 2D driving simulator from [@pmlr-v87-biyik18a]. In @fig-car_direct
-you can see the setting of a 3-lane road with the orange car being
-controlled by the computer.
+The first real example of learning reward functions from pairwise comparisons is a 2D driving simulator from [@pmlr-v87-biyik18a]. In @fig-car_direct you can see the setting of a 3-lane road with the orange car being controlled by the computer.
 
 ![The choices presented to a human for feedback are represented by green
 and red trajectories. White trajectory demonstrates the lane change of
@@ -2342,604 +2208,31 @@ the lane without swerving.
 
 #### Active Learning for Pairwise Comparisons {.unnumbered}
 
-We have discussed that pairwise comparisons should be selected to
-maximize the minimum volume of remaining options removed. The question
-that can come out of the driving example is does it really matter to
-follow that goal or does random choice of queries performs as well? It
-turns out that indeed most active learning algorithms (purposefully
-selecting queries) over time converge with the performance of the random
-query selection, so in long term the performance is similar. However,
-what is different is that active learning achieves better performance
-earlier, which in time-sensitive tasks can be a critical factor.
+We have discussed that pairwise comparisons should be selected to maximize the minimum volume of remaining options removed. The question that can come out of the driving example is does it really matter to follow that goal or does random choice of queries performs as well? It turns out that indeed most active learning algorithms (purposefully selecting queries) over time converge with the performance of the random query selection, so in long term the performance is similar. However, what is different is that active learning achieves better performance earlier, which in time-sensitive tasks can be a critical factor. One example of such a setting can be exoskeletons for humans as part of the rehabilitation after surgery [@Li_2021]. Different people have significantly different walking patterns as well as rehabilitation requirements, so the exoskeleton needs to adapt to the human as soon as possible for a more successful rehabilitation. Figure @fig-robotics demonstrates the difference in the time needed between the two approaches. In general, in robotics, the time differences that might seem small to a human might be detrimental to the final performance.
 
-One example of such a setting can be exoskeletons for humans as part of
-the rehabilitation after surgery [@Li_2021]. Different people have
-significantly different walking patterns as well as rehabilitation
-requirements, so the exoskeleton needs to adapt to the human as soon as
-possible for a more successful rehabilitation. Figure @fig-robotics
-demonstrates the difference in the time needed between the two
-approaches. In general, in robotics, the time differences that might
-seem small to a human might be detrimental to the final performance.
+![Performance of active learning and random query selection algorithms in the task of exoskeleton learning with human preferences. [@Li_2021]](Figures/robo_graph.png){#fig-robotics width="60%"}
 
-![Performance of active learning and random query selection algorithms
-in the task of exoskeleton learning with human preferences.
-[@Li_2021]](Figures/robo_graph.png){#fig-robotics width="60%"}
-
-#### Multi-Modal Reward Functions for Pairwise Comparisons {.unnumbered}
-
-What if one is working with multiple people and their responses to the
-queries for comparisons? It will be impossible to recover the different
-personalities based on the answers, and it might be necessary to conduct
-a full ranking before it is clear which responses belonged to which
-person, but the underlying theory for the number of comparisons is
-non-trivial. For that, the researchers [@myers2021learning] have used
-multi-modal models for reward function learning, which allows to account
-for different types of valid behaviours and trajectories that can come
-from different humans.
-
-![The negotiation setting with two people and three shared items. Each
-person has a desired number of items indicated in their utility box.
-Alice is the controlled agent that has many different response options
-that are illustrated by the approaches different models might take.
-[@kwon2021targeted]](Figures/negotiation.png){#fig-negotiation
-width="80%"}
-
-An example setting for such type of problem is negotiations
-[@kwon2021targeted]. Let's say there are some shared items and two
-people with different utilities and desires for items, where each person
-only knows their utility. In a specific case of
-@fig-negotiation, Bob as a proposing agent and Alice as a
-controlled agent who has many different ways of responding to Bob's
-proposals. Different methods can be used to design Alice as an AI agent.
-The first idea is reinforcement learning, where multiple rounds of
-negotiations are done, the model simulates game theory and sees how Bob
-reacts. Authors of this setting [@kwon2021targeted] show that over time
-the model learns to ask for the same thing over and over again, as Alice
-is not trained to be human-like or negotiable, and just tries to
-maximize Alice's utility. The second approach is supervised learning,
-where the model can be trained on some dataset, learning the history of
-negotiations. This results in Alice being very agreeable, which
-demonstrates two polar results of the two approaches, and it would be
-ideal to find a middle ground and combine both of them. The authors
-proposed the Targeted acquisition approach, which is based on active
-learning ideas. The model asks diverse questions at different cases and
-stages of negotiations like humans, determining which questions are more
-valuable to be asked throughout learning. Such an approach ended up in
-more fair and optimal results than supervised or reinforcement learning
-[@kwon2021targeted].
-
-In conclusion, pairwise comparisons show to be a great way of learning
-linear reward functions, but at times present challenges or
-incapabilities that can be further improved with additional
-incorporations of approaches like Active Learning. That improves many
-applications in terms of time spent getting to the result in case of
-exoskeleton adjustments, as well as getting to a middle ground between
-polar behaviors in applications like negotiations.
-
-### Truthful Preference Elicitation with Adversary
-
-In our study of social choice models in Chapter
-[\[2model\]](#2human-decision-making-choice-models){reference-type="ref" reference="2model"}, we study
-how axiomatic properties are implemented to prevent strategic
-manipulation of a population. This brings us onto the field of
-**mechanism design**. At its core, mechanism design is the science of
-making rules. The intent in this field is to design systems so that the
-strategic behaviour of individuals leads to desirable outcomes. Just
-thinking about services on the Internet -- file sharing, reputation
-systems, web search, web advertising, email, Internet auctions,
-congestion control -- all have to be set up so that an individual's
-selfish behavior leads to better outcomes for the entire community. A
-more specific example of this is the phenomenon of "bid-sniping" that
-was present on eBay in the early 2000s. When people could bid on E-bay,
-the rule was that the highest bidder by the end of some specified time
-period would get the item. As a result, people would just wait until the
-very last minute to bid in order to not raise the price of the item too
-early. On the other hand, when Amazon still allowed bidding, they had a
-rule that any time a bid was placed it would extend the time of the bid
-by ten minutes. This simple difference had drastic effects on bidding
-prices over time. Mechanism design develops the theoretical framework
-for learning social choices and eliciting truthful preference.
-
-We will cover frameworks that model several scenarios that mechanism
-design is usefully applied to: recommendation systems (where users will
-selfishly try to stick to their preferences while a planner encourages
-exploration); auctions (where bidders will try to maximise their reward
-compared to others); and peer grading (where truthful reporting is not
-necessarily an incentive for students).
-
-#### Auction Theory {.unnumbered}
-
-##### Single-Item Auctions {#single-item-auctions .unnumbered}
-
-The first problem within auction theory we will consider is the
-*single-item auction*. The premise of this problem is that there is a
-single item to sell, $n$ bidders (with unknown private valuations of the
-item $v_1$, \..., $v_n$). The bidder's individual objective is to
-maximize utility: the value $v_i$ of the item subtracted by the price
-paid for the item. The auction procedure is standard in the sense that
-bids are solicited and the highest bid will win the auction. While the
-objective of the individual bidder is clear, there could be a plethora
-of different objectives for the auction as a whole. One option could be
-to maximize social surplus, meaning the goal is to maximize the value of
-the winner. Another objective could be to maximize seller profit which
-is the payment of the winner. For simplicity, we can focus on the first
-objective where the goal is to maximize social surplus. If we want to
-maximize social surplus it turns out that a great way to do this is the
-"second-price auction".
-
-###### Maximizing Social Surplus {#maximizing-social-surplus .unnumbered}
-
-In the second-price auction, we will operate under slightly different
-conditions. In the second-price auction we 1) solicit sealed bids, 2)
-have the winner be the highest bidder, and 3) charger winner the
-second-highest bid price. As an example, if the solicited bids are
-$b = (2, 6, 4, 1)$ the winner will be that who bid $6$, but will pay a
-price of $4$. From here, we can do some equilibrium analysis to try and
-learn what the optimal bidding strategy is for each bidder. Let the
-amount bidder $i$ bids to be $b_i$, so we have bids
-$b_1, b_2, ..., b_n$. How much should bidder $i$ bid? To analyze this,
-let us define $t_i = max_{j \neq i} b_j$ which represents the max of the
-bids that is not from bidder $i$. There are now two cases to consider:
-if $b_i$ \> $t_i$ and if $b_i$ \< $t_i$. In the first case the bidder
-$i$ wins, and if the bidder bid $b_i = v_i$, they are guaranteed to have
-a positive return on bid. In the other case, they lose the bid and the
-net loss is 0 because they don't have to pay. From this we can conclude
-that bidder $i$'s dominant strategy is to just bid $b_i = v_i$.
-Rigorously proving this is a little bit trickier, but it was shown from
-Vickrey in 1961 \[cite\] that truthful bidding is the dominant strategy
-in second-price auctions. A corollary of this is that we are maximizing
-social surplus since bids are values and the winner is the bidder with
-highest valuation.
-
-###### Maximize Seller Profit {#maximize-seller-profit .unnumbered}
-
-If we want to look at things from the perspective of a seller trying to
-maximize their profit we need to treat the bidder's bids as uniform
-random variables. Consider the example scenario where we have two
-bidders each bidding uniformly between 0 and 1. What is the seller's
-expected profit? (in this case profit and revenue for the seller are the
-same because we assume the seller throws away the item if it doesn't
-sell/has no valuation for it).
-
-From there the question now becomes, can we get more expected profit
-from the seller's perspective? It turns out there is a design where we
-can add a reserve price of $r$ to the second-price auction. The way this
-works is we can 1) Insert seller-bid at $r$, 2) solicit bids, 3) pick
-the highest bidder, and 3) charge the 2nd-highest bid. In effect, this
-is just the second-price auction but with a bid from the seller as well,
-at a price of $r$. A lemma, that we won't prove here, is that the
-second-price auction with reserve price $r$ still has a dominant
-strategy of just being truthful.
-
-Let's now consider what the profit of a second-price auction would be
-with two bidders that uniformly bid between 0 and 1 -- but this time we
-have a reserve price of $1/2$. To calculate the expected profit we break
-down the situation into 3 cases:
-
--   Case 1:
-    $1/2 > v_1 > v_2 \rightarrow 1/4 \text{ probability} \rightarrow  E[\text{profit}] = 0$
-
--   Case 2:
-    $v_1 > v_2 > 1/2 \rightarrow 1/4 \text{probability} \rightarrow E[v2 | case 2] = 2/3$
-
--   Case 3:
-    $v_1 > 1/2 > v_2 \rightarrow 1/2 \text{ probability} \rightarrow 1/2$
-
-Why is $E[v2 | case 2] = 2/3$? If $v_1$ and $v_2$ are greater than
-$1/2$, they are evenly spread across the interval, meaning the
-expectation will be 1/2 + 1/6 = 2/3. Adding up all these cases we get
-$E[profit] = 5/12$. It turns out that second-price auctions with reserve
-actually maximize profit in general (for symmetric bidders)!
-
-In the previous section we conclude that second-price auctions with
-reserve maximize profit for the seller. In order to prove this, we now
-move to the more general topic of asking how should a monopolist divide
-good across separate markets. We can make the assumption that the demand
-model is a concave revenue $R(q)$ in quantity $q$. Under this
-assumption, we can just divide supply into $q = q_a + q_b$ such that
-$R'_a(q_a) = R'_b(q_b)$. The idea from here is a theorem from Myerson in
-1981 that states an optimal action maximizes \"marginal revenue\".
-Consider an example where we have two bidders bidding a uniform value
-between 0 and 1. Our revenue curve can now be derived from the offering
-price $V(q) = 1 - q$ like so: $R(q) = qV(q) = q - q^2$. Taking the
-derivative gives us the marginal revenue $R'(q) = 1-2q$. This means two
-things: 1) we want to sell to bidder $i$ with the highest $R'(q_i)$ and
-2) we want to sell to bidder $i$ with value at least $1/2$ (if we want a
-positive $R'(q_i)$. But this is just a second-price auction with reserve
-$1/2$! This means that for symmetric bidders, a second price with
-reserve is the optimal auction.
-
-###### What good are auctions? {#what-good-are-auctions .unnumbered}
-
-An interesting topic to discuss is what benefits auctions bring to the
-table as opposed to just standard pricing. Online auctions used to be a
-lot more popular in the early 2000s and have been completely replaced by
-standard online pricing, even on sites like e-bay. While auctions are
-slower and have added inherent complexities, they are actually optimal
-on paper. Standard pricing on the other is non-optimal; although it is
-fast and simpler for buyers. There is actually a way to quantify this:
-for pricing $k$ units, the loss is at most $1 / \sqrt{2\pi k}$ of
-optimal profit.
-
-Let's consider applications in duopoly platform design. We know that the
-optimal auction is second-price with reserve, but what happens when we
-introduce competition between two auction platforms? Some important
-details related to the revenue of a second-price auction is that a
-second-price auction with no reserve and n bidders leads to larger
-revenue having an optimal reserve and n - 1 bidders
- [@bulow-klemperer1996]. Additionally, with an entry cost, no reserve is
-the optimal strategy for maximizing revenue  [@mcafee-87]. Let's
-consider an example of a competing auction system which is Google ads vs
-Bing ads. How should an advertiser divide the budget between Google and
-Bing? They should give the same budget to both companies. What happens
-if Bing raises their prices? Then, the advertising company moves more of
-its budget to Google from Bing.
-
-#### Prior-Independent Auctions {#prior-independent-auctions .unnumbered}
-
-The Bulow-Klemperer theorem demonstrates that increased competition can
-be more valuable than perfect knowledge of bidders' valuation
-distributions. This result provides insight into the potential of
-simple, prior-independent auctions to approach the performance of
-optimal auctions. The theorem states that for a single-item auction with
-bidders' valuations drawn independently from a regular distribution $F$:
-
-::: {.callout-note title="theorem"}
-::: {#thm-bulow-klemperer}
-Let $F$ be a regular distribution and $n$ a positive integer. Then:
-$$E_{v_1,\ldots,v_{n+1} \sim F}[\text{Rev(VA)}(n+1 \text{ bidders})] \geq E_{v_1,\ldots,v_n \sim F}[\text{Rev(OPT}_F)(n \text{ bidders})]$$  {#eq-eq3.64}
-where VA denotes the Vickrey auction and $\text{OPT}_F$ denotes the
-optimal auction for $F$.
-:::
-:::
-
-This shows that running a simple Vickrey auction with one extra bidder
-outperforms the revenue-optimal auction that requires precise knowledge
-of the distribution. It suggests that in practice, effort spent on
-recruiting additional bidders may be more fruitful than fine-tuning
-auction parameters.
-
-##### The VCG Mechanism {#the-vcg-mechanism .unnumbered}
-
-The VCG mechanism is a cornerstone of mechanism design theory, providing
-a general solution for welfare maximization in multi-parameter
-environments. The key result is:
-
-::: {.callout-note title="theorem"}
-::: {#thm-VCG}
-[]{#thm:VCG label="thm:VCG"} In every general mechanism design
-environment, there is a dominant-strategy incentive-compatible (DSIC)
-welfare-maximizing mechanism.
-:::
-:::
-
-The VCG mechanism operates as follows:
-
-1.  Given bids $b_1, \ldots, b_n$, where each $b_i$ is indexed by the
-    outcome set $\Omega$, the allocation rule is:
-
-    $$x(b) = \arg \max_{\omega \in \Omega} \sum_{i=1}^n b_i(\omega)$$  {#eq-eq3.65}
-
-2.  The payment rule for each agent $i$ is:
-
-    $$p_i(b) = \max_{\omega \in \Omega} \sum_{j \neq i} b_j(\omega) - \sum_{j \neq i} b_j(\omega^*)$$  {#eq-eq3.66}
-
-    where $\omega^* = x(b)$ is the chosen outcome.
-
-The key insight is to charge each agent its "externality" - the welfare
-loss inflicted on other agents by its presence. This payment rule,
-coupled with the welfare-maximizing allocation rule, yields a DSIC
-mechanism.
-
-The VCG mechanism can be interpreted as having each agent pay its bid
-minus a \"rebate\" equal to the increase in welfare attributable to its
-presence:
-
-$$p_i(b) = b_i(\omega^*) - \left[ \sum_{j=1}^n b_j(\omega^*) - \max_{\omega \in \Omega} \sum_{j \neq i} b_j(\omega) \right]$$  {#eq-eq3.67}
-
-While the VCG mechanism provides a theoretical solution for DSIC
-welfare-maximization in general environments, it can be challenging to
-implement in practice due to computational and communication
-complexities.
-
-##### Combinatorial Auctions {#combinatorial-auctions .unnumbered}
-
-Combinatorial auctions are an important class of multi-parameter
-mechanism design problems, with applications ranging from spectrum
-auctions to airport slot allocation. In a combinatorial auction:
-
--   There are $n$ bidders and a set $M$ of $m$ items.
-
--   The outcome set $\Omega$ consists of allocations
-    $(S_1, \ldots, S_n)$, where $S_i$ is the bundle allocated to bidder
-    $i$.
-
--   Each bidder $i$ has a private valuation $v_i(S)$ for each bundle
-    $S \subseteq M$.
-
-While the VCG mechanism theoretically solves the welfare-maximization
-problem, combinatorial auctions face several major challenges in
-practice:
-
-1.  Preference Elicitation: Each bidder has $2^m - 1$ private
-    parameters, making direct revelation infeasible for even moderate
-    numbers of items. This necessitates the use of indirect mechanisms
-    that elicit information on a \"need-to-know\" basis.
-
-2.  Computational Complexity: Even when preference elicitation is not an
-    issue, welfare-maximization can be an intractable problem. In
-    practice, approximations are often used, hoping to achieve
-    reasonably good welfare.
-
-3.  VCG Limitations: The VCG mechanism can exhibit bad revenue and
-    incentive properties in combinatorial settings. For example, adding
-    bidders can sometimes decrease revenue to zero, and the mechanism
-    can be vulnerable to collusion and false-name bids.
-
-4.  Strategic Behavior in Iterative Auctions: Most practical
-    combinatorial auctions are iterative, comprising multiple rounds.
-    This introduces new opportunities for strategic behavior, such as
-    using bids to signal intentions to other bidders.
-
-These challenges make combinatorial auctions a rich and complex area of
-study, requiring careful design to balance theoretical guarantees with
-practical considerations.
-
-##### Spectrum Auctions {#spectrum-auctions .unnumbered}
-
-Spectrum auctions represent a complex application of combinatorial
-auction theory. With n bidders and m non-identical items, each bidder
-has a private valuation for every possible bundle of items, making it
-impractical to directly elicit all preferences. This necessitates the
-use of indirect, iterative mechanisms that query bidders for valuation
-information on a "need-to-know" basis, sacrificing some of the desirable
-properties of direct mechanisms like dominant strategy incentive
-compatibility (DSIC) and full welfare maximization.
-
-The fundamental challenge in spectrum auctions lies in the nature of the
-items being sold. There is a dichotomy between items that are
-substitutes (where $v(AB) \leq v(A) + v(B))$ and those that are
-complements (where $v(AB) > v(A) + v(B))$. Substitute items, such as
-licenses for the same area with equal-sized frequency ranges, are
-generally easier to handle. When items are substitutes, welfare
-maximization is computationally tractable, and the VCG mechanism avoids
-many undesirable properties. However, complementary items, which arise
-naturally in spectrum auctions when bidders want adjacent licenses,
-present significant challenges.
-
-Early attempts at spectrum auctions revealed the pitfalls of naive
-approaches. Sequential auctions, where items are sold one after another,
-proved problematic as demonstrated by a Swiss auction in 2000. Bidders
-struggled to bid intelligently without knowing future prices, leading to
-unpredictable outcomes and potential revenue loss. Similarly,
-simultaneous sealed-bid auctions, as used in New Zealand in 1990,
-created difficulties for bidders in coordinating their bids across
-multiple items, resulting in severely suboptimal outcomes.
-
-The Simultaneous Ascending Auction (SAA) emerged as a solution to these
-issues and has formed the basis of most spectrum auctions over the past
-two decades. In an SAA, multiple items are auctioned simultaneously in
-rounds, with bidders placing bids on any subset of items subject to an
-activity rule. This format facilitates price discovery, allowing bidders
-to adjust their strategies as they learn about others' valuations. It
-also allows bidders to determine valuations on a need-to-know basis,
-reducing the cognitive burden compared to direct-revelation auctions.
-
-Despite its advantages, the SAA is not without vulnerabilities. Demand
-reduction, where bidders strategically reduce their demand to lower
-prices, can lead to inefficient outcomes even when items are
-substitutes. The exposure problem arises with complementary items, where
-bidders risk winning only a subset of desired items at unfavorable
-prices. These issues highlight the ongoing challenges in designing
-effective spectrum auctions, balancing theoretical guarantees with
-practical considerations.
-
-##### Case study: Classroom Peer Grading {#case-study-classroom-peer-grading .unnumbered}
-
-This chapter discusses work by Jason Hartline, Yingkai Li, Liren Shan,
-and Yifan Wu at Northwestern University, where researchers examined
-mechanism design for the classroom, specifically in terms of the
-optimization of scoring rules. They explored peer grading in the
-classroom and how to construct a peer grading system that optimizes the
-objectives for each stakeholder in the system, including those being
-graded, the peer graders, the TAs of the class, and the professor.
-
-Firstly, let's think of the classroom like a computer. We can think of
-students as local optimizers; their incentive is to minimize the amount
-of work they need to do and maximize the grades that they receive. The
-graders are imprecise operators, which means that there is some
-uncertainty in their ability to grade the work completed by the
-students. The syllabus can be thought of as the rules that map the
-actions of the students to the grade they end up receiving in the class.
-Our overall goals for this classroom based on these definitions is to
-minimize work, maximize learning, and fairly assess the students for the
-work that they do  [@jasonH2020].
-
-One basic question that we can examine, is what is the best syllabus
-that maximizes our objectives for our classroom design. Some components
-of this could include grading randomized exams, grading with partial
-credit, group projects, and finally, peer grading, which is the
-component that we will be taking a deeper dive into.
-
-The general situation of the peer grading problem is that proper scoring
-rules make peer grades horrible  [@jasonH2020]. So we want to be able to
-optimize scoring rules and make sure that we are optimizing each
-component of the peer grading pipeline.
-
-The main algorithms focused on in this peer grading design paper were
-matching peers and TAs to submissions and the grading of those
-submissions from the TAs and the peer reviews  [@jasonH2020]. There are
-quite a number of advantages to peer grading including that peers are
-able to learn from reviewing other people's work, it reduces the work
-for the teacher, and improves the turnaround time for assignment
-feedback (which are all part of our overarching goals for our mechanism
-design for the classroom). But, it is also important to acknowledge the
-potential disadvantages of the peer grading system: it is possible that
-the peer graders present inaccurate grades and there is student unrest.
-This presents us with a challenge: being able to incentivize accurate
-peer reviews.
-
-One problem that we run into, when we use the proper scoring rule to
-score peer reviews, if the peer graders use the lazy peer strategy,
-which means that they always report 80$\%$ for their peer reviews, they
-get graded very well using the proper scoring rule algorithm. In fact,
-the proper scoring rule says that their peer review is 96$\%$ accurate
- [@jasonH2023]. So how do we incentivize effort in reviews from peer
-graders? We use a scoring rule that maximizes the difference in score
-between effort or no effort reviews as indicated by the peer reviewers
- [@jasonH2023]. So overall, the analysis of datasets leads to decision
-optimizations and, eventually, payoff from those decisions.
-
-To conclude our mechanism design in the classroom discussion, we have
-two key takeaways: scoring rules are essential in being able to
-understand and analyze data thoroughly, and optimal scoring rules for
-binary effort allow us to understand the setting independent of the
-dataset  [@jasonH2023].
-
-#### Mutual Information Paradigm {#mutual-information-paradigm .unnumbered}
-
-In this section we discuss an influential new framework for designing
-peer prediction mechanisms, the Mutual Information Paradigm (MIP)
-introduced by Kong and Schoenebeck [@kongschoenebeck2019]. Traditional
-peer prediction approaches typically rely on scoring rules and
-correlation between agents' signals. However, these methods often
-struggle with issues like uninformed equilibria, where agents can
-coordinate on uninformative strategies that yield higher payoffs than
-truth-telling. The core idea is to reward agents based on the mutual
-information between their report and the reports of other agents.
-
-We consider a setting with $n$ agents, each possessing a private signal
-$\Psi_i$ drawn from some set $\Sigma$. The mechanism asks each agent to
-report their signal, which we denote as $\hat{\Psi}_i$. For each agent
-$i$, the mechanism randomly selects a reference agent $j \neq i$. Agent
-$i$'s payment is then calculated as: 
-$$MI(\hat{\Psi}_i; \hat{\Psi}_j)$$   {#eq-eq3.68}
-where $MI$ is an information-monotone mutual information measure. An
-information-monotone $MI$ measure must satisfy the following properties:
-
--   **Symmetry**: $MI(X; Y) = MI(Y; X)$.
-
--   **Non-negativity**: $MI(X; Y) \geq 0$, with equality if and only if
-    $X$ and $Y$ are independent.
-
--   **Data processing inequality**: For any transition probability $M$,
-    if $Y$ is independent of $M(X)$ conditioned on $X$, then
-    $MI(M(X); Y) \leq MI(X; Y)$.
-
-Two important families of mutual information measures that satisfy these
-properties are $f$-mutual information and Bregman mutual information.
-The $f$-mutual information is defined as:
-$$MI_f(X; Y) = D_f(U_{X,Y}, V_{X,Y})$$  {#eq-eq3.69}
- where $D_f$ is an $f$-divergence,
-$U_{X,Y}$ is the joint distribution of $X$ and $Y$, and $V_{X,Y}$ is the
-product of their marginal distributions. The Bregman mutual information
-is defined as: $$BMI_{PS}(X; Y) = \mathbb{E}_{X} [D{PS}(U_{Y|X}, U_Y)]$$  {#eq-eq3.70}
-where $D_{PS}$ is a Bregman divergence based on a proper scoring rule
-$PS$, $U_{Y|X}$ is the conditional distribution of $Y$ given $X$, and
-$U_Y$ is the marginal distribution of $Y$.
-
-The MIP framework can be applied in both single-question and
-multi-question settings. In the multi-question setting, the mechanism
-can estimate the mutual information empirically from multiple questions.
-In the single-question setting, additional techniques like asking for
-predictions about other agents' reports are used to estimate the mutual
-information.
-
-A key theoretical result of the MIP framework is that when the chosen
-mutual information measure is strictly information-monotone with respect
-to agents' priors, the resulting mechanism is both dominantly truthful
-and strongly truthful. This means that truth-telling is a dominant
-strategy for each agent and that the truth-telling equilibrium yields
-strictly higher payoffs than any other non-permutation strategy profile.
-
-As research continues to address practical implementation challenges of
-designing truthful mechanisms, MIP-based approaches have significant
-potential to improve preference elicitation and aggregation in
-real-world applications lacking verifiable ground truth.
-
-#### Auction Theory 2 {.unnumbered}
-
-##### Single-Item Auctions {#single-item-auctions-1 .unnumbered}
-
-The first problem within auction we will consider is the *single-item
-auction*. In this problem setup, there is a single item to sell and $n$
-bidders each with unknown private valuations of the item
-$v_1, \ldots, v_n$,
-
-[^1]: Here, the "$\sup$\" operation refers to the *supremum*, which is
-    the largest value that a certain set can take on, whereas "$\inf$\"
-    would refer to the *infimum*, or the smallest value a certain set
-    can take on.
+In conclusion, pairwise comparisons show to be a great way of learning linear reward functions, but at times present challenges or incapabilities that can be further improved with additional incorporations of approaches like Active Learning. That improves many applications in terms of time spent getting to the result in case of exoskeleton adjustments, as well as getting to a middle ground between polar behaviors in applications like negotiations.
 
 ### Application: Guiding Human Demonstrations in Robotics
 
-A strong approach to learning policies for robotic manipulation is
-imitation learning, the technique of learning behaviors from human
-demonstrations. In particular, interactive imitation learning allows a
-group of humans to contribute their own demonstrations for a task,
-allowing for scalable learning. However, not all groups of demonstrators
-are equally helpful for interactive imitation learning.
+A strong approach to learning policies for robotic manipulation is imitation learning, the technique of learning behaviors from human demonstrations. In particular, interactive imitation learning allows a group of humans to contribute their own demonstrations for a task, allowing for scalable learning. However, not all groups of demonstrators are equally helpful for interactive imitation learning.
 
-The ideal set of demonstrations for imitation learning would follow a
-single, optimal method for performing the task, which a robot could
-learn to mimic. Conversely, *multimodality*, the presence of multiple
-optimal methods in the demonstration set, is challenging for imitation
-learning since it has to learn from contradicting information for how to
-accomplish a task.
+The ideal set of demonstrations for imitation learning would follow a single, optimal method for performing the task, which a robot could learn to mimic. Conversely, *multimodality*, the presence of multiple optimal methods in the demonstration set, is challenging for imitation learning since it has to learn from contradicting information for how to accomplish a task. A common reason for multimodality is the fact that different people often subconsciously choose different paths for execution, as illustrated in @fig-multimodalexecution.
 
-A common reason for multimodality is the fact that different people
-often subconsciously choose different paths for execution, as
-illustrated in @fig-multimodalexecution.
+![Examples of two different ways to insert a nut onto a round peg. The orange demonstration picks up the nut from the hole while the blue demonstration picks up the nut from the side [@gandhi2022eliciting]](Figures/multimodal_peg.png){#fig-multimodalexecution width="50%"}
 
-![Examples of two different ways to insert a nut onto a round peg. The
-orange demonstration picks up the nut from the hole while the blue
-demonstration picks up the nut from the side
-[@gandhi2022eliciting]](Figures/multimodal_peg.png){#fig-multimodalexecution
-width="50%"}
-
-Gandhi et al. [@gandhi2022eliciting] identifies whether demonstrations
-are compatible with one another and offer an active elicitation
-interface to guide humans to provide better demonstrations in
-interactive imitation learning. Their key motivation is to allow
-multiple users to contribute demonstrations over the course of data
-collection by guiding users towards compatible demonstrations.
-
-To identify whether a demonstration is "compatible" with a base policy
-trained with prior demonstrations, the researchers measure the
-*likelihood* of demonstrated actions under the base policy, and the
-*novelty* of the visited states. Intuitively, low likelihood and low
-novelty demonstrations should be excluded since they represent
-conflicting modes of behavior on states that the robot can already
-handle, and are therefore incompatible. This concept of compatibility is
-used for filtering a new set of demonstrations and actively eliciting
-compatible demonstrations.
-
-In the following subsections, we describe the process of estimating
-compatibility and active elicitation in more detal.
+Gandhi et al. [@gandhi2022eliciting] identifies whether demonstrations are compatible with one another and offer an active elicitation interface to guide humans to provide better demonstrations in interactive imitation learning. Their key motivation is to allow multiple users to contribute demonstrations over the course of data collection by guiding users towards compatible demonstrations. To identify whether a demonstration is "compatible" with a base policy trained with prior demonstrations, the researchers measure the *likelihood* of demonstrated actions under the base policy, and the *novelty* of the visited states. Intuitively, low likelihood and low novelty demonstrations should be excluded since they represent conflicting modes of behavior on states that the robot can already handle, and are therefore incompatible. This concept of compatibility is used for filtering a new set of demonstrations and actively eliciting compatible demonstrations. In the following subsections, we describe the process of estimating compatibility and active elicitation in more detal.
 
 #### Estimating Compatiblity {.unnumbered}
 
-We want to define a compatibility measure $\mathcal{M}$, that estimates
-the performance of policy $\pi_{base}$ that is retrained on a union of
-$\mathcal{D}_{base}$, the known base dataset, and $\mathcal{D}_{new}$,
-the newly collected dataset. To define this compatibility measure in a
-way that is easy to compute, we can use two interpretable metrics:
-likelihood and novelty.
+We want to define a compatibility measure $\mathcal{M}$, that estimates the performance of policy $\pi_{base}$ that is retrained on a union of $\mathcal{D}_{base}$, the known base dataset, and $\mathcal{D}_{new}$, the newly collected dataset. To define this compatibility measure in a way that is easy to compute, we can use two interpretable metrics: likelihood and novelty. The likelihood of actions $a_{new}$ in $\mathcal{D}_{new}$ is measured as the negative mean squared error between actions predicted by the base policy and this proposed action:
 
-The likelihood of actions $a_{new}$ in $\mathcal{D}_{new}$ is measured
-as the negative mean squared error between actions predicted by the base
-policy and this proposed action:
+$$likelihood(s_{new}, a_{new}) = -\mathbb{E}[|| \pi_{base}(s_{new}) - a_{new} ||^2_2].$$  {#eq-eq3.61}
 
-$$\begin{aligned}
-    likelihood(s_{new}, a_{new}) = -\mathbb{E}[|| \pi_{base}(s_{new}) - a_{new} ||^2_2].
-\end{aligned}$$  {#eq-eq3.61}
+The novelty of the state $s_{new}$ in $\mathcal{D}_{new}$ is the standard deviation in the predicted actions under base policy:
 
-The novelty of the state $s_{new}$ in $\mathcal{D}_{new}$ is the
-standard deviation in the predicted actions under base policy:
-
-$$\begin{aligned}
-    novelty(s_{new}) = \mathrm{Var}[\pi_{base}(s_{new})].
-\end{aligned}$$  {#eq-eq3.62}
+$$novelty(s_{new}) = \mathrm{Var}[\pi_{base}(s_{new})].$$  {#eq-eq3.62}
 
 We can plot likelihood and novelty on a 2D plane, as shown in @fig-likelihood_novelty, and identify thresholds on
 likelihood and novelty, denoted as $\lambda$ and $\eta$ respectively.

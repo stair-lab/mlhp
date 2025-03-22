@@ -1,4 +1,13 @@
-# Model-Free Preference Optimization {#sec-model-free}
+---
+title: Alignment of Policy with Preferences
+format: html
+filters:
+  - pyodide
+execute:
+  engine: pyodide
+  pyodide:
+    auto: true
+---
 
 ::: {.content-visible when-format="html"}
 
@@ -15,9 +24,8 @@
 
 :::
 
-## Individual Preference Optimization via Dueling Bandit
+## Dueling Bandit
 
-### Introduction to Dueling Bandit Problem and Its Extension
 The multi-armed bandit (MAB) problem involves a gambler deciding which lever to pull on an MAB 
 machine to maximize the winning rate, despite not knowing which machine is the most rewarding. 
 This scenario highlights the need to balance exploration (trying new machines to discover potential 
@@ -773,245 +781,6 @@ systems can create a sense of novelty and interest, prompting even the
 most transient or self-interested users to engage in exploration,
 thereby enhancing the system's overall knowledge base and recommendation
 quality.
-
-### Incentive-Compatible Online Learning
-
-To address this problem, we seek to create a model. But first, it is
-useful to outline the key criteria that our model must achieve.
-
--   The *core* of the model revolves around repeated interactions
-    between a planner (the system) and multiple agents (the users). Each
-    agent, upon arrival in the system, is presented with a set of
-    available options to choose from. These options could vary widely
-    depending on the application of the model, such as routes in a
-    transportation network, a selection of hotels in a travel booking
-    system, or even entertainment choices in a streaming service.
-
--   The *interaction process* is straightforward but crucial: agents
-    arrive, select an action from the provided options, and then report
-    feedback based on their experience. This feedback is vital as it
-    forms the basis upon which the planner improves and evolves its
-    recommendations. The agents in this model are considered strategic;
-    they aim to maximize their reward based on the information available
-    to them. This aspect of the model acknowledges the real-world
-    scenario where users are typically self-interested and seek to
-    optimize their own outcomes.
-
--   The *planner*, on the other hand, has a broader objective. It aims
-    to learn which alternatives are best in a given context and works to
-    maximize the overall welfare of all agents. This involves a complex
-    balancing act: the planner must accurately interpret feedback from a
-    diverse set of agents, each with their own preferences and biases,
-    and use this information to refine and improve the set of options
-    available. The ultimate goal of the planner is to create a dynamic,
-    responsive system that not only caters to the immediate needs of
-    individual agents but also enhances the collective experience over
-    time, leading to a continually improving recommendation ecosystem.
-
-Let's break this up into a set of tangible research questions that we
-seek to answer in the rest of this chapter.
-
--   **Planner Limitations**: We seek to address the inherent limitations
-    faced by the planner, particularly in scenarios where monetary
-    transfers are not an option, and the only tool at its disposal is
-    the control over the flow of information between agents. This
-    inquiry aims to understand the extent to which these limitations
-    impact the planner's ability to effectively guide and influence
-    agent behavior.
-
--   **Inducing Exploration**: A critical question is whether the planner
-    can successfully induce exploration among agents, especially in the
-    absence of financial incentives. This involves investigating
-    strategies to encourage users to try less obvious or popular
-    options, thus broadening the scope of feedback and enhancing the
-    system's ability to learn and identify the best alternatives.
-
--   **Rate of Learning**: Another essential research area is
-    understanding the rate at which the planner learns from agent
-    interactions. This encompasses examining how different agent
-    incentives, their willingness to explore, and their feedback impact
-    the speed and efficiency with which the planner can identify optimal
-    recommendations.
-
--   **Model Extensions**: The model can be extended in several
-    directions, each raising its own set of questions.
-
-    1.  Multiple Agents with Interconnected Payoffs: When multiple
-        agents arrive simultaneously, their choices and payoffs become
-        interconnected, resembling a game. The research question here
-        focuses on how these interdependencies affect individual and
-        collective decision-making.
-
-    2.  Planner with Arbitrary Objective Function: Investigating
-        scenarios where the planner operates under an arbitrary
-        objective function, which might not align with maximizing
-        overall welfare or learning the best alternative.
-
-    3.  Observed Heterogeneity Among Agents: This involves situations
-        where differences among agents are observable and known, akin to
-        contextual bandits in machine learning. The research question
-        revolves around how these observable traits can be used to
-        tailor recommendations more effectively.
-
-    4.  Unobserved Heterogeneity Among Agents: This aspect delves into
-        scenarios where differences among agents are not directly
-        observable, necessitating the use of causal inference techniques
-        to understand and cater to diverse user needs.
-
-#### Bayesian Incentive-Compatible Bandit Model {#bayesian-incentive-compatible-bandit-model .unnumbered}
-
-In this section, we introduce the main model of study in this chapter
-[@mansour2019bayesianincentivecompatiblebanditexploration; @mansour2021bayesianexplorationincentivizingexploration].
-In our setup, there is a "planner,\" which aims to increase exploration,
-and many independent "agents,\" which will act selfishly (in a way that
-they believe will maximize their individual reward).
-
-Under our model shown in Figure
-[1.1](#fig-planner-agent){reference-type="ref"
-reference="fig-planner-agent"}, there are $K$ possible actions that all
-users can take, and each action has some mean reward $\mu_i \in [0, 1]$.
-In addition, there is a common prior belief on each $\mu_i$ across all
-users.. The $T$ agents, or users, will arrive sequentially. As the
-$t$'th user arrives, they are recommended an action $I_t$ by the
-planner, which they are free to follow or not follow. After taking
-whichever action they choose, the user experiences some realized reward
-$r_i \in [0, 1]$, which is stochastic i.i.d. with mean $\mu_i$, and
-reports this reward back to the planner.
-
-![Planner-agent
-setup](Figures/planner-agent-setup.png){#fig-planner-agent width="60%"}
-
-So far, the model we have defined is equivalent to a multi-armed bandit
-model, which we have seen earlier in this chapter
-([1](#4optim){reference-type="ref" reference="4optim"}). Under this
-model, well-known results in economics, operations research and computer
-science show that $O(\sqrt{T})$ regret is achievable
-[@russo2015informationtheoreticanalysisthompsonsampling; @auer_cesa-bianchi_fischer_2002; @LAI19854]
-with algorithms such as Thompson sampling and UCB.
-
-However, our agents are strategic and aim to maximize their own rewards.
-If they observe the rewards gained from actions taken by other previous
-users, they will simply take the action they believe will yield the
-highest reward given the previous actions; they would prefer to benefit
-from exploration done by other users rather than take the risk of
-exploring themselves. Therefore, exploration on an individual level,
-which the planner would like to facilitate, is not guaranteed under this
-paradigm.
-
-In light of this, we also require that our model satisfy **incentive
-compatibility**, or that taking the action recommended by the planner
-has an expected utility that is as high as any other action the agent
-could take. Formally,
-$$\forall i : \, E[\mu_i | I_t = i] \geq E[\mu_{i'} | I_t = i].$$ Note
-that this incentivizes the agents to actually take the actions
-recommended by the planner; if incentive compatibility is not satisfied,
-agents would simply ignore the planner and take whatever action they
-think will lead to the highest reward.
-
-At a high level, the key to achieving incentive compatibility while
-still creating a policy for the planner that facilitates exploration is
-information asymmetry. Under this paradigm, the users only have access
-to their previous recommendations, actions, and rewards, and not to the
-recommendations, actions, and rewards of other users. Therefore, they
-are unsure of whether, after other users take certain actions and
-receive certain rewards, arms that they might have initially considered
-worse in practice outperform arms that they initially considered better.
-Only the planner has access to the previous actions and rewards of all
-users; the user only has access to their own recommendations and overall
-knowledge of the planner's policy.
-
-The main question we aim to answer for the rest of this section is,
-given this new constraint of incentive compatibility, is $O(\sqrt{T})$
-regret still achievable? We illustrate such an algorithm in the
-following.
-
-#### Black-box Reduction Algorithm {#black-box-reduction-algorithm .unnumbered}
-
-The main result for this chapter is a **black-box reduction** algorithm
-to turn any bandit algorithm into an *incentive compatible* one, with
-only a constant increase in Bayesian regret. Since, as mentioned
-earlier, there are bandit algorithms with $O(\sqrt{T})$ Bayesian regret,
-black-box reduction will also allow us to get incentive-compatible
-algorithms with $O(\sqrt{T})$ regret. The idea of black-box reduction
-will be to simulate $T$ steps of any bandit algorithm in an
-incentive-compatible way in $c T$ steps. This allows us to design
-incentive-compatible recommendation systems by using any bandit
-algorithm and then adapting it.
-
-Consider the following setting: there are two possible actions, $A_1$
-and $A_2$. Assume the setting of **deterministic rewards**, where action
-1 has reward $\mu_1$ with prior $U[1/3, 1]$ and mean
-$\mathbb{E}[\mu_1] = 2/3$, and action 2 has reward $\mu_2$ with prior
-$U[0, 1]$ and mean $\mathbb{E}[\mu_2] = 1/2$. Without the planner
-intervention and with full observability, users would simply always pick
-$A_1$, so how can the planner *incentivize* users to play $A_2$?
-
-![Illustration of black-box reduction algorithm when we have
-deterministic
-rewards.](Figures/guinea_pig_fig.png){#fig-deterministic-guinea-pig}
-
-The key insight is going to be to *hide exploration in a pool of
-exploitation*. The users are only going to receive a recommendation from
-the planner, and no other observations. After deterministically
-recommending the action with the highest expected reward ($A_1$), the
-planner will pick one **guinea pig** to recommend the exploratory action
-of $A_2$. The users don't know whether they are the guinea pig, so
-intuitively, as long as the planner picks guinea pigs uniformly at
-random and at low enough frequencies, the optimal decision for the users
-is still to follow the planner's recommendation, even if it might go
-against their interest.
-
-The planner will pick the user who will be recommended the exploratory
-action uniformly at random from the $L$ users that come after the first
-one (which deterministically gets recommended the exploitation action).
-Under this setting (illustrated in Figure
-[1.2](#fig-deterministic-guinea-pig){reference-type="ref"
-reference="fig-deterministic-guinea-pig"}), it is optimal for users to
-always follow the option that is recommended for them. More formally, if
-$I_t$ is the recommendation that a user receives at time $t$, then we
-have that: $$\begin{split}
-    \mathbb{E}[\mu_1 - \mu_2 | I_t = 2] Pr[I_t = 2] &= \frac{1}{L} (\mu_1 - \mu_2) \quad \text{(Gains if you are the unlucky guinea pig)}\\
-    &+ (1 - \frac{1}{L}) \mathbb{E}[\mu_1 - \mu_2 | \mu_1 < \mu_2] Pr[\mu_1 < \mu_2] \quad \text{(Loss if you are not and $\mu_1 < \mu_2$)}\\
-    &\leq 0
-\end{split}$$ This holds when $L \geq 12$. It means that the gains from
-not taking the recommended action are *negative*, which implies that
-users should always take the recommendation.
-
-So far we have considered the case where rewards are deterministic, but
-what about **stochastic rewards**? We are now going to consider the case
-where rewards are independent and identically distributed from some
-distribution, and where each action $A_i$ has some reward distribution
-$r_i^t \sim D_i, \mathbb{E}[r_i^t] = \mu_i$. Back to the case where
-there are only two actions, we are going to adapt the prior algorithm of
-guinea pig-picking to the stochastic reward setting. Since one reward
-observation is not enough to fully know $\mu_1$ anymore, we'll instead
-observe the outcome of the first action $M$ times to form a strong
-posterior $\mathbb{E}[\mu_1 | r_1^1, \ldots r_1^M]$.
-
-![Illustration of black-box reduction algorithm when we have stochastic
-rewards.](Figures/stochastic_guinea_pig.png){#fig-stochastic-guinea-pig}
-
-Figure [1.3](#fig-stochastic-guinea-pig){reference-type="ref"
-reference="fig-stochastic-guinea-pig"} illustrates the algorithm that we
-can use with stochastic rewards when there are two actions. Similarly,
-as before, we pick one guinea pig uniformly at random from the next $L$
-users and use the reward we get as the exploratory signal.\
-In a very similar manner, we can generalize this algorithm from always
-having two actions to the general multi-armed bandit problem. Now
-suppose we have a general multi-armed bandit algorithm $A$. We will wrap
-this algorithm around our black box reduction algorithm to make it
-incentive-compatible.
-
-![Illustration of black-box reduction algorithm for the general
-multi-armed bandit
-case.](Figures/multi-armed-guinea-pig.png){#fig-multi-armed-guinea-pig}
-
-As Figure [1.4](#fig-multi-armed-guinea-pig){reference-type="ref"
-reference="fig-multi-armed-guinea-pig"} shows, we wrap every decision
-that $A$ would make by exactly $L-1$ recommendations of the action
-believed to be the best so far. This guarantees that the expected
-rewards for the users that are not chosen as guinea pigs are at least as
-good as $A$'s reward at phase $n$.
 
 ## Preferential Bayesian Optimization
 
