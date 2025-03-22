@@ -393,11 +393,11 @@
 \newcommand*\listoflistings{\listof{codelisting}{List of Listings}}
 \usepackage{amsthm}
 \theoremstyle{plain}
-\newtheorem{proposition}{Proposition}[chapter]
-\theoremstyle{plain}
 \newtheorem{theorem}{Theorem}[chapter]
 \theoremstyle{definition}
 \newtheorem{definition}{Definition}[chapter]
+\theoremstyle{plain}
+\newtheorem{proposition}{Proposition}[chapter]
 \theoremstyle{remark}
 \AtBeginDocument{\renewcommand*{\proofname}{Proof}}
 \newtheorem*{remark}{Remark}
@@ -601,24 +601,25 @@ one should understand to create such systems.
 
 \section{The Construction of Preference}\label{sec-foundations}
 
-\subsection{Axiom 1: Construction of Choices
-Set}\label{axiom-1-preference-models-model-choice}
+\subsection{Axiom 1. Construction of Choices Set: Luce's Choice Axiom
+(Luce, 1959)}\label{axiom-1-preference-models-model-choice}
 
-Preference models model the preferred choices amongst a set of options.
+Preference models model the preferred choices amongst a set of items.
 Preference models must enumerate the set of all possible choices
 included in a human decision. As such, we must ensure that the choices
 we enumerate capture the entire domain (collectively exhaustive) but are
 distinct (mutually exclusive) choices. A discrete set of choices is a
 constraint we canonically impose to ensure we can tractably model
 preferences and aptly estimate the parameters of preference models. We
-assume that if a new option is added to the choice set, the relative
-probabilities of choosing between the original options remain unchanged.
+assume that if a new item is added to the choice set, the relative
+probabilities of choosing between the original items remain unchanged.
 This is known as the Independence of Irrelevant Alternatives (IIA)
 property from Luce's axiom of choices (\citeproc{ref-Luce1977}{Luce
 1977}).
 
-\subsection{Axiom 2: Preference Centers around
-Utility}\label{axiom-2-preference-centers-around-reward}
+\subsection{Axiom 2. Preference Centers around Utility: Reciprocity
+(Block \& Marschak,
+1960)}\label{axiom-2-preference-centers-around-reward}
 
 Preference models are centered around the notion of reward, a scalar
 quantity representing the benefit or value an individual attains from
@@ -628,15 +629,16 @@ human. We use the notation \(u_{i,j}\) as the reward of person \(i\)
 choosing item \(j\). The reward is a random variable, decomposing into
 true reward \(u_{i,j}^*\) and a random noise \(\epsilon_{i,j}\):
 \(u_{i,j} = u_{i,j}^* + \epsilon_{i,j}\). McFadden
-(\citeproc{ref-mcfadden_conditional_1974}{1974}) posit that reward can
+(\citeproc{ref-mcfadden_conditional_1974}{1974}) posits that reward can
 further be decomposed into user-specific reward \(\theta_i\) and
 item-specific reward \(z_j\): \(u_{i,j}^* = \theta_i + z_j\). This
 decomposition indicates that for a single user, only the relative
-difference in reward matters to predict the choice among options, and
-the scale of rewards is important when comparing across users.
+difference in reward matters to predict the choice among items, and the
+scale of rewards is important when comparing across users.
 
-\subsection{Axiom 3: Preference captures
-decision-making}\label{axiom-3-preference-captures-decision-making}
+\subsection{Axiom 3. Preference captures decision-making: Wins as a
+Sufficient Statistic (Bühlmann \& Huber,
+1963)}\label{axiom-3-preference-captures-decision-making}
 
 Human preferences are classified into two categories: revealed
 preferences and stated preferences. Revealed preferences are those one
@@ -653,13 +655,13 @@ those individuals explicitly indicate in potentially experimental
 conditions. The explicit knowledge may be leveraged by including
 inductive biases during modeling (for example, the context used in a
 model), which are reasonable assumptions for how a human would consider
-a set of options. This may include controlled experiments or studies.
-This may be harder to obtain and somewhat biased, as they can be
-hypothetical or only accurately reflect a piece of the overall context
-of a decision. However, they enable greater control of the
-decision-making process.
+a set of items. This may include controlled experiments or studies. This
+may be harder to obtain and somewhat biased, as they can be hypothetical
+or only accurately reflect a piece of the overall context of a decision.
+However, they enable greater control of the decision-making process.
 
-\subsection{Axiom 4: Rationality}\label{human-rationality}
+\subsection{Axiom 4. Rationality: The Transitivity of odds (Good,
+1955)}\label{human-rationality}
 
 The preference model assumes that humans are rational. Perfect
 rationality posits that individuals make decisions that maximize their
@@ -690,7 +692,7 @@ One can extend the above model in various ways. For example, the above
 model does not account for similar actions. Consider the following
 example when choosing a mode of transportation: car and train, with no
 particular preference for either choice. The preferred probability is
-50\% for either option. However, if we have 99 cars and one train in the
+50\% for either item. However, if we have 99 cars and one train in the
 choice set, we would have a 99\% probability of choosing a car. To
 address this issue, various extensions have been proposed. For example,
 we can introduce a similarity metric to cluster items. We want a metric
@@ -883,14 +885,14 @@ or reject points.
 \pandocbounded{\includegraphics[keepaspectratio]{src/chap1_files/figure-pdf/cell-4-output-1.pdf}}
 
 The binary choice model centers around one item. The model predicts, for
-that option, after observing user choices in the past, whether that
-option will be chosen. We use binary variable \(y \in \{0, 1\}\) to
-represent whether the user will pick that choice in the next selection
-phase. We denote \(P = p(y = 1)\). We can formally model \(y\) as a
-function of the reward of the positive choice: \(y = \mathbb{I}[U>0]\).
-We explore two cases based on the noise distribution. \(\psi\) is the
-logistic function or the standard normal cumulative distribution
-function if noise follows logistic distribution and the standard normal
+that item, after observing user choices in the past, whether that item
+will be chosen. We use binary variable \(y \in \{0, 1\}\) to represent
+whether the user will pick that choice in the next selection phase. We
+denote \(P = p(y = 1)\). We can formally model \(y\) as a function of
+the reward of the positive choice: \(y = \mathbb{I}[U>0]\). We explore
+two cases based on the noise distribution. \(\psi\) is the logistic
+function or the standard normal cumulative distribution function if
+noise follows logistic distribution and the standard normal
 distribution, respectively: \[
 p(u_{i,j} > 0) = p(u_{i,j}^* + \epsilon > 0) = 1 - p( \epsilon < -u_{i,j}^*) = \psi(u_{i,j}^*).
 \]
@@ -950,8 +952,8 @@ Suppose we have a single example with attributes \(z_i\) and wish to
 know which of \(J\) rating scales an individual will choose from. We can
 define \(J - 1\) parameters, which act as thresholds on the reward
 computed by \(u_i = u_{i,j}^*\) to classify the predicted choice between
-these options. For example, if there are three predefined options, we
-can define parameters \(a, b \in \mathbb{R}\) such that \[
+these items. For example, if there are three predefined items, we can
+define parameters \(a, b \in \mathbb{R}\) such that \[
 y_i =
 \begin{cases} 
     1 & u < a \\
@@ -1207,11 +1209,11 @@ test auc: 0.7656601071357727
 
 \subsection{Pairwise Model}\label{pairwise-model}
 
-In \emph{pairwise sampling}, participants compare two options to
-determine which is preferred. One of the major advantages of this method
-is the low cognitive demand for raters. Its disadvantage is the limited
-amount of information content elicited by a sample. Below is a survey
-based on pairwise sampling:
+In \emph{pairwise sampling}, participants compare two items to determine
+which is preferred. One of the major advantages of this method is the
+low cognitive demand for raters. Its disadvantage is the limited amount
+of information content elicited by a sample. Below is a survey based on
+pairwise sampling:
 
 \begin{tcolorbox}[colframe=.grey, title=\faCode \enspace Code]
 
@@ -1305,7 +1307,7 @@ a user preferring choice \(i\), which we denote as
 \(P_i = Z^{-1}\exp(u_{i,j}^*)\) where
 \(Z = \sum_{j = 1}^{J} \exp(u_{i,j}^*)\).
 
-We can model an open-ended ranking of the available options with the
+We can model an open-ended ranking of the available items with the
 Plackett-Luce model, in which we jointly model the full sequence of
 choice ordering (\citeproc{ref-plackett_luce}{Plackett 1975}). The
 general form models the joint distribution as the product of conditional
@@ -1324,12 +1326,12 @@ massive corpus of text data, learning to understand language and
 context. They are capable of multiple language-related tasks such as
 text classification, language generation, and question answering. A LLM
 should be aligned to respond correctly based on human preferences. A
-promising approach is to train LLMs using reinforcement learning with
-the reward model (RM) learned from human preference data, providing a
-mechanism to score the quality of the generated text. This approach,
-known as reinforcement learning from human feedback (RLHF), leverages
-human feedback to guide model training, allowing LLMs to better align
-with human expectations while continuously improving performance.
+promising approach is to train LLMs using reinforcement learning (RL)
+with the reward model (RM) learned from human preference data, providing
+a mechanism to score the quality of the generated text. This approach,
+known as RL from human feedback (RLHF), leverages human feedback to
+guide model training, allowing LLMs to better align with human
+expectations while continuously improving performance.
 
 We discuss the reward model used in the Llama2 model. The Llama2 RM
 (\citeproc{ref-2307.09288}{Touvron et al. 2023}) is initialized from the
@@ -1361,49 +1363,38 @@ designed primarily based on the sigmoid function, which is used to
 normalize the raw reward model score flattens out beyond the range of
 \([-4, 4]\). Thus, the maximum possible margin is eight. A small
 regularization term is often added to center the score distribution on
-0.
-
-\begin{longtable}[]{@{}lcccc@{}}
-\caption{Two variants of preference rating-based margin have different
-magnitudes.}\label{tbl-margin_nums}\tabularnewline
-\toprule\noalign{}
-\endfirsthead
-\endhead
-\bottomrule\noalign{}
-\endlastfoot
-& Significantly Better & Better & Slightly Better & Negligibly Better /
-Unsure \\
-Margin Small & 1 & 2/3 & 1/3 & 0 \\
-Margin Large & 3 & 2 & 1 & 0 \\
-\end{longtable}
+0. We consider two variants of preference rating-based margin. When the
+preference rating-based margin is small, outcomes are rated as
+``Significantly Better'' (1), ``Better'' (2 out of 3), and ``Slightly
+Better'' (1 out of 3), and ``Negligibly Better or Unsure'' (0 out of 3).
+In contrast, when the margin is large, outcomes are rated as
+``Significantly Better'' (3), ``Better'' (2), and ``Slightly Better''
+(1), and ``Negligibly Better or Unsure'' (0 out of 3).
 
 \subsection{List-wise Model}\label{list-wise-model}
 
-\emph{Multiple-choice sampling} involves participants selecting one
-option from a set of alternatives. Multiple-choice sampling is simple
-for participants to understand and reflect on realistic decision-making
-scenarios where individuals choose one option from many. It is
-beneficial in complex choice scenarios, such as modes of transportation,
-where choices are not independent (\citeproc{ref-bolt2009}{Bolt and
-Wollack 2009}). Multiple-choice sampling often relies on simplistic
-assumptions such as the independence of irrelevant alternatives (IIA),
-which may not always hold true. This method may also fail to capture the
-variation in preferences among different individuals, as it typically
-records only the most preferred choice without accounting for the
-relative importance of other options.
-
-In \emph{rank-order sampling}, participants rank items from most to
-least preferred. Used in voting, market research, and psychology, it
-provides rich preference data but is more complex and cognitively
-demanding than pairwise comparisons, especially for large item sets.
-Participants may also rank inconsistently
-(\citeproc{ref-ragain2019}{Ragain and Ugander 2019}).
-
-\emph{In Best-worst scaling} (BWS), participants are presented with
-items and asked to identify the most and least preferred options. The
-primary objective of BWS is to discern the relative importance or
-preference of items, making it widely applicable in various fields such
-as market research, health economics, and social sciences
+\emph{Multiple-choice sampling} involves participants selecting one item
+from a set of alternatives. Multiple-choice sampling is simple for
+participants to understand and reflect on realistic decision-making
+scenarios where individuals choose one item from many. It is beneficial
+in complex choice scenarios, such as modes of transportation, where
+choices are not independent (\citeproc{ref-bolt2009}{Bolt and Wollack
+2009}). Multiple-choice sampling often relies on simplistic assumptions
+such as the independence of irrelevant alternatives (IIA), which may not
+always hold true. This method may also fail to capture the variation in
+preferences among different individuals, as it typically records only
+the most preferred choice without accounting for the relative importance
+of other items. In \emph{rank-order sampling}, participants rank items
+from most to least preferred. Used in voting, market research, and
+psychology, it provides rich preference data but is more complex and
+cognitively demanding than pairwise comparisons, especially for large
+item sets. Participants may also rank inconsistently
+(\citeproc{ref-ragain2019}{Ragain and Ugander 2019}). \emph{In
+Best-worst scaling} (BWS), participants are presented with items and
+asked to identify the most and least preferred items. The primary
+objective of BWS is to discern the relative importance or preference of
+items, making it widely applicable in various fields such as market
+research, health economics, and social sciences
 (\citeproc{ref-campbell2015}{Campbell and Erdem 2015}). BWS provides
 rich data on the relative importance of items, helps clarify
 preferences, reduces biases found in traditional rating scales, and
@@ -1511,7 +1502,7 @@ context. Train a unified reward model that integrates both datasets or
 train two separate reward models, one for each quality, and optimize the
 LLM toward both. Option 1 is difficult because of the tension between
 helpfulness and harmlessness. They trade off against each other,
-confusing an RM trained in both. The chosen solution was option 2, where
+confusing an RM trained in both. The chosen solution was item 2, where
 two RMs are used to train the LLM piecewise. The helpfulness RM is used
 as the primary optimization term, while the harmlessness RM acts as a
 penalty term, driving the behavior of the LLM away from unsafe territory
@@ -1532,215 +1523,109 @@ model generation and the user prompt:
 
 \subsection{Pretraining}\label{pretraining}
 
-Reinforcement learning (RL) often stumbles when it comes to devising
-reward functions aligning with human intentions. Preference-based RL
-algorithms aim to solve this by learning from human feedback, but this
-often demands a \emph{highly impractical number of queries} or leads to
-oversimplified reward functions that don't hold up in real-world tasks.
-As discussed in the previous section, one may apply meta-learning so
-that the RL agent can adapt to new tasks with fewer human queries to
-address the impractical requirement of human queries.
-(\citeproc{ref-hejna2023few}{Hejna III and Sadigh 2023}) proposes
-pre-training models on previous tasks with the meta-learning method MAML
-(\citeproc{ref-finn2017model}{Finn, Abbeel, and Levine 2017}), and then
-the meta-trained model can adapt to new tasks with fewer queries. We
-consider settings where a state is denoted as \(s\in S\), and action is
-denoted as \(a\in A\), for state space \(S\) and action space \(A\). The
-reward function \(r: S\times A \to \mathbb{R}\) is unknown and needs to
-be learned from eliciting human preferences. There are multiple tasks,
-each with its own reward function and transition probabilities. The
-reward model is parameterized by \(\psi\). We denote
-\(\hat{r}_\psi(s, a)\) to be a learned estimate of an unknown
-ground-truth reward function \(r(s, a)\), parameterized by \(\psi\).
-Accordingly, a reward model determines an RL policy \(\phi\) by
-maximizing the accumulated rewards. The preferences is learned via
-pairwise comparison of trajectory segments
-\[\begin{aligned} \sigma = (s_t, a_t, s_{t+1}, a_{t+1}, ..., s_{t+k-1}, s_{t+k-1}) \end{aligned}\]
-of \(k\) states and actions. For each pre-training task, there is a
-dataset \(D\) consists of labeled queries \((\sigma_1, \sigma_2, y)\)
-where \(y\in \{0, 1\}\) is the label representing which trajectory is
-preferred. Therefore, a loss function \(L(\psi, D)\) captures how well
-the reward model characterizes the preferences in dataset \(D\). Hejna
-III and Sadigh (\citeproc{ref-hejna2023few}{2023}) predict the preferred
-segments using the Bradley-Terry model:
-\[P[\sigma_1 \succ \sigma_2 ] = \frac{\exp \sum_t \hat{r}_\psi(s_t^{1}, a_t^{1})}{\exp \sum_t \hat{r}_\psi(s_t^{1}, a_t^{1}) + \exp \sum_t \hat{r}_\psi(s_t^{2}, a_t^{2})}.\]
-Then, the loss function is binary cross-entropy loss:
-\[{L}(\psi,  {D}) = - \mathbb{E}_{(\sigma^1, \sigma^2, y) \sim {D}} \left[ y(1) \log (P[\sigma_1 \succ \sigma_2 ]) + y(2)\log(1 - P[\sigma_1 \succ \sigma_2 ]) \right].\]
+RL often stumbles when it comes to devising reward functions aligning
+with human intentions. Preference-based RL aims to solve this by
+learning from human feedback, but this often demands a \emph{highly
+impractical number of queries} or leads to oversimplified reward
+functions that don't hold up in real-world tasks. As discussed in the
+previous section, one may apply meta-learning so that the RL agent can
+adapt to new tasks with fewer human queries to address the impractical
+requirement of human queries. (\citeproc{ref-hejna2023few}{Hejna III and
+Sadigh 2023}) proposes pre-training models on previous tasks with the
+meta-learning method MAML (\citeproc{ref-finn2017model}{Finn, Abbeel,
+and Levine 2017}), and then the meta-trained model can adapt to new
+tasks with fewer queries. We consider settings where a state is denoted
+as \(s\in S\), and action is denoted as \(a\in A\), for state space
+\(S\) and action space \(A\). The reward function
+\(r: S\times A \to \mathbb{R}\) is unknown and needs to be learned from
+eliciting human preferences. There are multiple tasks, each with its own
+reward function and transition probabilities. The reward model is
+parameterized by \(\psi\). We denote \(\hat{r}_\psi(s, a)\) to be a
+learned estimate of an unknown ground-truth reward function \(r(s, a)\),
+parameterized by \(\psi\). Accordingly, a reward model determines an RL
+policy \(\phi\) by maximizing the accumulated rewards. The preferences
+is learned via pair. For each pre-training task, there is a dataset
+\(D\) consists of binary preference between pair of trajectory.
+Bradley-Terry model is used to predict the preferred trajectory.
 
 To efficiently approximate the reward function \(r_\text{new}\) for a
-new task with minimal queries, as described in
-(\citeproc{ref-hejna2023few}{Hejna III and Sadigh 2023}), we aim to
-utilize a pre-trained reward function \(\hat{r}_\psi\) that can be
-quickly fine-tuned using just a few preference comparisons. We can
-leverage the common structure across tasks by pre-training on data from
-prior tasks to speed up the adaptation process. Although any
+new task with minimal queries, Hejna III and Sadigh
+(\citeproc{ref-hejna2023few}{2023}) utilizes a pre-trained reward
+function \(\hat{r}_\psi\) that can be quickly fine-tuned using just a
+few preference comparisons by leveraging the common structure across
+tasks by pre-training on data from prior tasks. Although any
 meta-learning method is compatible, (\citeproc{ref-hejna2023few}{Hejna
 III and Sadigh 2023}) opts for Model Agnostic Meta-Learning (MAML) due
-to its simplicity. Therefore, the pre-training update for the reward
-model \(\psi\) is
-\[\psi \xleftarrow{} \psi - \beta \nabla_\psi \sum_{i = 1}^N {L} (\psi - \alpha \nabla_\psi {L}(\psi, {D}_i), {D}_i),\]
-where \(\alpha\) and \(\beta\) are the inner and outer learning rates,
-respectively. We note that data \(\{D_i\}_i\) of labeled preference
-queries for prior tasks can come from offline datasets, simulated
-policies, or actual humans. With the aforementioned pre-training with
-meta learning, the meta-learned reward model can then be used for
-few-shot preference-based RL during an online adaptation phase. Given a
-pre-trained reward model \(\psi\), the core procedure of the few-shot
-adaption for time step \(t=1, 2, \dots\) is
-
-\begin{enumerate}
-\def\labelenumi{\arabic{enumi}.}
-\item
-  Find pairs of trajectories \((\sigma_1, \sigma_2)\) with preference
-  uncertainty based on \(\psi\). Uncertain queries are selected using
-  the disagreement of an ensemble of reward functions over the
-  preference predictors. Specifically, comparisons that maximize
-  \(\texttt{std}(P[\sigma_1 \succ \sigma_2])\) are selected each time
-  feedback is collected.
-\item
-  Query human preference \(y\) and forms a new dataset \(D_{new}\)
-\item
-  Update the reward model by
-  \(\psi'\leftarrow \psi - \alpha \nabla_\psi L(\psi, D_{new})\), then
-  update the policy with the new reward model.
-\end{enumerate}
+to its simplicity. With the aforementioned pre-training with meta
+learning, the meta-learned reward model can then be used for few-shot
+preference-based RL during an online adaptation phase. Given a
+pre-trained reward model \(\psi\), the the active few-shot adaption
+iterates between finding informative pair of trajectory to query human
+and update reward model and corresponding policy with new data.
+Informative pair is selected using the disagreement of an ensemble of
+reward functions over the preference predictors. Specifically,
+comparisons that maximize \(\mathbb{V}(p(e_j \succ e_{j'}))\) are
+selected each time feedback is collected.
 
 The experiment tests the proposed method on the Meta-World benchmark
 (\citeproc{ref-yu2020meta}{Yu et al. 2020}). Three baselines compared
 with the proposed method are (1) Soft-Actor Critic (SAC) trained from
-ground truth rewards, representing the standard best possible method
-given the ground-truth reward, PEBBLE (\citeproc{ref-lee2021pebble}{Lee,
-Smith, and Abbeel 2021}), which does not use information from prior
-tasks, and (3) Init, which initializes the reward model with the
-pretrained weights from meta learning but instead of adapting the reward
-model to the new task, it performs standard updates as in PEBBLE. The
-results show that the proposed method outperforms all of the baseline
-methods. There are still some drawbacks. For example, many of the
-queries the model picks for human preference elicitation are actually
-almost identical to humans. After all, the model would pick the most
-uncertain pair of trajectories for human preference queries, and similar
-trajectories surely have high uncertainty in their preference. This
-suggests the need for new ways of designing the query selection
-strategy. Moreover, despite the improved query complexity, an
-impractical number of queries still need to be made. In addition, it is
-mentioned in the paper that the proposed method may be even worse than
-training from scratch if the new task is too out-of-distribution.
-Certainly, since meta-learning assumes in-distribution tasks, we cannot
-expect the proposed method to be good for out-of-distribution tasks. It
-is thus an interesting future direction to investigate whether one can
-design a method that automatically balances between using the prior
-information or training from scratch.
+ground truth rewards, representing performance upper bound, PEBBLE
+(\citeproc{ref-lee2021pebble}{Lee, Smith, and Abbeel 2021}), which does
+not use information from prior tasks, and (3) Init, which initializes
+the reward model with the pretrained weights from meta learning but
+instead of adapting the reward model to the new task, it performs
+standard updates as in PEBBLE. The results show that the proposed method
+outperforms all of the baseline methods. There are still some drawbacks.
+For example, many of the queries the model picks to elicit human
+preference are almost identical. Moreover, despite the improved query
+complexity, an impractical number of queries still need to be made. In
+addition, it is mentioned in the paper that the proposed method may be
+even worse than training from scratch if the new task is too
+out-of-distribution. Designing a method that automatically balances
+between using the prior information or training from scratch is an
+important future direction.
 
 Zhou et al. (\citeproc{ref-zhou2019watch}{2019}) studies a related
 problem by asking the question, ``How can we efficiently learn both from
-expert demonstrations and from trials where we only get \textbf{binary}
-feedback from a human". Why do we care about this question? In the
-context of robotics, a very compelling answer is the \emph{cost of data
-collection}. In a hypothetical world where we have a vast number of
-\textbf{expert demonstrations} of robots accomplishing many diverse
-tasks, we don't necessarily need to worry about learning from trials or
-from humans. We could simply learn a competent imitation agent to
-perform any task. Natural Language Processing could be seen as living in
-this world because internet-scale data is available. \textbf{Robots,
-however, are expensive}, so people generally don't have access to them
-and, therefore cannot use them to produce information to imitate.
-Similarly, \textbf{human time is expensive}, so even for large
-organizations with access to many robots, it's still hard to collect a
-lot of expert demonstrations. The most extensive available collection of
-robotics datasets today is the Open X-Embodiment
-(\citeproc{ref-padalkar2023open}{Padalkar et al. 2023}), which consists
-of around 1M episodes from more than 300 different scenes. Even such
-large datasets are not enough to learn generally capable robotic
-policies from imitation learning alone.
-
-The main insight is that binary feedback is much cheaper to obtain than
-expert demonstrations! Instead of hiring people to act as robot
-operators to tell the robot precisely what to do; if there was a way of
-having many robots trying things in parallel, we can have humans watch
-videos of what the robots did and then give a successful classification
-of whether the robot accomplished the goal. This is a much cheaper form
-of human supervision because the human labels don't necessarily need to
-be given in real-time, so one human labeler can label many trajectories
-in parallel, and the human doesn't need to be a skilled robot operator.
-Concretely, this paper seeks to learn new tasks with the following
+expert demonstrations and from trials where we only get binary feedback
+from a human?'' This paper seeks to learn new tasks with the following
 general problem setting: We only get one expert demonstration of the
 target task; after seeing the expert demonstration, robots try to solve
 the task 1 or more times; then the user (or some pre-defined reward
 function) annotates each trial as a success/failure; the agent learns
 from both the demos and the annotated trials to perform well on the
-target task.
+target task. A task \(i\) is described by the tuple
+\(\{S, A, r_i, P_i\}\). \(S\) and \(A\) represents all possible states
+and action, respectively. \(r_i\) is the reward function
+\(r_i : S \times A \to \mathbb{R}\), and \(P_i\) is the transition
+dynamics function. \(S\) and \(A\) are shared across tasks. Learning
+occurs in 3 phases. During the watch phase, we give the agent \(K=1\)
+demonstrations of the target tasks and all demonstrations are
+successful. In the Try phase, we use the agent learned during the Watch
+phase to attempt the task for \(L\) trials. After the agent completes
+the trials, humans (or pre-programmed reward functions) provide one
+binary reward for each trial, indicating whether the trial was
+successful. The expected output of this phase is \(L\) trajectories and
+corresponding feedback. After completing the trials, the agent must
+learn from both the original expert demonstrations and the trials to
+solve the target task.
 
-Meta-Learning deals with the efficient learning of new tasks. In the
-context of robotics or reinforcement learning in general, \textbf{how do
-we define tasks}? We will use the Markov decision process (\textbf{MDP})
-formalism. A task \(T_i\) is described with the tuple
-\(\{S, A, r_i, P_i\}\). \(S\) represents the \emph{state} of the task or
-all possible states the agent could find itself in. This work uses image
-observations, so \(S\) is the space of all possible RGB images. \(A\) is
-the action space, meaning the set of all possible actions the agent
-could take. In robotics, there are many ways of representing action
-spaces, and this work considers end-effector positions, rotations, and
-openings. \(r_i\) is the reward function for the task, with the function
-signature \(r_i : S \times A \to \mathbb{R}\). This work assumes all
-reward functions are binary. \(P_i\) is the transition dynamics
-function. It's a function that maps state-action pairs to probability
-distributions over the next states. \(S\) and \(A\) are shared across
-tasks. Transition dynamics functions are usually shared between tasks
-because they represent the laws of physics. However, this work considers
-environments with different objects, so they don't share the dynamics
-function. Given this definition for tasks, they assume that the tasks
-from the data they get come from some unknown task-generating
-distribution \(p(T)\).
+First, we are given a dataset of expert demonstrations containing
+multiple demos for each task and the dataset contains hundreds of tasks.
+Importantly, no online interaction is needed for training, and this
+method trains only with supervised learning. This section describes how
+this paper trains an agent from the given expert demonstrations, and how
+to incorporate the trials and human feedback into the loop. What we want
+to obtain out of the Watch phase is a policy conditioned on a set of
+expert demonstrations via meta-imitation learning. Given the
+demonstrations \(\{d_{i,k}\}\) for task \(i\), we sample another
+different demonstration coming from the same task \(d_i^{\text{test}}\),
+where \(d_i^{\text{test}}\) is an example of optimal behavior given the
+demonstrations. The policy is obtained by imitating actions taken on
+\(d_i^{\text{test}}\) via maximum likelihood:
 
-There are 3 phases for the problem statement. During the \emph{watch}
-phase, we give the agent \(K\) demonstrations of the target tasks. This
-paper considers the case where \(K\) always equals 1, and all
-demonstrations are successful. That is, each demonstration consists of a
-trajectory \(\{(s_0, a_0), \ldots, (s_H, a_H)\}\) where \(H\) is the
-task horizon, and the final state is always successful, that is
-\(r_i(s_H, a_H) = 1, r_i(s_j, a_j) = 0\) for every \(j \neq H\).
-Importantly, these demonstrations alone might not be sufficient for
-\textbf{full task specification}. As an example, consider a
-demonstration in which an apple is moved to the right, next to a pan.
-Seeing this demonstration alone, the task could always be moving the
-apple to the right, or it could always be moving the apple next to the
-pan, irrespective of where the pan is. After the Watch phase, the
-expected output is a policy capable of gathering information about a
-task, given demonstrations. In the Try phase, we use the agent learned
-during the Watch phase to attempt the task for \(L\) trials. As
-specified earlier, this paper considers the case where \(L\) always
-equals 1. After the agent completes the trials, humans (or
-pre-programmed reward functions) provide one binary reward for each
-trial, indicating whether the trial was successful. The expected output
-of this phase is \(L\) trajectories and corresponding feedback that
-hopefully \emph{disambiguate} the task. After completing the trials, the
-agent must learn from both the original expert demonstrations and the
-trials, and become capable of solving the target task.
-
-To train agents that can Watch, Try, and Learn, we are given a dataset
-of expert demonstrations containing multiple demos for each task and the
-dataset contains hundreds of tasks. Importantly, \textbf{no online
-interaction} is needed for training, and this method trains only with
-\textbf{supervised learning} and no reinforcement learning. This section
-describes how this paper trains an agent from the given expert
-demonstrations, and how to incorporate the trials and human feedback
-into the loop. We describe the algorithm to obtain an agent conditioned
-on the given expert demonstration. What we want to obtain out of the
-Watch phase is a policy conditioned on a set of expert demonstrations.
-Formally, we want to obtain
-\(\pi_\theta^{\text{watch}}(a | s, \{d_{i,k}\})\). We can obtain this
-policy through meta-imitation learning. Given the demonstrations
-\(\{\textbf{d}_{i,k}\}\) for task \(i\), we sample another
-\emph{different} demonstration coming from the same task
-\(\textbf{d}_i^{\text{test}}\). The key insight here is that
-\(\textbf{d}_i^{\text{test}}\) is an example of \textbf{optimal
-behavior} given the demonstrations. Therefore, to obtain
-\(\pi_\theta^{\text{watch}}(a | s, \{d_{i,k}\})\), we simply regress the
-policy to imitate actions taken on \(\textbf{d}_i^{\text{test}}\).
-Concretely, we train policy parameters \(\theta\) to minimize the
-following loss:
-
-\(\mathcal{L}^\text{watch}(\theta, \mathcal{D}_i^*) = \mathbb{E}_{\{d_{i,k}\} \sim \mathcal{D}_i^*} \mathbb{E}_{\{d_{i,k}^{\text{test}}\} \sim \mathcal{D}_i^*  \{d_{i,k}\}} \mathbb{E}_{(s_t, a_t) \sim d_i^{\text{test}}} \big[- \log \pi_\theta^{\text{watch}} (a_t | s_t, \{d_{i,k}\}) \big]\)
+\[\mathcal{L}^\text{watch}(\theta, \mathcal{D}_i^*) = \mathbb{E}_{\{d_{i,k}\} \sim \mathcal{D}_i^*} \mathbb{E}_{\{d_{i,k}^{\text{test}}\} \sim \mathcal{D}_i^*  \{d_{i,k}\}} \mathbb{E}_{(s_t, a_t) \sim d_i^{\text{test}}} \log \pi_\theta^{\text{watch}} (a_t | s_t, \{d_{i,k}\})\]
 
 This corresponds to imitation learning by minimizing the negative
 log-likelihood of the test trajectory actions, conditioning the policy
@@ -1748,38 +1633,36 @@ on the entire demo set. However, how is the conditioning on the demo set
 achieved? In addition to using features obtained from the images of the
 current state, the architecture uses features from frames sampled (in
 order) from the demonstration episodes, which are concatenated together.
-
 On the Try phase when the agent is given a set of demonstrations
-\(\{\textbf{d}_{i,k}\}\), we deploy the policy
-\(\pi_\theta^{\text{watch}}(a | s, \{\textbf{d}_{i,k}\})\) to collect
-\(L\) trials. There is no training involved in the Try phase; we simply
+\(\{d_{i,k}\}\), we deploy the policy
+\(\pi_\theta^{\text{watch}}(a | s, \{d_{i,k}\})\) to collect \(L\)
+trials. There is no training involved in the Try phase; we simply
 condition the policy on the given demonstrations. During the Watch
 phase, the objective was to train a policy conditioned on demonstrations
-\(\pi_\theta^{\text{watch}}(a | s, \{\textbf{d}_{i,k}\})\). The authors
-of Watch, Try, Learn uses a similar strategy as the Watch phase for the
-Learn phase. We now want to train a policy that is conditioned on the
-demonstrations, as well as the trials and binary feedback. That is, we
-want to learn
-\(\pi_\phi^{\text{watch}}(a | s, \{\textbf{d}_{i,k}\}, \{\mathbf{\tau}_{i, l}\})\).
+\(\pi_\theta^{\text{watch}}(a | s, \{d_{i,k}\})\). The authors of Watch,
+Try, Learn uses a similar strategy as the Watch phase for the Learn
+phase. We now want to train a policy that is conditioned on the
+demonstrations, as well as the trials and binary feedback. We want to
+learn
+\(\pi_\phi^{\text{watch}}(a | s, \{d_{i,k}\}, \{\mathbf{\tau}_{i, l}\})\).
 To train the policy, we again use meta-imitation learning, where we
 additionally sample yet another trajectory from the same task.
 Concretely, we train policy parameters \(\phi\) to minimize the
 following loss:
-\(\mathcal{L}^{\text{learn}}(\phi, \mathcal{D}_i, \mathcal{D}_i^*) = \mathbb{E}_{(\{d_{i,k}\}, \{\mathbf{\tau}_{i,l}\}) \sim \mathcal{D}_i} \mathbb{E}_{\{d_{i,k}^{\text{test}}\} \sim \mathcal{D}_i^* \{d_{i,k}\}} \mathbb{E}_{(s_t, a_t) \sim d_i^{\text{test}}} \big[- \log \pi_\theta^{\text{learn}} (a_t | s_t, \{d_{i,k}\}, \{\tau_{i,l}\}) \big]\)
+\[\mathcal{L}^{\text{learn}}(\phi, \mathcal{D}_i, \mathcal{D}_i^*) = \mathbb{E}_{(\{d_{i,k}\}, \{\mathbf{\tau}_{i,l}\}) \sim \mathcal{D}_i} \mathbb{E}_{\{d_{i,k}^{\text{test}}\} \sim \mathcal{D}_i^* \{d_{i,k}\}} \mathbb{E}_{(s_t, a_t) \sim d_i^{\text{test}}} \big[- \log \pi_\theta^{\text{learn}} (a_t | s_t, \{d_{i,k}\}, \{\tau_{i,l}\}) \big]\]
 
-The following three baselines are considered: (1) Behavior cloning is
-simple imitation learning based on maximum log-likelihood training using
-data from all tasks, (2) Meta-imitation learning corresponds to simply
-running the policy from the Watch step without using any trial data.
-That is, we only condition on the set of expert demonstrations, but no
-online trials, and (3) Behavior Cloning + SAC pretrains a policy with
-Behavior Cloning on all data, and follow that with Reinforcement
-Learning fine-tuning for the specific target task, using the
-maximum-entropy algorithm SAC (\citeproc{ref-haarnoja2018soft}{Haarnoja
-et al. 2018}). Watch Try Learn significantly outperforms baselines on
-every task family: it is far superior to Behavior Cloning, which is a
-very weak baseline, and it significantly surpasses Meta-Imitation
-Learning on 3 out of 4 task families.
+Three baselines are considered: (1) behavior cloning is simple imitation
+learning based on maximum log-likelihood training using data from all
+tasks, (2) meta-imitation learning corresponds to simply running the
+policy from the Watch step without using any trial data. We only
+condition on the set of expert demonstrations, but no online trials, and
+(3) behavior cloning + SAC pretrains a policy with behavior cloning on
+all data, and follow that with RL fine-tuning for the specific target
+task, using the maximum-entropy algorithm SAC
+(\citeproc{ref-haarnoja2018soft}{Haarnoja et al. 2018}). The proposed
+approach significantly outperforms baselines on every task family: it is
+far superior to behavior cloning and it significantly surpasses
+Meta-Imitation Learning on 3 out of 4 task families.
 
 \subsection{Others Consideration}\label{others-consideration}
 
@@ -1858,82 +1741,80 @@ preference modeling, which focuses on understanding how a single person
 makes decisions, social choice theory addresses the challenge of
 combining multiple preference profiles into a single, coherent outcome.
 One of the most widely used approaches to aggregating preferences is
-voting. A \textbf{voting rule} is a function that maps a set of
-individual preference rankings to a collective decision. The outcome of
-a vote is determined by a \textbf{social choice function (SCF)}, which
-selects a winner based on the aggregated preferences. Several voting
-rules exist, each with different properties:
+voting. A voting rule is a function that maps a set of individual
+preference rankings to a collective decision. The outcome of a vote is
+determined by a social choice function (SCF), which selects a winner
+based on the aggregated preferences. Several voting rules exist, each
+with different properties:
 
 \begin{itemize}
 \tightlist
 \item
-  \textbf{Plurality Rule:} Each voter assigns one point to their top
-  choice, and the alternative with the most points wins.
+  Plurality Rule: Each voter assigns one point to their top choice, and
+  the alternative with the most points wins.
 \item
-  \textbf{Borda Count:} Voters rank all alternatives, and points are
-  assigned based on the position in each ranking.
+  Borda Count: Voters rank all alternatives, and points are assigned
+  based on the position in each ranking.
 \item
-  \textbf{Single Transferable Vote (STV):} Voters rank choices, and
-  rounds of elimination occur until a candidate has a majority.
+  Single Transferable Vote (STV): Voters rank choices, and rounds of
+  elimination occur until a candidate has a majority.
 \item
-  \textbf{Condorcet Methods:} The \textbf{Condorcet winner} is the
-  option that would win in all pairwise comparisons against other
-  alternatives (if one exists).
+  Condorcet Methods: The Condorcet winner is the item that would win in
+  all pairwise comparisons against other alternatives (if one exists).
 \end{itemize}
 
 However, preference aggregation is not always straightforward. The
-\textbf{Condorcet Paradox} illustrates that no single alternative may be
-a clear winner due to cycles in majority preferences, violating
-transitivity. Additionally, different voting rules can yield different
-winners, highlighting the importance of selecting an appropriate
-aggregation method. A fundamental result in social choice theory is
-\textbf{Arrow's Impossibility Theorem}, which states that when there are
-three or more alternatives, no voting system can simultaneously satisfy
-the following fairness criteria:
+Condorcet Paradox illustrates that no single alternative may be a clear
+winner due to cycles in majority preferences, violating transitivity.
+Additionally, different voting rules can yield different winners,
+highlighting the importance of selecting an appropriate aggregation
+method. A fundamental result in social choice theory is Arrow's
+Impossibility Theorem, which states that when there are three or more
+alternatives, no voting system can simultaneously satisfy the following
+fairness criteria:
 
 \begin{enumerate}
 \def\labelenumi{\arabic{enumi}.}
 \tightlist
 \item
-  \textbf{Unanimity (Pareto efficiency):} If all individuals prefer one
-  option over another, the group ranking should reflect this.
+  Unanimity (Pareto efficiency): If all individuals prefer one item over
+  another, the group ranking should reflect this.
 \item
-  \textbf{Independence of Irrelevant Alternatives (IIA):} The relative
-  ranking of two options should not be influenced by a third, unrelated
-  option.
+  Independence of Irrelevant Alternatives: The relative ranking of two
+  items should not be influenced by another unrelated item.
 \item
-  \textbf{Non-dictatorship:} No single individual's preference should
-  always determine the group's outcome.
+  Non-dictatorship: No single individual's preference should always
+  determine the group's outcome.
 \end{enumerate}
 
 Arrow's theorem suggests that every fair aggregation method must
 compromise on at least one of these desirable properties. Additionally,
-the \textbf{Gibbard-Satterthwaite Theorem} proves that any deterministic
-voting rule that selects a single winner is either \textbf{dictatorial}
-(one person always determines the result) or \textbf{manipulable}
-(voters can strategically misrepresent their preferences to achieve a
-better outcome). While manipulation is theoretically possible, certain
-voting rules, such as STV, introduce computational complexity that makes
-strategic voting impractical in real-world scenarios.
+the Gibbard-Satterthwaite Theorem proves that any deterministic voting
+rule that selects a single winner is either dictatorial (one person
+always determines the result) or manipulable (voters can strategically
+misrepresent their preferences to achieve a better outcome). While
+manipulation is theoretically possible, certain voting rules, such as
+STV, introduce computational complexity that makes strategic voting
+impractical in real-world scenarios.
 
-Preference aggregation is also critical in reinforcement learning from
-human feedback (RLHF), where human judgments guide model training.
-Aggregating human preferences in RLHF faces challenges similar to
-traditional voting, such as inconsistencies in preferences and strategic
-bias. Several approaches address these challenges. For example, Majority
-Voting simply aggregates by selecting the most preferred response.
-Weighted Voting adjusts vote weights based on expertise or
-trustworthiness. Jury Learning is a method that integrates dissenting
-opinions, ensuring that minority perspectives are not entirely
-disregarded. Lastly, Social Choice in AI Alignment incorporates diverse
-human feedback to align AI behavior with a broad spectrum of human
-values. These approaches highlight the interplay between human
-preference modeling and machine learning. Designing aggregation
-mechanisms that reflect collective human values is an ongoing research
-challenge. While traditional social choice methods focus on aggregation,
-recent work in pluralistic alignment suggests alternative frameworks
-that preserve the diversity of human preferences rather than collapsing
-them into a single decision. Pluralistic AI systems aim to:
+Preference aggregation is also critical in RLHF, where human judgments
+guide model training. Aggregating human preferences in RLHF faces
+challenges similar to traditional voting, such as inconsistencies in
+preferences and strategic bias. Several approaches address these
+challenges. For example, Majority Voting simply aggregates by selecting
+the most preferred response. Weighted Voting adjusts vote weights based
+on expertise or trustworthiness. Jury Learning is a method that
+integrates dissenting opinions, ensuring that minority perspectives are
+not entirely disregarded. Lastly, Social Choice in AI Alignment
+incorporates diverse human feedback to align AI behavior with a broad
+spectrum of human values. These approaches highlight the interplay
+between human preference modeling and machine learning. Designing
+aggregation mechanisms that reflect collective human values is an
+ongoing research challenge. While traditional social choice methods
+focus on aggregation, recent work in pluralistic alignment suggests
+alternative frameworks that preserve the diversity of human preferences
+rather than collapsing them into a single decision. Pluralistic AI
+systems aim to:
 
 \begin{enumerate}
 \def\labelenumi{\arabic{enumi}.}
@@ -1951,18 +1832,16 @@ them into a single decision. Pluralistic AI systems aim to:
 
 This perspective is particularly relevant in generative AI, where models
 trained on aggregated preferences may fail to capture the nuances of
-diverse human values.
-
-Aggregating human preferences is a complex task influenced by
-mathematical constraints and strategic considerations. Voting-based
-methods provide well-studied mechanisms for aggregation, but they face
-fundamental limitations, as Arrow's and Gibbard-Satterthwaite's theorems
-outlined. Beyond traditional aggregation, emerging approaches in
-reinforcement learning and AI alignment seek to balance fairness,
-robustness, and pluralism. As machine learning systems increasingly
-interact with human preferences, designing aggregation frameworks that
-capture the richness of human decision-making remains an active and
-critical area of research.
+diverse human values. Aggregating human preferences is a complex task
+influenced by mathematical constraints and strategic considerations.
+Voting-based methods provide well-studied mechanisms for aggregation,
+but they face fundamental limitations, as Arrow's and
+Gibbard-Satterthwaite's theorems outlined. Beyond traditional
+aggregation, emerging approaches in RL and AI alignment seek to balance
+fairness, robustness, and pluralism. As machine learning systems
+increasingly interact with human preferences, designing aggregation
+frameworks that capture the richness of human decision-making remains an
+active and critical area of research.
 
 \section{Exercises}\label{exercises}
 
@@ -1997,7 +1876,7 @@ function \(f(x)=e^{-(x+e^{-x})}\) and cumulative distribution function
   multi-class logistic regression!
 \end{enumerate}
 
-Next, you will implement logistic regression to predict preferred prompt
+Next, you will implement logistic regression to predict preferred
 completions. We will use the preference dataset from
 \href{https://huggingface.co/datasets/allenai/reward-bench}{RewardBench}.
 Notice the provided \texttt{data/chosen\_embeddings.pt} and
@@ -2005,31 +1884,29 @@ Notice the provided \texttt{data/chosen\_embeddings.pt} and
 constructed by feeding the prompt alongside the chosen/rejected
 responses through Llama3-8B-Instruct and selecting the last token's
 final hidden embedding. Let \(e_1\) and \(e_2\) be two hidden embeddings
-with \(e_1\succ e_2\). We assume weights \(w\) exist for which the
-Bradley-Terry reward of an embedding \(e\) can be modeled as
-\(r=w\cdot e\). In this setting, the probability of \(e_1\succ e_2\) is
+with \(e_1\succ e_2\). We assume reward is a linear function of
+embedding \(u_j=w^\top e_j\) and use the Bradley-Terry model to predict
+the preferred item. We can view maximum likelihood across the preference
+dataset with this model as logistic regression on \(e_1-e_2\) and all
+labels being \(1\). Here, we are given a dataset \(X\) with \(N\) rows
+of datapoints and \(D\) features per datapoint. The weights of the model
+are parametrized by \(w\), a \(d\)-dimensional column vector. Given
+binary labels \(y\) of shape \(N\) by \(1\), the negative log likelihood
+function and the corresponding gradient is
 
-\[\frac{e^{w\cdot e_1}}{e^{w\cdot e_1}+e^{w\cdot e_2}}=\frac{1}{1+e^{w\cdot(e_2-e_1)}}=\sigma(w\cdot(e_1-e_2)).\]
+\[p(y, X| w)=-\frac{1}{N}(y^\top \log(\sigma(X^\top w)) + (1-y)^\tau \log(1-\sigma(X^\top w))), \quad \nabla_w p(y, X | w)=\frac{1}{N}X^T(\sigma(X^\top w)-y),\]
 
-Hence, we can view maximum likelihood across the preference dataset with
-this model as logistic regression on \(e_1-e_2\) without a bias term and
-all labels being \(1\). In biasless logistic regression, we are given a
-dataset \(X\) with \(N\) rows of datapoints and \(D\) features per
-datapoint. The weights of the model are parametrized by \(\theta\), a
-\(D\)-dimensional column vector. Given binary labels \(y\) of shape
-\(N\) by \(1\), the binary cross-entropy loss is
-\[J(\theta)=-\frac{1}{N}(y^T\log(\sigma(X\theta)) + (1-y)^T\log(1-\sigma(X\theta))), \quad \nabla_\theta J(\theta)=\frac{1}{N}X^T(\sigma(X\theta)-y),\]
 where \(\sigma\) is the sigmoid function and is applied element-wise
-along with \(\log\).
+along with \(\log\). As usual, we use maximum likelihood to learn the
+parameter.
 
 \begin{enumerate}
 \def\labelenumi{\arabic{enumi}.}
 \tightlist
 \item
-  \textbf{(Coding, 5 points)}. Open the file
-  \texttt{logistic\_regression/logistic\_regression.py}. Implement the
-  function \texttt{train} in the biasless case and the
-  \texttt{predict\_probs} function.
+  \textbf{(Coding, 5 points)}. Implement the functions \texttt{train}
+  and the \texttt{predict\_probs} in \texttt{LogisticRegression} class.
+  The starter code is provided below.
 \end{enumerate}
 
 \begin{tcolorbox}[colframe=.grey, title=\faCode \enspace Code]
@@ -2045,8 +1922,7 @@ along with \(\log\).
 
 \NormalTok{    def train(self, X, y, learning\_rate, num\_iterations):}
 \NormalTok{        """}
-\NormalTok{        Train the logistic regression model using gradient descent (no bias).}
-\NormalTok{        Each gradient update should be with respect to the entire dataset X.}
+\NormalTok{        Train the logistic regression model using full batch gradient{-}based optimization.}
 
 \NormalTok{        Parameters:}
 \NormalTok{        {-} X (torch.Tensor): Training data of shape (n\_samples, n\_features).}
@@ -2064,7 +1940,7 @@ along with \(\log\).
 
 \NormalTok{    def predict\_probs(self, X):}
 \NormalTok{        """}
-\NormalTok{        Predict probabilities for samples in X (no bias).}
+\NormalTok{        Predict probabilities for samples in X.}
 
 \NormalTok{        Parameters:}
 \NormalTok{        {-} X (torch.Tensor): Input data of shape (n\_samples, n\_features).}
@@ -2082,7 +1958,6 @@ along with \(\log\).
 
 
 \NormalTok{if \_\_name\_\_ == "\_\_main\_\_":}
-\NormalTok{    \# \%\%}
 \NormalTok{    \# Load in Llama3 embeddings of prompt + completions on RewardBench}
 \NormalTok{    chosen\_embeddings = torch.load(\textquotesingle{}data/chosen\_embeddings.pt\textquotesingle{})}
 \NormalTok{    rejected\_embeddings = torch.load(\textquotesingle{}data/rejected\_embeddings.pt\textquotesingle{})}
@@ -2090,26 +1965,15 @@ along with \(\log\).
 \NormalTok{    \# Subtract the embeddings according to the Bradley{-}Terry reward model setup presented in the problem }
 \NormalTok{    X = (chosen\_embeddings {-} rejected\_embeddings).to(torch.float)}
 \NormalTok{    y = torch.ones(X.shape[0])}
-
-\NormalTok{    \# Split dataset 80/20 into training and validation sets}
 \NormalTok{    X\_train, X\_val, y\_train, y\_val = train\_test\_split(X, y, test\_size=0.2, random\_state=42)  }
 
-\NormalTok{    print("Training set size:", X\_train.shape)}
-\NormalTok{    print("Validation set size:", X\_val.shape)}
-
-\NormalTok{    model = LogisticRegression()}
-
-\NormalTok{    \# Tune the learning\_rate and num\_iterations until you achieve expected validation accuracy of at least 90\%}
+\NormalTok{    \# Tune the learning\_rate and num\_iterations}
 \NormalTok{    learning\_rate = None}
 \NormalTok{    num\_iterations = None}
-
+\NormalTok{    model = LogisticRegression()}
 \NormalTok{    model.train(X\_train, y\_train, learning\_rate=learning\_rate, num\_iterations=num\_iterations)}
-
-\NormalTok{    y\_train\_probs = model.predict\_probs(X\_train)}
-\NormalTok{    print(f"Expected Train Accuracy: \{y\_train\_probs.mean()\}")}
-
-\NormalTok{    y\_val\_probs = model.predict\_probs(X\_val)}
-\NormalTok{    print(f"Expected Validation Accuracy: \{y\_val\_probs.mean()\}") \# Should reach at least 90\%}
+\NormalTok{    print(f"Expected Train Accuracy: \{model.predict\_probs(X\_train).mean()\}")}
+\NormalTok{    print(f"Expected Validation Accuracy: \{del.predict\_probs(X\_val).mean()\}") \# Should reach at least 90\%}
 \end{Highlighting}
 \end{Shaded}
 
@@ -2358,10 +2222,7 @@ follows: a proposal \(P\) for \(x_{t+1}\) is made via sampling from a
 chosen distribution \(Q(\,\cdot\,| x_t)\) (e.g., adding Gaussian noise).
 The acceptance probability of the proposal is given by
 
-\[A= \min \left( 1, \frac{\pi(P)Q(x_t | P)}{\pi(x_t)Q(P | x_t)} \right).\]
-
-That is,
-\[x_{t+1}=\begin{cases} P & \text{with probability } A, \\ x_t & \text{with probability } 1 - A. \end{cases}\]
+\[A= \min \left( 1, \frac{\pi(P)Q(x_t | P)}{\pi(x_t)Q(P | x_t)} \right). \text{ That is } x_{t+1}=\begin{cases} P & \text{with probability } A, \\ x_t & \text{with probability } 1 - A. \end{cases}\]
 To extract our samples from \(\pi\), we run the Markov chain for \(N\)
 timesteps and disregard the first \(T<N\) timesteps in what is called
 the \emph{burn-in or mixing time} (i.e., our final samples are
@@ -2369,18 +2230,13 @@ the \emph{burn-in or mixing time} (i.e., our final samples are
 that the Markov chain elements are representative of the distribution
 \(\pi\) -- initial elements of the chain will not be a good
 approximation of \(\pi\) and depend more on the choice of initialization
-\(x_1\).
+\(x_1\). To build some intuition, suppose we have a biased coin that
+turns heads with probability \(p_{\text{heads}}\). We observe \(12\)
+coin flips to have \(9\) heads (H) and \(3\) tails (T). If our prior for
+\(p_{\text{H}}\) was \(B(1, 1)\), then our posterior will be
+\(B(1+9, 1+3)=B(10, 4)\). The Bayesian update is given by
 
-To build some intuition, suppose we have a biased coin that turns heads
-with probability \(p_{\text{heads}}\). We observe \(12\) coin flips to
-have \(9\) heads and \(3\) tails. If our prior for \(p_{\text{heads}}\)
-was \(B(1, 1)\), then our posterior will be \(B(1+9, 1+3)=B(10, 4)\).
-The Bayesian update is given by
-
-\[\begin{aligned}
-    P(p_{\text{heads}}|9\text{ heads}, 3\text{ tails})&=\frac{P(9\text{ heads}, 3\text{ tails} | p_{\text{heads}})B(1, 1)(p_{\text{heads}})}{\int_0^1 P(9\text{ heads}, 3\text{ tails} | p_{\text{heads}})B(1, 1)(p_{\text{heads}}) dp_{\text{heads}}}\\
-    &=\frac{P(9\text{ heads}, 3\text{ tails} | p_{\text{heads}})}{\int_0^1 P(9\text{ heads}, 3\text{ tails} | p_{\text{heads}})  dp_{\text{heads}}}.
-\end{aligned}\]
+\[p(p_{\text{H}}|9\text{H}, 3\text{T}) = \frac{p(9\text{H}, 3\text{T} | p_{\text{H}})B(1, 1)(p_{\text{H}})}{\int_0^1 P(9\text{H}, 3\text{T} | p_{\text{H}})B(1, 1)(p_{\text{H}}) dp_{\text{H}}} =\frac{p(9\text{H}, 3\text{T} | p_{\text{H}})}{\int_0^1 p(9\text{H}, 3\text{T} | p_{\text{H}})  dp_{\text{H}}}.\]
 
 \textbf{Find the acceptance probablity} \(A\) in the setting of the
 biased coin assuming the proposal distribution
@@ -2880,12 +2736,6 @@ Robot Learning}, 342--52. PMLR.
 Myers, Vivek, Erdem Bıyık, Nima Anari, and Dorsa Sadigh. 2021.
 {``Learning Multimodal Rewards from Rankings.''}
 \url{https://arxiv.org/abs/2109.12750}.
-
-\bibitem[\citeproctext]{ref-padalkar2023open}
-Padalkar, Abhishek, Acorn Pooley, Ajinkya Jain, Alex Bewley, Alex
-Herzog, Alex Irpan, Alexander Khazatsky, et al. 2023. {``Open
-x-Embodiment: Robotic Learning Datasets and RT-x Models.''} \emph{arXiv
-Preprint arXiv:2310.08864}.
 
 \bibitem[\citeproctext]{ref-plackett_luce}
 Plackett, R. L. 1975. {``The Analysis of Permutations.''} \emph{Journal
