@@ -1,5 +1,5 @@
 ---
-title: Alignment of Policy with Preferences
+title: Learning Model of Decisions
 format: html
 filters:
   - pyodide

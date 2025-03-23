@@ -395,9 +395,9 @@
 \theoremstyle{definition}
 \newtheorem{definition}{Definition}[chapter]
 \theoremstyle{plain}
-\newtheorem{theorem}{Theorem}[chapter]
-\theoremstyle{plain}
 \newtheorem{proposition}{Proposition}[chapter]
+\theoremstyle{plain}
+\newtheorem{theorem}{Theorem}[chapter]
 \theoremstyle{remark}
 \AtBeginDocument{\renewcommand*{\proofname}{Proof}}
 \newtheorem*{remark}{Remark}
@@ -577,14 +577,14 @@ divided into 4 chapters:
 
 This book covers various topics, from the statistical foundations and
 strategies for interactively querying humans to applications for
-eliciting preference. We review the relevant foundations in
-microeconomics, psychology, marketing, statistics, and other disciplines
-and explore their applications to various domains, such as language,
-robotics, logistics, and more. We adopt the machine learning perspective
-for modeling, estimating, and evaluating the learning processes. This
-book is used at Stanford University for a quarter-long class CS329H:
-Machine Learning from Human Preferences. We include the lecture slides
-and homework at the begining and end of each chapter, respectively.
+eliciting preference. We review the relevant foundations in statistics,
+psychology, economics and other disciplines and explore their
+applications to various domains, such as natural language and robotics,
+and more. We adopt the machine learning perspective for modeling,
+estimating, and evaluating the learning processes. This book is used at
+Stanford University for a quarter-long class CS329H: Machine Learning
+from Human Preferences. We include the lecture slides and homework at
+the begining and end of each chapter, respectively.
 
 \bookmarksetup{startatroot}
 
@@ -2703,146 +2703,107 @@ Representations}.
 
 \bookmarksetup{startatroot}
 
-\chapter{Active Learning of Preference
-Models}\label{active-learning-of-preference-models}
+\chapter{Learning Model of
+Preferences}\label{learning-model-of-preferences}
 
 \section{Motivation}\label{motivation}
 
-Data is often scarce, and acquiring labeled data can be expensive.
-Active learning is a machine learning paradigm that aims to reduce the
-amount of labeled data required to train a model to achieve high
-accuracy. Active learning algorithms iteratively select an input
-datapoint for an oracle (e.g., a human annotator) to label such that
-when the label is observed, the model improves the most. The goal of AL
-algorithms is to minimize the number of labels required to achieve a
-desired level of performance. This technique is particularly useful in
-situations where labeling data is expensive, time-consuming, or requires
-domain expertise. There are two primary setups in active learning:
+Acquiring labeled data is expensive. Active learning (AL) is a machine
+learning paradigm that aims to reduce the amount of labeled data
+required to train a model to achieve high accuracy. AL algorithms
+iteratively select an input datapoint for an oracle (e.g., a human
+annotator) to label such that when the label is observed, the model
+improves the most. Two primary setups in AL is pool-based and
+stream-based. In pool-based AL, the model selects samples from a large
+unlabeled pool of data. For example, a model for text classification
+selects the most uncertain texts from a large pool to ask a human
+annotator to label. In stream-based AL, the model receives samples
+sequentially (one sample at a time) and decides whether to label them.
+The data is gone if the decision maker decides not to label it. AL
+process iterates between (1) Current model trained on current dataset
+\(\mathcal{D}\), potential points \(\tilde{x}_1 \dots \tilde{x}_m\) are
+being investigated. AL will choose one of them to add to the dataset;
+and (2) Relative to the model, a proxy highlights the relative value of
+each point to model improvement
+\((v(\tilde{x}_1) \dots v(\tilde{x}_m) )\). The cycle repeats until the
+budget deplet or a reliability criteria is reached.
 
-\begin{itemize}
-\item
-  \textbf{Pool-based:} The model selects samples from a large unlabeled
-  pool of data. For example, a model for text classification selects the
-  most uncertain texts from a large pool to ask a human annotator to
-  label.
-\item
-  \textbf{Stream-based:} The model receives samples sequentially (one
-  sample at a time) and decides whether to label them. The data is gone
-  if the decision maker decides not to label it. For example, a system
-  monitoring sensor data decides on-the-fly whether new sensor readings
-  are valuable enough to label.
-\end{itemize}
-
-A common AL process iterates between two steps: (1) Current model
-trained on current dataset \(\mathcal{D}\), potential points
-\(\tilde{x}_1 \dots \tilde{x}_m\) are being investigated. AL will choose
-one of them to add to the dataset; and (2) Relative to the model, a
-proxy highlights the relative value of each point to model improvement
-\((v(\tilde{x}_1) \dots v(\tilde{x}_m) )\). A naive proxy is the model's
-uncertainty about the point. The cycle repeats until we collect enough
-data or the model is good enough.
-
-Active learning has been successfully applied to various domains to
-enhance real-world systems, including computer vision, natural language
-processing, and recommender systems. For example, active learning can
-improve the computer vision models used in autonomous vehicles
-(\citeproc{ref-AL_app_autonomous}{Jarl et al. 2021}), here driving
-scenes can take infinitely many forms, making it impossible to gather an
-exhaustive dataset. Instead, probing a model to understand what type of
-data it would benefit from is more practical. In robotics, autonomous
-agents may query humans when unsure how to act or when facing new
-situations (\citeproc{ref-AL_app_robotics}{Taylor, Berrueta, and Murphey
-2021}). In this field, collecting data often incurs significant
-financial and time costs: the robot must act in real-time in the real
-world, and while parallelization is possible, being strategic about
-which examples to collect can best benefit the model. In meteorology,
-active learning can help decide where to place additional sensors for
+AL has successfully enhance various real-world systems. For example, AL
+can improve the computer vision models used in autonomous vehicles
+(\citeproc{ref-AL_app_autonomous}{Jarl et al. 2021}). Probing a model to
+understand what type of data it would benefit from is more practical. In
+robotics, autonomous agents may query humans when unsure how to act when
+facing new situations (\citeproc{ref-AL_app_robotics}{Taylor, Berrueta,
+and Murphey 2021}). Here, collecting data often incurs significant
+financial and time costs because physical robot arm worns out over time.
+In meteorology, AL can help decide where to place additional sensors for
 weather predictions (\citeproc{ref-AL_app_sensors}{Singh, Nowak, and
 Ramanathan 2006}). Sensor placement involves deploying teams to remote
 locations and expensive construction for an extra data point. Choosing
 these locations and allocating resources wisely is of interest to
-governments and businesses. Active learning could also be employed to
-select data for fine-tuning large language models (LLMs) for specific
-downstream tasks (\citeproc{ref-AL_app_LLMs}{Margatina et al. 2023}). In
-this context, it might be difficult to fully describe an NLP task one
-might want an LLM to solve. Often, instead of defining a task via a
-dataset of examples, it may be easier for a human to interact with the
-LLM for a specific use case, identify gaps in the model, and address
-those using active learning.
+governments and businesses. AL could also be employed to select data for
+fine-tuning large language models (LLMs) for specific downstream tasks
+(\citeproc{ref-AL_app_LLMs}{Margatina et al. 2023}). Here, it might be
+difficult to fully describe a targeted NLP task. Often, instead of
+defining a task via a dataset of examples, it may be easier for a human
+to interact with the LLM for a specific use case, identify gaps in the
+model, and address those using AL.
 
-Consider the scenario where a robot is being trained to assist
-individuals with feeding. How can such a robot be effectively taught to
-perform necessary tasks, such as determining the appropriate distance to
-reach, detecting the location of a person's mouth, and, most
-importantly, understanding human preferences? Typically, robots learn by
-observing human demonstrations, replicating the ways a person performs
-the task. However, this method poses significant challenges. Expert
-demonstrations are often limited, and training a supervised learning
-model would require vast amounts of demonstration data, which is
-difficult to obtain at scale. Moreover, demonstrations tend to be
+Typically, in robotic, robots learn by observing human demonstrations.
+However, expert demonstrations are often limited, and training a
+supervised learning model would require vast amounts of demonstration
+data, which is difficult to obtain at scale. Demonstrations tend to be
 variable, reflecting the actions of individual humans, making the data
 collection process inconsistent. To address these limitations,
 alternative approaches have been proposed, such as using pairwise
 comparisons, where humans evaluate two action trajectories to determine
 the superior one, or employing physical corrections, in which reward
 functions are learned through human-robot interactions, with humans
-guiding the robot's actions during the task.
+guiding the robot's actions during the task.AL algorithms can be
+employed in preference learning tasks, where the objective is to develop
+a model that aligns with human preferences while minimizing the need for
+extensive labeled data or reducing the high cost of annotations.
 
-Active learning algorithms can be employed in preference learning tasks,
-such as the previously mentioned example, where the objective is to
-develop a model that aligns with human preferences while minimizing the
-need for extensive labeled data or reducing the high cost of
-annotations. This chapter will explore the theoretical foundations of
-pairwise comparisons and active preference learning, along with
-extensions to these methods that address known limitations. Practical
-examples where these approaches prove beneficial will also be discussed.
-Additionally, we will examine the role of LLMs in assisting robots
-through corrective feedback and highlight the applications of these
-techniques.
-
-\section{Probabilistic Reward Models}\label{probabilistic-reward-models}
-
-In this section, we consider a binary classification problem. The model
-is trained on a small labeled dataset
+Motivating by the pairwise preference setting, we consider a binary
+classification problem. The model is trained on a small labeled dataset
 \(\mathcal{D} = \{(x_1, y_1), \ldots, (x_n, y_n)\}\), where \(x_i\)
 represents the input data and \(y_i\) is the corresponding label. The
 model is uncertain about the class labels of some data points and can
 query an oracle to obtain the true labels of these data points. The goal
 is to minimize the number of queries to the oracle while maximizing the
 model's performance. Uncertainty quantification (UQ) is a critical
-aspect of active learning that allows models to evaluate the
-informativeness of new data points. In machine learning (ML), two
-primary types of uncertainty are often considered: epistemic and
-aleatoric uncertainty. \textbf{Epistemic uncertainty}, or model
-uncertainty, arises from a lack of knowledge and can be reduced by
-acquiring more data. This type of uncertainty is especially significant
-when the model lacks confidence due to insufficient or incomplete
-information in its training set. On the other hand, \textbf{aleatoric
-uncertainty}, or data uncertainty, stems from the inherent randomness
-within the data itself. Unlike epistemic uncertainty, aleatoric
-uncertainty cannot be reduced, even with additional data, as it reflects
-noise or unpredictability in the real data-generating process. Several
-approaches exist to quantify uncertainty in active learning, each with
-its strengths and limitations.
+aspect of AL that allows models to evaluate the informativeness of new
+data points. In machine learning (ML), two primary types of uncertainty
+are often considered: epistemic and aleatoric uncertainty. Epistemic
+uncertainty, or model uncertainty, arises from a lack of knowledge and
+can be reduced by acquiring more data. This type of uncertainty is
+especially significant when the model lacks confidence due to
+insufficient or incomplete information in its training set. On the other
+hand, aleatoric uncertainty, or data uncertainty, stems from the
+inherent randomness within the data itself. Unlike epistemic
+uncertainty, aleatoric uncertainty cannot be reduced, even with
+additional data, as it reflects noise or unpredictability in the real
+data-generating process. Several approaches exist to quantify
+uncertainty in AL, each with its strengths and limitations.
 
-\textbf{Bayesian methods}, such as Bayesian Neural Networks (BNNs) and
-Gaussian Processes (GPs), offer a principled way of estimating
-uncertainty by incorporating prior knowledge into the model. These
-approaches can generate meaningful uncertainty estimates that aid in
-choosing informative samples for labeling. However, they can become
+Bayesian methods, such as Bayesian Neural Networks (BNNs) and Gaussian
+Processes (GPs), offer a principled way of estimating uncertainty by
+incorporating prior knowledge into the model. These approaches can
+generate meaningful uncertainty estimates that aid in choosing
+informative samples for labeling. However, they can become
 computationally prohibitive, especially for large and complex models,
 limiting their applicability in some practical scenarios. Another common
-technique for uncertainty quantification is the use of \textbf{ensemble
-methods}, such as Random Forests or Gradient Boosting Machines. These
-methods involve training multiple models and combining their predictions
-to provide an estimate of uncertainty. Ensemble methods are relatively
-easy to implement and can give valuable insights into model uncertainty.
+technique for uncertainty quantification is the use of ensemble methods,
+such as Random Forests or Gradient Boosting Machines. These methods
+involve training multiple models and combining their predictions to
+provide an estimate of uncertainty. Ensemble methods are relatively easy
+to implement and can give valuable insights into model uncertainty.
 However, they can be computationally expensive and may not always
 produce well-calibrated uncertainty estimates. Moreover, they do not
 integrate prior knowledge, which can be a disadvantage in certain
-applications. \textbf{Conformal prediction methods} also provide a
-framework for estimating uncertainty by offering a measure of confidence
-in predictions based on the conformity of a given instance with the
+applications. Conformal prediction methods also provide a framework for
+estimating uncertainty by offering a measure of confidence in
+predictions based on the conformity of a given instance with the
 training data. While these methods are useful in some contexts, this
 book focuses primarily on the Bayesian approach due to its theoretical
 robustness and capacity to quantify uncertainty in a more comprehensive
@@ -2850,48 +2811,44 @@ manner.
 
 \section{Acquisition Function}\label{acquisition-function}
 
-Uncertainty quantification plays a vital role in \textbf{acquisition
-functions}, which are central to active learning strategies. These
-functions determine which samples are most valuable to label by
-evaluating their utility based on the model's current uncertainty
-estimates. Common acquisition functions include \textbf{uncertainty
-sampling} (\citeproc{ref-AL_uncertainty}{Zhu et al. 2010}), which
-selects samples the model is least confident about,
-\textbf{query-by-committee} (\citeproc{ref-AL_committee}{Beluch et al.
-2018}), which utilizes a set of models to choose the most uncertain
-samples, and \textbf{Bayesian Active Learning by Disagreement (BALD)}
-(\citeproc{ref-AL_BALD}{Houlsby et al. 2011}), which selects samples
-that maximize information gain by reducing model uncertainty. Through
-careful uncertainty quantification, acquisition functions guide the
-active learning process, improving the model's efficiency in learning
-from limited data. Other acquisition functions that can be employed
-include:
+Uncertainty quantification plays a vital role in acquisition functions,
+which are central to AL strategies. These functions determine which
+samples are most valuable to label by evaluating their utility based on
+the model's current uncertainty estimates. Common acquisition functions
+include uncertainty sampling (\citeproc{ref-AL_uncertainty}{Zhu et al.
+2010}), which selects samples the model is least confident about,
+query-by-committee (\citeproc{ref-AL_committee}{Beluch et al. 2018}),
+which utilizes a set of models to choose the most uncertain samples, and
+Bayesian AL by Disagreement (BALD) (\citeproc{ref-AL_BALD}{Houlsby et
+al. 2011}), which selects samples that maximize information gain by
+reducing model uncertainty. Through careful uncertainty quantification,
+acquisition functions guide the AL process, improving the model's
+efficiency in learning from limited data. Other acquisition functions
+that can be employed include:
 
 \begin{itemize}
 \item
-  \textbf{Active Thompson Sampling}
-  (\citeproc{ref-AL_exploreexploit}{Bouneffouf et al. 2014}): This
-  method leverages the Thompson Sampling algorithm to select a posterior
+  Thompson Sampling (\citeproc{ref-AL_exploreexploit}{Bouneffouf et al.
+  2014}) leverages the Thompson Sampling algorithm to select a posterior
   sample from the model's distribution and compute the expected utility
   of labeling using that sample. By doing so, the algorithm balances
-  exploration and exploitation, leading to effective active learning.
+  exploration and exploitation, leading to effective AL.
 \item
-  \textbf{Expected model change} (\citeproc{ref-AL_expmodelchange}{Cai,
-  Zhang, and Zhou 2013}): This approach focuses on labeling points that
-  would have the most impact on changing the current model parameters.
+  Expected model change (\citeproc{ref-AL_expmodelchange}{Cai, Zhang,
+  and Zhou 2013}): This approach focuses on labeling points that would
+  have the most impact on changing the current model parameters.
 \item
-  \textbf{Expected error reduction}
-  (\citeproc{ref-AL_experrorredn}{Mussmann et al. 2022}): Points that
-  would most effectively reduce the model's generalization error are
-  labeled using this strategy.
+  Expected error reduction (\citeproc{ref-AL_experrorredn}{Mussmann et
+  al. 2022}): Points that would most effectively reduce the model's
+  generalization error are labeled using this strategy.
 \item
-  \textbf{Variance reduction} (\citeproc{ref-AL_variance}{Cohn,
-  Ghahramani, and Jordan 1996}): This approach labels points that would
-  minimize output variance, which is one component of error. By
-  selecting points that reduce variability in the model's predictions,
-  it aims to improve overall performance.
+  Variance reduction (\citeproc{ref-AL_variance}{Cohn, Ghahramani, and
+  Jordan 1996}): This approach labels points that would minimize output
+  variance, which is one component of error. By selecting points that
+  reduce variability in the model's predictions, it aims to improve
+  overall performance.
 \item
-  \textbf{User Centered Labeling Strategies}
+  User Centered Labeling Strategies
   (\citeproc{ref-AL_usercentered}{Bernard et al. 2018}): This approach
   involves actively involving the user in the labeling process by
   visualizing data through dimensionality reduction techniques. The user
@@ -2899,63 +2856,63 @@ include:
   expertise and preferences. This strategy leverages user input to
   improve the quality and relevance of the labeled data.
 \item
-  \textbf{Querying from diverse subspaces or partitions}
+  Querying from diverse subspaces or partitions
   (\citeproc{ref-AL_partition}{Ma et al. 2022}): When using a forest of
   trees as the underlying model, the leaf nodes can represent
   overlapping partitions of the feature space. This strategy selects
   instances from non-overlapping or minimally overlapping partitions for
   labeling.
 \item
-  \textbf{Conformal prediction} (\citeproc{ref-AL_conformal}{Makili,
-  Sánchez, and Dormido-Canto 2012}): This method predicts that a new
-  data point will have a label similar to old data points in some
-  specified way. The degree of similarity within the old examples is
-  used to estimate the confidence in the prediction.
+  Conformal prediction (\citeproc{ref-AL_conformal}{Makili, Sánchez, and
+  Dormido-Canto 2012}): This method predicts that a new data point will
+  have a label similar to old data points in some specified way. The
+  degree of similarity within the old examples is used to estimate the
+  confidence in the prediction.
 \item
-  \textbf{Mismatch-first farthest-traversal}
-  (\citeproc{ref-AL_mismatch}{Zhao, Heittola, and Virtanen 2020}): This
-  strategy first prioritizes data points that are wrongly predicted by
-  the current model compared to the nearest-neighbor prediction. The
-  second criterion is the distance to previously selected data, with
-  preference given to those that are farthest away. The goal is to
-  optimize both the correction of mispredictions and the diversity of
-  the selected data.
+  Mismatch-first farthest-traversal (\citeproc{ref-AL_mismatch}{Zhao,
+  Heittola, and Virtanen 2020}): This strategy first prioritizes data
+  points that are wrongly predicted by the current model compared to the
+  nearest-neighbor prediction. The second criterion is the distance to
+  previously selected data, with preference given to those that are
+  farthest away. The goal is to optimize both the correction of
+  mispredictions and the diversity of the selected data.
 \end{itemize}
 
 Uncertainty sampling (\citeproc{ref-AL_uncertainty}{Zhu et al. 2010}) is
-a widely used acquisition function in active learning that selects data
-points for which the model exhibits the greatest uncertainty. This
-method aims to improve model performance by focusing labeling efforts on
-ambiguous samples, where additional information is likely to yield the
-greatest benefit. Let \(x\) represent the input, and \(p(y|x)\) the
-probability distribution of the output \(y\) given \(x\). Several
-acquisition strategies fall under uncertainty sampling, including
-\textbf{entropy sampling}, \textbf{margin sampling}, and \textbf{least
-confidence sampling}, each providing a unique measure of uncertainty.
+a widely used acquisition function in AL that selects data points for
+which the model exhibits the greatest uncertainty. This method aims to
+improve model performance by focusing labeling efforts on ambiguous
+samples, where additional information is likely to yield the greatest
+benefit. Let \(x\) represent the input, and \(p(y|x)\) the probability
+distribution of the output \(y\) given \(x\). Several acquisition
+strategies fall under uncertainty sampling, including entropy sampling,
+margin sampling, and least confidence sampling, each providing a unique
+measure of uncertainty.
 
 \begin{itemize}
 \item
-  \textbf{Entropy sampling} measures uncertainty by calculating the
-  entropy of the predicted probability distribution. The acquisition
-  function is given by \(\alpha(x) = - \sum_{y} p(y|x) \log p(y|x)\),
-  with higher entropy values indicating higher uncertainty.
+  Entropy sampling measures uncertainty by calculating the entropy of
+  the predicted probability distribution. The acquisition function is
+  given by \(\alpha(x) = - \sum_{y} p(y|x) \log p(y|x)\), with higher
+  entropy values indicating higher uncertainty.
 \item
-  \textbf{Margin sampling} focuses on the difference between the two
-  highest predicted probabilities for a sample. The acquisition function
-  is given by \(\alpha(x) = p(y_1|x) - p(y_2|x)\), where \(y_1\) and
+  Margin sampling focuses on the difference between the two highest
+  predicted probabilities for a sample. The acquisition function is
+  given by \(\alpha(x) = p(y_1|x) - p(y_2|x)\), where \(y_1\) and
   \(y_2\) are two most likely classes. Smaller margins signify greater
   uncertainty.
 \item
-  \textbf{Least confidence sampling} measures uncertainty by identifying
-  the sample with the lowest predicted probability for its most likely
+  Least confidence sampling measures uncertainty by identifying the
+  sample with the lowest predicted probability for its most likely
   class. The acquisition function is
   \(\alpha(x) = 1 - p(y_{\text{max}}|x)\), where \(y_{\text{max}}\) is
   the class with the highest probability.
 \end{itemize}
 
-\textbf{Example:} Consider a binary classification problem with two
-classes \(y_1\) and \(y_2\). We have three samples \(x_1, x_2, x_3\) and
-the corresponding predictive distributions are as follows:
+Example: Consider a binary classification problem with two classes
+\(y_1\) and \(y_2\). We have three samples \(x_1, x_2, x_3\) and the
+corresponding predictive distributions are as follows:
+
 \begin{equation}\phantomsection\label{eq-eq3.1}{\begin{aligned}
 p(y_1|x_1) &= 0.6, \quad p(y_2|x_1) = 0.4\\
 p(y_1|x_2) &= 0.3, \quad p(y_2|x_2) = 0.7\\
@@ -2965,7 +2922,7 @@ p(y_1|x_3) &= 0.8, \quad p(y_2|x_3) = 0.2
 \begin{itemize}
 \tightlist
 \item
-  \textbf{Entropy Sampling}
+  Entropy Sampling
 
   \begin{itemize}
   \tightlist
@@ -2984,7 +2941,7 @@ indicating the model is most uncertain about its prediction at \(x_1\).
 \begin{itemize}
 \tightlist
 \item
-  \textbf{Margin Sampling}
+  Margin Sampling
 
   \begin{itemize}
   \tightlist
@@ -3003,7 +2960,7 @@ indicating the model is most uncertain about the prediction at \(x_1\).
 \begin{itemize}
 \tightlist
 \item
-  \textbf{Least Confidence Sampling}
+  Least Confidence Sampling
 
   \begin{itemize}
   \tightlist
@@ -3018,37 +2975,36 @@ indicating the model is most uncertain about the prediction at \(x_1\).
 
 We would select \(x_1\) for labeling as it has the lowest confidence,
 indicating the model is most uncertain about the prediction at \(x_1\).
-
 In summary, uncertainty sampling methods, whether based on entropy,
 margin, or least confidence, help prioritize data points that the model
 struggles with the most. By focusing on these uncertain samples, the
 model can more efficiently improve its performance, making uncertainty
-sampling a key tool in active learning.
+sampling a key tool in AL.
 
 Query-by-Committee (\citeproc{ref-AL_committee}{Beluch et al. 2018}) is
-an active learning strategy where a committee of models selects samples
-for labeling based on the level of disagreement among the committee
-members. Several acquisition functions can be employed under this
-framework to quantify the disagreement:
+an AL strategy where a committee of models selects samples for labeling
+based on the level of disagreement among the committee members. Several
+acquisition functions can be employed under this framework to quantify
+the disagreement:
 
 \begin{itemize}
 \item
-  \textbf{Vote Entropy:} The vote entropy measures the uncertainty based
-  on how often the committee members vote for each class. The
-  acquisition function is defined as
+  Vote Entropy: The vote entropy measures the uncertainty based on how
+  often the committee members vote for each class. The acquisition
+  function is defined as
   \(\alpha(x) = \mathbb{H}\left[\frac{V(y)}{C}\right]\), where \(V(y)\)
   is the number of votes for class \(y\) and \(C\) is the number of
   committee members.
 \item
-  \textbf{Consensus Entropy:} This acquisition function measures the
-  entropy of the average probability distribution across committee
-  members. It is given by \(\alpha(x) = \mathbb{H}[P_C(y|x)]\), where
-  \(P_C(y|x)\) is the average probability distribution for sample \(x\)
-  across all committee members.
+  Consensus Entropy: This acquisition function measures the entropy of
+  the average probability distribution across committee members. It is
+  given by \(\alpha(x) = \mathbb{H}[P_C(y|x)]\), where \(P_C(y|x)\) is
+  the average probability distribution for sample \(x\) across all
+  committee members.
 \item
-  \textbf{KL Divergence:} The KL divergence quantifies the disagreement
-  by comparing the probability distribution of each committee member to
-  the average distribution. The acquisition function is given by
+  KL Divergence: The KL divergence quantifies the disagreement by
+  comparing the probability distribution of each committee member to the
+  average distribution. The acquisition function is given by
   \(\alpha(x) = \frac{1}{C} \sum_{c=1}^{C} D_{KL}[P_c(y|x) || P_C(y|x)]\),
   where \(P_c(y|x)\) is the probability distribution of committee member
   \(c\) and \(P_C(y|x)\) is the average distribution across the
@@ -3093,7 +3049,7 @@ member are given below:
 \(x_3\) & 0.8 & 0.2 & 0.9 & 0.1 & 0.7 & 0.3 \\
 \end{longtable}
 
-\textbf{Query-by-Committee: Vote Entropy}
+Query-by-Committee: Vote Entropy
 
 \begin{itemize}
 \tightlist
@@ -3113,10 +3069,8 @@ Thus, sample \(x_1\) would be selected for labeling as it has the
 highest vote entropy, indicating the greatest disagreement among the
 committee members.
 
-\textbf{Query-by-Committee: Consensus Entropy}
-
-The first step is to compute the consensus probability of each class for
-each sample:
+Query-by-Committee: Consensus Entropy. The first step is to compute the
+consensus probability of each class for each sample:
 
 \begin{itemize}
 \tightlist
@@ -3150,10 +3104,9 @@ Thus, \(x_1\) would be selected for labeling as it has the highest
 consensus entropy, indicating the highest level of disagreement among
 the committee members.
 
-Bayesian Active Learning by Disagreement (BALD)
-(\citeproc{ref-AL_BALD}{Houlsby et al. 2011}) selects the samples for
-which the model expects to gain the most Shannon information when
-corresponding labels are observed:
+Bayesian AL by Disagreement (BALD) (\citeproc{ref-AL_BALD}{Houlsby et
+al. 2011}) selects the samples for which the model expects to gain the
+most Shannon information when corresponding labels are observed:
 
 \begin{equation}\phantomsection\label{eq-eq3.2}{
 \mathbb{I}(\theta; y|x, \mathcal{D}) = \mathbb{H}[p(y|x, \mathcal{D})] - \mathbb{E}_{p(\theta | \mathcal{D})} [\mathbb{H}[p(y|x, \theta, \mathcal{D})]]
@@ -3163,46 +3116,25 @@ where \(\mathbb{H}[\cdot]\) denotes entropy. When there is significant
 disagreement among models, the predictive entropy (the first term) will
 be large, while the expected entropy (the second term) will be smaller.
 This difference represents the degree to which the models disagree. BALD
-selects points where this disagreement is maximized.
+selects points where this disagreement is maximized. The first term is
+\[\mathbb{H}[p(y|x, \mathcal{D})] = \mathbb{H}\left[\int_{\theta} p(y|x, \theta, \mathcal{D}) p(\theta | \mathcal{D}) d\theta\right] \approx \mathbb{H}\left[\frac{1}{N}\sum_{i=1}^{N} p(y|x, \theta_i, \mathcal{D})\right] = \mathbb{H}\left[\overline{p}(y|x, \mathcal{D})\right]\]
+The second term is
+\[\mathbb{E}_{p(\theta|\mathcal{D})} [\mathbb{H}[p(y|x, \theta, \mathcal{D})]] = \mathbb{E}_{p(\theta|\mathcal{D})} \left[ - \sum_{y} p(y|x, \theta, \mathcal{D}) \log p(y|x, \theta, \mathcal{D}) \right] \approx - \frac{1}{N} \sum_{i=1}^{N} \left( \sum_{y} p(y|x, \theta_i, \mathcal{D}) \log p(y|x, \theta_i, \mathcal{D}) \right)\]
 
-\begin{itemize}
-\tightlist
-\item
-  To compute the first term, we can derive the following expression:
-\end{itemize}
-
-\begin{equation}\phantomsection\label{eq-eq3.3}{\begin{aligned}
-\mathbb{H}[p(y|x, \mathcal{D})] &= \mathbb{H}\left[\int_{\theta} p(y|x, \theta, \mathcal{D}) p(\theta | \mathcal{D}) d\theta\right]\\
-&\approx \mathbb{H}\left[\frac{1}{N}\sum_{i=1}^{N} p(y|x, \theta_i, \mathcal{D})\right]\\
-&= \mathbb{H}\left[\overline{p}(y|x, \mathcal{D})\right]
-\end{aligned}}\end{equation}
-
-\begin{itemize}
-\tightlist
-\item
-  To compute the second term, we can derive the following expression:
-\end{itemize}
-
-\begin{equation}\phantomsection\label{eq-eq3.4}{\begin{aligned}
-\mathbb{E}_{p(\theta|\mathcal{D})} [\mathbb{H}[p(y|x, \theta, \mathcal{D})]] &= \mathbb{E}_{p(\theta|\mathcal{D})} \left[ - \sum_{y} p(y|x, \theta, \mathcal{D}) \log p(y|x, \theta, \mathcal{D}) \right] \\
-&\approx - \frac{1}{N} \sum_{i=1}^{N} \left( \sum_{y} p(y|x, \theta_i, \mathcal{D}) \log p(y|x, \theta_i, \mathcal{D}) \right)
-\end{aligned}}\end{equation}
-
-\textbf{Example:} Consider a binary classification problem with two
-classes, \(y_1\) and \(y_2\). We have two samples, \(x_1\) and \(x_2\),
-and the model's predictive distributions are as follows:
+Example: Consider a binary classification problem with two classes,
+\(y_1\) and \(y_2\). We have two samples, \(x_1\) and \(x_2\), and the
+model's predictive distributions are as follows:
 
 \begin{itemize}
 \item
-  \textbf{First-time inference} (with
-  \(\theta_1 \sim p(\theta | \mathcal{D})\)):
+  First-time inference (with \(\theta_1 \sim p(\theta | \mathcal{D})\)):
   \begin{equation}\phantomsection\label{eq-eq3.5}{
   p(y_1|x_1, \theta_1, \mathcal{D}) = 0.6, \quad p(y_2|x_1, \theta_1, \mathcal{D}) = 0.4
   }\end{equation} \begin{equation}\phantomsection\label{eq-eq3.6}{
   p(y_1|x_2, \theta_1, \mathcal{D}) = 0.4, \quad p(y_2|x_2, \theta_1, \mathcal{D}) = 0.6
   }\end{equation}
 \item
-  \textbf{Second-time inference} (with
+  Second-time inference (with
   \(\theta_2 \sim p(\theta | \mathcal{D})\)):
   \begin{equation}\phantomsection\label{eq-eq3.7}{
   p(y_1|x_1, \theta_2, \mathcal{D}) = 0.8, \quad p(y_2|x_1, \theta_2, \mathcal{D}) = 0.2
@@ -3211,10 +3143,10 @@ and the model's predictive distributions are as follows:
   }\end{equation}
 \end{itemize}
 
-\textbf{Solution:}
+Solution:
 
-\textbf{Step 1:} Compute the entropy of the model's predictive
-distribution for each sample:
+Step 1: Compute the entropy of the model's predictive distribution for
+each sample:
 
 \begin{itemize}
 \tightlist
@@ -3234,36 +3166,23 @@ Now, we compute the entropy for each sample using the formula:
 \mathbb{H}[p(y|x, \mathcal{D})] = - p(y_1|x, \mathcal{D}) \log(p(y_1|x, \mathcal{D})) - p(y_2|x, \mathcal{D}) \log(p(y_2|x, \mathcal{D}))
 }\end{equation}
 
-For \(x_1\):
+\[
+\begin{aligned}
+    &\mathbb{H}[p(y|x_1, \mathcal{D})] = - 0.7 \log(0.7) - 0.3 \log(0.3) = 0.27 \\
+    &\mathbb{H}[p(y|x_2, \mathcal{D})] = - 0.45 \log(0.45) - 0.55 \log(0.55) = 0.30
+\end{aligned}
+\]
 
-\begin{equation}\phantomsection\label{eq-eq3.10}{
-\mathbb{H}[p(y|x_1, \mathcal{D})] = - 0.7 \log(0.7) - 0.3 \log(0.3) = 0.27
-}\end{equation}
+Step 2: Compute the expected entropy of the model's predictive
+distribution for each sample. For \(x_1\):
 
-For \(x_2\):
-
-\begin{equation}\phantomsection\label{eq-eq3.11}{
-\mathbb{H}[p(y|x_2, \mathcal{D})] = - 0.45 \log(0.45) - 0.55 \log(0.55) = 0.30
-}\end{equation}
-
-\textbf{Step 2:} Compute the expected entropy of the model's predictive
-distribution for each sample.
-
-For \(x_1\):
-
-\begin{itemize}
-\tightlist
-\item
-  \(\mathbb{H}_{\theta_1}[p(y|x_1, \theta, \mathcal{D})] = -0.6 \log(0.6) - 0.4 \log(0.4) = 0.29\)
-\item
-  \(\mathbb{H}_{\theta_2}[p(y|x_1, \theta, \mathcal{D})] = -0.8 \log(0.8) - 0.2 \log(0.2) = 0.22\)
-\end{itemize}
-
-Average the results:
-
-\begin{equation}\phantomsection\label{eq-eq3.12}{
-\mathbb{E}_{p(\theta|\mathcal{D})}[\mathbb{H}[p(y|x_1, \theta, \mathcal{D})]] \approx \frac{0.29 + 0.22}{2} = 0.255
-}\end{equation}
+\[
+\begin{aligned}
+    &\mathbb{H}_{\theta_1}[p(y|x_1, \theta, \mathcal{D})] = -0.6 \log(0.6) - 0.4 \log(0.4) = 0.29 \\
+    &\mathbb{H}_{\theta_2}[p(y|x_1, \theta, \mathcal{D})] = -0.8 \log(0.8) - 0.2 \log(0.2) = 0.22 \\
+    &\mathbb{E}_{p(\theta|\mathcal{D})}[\mathbb{H}[p(y|x_1, \theta, \mathcal{D})]] \approx \frac{0.29 + 0.22}{2} = 0.255
+\end{aligned}
+\]
 
 For \(x_2\):
 
@@ -3281,46 +3200,34 @@ Average the results:
 \mathbb{E}_{p(\theta|\mathcal{D})}[\mathbb{H}[p(y|x_2, \theta, \mathcal{D})]] \approx \frac{0.29 + 0.30}{2} = 0.295
 }\end{equation}
 
-\textbf{Step 3:} Compute the BALD score for each sample.
+Step 3: Compute the BALD score for each sample. The BALD score
+\(\alpha(x)\) is the difference between the predictive entropy and the
+expected entropy:
 
-The BALD score \(\alpha(x)\) is the difference between the predictive
-entropy and the expected entropy:
-
-For \(x_1\):
-
-\begin{equation}\phantomsection\label{eq-eq3.14}{
+\[
 \alpha(x_1) = \mathbb{H}[p(y|x_1, \mathcal{D})] - \mathbb{E}_{p(\theta|\mathcal{D})}[\mathbb{H}[p(y|x_1, \theta, \mathcal{D})]] = 0.27 - 0.255 = 0.015
-}\end{equation}
+\]
 
-For \(x_2\):
-
-\begin{equation}\phantomsection\label{eq-eq3.15}{
+\[
 \alpha(x_2) = \mathbb{H}[p(y|x_2, \mathcal{D})] - \mathbb{E}_{p(\theta|\mathcal{D})}[\mathbb{H}[p(y|x_2, \theta, \mathcal{D})]] = 0.30 - 0.295 = 0.005
-}\end{equation}
+\]
 
 We would select \(x_1\) for labeling since it has the highest BALD
 score, indicating that labeling \(x_1\) will provide the most
 information gain for the model.
 
-Active Learning by Variance Reduction (\citeproc{ref-AL_variance}{Cohn,
-Ghahramani, and Jordan 1996}) is an algorithm designed to select the
-next data point for labeling based on the anticipated reduction in the
-model's variance. The objective is to identify the point
-\(\tilde{x} \sim p(x)\) that, when labeled (\(y(\tilde{x})\)), will most
-effectively decrease the model's variance. To quantify the expected
-error at a given input \(x\), we can mathematically express it as
-follows:
-
-\begin{equation}\phantomsection\label{eq-eq3.16}{
-\mathbb{E}_{\hat{y} \sim p(\hat{y} | \mathcal{D}; x), y \sim p(y|x)} (\hat{y} - y)^2
-}\end{equation}
-
-In Equation~\ref{eq-eq3.16}, \(\hat{y}\) represents the model's
-prediction, while \(y\) denotes the true label corresponding to the
-input \(x\). This formulation captures the average squared difference
-between the predicted and actual values, providing a measure of the
-model's accuracy. Utilizing concepts from bias-variance decomposition as
-outlined in the literature
+AL by Variance Reduction (\citeproc{ref-AL_variance}{Cohn, Ghahramani,
+and Jordan 1996}) is an algorithm designed to select the next data point
+for labeling based on the anticipated reduction in the model's variance.
+The objective is to identify the point \(\tilde{x} \sim p(x)\) that,
+when labeled (\(y(\tilde{x})\)), will most effectively decrease the
+model's variance. The expected error at a given input \(x\) is
+\(\mathbb{E}_{\hat{y} \sim p(\hat{y} | \mathcal{D}; x), y \sim p(y|x)} (\hat{y} - y)^2\).
+\(\hat{y}\) represents the model's prediction, while \(y\) denotes the
+true label corresponding to the input \(x\). This formulation captures
+the average squared difference between the predicted and actual values,
+providing a measure of the model's accuracy. Utilizing concepts from
+bias-variance decomposition as outlined in the literature
 (\citeproc{ref-bias_variance_orig_paper}{Geman, Bienenstock, and Doursat
 1992}), we can expand the expected error term. The expansion is given
 by:
@@ -3335,44 +3242,29 @@ by:
 In Equation~\ref{eq-eq3.17}, the first term represents the variance of
 the true label \(y\), the second term evaluates to zero, and the third
 term accounts for the variance of the model's prediction \(\hat{y}\). To
-clarify why the second term is zero, we note that:
+clarify why the second term is zero, we note that
+\(\mathbb{E}_{\hat{y}, y}[\mathbb{E}[y|x] - y] = 0\). This indicates
+that the expected deviation of the true label from its conditional mean
+is null, as \(\mathbb{E}[y|x]\) is, by definition, the average of \(y\)
+given \(x\). Focusing on the third term, we derive it as follows:
 
-\begin{equation}\phantomsection\label{eq-eq3.18}{
-\mathbb{E}_{\hat{y}, y}[\mathbb{E}[y|x] - y] = 0
-}\end{equation}
-
-This indicates that the expected deviation of the true label from its
-conditional mean is null, as \(\mathbb{E}[y|x]\) is, by definition, the
-average of \(y\) given \(x\). Focusing on the third term, we derive it
-as follows:
-
-\begin{equation}\phantomsection\label{eq-eq3.19}{\begin{aligned}
-\mathbb{E}_{\hat{y}, y}(\hat{y} - \mathbb{E}[y|x])^2 &= \mathbb{E}_{\hat{y}, y}[(\hat{y} - \mathbb{E}_{\hat{y}}[\hat{y}] + \mathbb{E}_{\hat{y}}[\hat{y}] - \mathbb{E}[y|x])^2] \\
-&= \mathbb{E}_{\hat{y}, y}[(\hat{y} - \mathbb{E}_{\hat{y}}[\hat{y}])^2] + (\mathbb{E}_{\hat{y}}[\hat{y}] - \mathbb{E}[y|x])^2
-\end{aligned}}\end{equation}
+\[\mathbb{E}_{\hat{y}, y}(\hat{y} - \mathbb{E}[y|x])^2 = \mathbb{E}_{\hat{y}, y}[(\hat{y} - \mathbb{E}_{\hat{y}}[\hat{y}] + \mathbb{E}_{\hat{y}}[\hat{y}] - \mathbb{E}[y|x])^2] = \mathbb{E}_{\hat{y}, y}[(\hat{y} - \mathbb{E}_{\hat{y}}[\hat{y}])^2] + (\mathbb{E}_{\hat{y}}[\hat{y}] - \mathbb{E}[y|x])^2\]
 
 Here, \(\mathbb{E}_{\hat{y}}[\hat{y}]\) represents the expected model
 prediction conditioned on the data \(\mathcal{D}\) and input \(x\).
 Combining the results of our analysis, we arrive at the total expected
 error as:
 
-\begin{equation}\phantomsection\label{eq-eq3.20}{
-\mathbb{E}_{y} [(y - \mathbb{E}[y|x])^2] + (\mathbb{E}_{\hat{y}} [\hat{y} - \mathbb{E}[y|x]] )^2 + \mathbb{E}_{\hat{y}} [(\hat{y} - \mathbb{E}_{\hat{y}}[\hat{y}])^2]
-}\end{equation}
+\[\mathbb{E}_{y} [(y - \mathbb{E}[y|x])^2] + (\mathbb{E}_{\hat{y}} [\hat{y} - \mathbb{E}[y|x]] )^2 + \mathbb{E}_{\hat{y}} [(\hat{y} - \mathbb{E}_{\hat{y}}[\hat{y}])^2]\]
 
 In this equation, the first term signifies the variance of the true
 label, which remains constant for a given \(x\). The second term
 captures the bias of the model, reflecting how much the average model
 prediction deviates from the expected true label. The third term
 quantifies the model's uncertainty concerning the selected input \(x\).
-
 Referring to (\citeproc{ref-AL_variance}{Cohn, Ghahramani, and Jordan
-1996}), we can denote the uncertainty term as:
-
-\begin{equation}\phantomsection\label{eq-eq3.21}{
-\sigma^2_{\hat{y}} (x | \mathcal{D}) = \mathbb{E}_{\hat{y}} [(\hat{y} - \mathbb{E}_{\hat{y}}[\hat{y}])^2]
-}\end{equation}
-
+1996}), we can denote the uncertainty term as
+\(\sigma^2_{\hat{y}} (x | \mathcal{D}) = \mathbb{E}_{\hat{y}} [(\hat{y} - \mathbb{E}_{\hat{y}}[\hat{y}])^2]\).
 This term explicitly represents the variance of the model predictions at
 the input \(x\) given the dataset \(\mathcal{D}\). More explicitly, it
 can be expressed as:
@@ -3383,135 +3275,58 @@ can be expressed as:
 
 This formulation emphasizes the variability of the model's predictions
 around their mean, providing insights into the model's reliability in
-its estimations. The active learning by variance reduction algorithm can
-be summarized as follows:
+its estimations. The AL by variance reduction algorithm can be
+summarized as follows:
 
 \begin{enumerate}
 \def\labelenumi{\arabic{enumi}.}
 \tightlist
 \item
-  \textbf{Sampling Candidates}: Sample candidate points
+  Sampling Candidates: Sample candidate points
   \(\tilde{x}_1, \dots, \tilde{x}_m\) from \(p(x)\).
 \item
-  \textbf{Compute Expected Variance Reduction}: For each candidate
-  \(\tilde{x}_i\), compute:
-  \begin{equation}\phantomsection\label{eq-eq3.23}{
-  \mathbb{E}_{p(x)} [\sigma^2_{\hat{y}} (x | \tilde{\mathcal{D}})]
-  }\end{equation}
+  Compute Expected Variance Reduction: For each candidate
+  \(\tilde{x}_i\), compute
+  \(\mathbb{E}_{p(x)} [\sigma^2_{\hat{y}} (x | \tilde{\mathcal{D}})]\)
 \item
-  \textbf{Select the Best Candidate}: Choose the point that minimizes
-  expected variance reduction:
-  \begin{equation}\phantomsection\label{eq-eq3.24}{
-     \tilde{x}^* = \arg\min_{\tilde{x}_i} \mathbb{E}_{p(x)} [\sigma^2_{\hat{y}} (x | \tilde{\mathcal{D}})]
-  }\end{equation}
+  Select the Best Candidate: Choose the point that minimizes expected
+  variance reduction
+  \(\tilde{x}^* = \arg\min_{\tilde{x}_i} \mathbb{E}_{p(x)} [\sigma^2_{\hat{y}} (x | \tilde{\mathcal{D}})]\)
 \item
-  \textbf{Update Model}: Incorporate the newly labeled data and repeat
-  the process.
+  Update Model: Incorporate the newly labeled data and repeat the
+  process.
 \end{enumerate}
 
 While there is no general recipe for the number of iterations to
 perform, one could imagine relying on some empirical measure like a loss
-on left-out labelled data to gauge model improvement (as seen in
-Figure~\ref{fig-empirical:gauss}, Figure~\ref{fig-empirical:regress}).
-Intuitively, the size of the data set and its relationship to the loss
-is intimately tied to the model complexity which impacts its
-data-thirstiness.
+on left-out labelled data to gauge model improvement. Intuitively, the
+size of the data set and its relationship to the loss is intimately tied
+to the model complexity which impacts its data-thirstiness.We note to
+the reader that \(P(X=x)\) is a distribution with potentially-infinite
+support and the authors do not compute this integral exactly. Instead,
+the computational estimate of that integral consists of sampling several
+points \(x \sim P(X=x)\) and averaging the quantity inside the integral
+over these points until convergence using Monte-Carlo sampling
+approaches (see (\citeproc{ref-monte-carlo}{Ghojogh et al. 2020})).
 
-We note to the reader that \(P(X=x)\) is a distribution with
-potentially-infinite support and the authors do not compute this
-integral exactly. Instead, the computational estimate of that integral
-consists of sampling several points \(x \sim P(X=x)\) and averaging the
-quantity inside the integral over these points until convergence using
-Monte-Carlo sampling approaches (see (\citeproc{ref-monte-carlo}{Ghojogh
-et al. 2020})).
-
-\begin{figure}
-
-\centering{
-
-\includegraphics[width=1\linewidth,height=\textheight,keepaspectratio]{src/Figures/1_two_models.png}
-
-}
-
-\caption{\label{fig-two_models}Two models were empirically explored.
-These two models lead to closed-form, accurately and
-efficiently-computed expected learner variance which can be plugged into
-the algorithm.}
-
-\end{figure}%
-
-Arm2D (Figure~\ref{fig-arm2D}) is a kinematics problem where learner has
-to predict the tip position of a robotic arm given a set of joint angles
+Arm2D is a kinematics problem where learner has to predict the tip
+position of a robotic arm given a set of joint angles
 \(\mathbf{\theta_1}, \mathbf{\theta_2}\). In this analysis, the two
-models seen in Figure~\ref{fig-two_models}, namely the Gaussian mixture
-model and locally-weighted regression (LOESS).
+models are the Gaussian mixture model and locally-weighted regression
+(LOESS). The results shown that the variance of the learner decreases
+because the authors selected points to minimize expected variance.
+Additionally, we observe a related decrease in the mean square error
+(MSE) of both models as the dataset size increases. This is a notable
+outcome because the expected learner variance for these models can be
+computed accurately and efficiently relative to a new point. When
+integrated into the general AL loop, this significantly enhances model
+performance. In the case of the locally-weighted regression model
+(\textbf{?@fig-empirical:regress}), it is surprising that if points were
+chosen randomly, the MSE would be highly unstable, with sharp
+fluctuations. However, when AL by variance reduction is applied, using
+expected learner variance as a proxy, the MSE decreases almost smoothly,
+aside from some initial instabilities.
 
-\begin{figure}
-
-\centering{
-
-\includegraphics[width=0.4\linewidth,height=\textheight,keepaspectratio]{src/Figures/1_experiment_setup.png}
-
-}
-
-\caption{\label{fig-arm2D}The arm kinematics problem. The learner
-attempts to predict tip position given a set of joint angles
-\(\mathbf{\theta_1}, \mathbf{\theta_2}\)}
-
-\end{figure}%
-
-\begin{figure}
-
-\centering{
-
-\includegraphics[width=1\linewidth,height=\textheight,keepaspectratio]{src/Figures/1_experiment_results_gaussian.png}
-
-}
-
-\caption{\label{fig-empirical:gauss}Arm2D domain. Dotted lines denote
-standard error for average of 10 runs, each started with one initial
-random example.}
-
-\end{figure}%
-
-The results shown in
-Figure~\ref{fig-empirical:gauss}, Figure~\ref{fig-empirical:regress} are
-intriguing. As expected, the variance of the learner decreases because
-the authors selected points to minimize expected variance. Additionally,
-we observe a related decrease in the mean square error (MSE) of both
-models as the dataset size increases. This is a notable outcome because
-the expected learner variance for these models can be computed
-accurately and efficiently relative to a new point. When integrated into
-the general active learning loop (\textbf{?@fig-schema}), this
-significantly enhances model performance.
-
-In the case of the locally-weighted regression model
-(Figure~\ref{fig-empirical:regress}), it is surprising that if points
-were chosen randomly, the MSE would be highly unstable, with sharp
-fluctuations. However, when active learning by variance reduction is
-applied, using expected learner variance as a proxy, the MSE decreases
-almost smoothly, aside from some initial instabilities.
-
-\begin{figure}
-
-\centering{
-
-\includegraphics[width=1\linewidth,height=\textheight,keepaspectratio]{src/Figures/1_experiment_results_regression.png}
-
-}
-
-\caption{\label{fig-empirical:regress}Variance and MSE learning curves
-for LOESS model trained on the Arm2D domain. Dotted lines denote
-standard error for average of 60 runs, each started with a single
-initial random example.}
-
-\end{figure}%
-
-\subsection{Active Learning in Ranking and
-Comparison}\label{active-learning-in-ranking-and-comparison}
-
-Many researchers have shown that making comparisons is easier and more
-convenient for users than assigning a specific score to each item.
 Individual comparisons yield a complete ranking over a set of \(n\)
 objects \(\Theta = (\theta_1, \theta_2, \cdots, \theta_n)\). This
 ranking is defined as a mapping
@@ -3545,31 +3360,27 @@ yet patients do not see them making many comparisons before deciding on
 the best option. This is because eye doctors incorporate domain
 knowledge into the process and only ask clients for comparisons when
 necessary. Applying similar knowledge in the ranking field leads to an
-active learning approach that selects data based on the relevance of a
-comparison query toward finding the final \(\sigma(\Theta)\).
+AL approach that selects data based on the relevance of a comparison
+query toward finding the final \(\sigma(\Theta)\).
 
-\subsubsection*{Geometric Approach to
-Comparisons}\label{geometric-approach-to-comparisons}
-\addcontentsline{toc}{subsubsection}{Geometric Approach to Comparisons}
-
-In this section, we will review the paper (\citeproc{ref-geo_paper}{G.
-and Nowak 2011}), which explores active learning within data that can be
-embedded in a multi-dimensional space. In this context, comparisons
-between two different objects divide the space into halves, with one
-object being superior in each half. By leveraging such spatial
-information, the paper develops a geometric approach to ranking and
-active learning. This spatial information serves as the domain knowledge
-that informs which comparisons to perform to achieve the ranking.
+We will review the paper (\citeproc{ref-geo_paper}{G. and Nowak 2011}),
+which explores AL within data that can be embedded in a
+multi-dimensional space. In this context, comparisons between two
+different objects divide the space into halves, with one object being
+superior in each half. By leveraging such spatial information, the paper
+develops a geometric approach to ranking and AL. This spatial
+information serves as the domain knowledge that informs which
+comparisons to perform to achieve the ranking.
 
 For this application, the following terms are defined:
 
 \begin{enumerate}
 \def\labelenumi{\arabic{enumi}.}
 \item
-  \textbf{\(R^d\)}: The space in which objects can be embedded.
+  \(R^d\): The space in which objects can be embedded.
 \item
-  \textbf{\(\theta_1, \cdots,\theta_n\)}: The objects, now representing
-  their locations in \(R^d\).
+  \(\theta_1, \cdots,\theta_n\): The objects, now representing their
+  locations in \(R^d\).
 \item
   For each ranking \(\sigma\), there is a reference point
   \(r_{\sigma} \in R^d\), such that if, according to ranking \(\sigma\),
@@ -3578,11 +3389,11 @@ For this application, the following terms are defined:
   words, object \(i\) is closer to the reference point \(r_{\sigma}\) of
   the ranking than object \(j\).
 \item
-  \textbf{\(\Sigma_{n,d}\)}: The set of all possible rankings of the
-  \(n\) objects that satisfy the embedding distances in the space
-  \(R^d\) as defined above. Note that not all possible rankings will
-  satisfy the embedding conditions, but multiple rankings might satisfy
-  all those conditions.
+  \(\Sigma_{n,d}\): The set of all possible rankings of the \(n\)
+  objects that satisfy the embedding distances in the space \(R^d\) as
+  defined above. Note that not all possible rankings will satisfy the
+  embedding conditions, but multiple rankings might satisfy all those
+  conditions.
 \item
   For every ranking \(\sigma\), there is \(M_n(\sigma)\), the number of
   pairwise comparisons needed to identify the ranking. When comparisons
@@ -3591,43 +3402,23 @@ For this application, the following terms are defined:
   to demonstrate that it can be reduced by incorporating spatial
   knowledge.
 \item
-  \textbf{\(q_{i,j}\)}: The query of comparison between objects \(i\)
-  and \(j\).
+  \(q_{i,j}\): The query of comparison between objects \(i\) and \(j\).
 \end{enumerate}
-
-\subsubsection*{Embedding Space}\label{embedding-space}
-\addcontentsline{toc}{subsubsection}{Embedding Space}
-
-\begin{figure}
-
-\centering{
-
-\includegraphics[width=0.4\linewidth,height=\textheight,keepaspectratio]{src/Figures/SPACE.png}
-
-}
-
-\caption{\label{fig-dim-space}Objects \(\theta_1, \theta_2, \theta_3\)
-and queries in \(R^2\). The \(r_\theta\) lies in the shaded region which
-represents \(\Sigma_{n,2}\)(consistent with the labels of
-\(q_{1,2}, q_{1,3}, q_{2,3}\)). The dotted (dashed) lines represent new
-queries whose labels are (are not) ambiguous.}
-
-\end{figure}%
 
 To properly understand how to select the most valuable queries, it is
 essential to examine the space where the objects exist and how the
 queries divide that space to determine the proper rankings. For this
-example, in Figure~\ref{fig-dim-space}, the paper
-(\citeproc{ref-geo_paper}{G. and Nowak 2011}) operates in \(R^2\) space
-with three objects: \(\theta_1\), \(\theta_2\), and \(\theta_3\). There
-are pairwise queries \(q_{1,3}\), \(q_{2,3}\), and \(q_{1,2}\) between
-them, denoted by solid lines equidistant from the two objects they
-compare. These lines split the \(R^2\) space into halves, with each half
-closer to one of the two objects. The paper colors the side of the worse
-object for each query in dark grey and takes the intersection of these
-halves, resulting in the dark grey region in the image. This region
-indicates \(\Sigma_{n,2}\) since all points follow the embedding
-conditions. Specifically, for every point \(r\) in the dark grey area,
+example, the paper (\citeproc{ref-geo_paper}{G. and Nowak 2011})
+operates in \(R^2\) space with three objects: \(\theta_1\),
+\(\theta_2\), and \(\theta_3\). There are pairwise queries \(q_{1,3}\),
+\(q_{2,3}\), and \(q_{1,2}\) between them, denoted by solid lines
+equidistant from the two objects they compare. These lines split the
+\(R^2\) space into halves, with each half closer to one of the two
+objects. The paper colors the side of the worse object for each query in
+dark grey and takes the intersection of these halves, resulting in the
+dark grey region in the image. This region indicates \(\Sigma_{n,2}\)
+since all points follow the embedding conditions. Specifically, for
+every point \(r\) in the dark grey area,
 \(||\theta_3 - r|| < ||\theta_2 - r|| < ||\theta_1 - r||\), meaning
 \(\theta_3 < \theta_2 < \theta_1\). Thus, every point \(r\) is one of
 the \(r_\sigma\) representing their respective rankings
@@ -3659,29 +3450,24 @@ If one of the three potential queries is performed, \(\theta_5\) will be
 closer to the dark grey area than \(\theta_1\), \(\theta_2\), and
 \(\theta_3\), meaning \(y_{1,5} = y_{2,5} = y_{3,5} = 0\). In this case,
 all labels are the same regardless of which object is used, meaning such
-a query will not be contradictory, as all agree on the label.
-
-The goal is to perform as many ambiguous queries as possible and skip
+a query will not be contradictory, as all agree on the label. The goal
+is to perform as many ambiguous queries as possible and skip
 non-ambiguous queries to decrease the total \(M_n(\sigma)\).
 Intuitively, if there is contradictory information about a query, it
 needs to be erformed so that a human can clarify its direction.
 Conversely, if all sources of information from the domain space agree on
 the query's label, that information can be used without asking a human,
-incorporating the knowledge of the embedding distances.
-
-Lastly, to consider the general case of the \(R^d\) space, rather than
-discussing halves of the image, it is essential to discuss half-spaces.
-Similarly, consider the half-space that assigns a label of \(1\) to the
-query and the half-space assigning a label of \(0\). If both half-spaces
-exist, they have conflicting information on the query, making the query
+incorporating the knowledge of the embedding distances. Lastly, to
+consider the general case of the \(R^d\) space, rather than discussing
+halves of the image, it is essential to discuss half-spaces. Similarly,
+consider the half-space that assigns a label of \(1\) to the query and
+the half-space assigning a label of \(0\). If both half-spaces exist,
+they have conflicting information on the query, making the query
 ambiguous. However, if one of the half-spaces does not exist, it means
 the other is the full space, representing consistency in the label
 assignment and a non-ambiguous query.
 
-\paragraph*{Algorithms for Ambiguous Query
-Selection}\label{algorithms-for-ambiguous-query-selection}
-\addcontentsline{toc}{paragraph}{Algorithms for Ambiguous Query
-Selection}
+Algorithms for Ambiguous Query Selection:
 
 \begin{algorithm}[H]
     \caption{Query Selection Algorithm}
@@ -3723,17 +3509,16 @@ space (e.g., \(Q(1,d) = 1, Q(n,0) = 1, Q(n,1) = n!\)). In that case,
 \(|\Sigma_{n,d}| = Q(n,d) = O(n^{2d})\), which is omitted here.
 Analogously, the authors define \(P(i,j)\), which represents the number
 of rankings in \(\Sigma_{n,d}\) that will still be possible with the
-addition of a new element \(i+1\) to the ranking objects. Referring back
-to Figure~\ref{fig-dim-space}, \(P(i,j)\) estimates how much of the dark
-grey area will still exist after making a query for \(i+1\). As
-indicated there, the dotted line ambiguous query did not change the dark
-grey a rea at all (\(P(n,d) = Q(n,d)\)), whereas the dashed
-non-ambiguous query would cut a piece from it (\(P(n,d) < Q(n,d)\)).
-Thus, \(Request q_{i,k+1} = P(k,d) / Q(k,d)\), so a higher value
-indicates more possible rankings and an ambiguous query that needs to be
-requested to obtain more useful information. With this in mind, the
-authors derive that \(E[M_n(\sigma)] = O(d\log n)\), showing that fewer
-queries are needed for effective ranking.
+addition of a new element \(i+1\) to the ranking objects. \(P(i,j)\)
+estimates how much of the dark grey area will still exist after making a
+query for \(i+1\). As indicated there, the dotted line ambiguous query
+did not change the dark grey a rea at all (\(P(n,d) = Q(n,d)\)), whereas
+the dashed non-ambiguous query would cut a piece from it
+(\(P(n,d) < Q(n,d)\)). Thus, \(Request q_{i,k+1} = P(k,d) / Q(k,d)\), so
+a higher value indicates more possible rankings and an ambiguous query
+that needs to be requested to obtain more useful information. With this
+in mind, the authors derive that \(E[M_n(\sigma)] = O(d\log n)\),
+showing that fewer queries are needed for effective ranking.
 
 The issue with this algorithm is that only one human provides the
 answers to the requested queries, which means it does not account for
@@ -3766,11 +3551,10 @@ queries (solid) in the noiseless case for \(n = 100\);
 
 \begin{longtable}[]{@{}llcc@{}}
 \caption{Statistics for the Robust Query Selection Algorithm (RQSA)
-(\citeproc{ref-geo_paper}{G. and Nowak 2011}) discussed at the end of
-\textbf{?@sec-QSA} and the baseline of conducting all comparisons. \(y\)
-serves as a noisy ground truth, \(\tilde{y}\) is the result of all
-comparisons, and \(\hat{y}\) is the output of the
-RQSA.}\label{tbl-geo_acc}\tabularnewline
+(\citeproc{ref-geo_paper}{G. and Nowak 2011}) and the baseline of
+conducting all comparisons. \(y\) serves as a noisy ground truth,
+\(\tilde{y}\) is the result of all comparisons, and \(\hat{y}\) is the
+output of the RQSA.}\label{tbl-geo_acc}\tabularnewline
 \toprule\noalign{}
 Dimension & & 2 & 3 \\
 \midrule\noalign{}
@@ -3801,15 +3585,14 @@ came from humans, indicated by \(y\) in the table. That resulted in the
 existence of noise and potential errors in the ground truth, which could
 influence the performance of both the baseline algorithm that does all
 comparisons (\(\tilde{y}\)) and the Robust Query Selection Algorithm
-(RQSA) proposed in \textbf{?@sec-QSA} (\(\hat{y}\)). As can be seen in
-both 2 and 3-dimensional spaces RQSA performed worse by \(8\%\) compared
-to the baseline, which indicates that active learning that uses the
-domain information can still be erroneous due to the inference of
-certain comparisons that sometimes may not be entirely correct. However,
-as can be seen by the upper part of Table~\ref{tbl-geo_acc},
-significantly less queries were requested compared to the baseline,
-which means that the approach can have a significant benefit at a cost
-of slight loss in accuracy.
+(RQSA) (\(\hat{y}\)). As can be seen in both 2 and 3-dimensional spaces
+RQSA performed worse by \(8\%\) compared to the baseline, which
+indicates that AL that uses the domain information can still be
+erroneous due to the inference of certain comparisons that sometimes may
+not be entirely correct. However, as can be seen by the upper part of
+Table~\ref{tbl-geo_acc}, significantly less queries were requested
+compared to the baseline, which means that the approach can have a
+significant benefit at a cost of slight loss in accuracy.
 
 \subsubsection*{User Information as Domain Knowledge for Active
 Learning}\label{sec-geo_app}
@@ -3826,11 +3609,10 @@ incorrect responses in the data. Through feedback and other studies
 (\citeproc{ref-noisy_humans}{Guillory and Bilmes 2011}) it was
 determined that presenting users with an option of indifference between
 the two objects can remove those problems. Moreover, in connection to
-active learning, the authors show that such an option helps to select
-more informative queries since it provides more domain knowledge that
-can be used, resulting in a decrease in the number of queries required.
-
-For this problem, the following terms are defined:
+AL, the authors show that such an option helps to select more
+informative queries since it provides more domain knowledge that can be
+used, resulting in a decrease in the number of queries required. For
+this problem, the following terms are defined:
 
 \begin{enumerate}
 \def\labelenumi{\arabic{enumi}.}
@@ -3839,7 +3621,7 @@ For this problem, the following terms are defined:
   result the model has to determine at the end of training. The
   preferred items will have lower costs, and less preferred ones will
   have higher costs. The goal is to determine this function with the
-  fewest possible number of queries using active learning.
+  fewest possible number of queries using AL.
 \item
   \(H\) - a set of hypotheses over the possible cost functions, where
   for each \(h \in H\) there is a cost function \(c_h\) associated with
@@ -3860,31 +3642,23 @@ For this problem, the following terms are defined:
   \(m\) pairs of tests and observations
 \item
   \(w(H|S)\) - probability mass of all hypotheses that are still
-  consistent with the observations (similar to the dark grey area from
-  Figure~\ref{fig-dim-space} and \(Q(i,j)\) discussed in
-  \textbf{?@sec-QSA}. This means that if \(h \in H\) is inconsistent
-  with user responses received, it is removed from \(H\).
+  consistent with the observations (similar to the dark grey area and
+  \(Q(i,j)\)). This means that if \(h \in H\) is inconsistent with user
+  responses received, it is removed from \(H\).
 \end{enumerate}
 
 With the key terms defined, let's consider the noiseless base setting
 where users only have two options for response. Those components will
 also later be translated to the setting with the third option so the
 true cost function can be determined there. \(w(H|S)\) is the sum of the
-weights of all hypotheses that are still consistent with the evidence.
-\begin{equation}\phantomsection\label{eq-eq3.25}{\begin{aligned}
-    w(H|S) = \sum_{h \in H} w(h | S)\\
-\end{aligned}}\end{equation} Each \(w(h|S)\) is a probability of the
-evidence's existence given such hypothesis:
-\begin{equation}\phantomsection\label{eq-eq3.26}{\begin{aligned}
-    w(h|S) = p(S|h)
-\end{aligned}}\end{equation} Such probability comes from the
-test-observation pairs since they compose the set \(S\). Moreover, each
-test is independent of other tests, which gives:
-\begin{equation}\phantomsection\label{eq-eq3.27}{\begin{aligned}
-    p(S|h) = \prod_{(t,o) \in S} p((t,o) | h)
-\end{aligned}}\end{equation} In the noiseless setting, users will select
-an option that minimizes their cost function (selecting more preferred
-items), mathematically defined as:
+weights of all hypotheses that are still consistent with the evidence:
+\(w(H|S) = \sum_{h \in H} w(h | S)\). Each \(w(h|S)\) is a probability
+of the evidence's existence given such hypothesis: \(w(h|S) = p(S|h)\).
+Such probability comes from the test-observation pairs since they
+compose the set \(S\). Moreover, each test is independent of other
+tests, which gives \(p(S|h) = \prod_{(t,o) \in S} p((t,o) | h)\). In the
+noiseless setting, users will select an option that minimizes their cost
+function (selecting more preferred items), mathematically defined as:
 \begin{equation}\phantomsection\label{eq-prob_base}{\begin{aligned}
     p((t, o = x) | h) = 
     \begin{cases}
@@ -3892,8 +3666,6 @@ items), mathematically defined as:
         0 & else
     \end{cases}
 \end{aligned}}\end{equation}
-
-\textbf{6.3.3.1 User Noise Modeling}
 
 As has been discussed, users are not perfect evaluators and even get
 frustrated if unable to select the better option. Prior work
@@ -3903,29 +3675,24 @@ to accounting for noise in users' responses, but a majority of such work
 applies the same noise to all queries and all responses. While those led
 to great performance results (\citeproc{ref-noisy_humans}{Guillory and
 Bilmes 2011}), they don't accurately reflect the real world, which gave
-rise to the idea of creating query-based noise.
-
-Effectively, for some of the queries it is important to incorporate the
-fact that the user is unsure and noisy, but for others, if the user is
-confident, noise in the response is not needed at all. For
-comparison-based learning, this means that the noise is related to the
-costs of the two items compared. Specifically for items \(x\) and \(y\),
-if \(c_{h^*}(x) \simeq c_{h^*}(y)\) then the items are hard to
-distinguish for the user, so here it is preferred to incorporate user
-uncertainty and noise. But if \(c_{h^*}(x) >> c_{h^*}(y)\), the user
-will certainly select \(y\) and the other way around, which is where the
-noise is not needed.
-
-Query-dependent noise is also supported in the psychology literature,
-which means that such an approach is more related to the real world. In
-particular, psychologists talk about the Luce-Sheppard Choice rule
-(\citeproc{ref-lus-shep}{Shepard 1957}) when talking about comparisons.
-This rule previously gave rise to a logistic model based on the noise
-(\citeproc{ref-lus-log}{Viappiani and Boutilier 2010}) where the
-probability of observation for a given test is:
-\begin{equation}\phantomsection\label{eq-noise_model}{\begin{aligned}
-    p((t, o = x) | h) \propto exp(-\gamma * c_h(x))
-\end{aligned}}\end{equation}
+rise to the idea of creating query-based noise. Effectively, for some of
+the queries it is important to incorporate the fact that the user is
+unsure and noisy, but for others, if the user is confident, noise in the
+response is not needed at all. For comparison-based learning, this means
+that the noise is related to the costs of the two items compared.
+Specifically for items \(x\) and \(y\), if
+\(c_{h^*}(x) \simeq c_{h^*}(y)\) then the items are hard to distinguish
+for the user, so here it is preferred to incorporate user uncertainty
+and noise. But if \(c_{h^*}(x) >> c_{h^*}(y)\), the user will certainly
+select \(y\) and the other way around, which is where the noise is not
+needed. Query-dependent noise is also supported in the psychology
+literature, which means that such an approach is more related to the
+real world. In particular, psychologists talk about the Luce-Sheppard
+Choice rule (\citeproc{ref-lus-shep}{Shepard 1957}) when talking about
+comparisons. This rule previously gave rise to a logistic model based on
+the noise (\citeproc{ref-lus-log}{Viappiani and Boutilier 2010}) where
+the probability of observation for a given test is
+\(p((t, o = x) | h) \propto exp(-\gamma * c_h(x))\)
 
 \begin{figure}
 
@@ -3960,8 +3727,6 @@ response options, and CLAUS is the model with the uncertainty option
 added. The figures show how incorporating such noise influences and
 smoothes the probability distribution of the user's response.
 
-\textbf{6.3.3.2 User Uncertainty}
-
 We will now discuss the functionality of CLAUS, which is an algorithm
 designed by (\citeproc{ref-claus}{Holladay et al. 2016}) that allows
 users to select an uncertain response about the two options that they
@@ -3970,17 +3735,14 @@ is associated with each \(c_h\), so now every hypothesis \(h\) is
 defined over a pair of \((c_h, \epsilon_h)\). It is important to note
 that the goal is to still learn and maintain our objective on \(c\),
 \(\epsilon\) is only necessary to model the users' responses. The
-uncertainty relates to the cost function in the following way:
-\begin{equation}\phantomsection\label{eq-eq3.30}{\begin{aligned}
-    |c_h(x) - c_h(y)| < \epsilon_h
-\end{aligned}}\end{equation} this means that the user is uncertain
-between items \(x\) and \(y\) and their cost difference is negligible
-such that the user is not able to select which item is better. This in
-turn gives more information about the real value of the two items, as a
-binary response would indicate the user's preference towards one item,
-which will not be real and will skew the cost functions.
-
-This causes modifications of the problem set-up:
+uncertainty relates to the cost function as
+\(|c_h(x) - c_h(y)| < \epsilon_h\). This means that the user is
+uncertain between items \(x\) and \(y\) and their cost difference is
+negligible such that the user is not able to select which item is
+better. This in turn gives more information about the real value of the
+two items, as a binary response would indicate the user's preference
+towards one item, which will not be real and will skew the cost
+functions. This causes modifications of the problem set-up:
 
 \begin{enumerate}
 \def\labelenumi{\arabic{enumi}.}
@@ -3991,14 +3753,15 @@ This causes modifications of the problem set-up:
 \item
   The probability distribution over the user's response
   (Equation~\ref{eq-prob_base}) will now be defined as:
-  \begin{equation}\phantomsection\label{eq-eq3.31}{\begin{aligned}
-  p((t, o = x) | h) = 
-  \begin{cases}
-      1 & c_h(x) < c_h(y) - \epsilon_h\\
-      0 & else
-  \end{cases}
-  \end{aligned}}\end{equation}
 \end{enumerate}
+
+\begin{equation}\phantomsection\label{eq-eq3.31}{\begin{aligned}
+    p((t, o = x) | h) = 
+    \begin{cases}
+        1 & c_h(x) < c_h(y) - \epsilon_h\\
+        0 & else
+    \end{cases}
+\end{aligned}}\end{equation}
 
 \begin{equation}\phantomsection\label{eq-eq3.32}{\begin{aligned}
     p((t, o = \tilde{xy}) | h) = 
@@ -4018,42 +3781,17 @@ choose the indifferent option.
 \setcounter{enumi}{2}
 \tightlist
 \item
-  Finally this also updates the noise model
-  (Equation~\ref{eq-noise_model}):
-  \begin{equation}\phantomsection\label{eq-eq3.33}{\begin{aligned}
-  p((t, o = x) | h) \propto \exp(-\gamma * [c_h(x) - c_h(y)])
-  \end{aligned}}\end{equation}
+  Finally this also updates the noise model: \[\begin{aligned}
+  &p((t, o = x) | h) \propto \exp(-\gamma * [c_h(x) - c_h(y)]) \\
+  &p((t, o = \tilde{xy}) | h) \propto exp(-1/\epsilon_h^2 * [c_h(x) - c_h(y)]^2)
+  \end{aligned}\]
 \end{enumerate}
-
-\begin{equation}\phantomsection\label{eq-eq3.34}{\begin{aligned}
-    p((t, o = \tilde{xy}) | h) \propto exp(-1/\epsilon_h^2 * [c_h(x) - c_h(y)]^2)
-\end{aligned}}\end{equation}
-
-\textbf{6.3.3.3 Performance Analysis}
-
-\begin{figure}
-
-\centering{
-
-\includegraphics[width=0.6\linewidth,height=\textheight,keepaspectratio]{src/Figures/equiv.png}
-
-}
-
-\caption{\label{fig-equiv_c}CLAUS using equivalence classes. Each cost
-function \(c\) corresponds to an equivalence class (blue ellipse).
-Hypotheses (black dots) are \(\{c_h,\epsilon_h\}\) pairs. Hypotheses
-sharing a cost \(c\) are said to be inside the equivalence class of
-\(c\). After performing a test and receiving an observation, the
-evidence results in downweighting connections among some of the
-hypotheses.}
-
-\end{figure}%
 
 Before diving deeper into the comparisons of performance, it is
 important to indicate that rather than predicting a specific pair
 \((c_h, \epsilon_h)\), the algorithm focuses on predicting a group of
 pairs that are similar to one another, otherwise called equivalence
-class (Figure~\ref{fig-equiv_c}), which indicates not essentially
+class (\textbf{?@fig-equiv\_c}), which indicates not essentially
 different hypothesis for the cost function and uncertainty. That
 information is learned through each new test, as the algorithm updates
 the information about \(c\) and \(\epsilon\) that distinguishes between
@@ -4062,27 +3800,15 @@ the authors tweaked the parameter responsible for the size of the
 equivalence class (how many hypotheses can be grouped together at a
 time).
 
-\begin{figure}
-
-\centering{
-
-\includegraphics[width=0.6\linewidth,height=\textheight,keepaspectratio]{src/Figures/GBS:CLAUS.png}
-
-}
-
-\caption{\label{fig-claus_num}Performance of GBS and its variants}
-
-\end{figure}%
-
 \begin{longtable}[]{@{}lcc@{}}
 \caption{Performance of GBS and CLAUS with different labels for the
 uncertainty}\label{tbl-claus_tab}\tabularnewline
 \toprule\noalign{}
-\textbf{Category} & \textbf{Accuracy} & \textbf{Query Count} \\
+Category & Accuracy & Query Count \\
 \midrule\noalign{}
 \endfirsthead
 \toprule\noalign{}
-\textbf{Category} & \textbf{Accuracy} & \textbf{Query Count} \\
+Category & Accuracy & Query Count \\
 \midrule\noalign{}
 \endhead
 \bottomrule\noalign{}
@@ -4096,44 +3822,42 @@ CLAUS - Not Sure & \(90.86 \pm 0.74\) & \(26.98 \pm 0.47\) \\
 \end{longtable}
 
 The first performance evaluation is done on the number of queries and
-confirms that it decreases in Figure~\ref{fig-claus_num}. The GBS model
-serves as the baseline, as it will do all of the comparison queries
-using the binary response options. The CLAUS model is measured over
-different values of \(\epsilon\) on the x-axis and over different sizes
-of the equivalence sets indicated by different shades of blue. Figure
-shows that all variants of CLAUS use approximately 10 fewer queries on
-average compared to GBS. Moreover, using bigger-sized equivalence
-classes can further decrease the number of needed queries. The most
-optimal \(\epsilon \simeq 0.07\), after which higher \(\epsilon\) does
-not provide any benefit.
+confirms that it decreases. The GBS model serves as the baseline, as it
+will do all of the comparison queries using the binary response options.
+The CLAUS model is measured over different values of \(\epsilon\) on the
+x-axis and over different sizes of the equivalence sets indicated by
+different shades of blue. Figure shows that all variants of CLAUS use
+approximately 10 fewer queries on average compared to GBS. Moreover,
+using bigger-sized equivalence classes can further decrease the number
+of needed queries. The most optimal \(\epsilon \simeq 0.07\), after
+which higher \(\epsilon\) does not provide any benefit.
 
 Lastly, the authors considered the performance difference, which is
 indicated in Table~\ref{tbl-claus_tab}. For that authors used two
 different labels for the uncertainty button in CLAUS, it was either
-labeled as "About Equal" or "Not Sure" as those can provoke different
-responses and feelings in users. Moreover, GBS and CLAUS-type responses
-were mixed in the same set of questions to the user, which splits the
-metrics for both in two as can be seen in Table~\ref{tbl-claus_tab}. The
-performance of CLAUS is lower by \(3\%\) on average, indicating similar
-results to \textbf{?@sec-geo\_app}, showing that a smaller number of
-queries can still lead to a performance loss. However, the second column
-of Table~\ref{tbl-claus_tab} supports the information in
-Figure~\ref{fig-claus_num}, as it also shows that 10 fewer queries were
-conducted on average.
+labeled as ``About Equal'' or ``Not Sure'' as those can provoke
+different responses and feelings in users. Moreover, GBS and CLAUS-type
+responses were mixed in the same set of questions to the user, which
+splits the metrics for both in two as can be seen in
+Table~\ref{tbl-claus_tab}. The performance of CLAUS is lower by \(3\%\)
+on average, showing that a smaller number of queries can still lead to a
+performance loss. However, the second column of
+Table~\ref{tbl-claus_tab} supports the information, as it also shows
+that 10 fewer queries were conducted on average.
 
 \subsection{Active Preference-Based Learning of Reward
 Functions}\label{active-preference-based-learning-of-reward-functions}
 
-Active learning can be essential in learning within dynamic systems and
-environments. Say we have an agent in an environment, and we want it to
-conform to a certain behavior as set by a human. How exactly do we go
-about doing this? In a traditional RL setting, this is solved by a class
-of algorithms under Inverse Reinforcement Learning. Techniques such as
-VICE and GAIL attempt to learn a reward function that can distinguish
-between states visited by the agent and states desired to be visited as
-defined by a human. In effect, a human will demonstrate what it would
-like the agent to do in the environment, and from there, learning is
-done. However, what if humans do not precisely know how an agent should
+AL can be essential in learning within dynamic systems and environments.
+Say we have an agent in an environment, and we want it to conform to a
+certain behavior as set by a human. How exactly do we go about doing
+this? In a traditional RL setting, this is solved by a class of
+algorithms under Inverse Reinforcement Learning. Techniques such as VICE
+and GAIL attempt to learn a reward function that can distinguish between
+states visited by the agent and states desired to be visited as defined
+by a human. In effect, a human will demonstrate what it would like the
+agent to do in the environment, and from there, learning is done.
+However, what if humans do not precisely know how an agent should
 optimally behave in an environment but still have some opinion on what
 trajectories would be better than others? This is where a paper like
 Active Preference-Based Learning of Reward Functions comes into the
@@ -4153,15 +3877,12 @@ linearly. If we have our human reward preference function defined as
 \begin{equation}\phantomsection\label{eq-eq3.35}{r_H(x^t, u_R^t, u_H^t) = w^{\intercal}\phi(x^t, u_R^t, u_H^t)}\end{equation}
 Because the reward function is linear, we can take the weight vector out
 of the summation if we want to calculate the reward over an entire
-trajectory:
-\begin{equation}\phantomsection\label{eq-eq3.36}{\begin{aligned}
+trajectory: \begin{equation}\phantomsection\label{eq-eq3.36}{
+\begin{aligned}
 R_{H}(x^0, u_R, u_H) &= \sum_{t=0}^{N} r_{H}(x^t, u^t, u_H^t)\\
 \Phi &= \sum \phi(x^t, u_R^t, u_H^t)\\ 
-R_H(traj) &= w\cdot\Phi(traj)\end{aligned}}\end{equation}
-
-\subsubsection*{\texorpdfstring{Properties of
-\(W\)}{Properties of W}}\label{properties-of-w}
-\addcontentsline{toc}{subsubsection}{Properties of \(W\)}
+R_H(traj) &= w\cdot\Phi(traj)
+\end{aligned}}\end{equation}
 
 First, the scale of \(w\) does not matter because we only care about the
 relative rewards produced with \(w\) (given two different trajectories,
@@ -4179,34 +3900,26 @@ p(I_t = +1|w) &= \frac{exp(R_H(traj_A))}{exp(R_H(traj_A)) + exp(R_H(traj_B))}\\
 p(I_t = -1|w) &= \frac{exp(R_H(traj_B))}{exp(R_H(traj_A)) + exp(R_H(traj_B))}
 \end{aligned}}\end{equation}
 
-We can re-write this expression to make it cleaner, using the following
-substitution:
-\begin{equation}\phantomsection\label{eq-eq3.38}{\psi = \Phi(traj_a) - \Phi(traj_b)}\end{equation}
-\begin{equation}\phantomsection\label{eq-eq3.39}{f_{\psi} (w) = p(I_t|w) = \frac{1}{1 + exp(-I_tw^{\intercal}\psi)}}\end{equation}
-
+We can re-write this expression to make it cleaner:
+\(\psi = \Phi(traj_a) - \Phi(traj_b), f_{\psi} (w) = p(I_t|w) = \frac{1}{1 + exp(-I_tw^{\intercal}\psi)}\).
 The idea now is that we can update \(p(w)\) everytime we get a result
 from a human preference query using Bayes:
+\(p(w|I_t) <- p(w) \cdot p(I_t|w)\). We do not need to know \(p(I_t)\)
+because we can use an algorithm like the Metropolis algorithm to
+actually sample.
 
-\begin{equation}\phantomsection\label{eq-eq3.40}{p(w|I_t) <- p(w) \cdot p(I_t|w)}\end{equation}
-
-We do not need to know \(p(I_t)\) because we can use an algorithm like
-the Metropolis algorithm to actually sample.
-
-\subsubsection*{Generating Queries}\label{generating-queries}
-\addcontentsline{toc}{subsubsection}{Generating Queries}
-
-This is where the interesting part of the paper comes into play. How do
-we actually generate queries for the user to pick between? This paper
-synthetically generates queries through an optimization process and then
-presents them to a human to pick between. The idea is that we want to
-generate a query that maximizes the conditional entropy \(H(I|w)\).
-There are a few ways to think about this -- intuitively we want to pick
-a query that we are most uncertain about given our current weights (thus
-having the highest conditional entropy given the weights). The way the
-authors of the paper frame this originally in the paper is that "we want
-to find the next query such that it will help us remove as much volume
-(the integral of the unnormalized pdf over w) as possible from the space
-of possible rewards." Mathematically this can be written as:
+How do we actually generate queries for the user to pick between? This
+paper synthetically generates queries through an optimization process
+and then presents them to a human to pick between. The idea is that we
+want to generate a query that maximizes the conditional entropy
+\(H(I|w)\). There are a few ways to think about this -- intuitively we
+want to pick a query that we are most uncertain about given our current
+weights (thus having the highest conditional entropy given the weights).
+The way the authors of the paper frame this originally in the paper is
+that ``we want to find the next query such that it will help us remove
+as much volume (the integral of the unnormalized pdf over w) as possible
+from the space of possible rewards.'' Mathematically this can be written
+as:
 
 \begin{equation}\phantomsection\label{eq-eq3.41}{max_{x^0, u_R, u_H^A, u_H^B} min\{E[1-f_{\psi}(w)], E[1 - f_{-\psi}(w)]\}}\end{equation}
 
@@ -4214,13 +3927,10 @@ But how exactly do we optimize this expression mathematically? After
 all, we need to use this expression to generate synthetic queries. The
 answer is to sample \(w_1, ... w_m\) from \(p(w)\). We can assume we are
 sampling points from a point cloud, thus approximating the distribution
-\(p(w)\) as
-
-\begin{equation}\phantomsection\label{eq-eq3.42}{p(w) = \frac{1}{M} \sum \delta (w_i).}\end{equation}
-We can now approximate the expectation expression like so:
-\begin{equation}\phantomsection\label{eq-eq3.43}{E[1 - f_{\psi}(w)] = \frac{1}{M} (\sum 1 - f_{\psi}(w_i))}\end{equation}
-
-and now we can optimize the expression to generate a synthetic query!
+\(p(w)\) as \(p(w) = \frac{1}{M} \sum \delta (w_i).\) We can now
+approximate the expectation expression as
+\(E[1 - f_{\psi}(w)] = \frac{1}{M} (\sum 1 - f_{\psi}(w_i))\), and now
+we can optimize the expression to generate a synthetic query!
 Altogether, the algorithm looks like the following:
 
 \begin{algorithm}[H]
@@ -4241,9 +3951,6 @@ Altogether, the algorithm looks like the following:
     \State \textbf{output:} distribution of $w: p(w)$
 \end{algorithmic}
 \end{algorithm}
-
-\subsubsection*{Batching Queries}\label{batching-queries}
-\addcontentsline{toc}{subsubsection}{Batching Queries}
 
 The algorithm itself works well, however there ends up being a bottle
 neck that each query needs to be synthesized before being sent to the
@@ -4280,9 +3987,6 @@ depicted as:
 
 \end{figure}%
 
-\subsubsection*{Results}\label{results}
-\addcontentsline{toc}{subsubsection}{Results}
-
 The authors test both the non-batched and variety of batched learning
 algorithms on multiple environments:
 
@@ -4300,12 +4004,12 @@ non-batched algorithms}
 \end{figure}%
 
 What is interesting to note is that when graphed over \(N\) the
-non-batched active learning approach does in the same ball-park of
-performance as the batched approaches. However, if you graph it over
-time, we see that learning is a much slower process when not-batched.
+non-batched AL approach does in the same ball-park of performance as the
+batched approaches. However, if you graph it over time, we see that
+learning is a much slower process when not-batched.
 
-\subsection{Application: Foundation Models for
-Robotics}\label{application-foundation-models-for-robotics}
+\section{Case Study 1: Foundation Models for
+Robotics}\label{case-study-1-foundation-models-for-robotics}
 
 Modern foundation models have been ubiquitous in discussions of
 powerful, general purpose AI systems that can accomplish myriad tasks
@@ -4323,36 +4027,18 @@ towards performance improvement on downstream robotic tasks despite the
 aforementioned issues (\citeproc{ref-nair2022r3m}{Nair et al. 2022};
 \citeproc{ref-karamcheti2023languagedriven}{Karamcheti et al. 2023}).
 
-\subsubsection*{R3M: Universal Visual Representation for
-Robotics}\label{r3m-universal-visual-representation-for-robotics}
-\addcontentsline{toc}{subsubsection}{R3M: Universal Visual
-Representation for Robotics}
-
-\begin{figure}
-
-\centering{
-
-\includegraphics[width=0.95\linewidth,height=\textheight,keepaspectratio]{src/Figures/r3m.png}
-
-}
-
-\caption{\label{fig-r3m-pipline}R3M pipeline}
-
-\end{figure}%
-
 R3M represents a significant advancement in the field of robotic
 manipulation and learning. This model diverges from traditional
 approaches that rely on training from scratch within the same domain on
 the same robot data as instead it leverags pretraining on large
 datasets, akin to the practices in computer vision and natural language
 processing (NLP) where models are trained on diverse, large-scale
-datasets to create reusable, general-purpose representations.
-
-The core principle behind R3M is its training methodology. It is
-pre-trained on a wide array of human videos, encompassing various
-activities and interactions. This diverse dataset enables the model to
-capture a broad spectrum of physical interactions and dynamics, which
-are crucial for effective robotic manipulation known as EGO4D
+datasets to create reusable, general-purpose representations. The core
+principle behind R3M is its training methodology. It is pre-trained on a
+wide array of human videos, encompassing various activities and
+interactions. This diverse dataset enables the model to capture a broad
+spectrum of physical interactions and dynamics, which are crucial for
+effective robotic manipulation known as EGO4D
 (\citeproc{ref-grauman2022ego4d}{Grauman et al. 2022}). However, prior
 papers could not fit this dataset well, and R3M leveraged. The training
 utilizes a unique objective that combines time contrastive learning,
@@ -4360,29 +4046,23 @@ video-language alignment, and a sparsity penalty. This objective ensures
 that R3M not only understands the temporal dynamics of scenes (i.e., how
 states transition over time) but also focuses on semantically relevant
 features, such as objects and their interrelations, while maintaining a
-compact and efficient representation.
-
-What sets R3M apart in the realm of robotics is its efficiency and
-effectiveness in learning from a limited amount of data. The model
-demonstrates remarkable performance in learning tasks in the real world
-with minimal human supervision -- typically less than 10 minutes. This
-is a stark contrast to traditional models that require extensive and
-often prohibitively large datasets for training. Furthermore, R3M's
-pre-trained nature allows for its application across a variety of tasks
-and environments without the need for retraining from scratch, making it
-a versatile tool in robotic manipulation. The empirical results from
-using R3M are compelling, leading to a 10\% improvement over training
-from a pretrained image-net model, self-supervised approaches such as
-MoCo or even CLIP (\citeproc{ref-deng2009imagenet}{Deng et al. 2009};
+compact and efficient representation. What sets R3M apart in the realm
+of robotics is its efficiency and effectiveness in learning from a
+limited amount of data. The model demonstrates remarkable performance in
+learning tasks in the real world with minimal human supervision --
+typically less than 10 minutes. This is a stark contrast to traditional
+models that require extensive and often prohibitively large datasets for
+training. Furthermore, R3M's pre-trained nature allows for its
+application across a variety of tasks and environments without the need
+for retraining from scratch, making it a versatile tool in robotic
+manipulation. The empirical results from using R3M are compelling,
+leading to a 10\% improvement over training from a pretrained image-net
+model, self-supervised approaches such as MoCo or even CLIP
+(\citeproc{ref-deng2009imagenet}{Deng et al. 2009};
 \citeproc{ref-he2020momentum}{He et al. 2020};
 \citeproc{ref-radford2021learning}{Radford et al. 2021}). Note however,
-that R3m does \textbf{not} use any language data which leaves quite a
-bit of supervision to be desired.
-
-\subsubsection*{Voltron: Language Driven Representation Learning for
-Robotics}\label{voltron-language-driven-representation-learning-for-robotics}
-\addcontentsline{toc}{subsubsection}{Voltron: Language Driven
-Representation Learning for Robotics}
+that R3m does not use any language data which leaves quite a bit of
+supervision to be desired.
 
 Building off the success of R3M, Voltron proposes a further extension of
 leveraging self-supervision and advancements in foundation models, and
@@ -4391,7 +4071,6 @@ objective, where the trained model alternates between predicting the
 task in an image through natural language and classifying images based
 on a natural text label. This forces a nuanced understanding of both
 modalities (\citeproc{ref-radford2021learning}{Radford et al. 2021}).
-
 Voltron's approach is distinguished by its versatility and depth of
 learning. It is adept at handling a wide range of robotic tasks, from
 low-level spatial feature recognition to high-level semantic
@@ -4399,34 +4078,19 @@ understanding required in language-conditioned imitation and intent
 scoring. This flexibility makes it suitable for various applications in
 robotic manipulation, from grasping objects based on descriptive
 language to performing complex sequences of actions in response to
-verbal instructions.
-
-\begin{figure}
-
-\centering{
-
-\includegraphics[width=0.95\linewidth,height=\textheight,keepaspectratio]{src/Figures/voltron.png}
-
-}
-
-\caption{\label{fig-voltron-pipeline}Voltron pipeline}
-
-\end{figure}%
-
-The authors rigorously test Voltron in scenarios such as dense
-segmentation for grasp affordance prediction, object detection in
-cluttered scenes, and learning multi-task language-conditioned policies
-for real-world manipulation with up to 15\% improvement over baselines.
-In each of these domains, Voltron has shown a remarkable ability to
-outperform existing models like MVP and R3M, showcasing its superior
-adaptability and learning capabilities
-(\citeproc{ref-xiao2022masked}{Xiao et al. 2022}).
-
-Moreover, Voltron's framework allows for a balance between encoding
-low-level and high-level features, which is critical in the context of
-robotics. This balance enables the model to excel in both control tasks
-and those requiring deeper semantic understanding, offering a
-comprehensive solution in the realm of robotic vision and manipulation.
+verbal instructions. The authors rigorously test Voltron in scenarios
+such as dense segmentation for grasp affordance prediction, object
+detection in cluttered scenes, and learning multi-task
+language-conditioned policies for real-world manipulation with up to
+15\% improvement over baselines. In each of these domains, Voltron has
+shown a remarkable ability to outperform existing models like MVP and
+R3M, showcasing its superior adaptability and learning capabilities
+(\citeproc{ref-xiao2022masked}{Xiao et al. 2022}). Moreover, Voltron's
+framework allows for a balance between encoding low-level and high-level
+features, which is critical in the context of robotics. This balance
+enables the model to excel in both control tasks and those requiring
+deeper semantic understanding, offering a comprehensive solution in the
+realm of robotic vision and manipulation.
 
 Voltron stands as a groundbreaking approach in the field of robotics,
 offering a language-driven, versatile, and efficient approach to
@@ -4440,63 +4104,58 @@ environments heralds a new era in robotic manipulation, where language
 and vision coalesce to create more intelligent, adaptable, and capable
 robotic systems.
 
-On the note of applying active learning to RL and environment settings,
-there have been many recent papers that have attempted to extend this to
-more modern RL environments. For example, the paper "When to Ask for
-Help" (\citeproc{ref-ask_help}{Xie et al. 2022}) examines the
-intersection of autonomous and active learning. Instead of just
-expecting an RL agent to autonomously solve a task, making the
-assumption that an agent could get stuck and need human input to get
-"unstuck" is a key insight of the paper. In general, there has been an
-emphasis in recent literature in robotics on not just blindly using
-demonstration data as a form of human input, but rather actively
-querying a human and using this to better synthesize correct actions.
+On the note of applying AL to RL and environment settings, there have
+been many recent papers that have attempted to extend this to more
+modern RL environments. For example, the paper ``When to Ask for Help''
+(\citeproc{ref-ask_help}{Xie et al. 2022}) examines the intersection of
+autonomous and AL. Instead of just expecting an RL agent to autonomously
+solve a task, making the assumption that an agent could get stuck and
+need human input to get ``unstuck'' is a key insight of the paper. In
+general, there has been an emphasis in recent literature in robotics on
+not just blindly using demonstration data as a form of human input, but
+rather actively querying a human and using this to better synthesize
+correct actions.
 
-Active learning holds promise for enhancing AI models in real-world
-scenarios, yet several challenges persist. This discussion aims to
-provide an overview of these challenges.
+AL holds promise for enhancing AI models in real-world scenarios, yet
+several challenges persist. This discussion aims to provide an overview
+of these challenges.
 
-\textbf{Task-Specific Considerations:}
+Task-Specific Considerations: For certain tasks, the input space of a
+model may have some rare yet extremely important pockets which may never
+be discovered by AL and may cause severe blindspots in the model. In
+medical imaging for instance, there can be rare yet critical diseases.
+Designing AL strategies for medical image analysis must prioritize rare
+classes, such as various forms of cancers. Oftentimes, collecting data
+around those rare classes is not a recommendation of the AL process
+because these examples constitute heavy distribution drifts from the
+input distribution a model has seen.
 
-For certain tasks, the input space of a model may have some rare yet
-extremely important pockets which may never be discovered by active
-learning and may cause severe blindspots in the model. In medical
-imaging for instance, there can be rare yet critical diseases. Designing
-AL strategies for medical image analysis must prioritize rare classes,
-such as various forms of cancers. Oftentimes, collecting data around
-those rare classes is not a recommendation of the active learning
-process because these examples constitute heavy distribution drifts from
-the input distribution a model has seen.
+Complex Task Adaptation: AL has predominantly been adopted for simple
+classification tasks, leaving more other types of tasks (generative ones
+for instance), less explored. In Natural Language Processing, tasks like
+natural language inference, question-answering pose additional
+complexities that affect the direct application of the AL process. While
+machine translation has seen AL applications, generation tasks in NLP
+require more thorough exploration. Challenges arise in obtaining
+unlabeled data, particularly for tasks with intricate inputs.
 
-\textbf{Complex Task Adaptation:}
+Unsupervised and Semi-Supervised Approaches: In the presence of large
+datasets without sufficient labels, unsupervised and semi-supervised
+approaches become crucial. These methods offer a means to extract
+information without relying on labeled data for every data point,
+potentially revolutionizing fields like medical image analysis. There is
+an ongoing need for methods that combine self/semi-supervised learning
+with AL.
 
-AL has predominantly been adopted for simple classification tasks,
-leaving more other types of tasks (generative ones for instance), less
-explored. In Natural Language Processing, tasks like natural language
-inference, question-answering pose additional complexities that affect
-the direct application of the active learning process. While machine
-translation has seen AL applications, generation tasks in NLP require
-more thorough exploration. Challenges arise in obtaining unlabeled data,
-particularly for tasks with intricate inputs.
-
-\textbf{Unsupervised and Semi-Supervised Approaches:}
-
-In the presence of large datasets without sufficient labels,
-unsupervised and semi-supervised approaches become crucial. These
-methods offer a means to extract information without relying on labeled
-data for every data point, potentially revolutionizing fields like
-medical image analysis. There is an ongoing need for methods that
-combine self/semi-supervised learning with active learning.
-
-\textbf{Algorithm Scalability:} Scalability is a critical concern for
-online AL algorithms, particularly when dealing with large datasets and
+Algorithm Scalability: Scalability is a critical concern for online AL
+algorithms, particularly when dealing with large datasets and
 high-velocity data streams. The computational demands of AL can become
 prohibitive as data volume increases, posing challenges for practical
 deployment. Issues of catastrophic forgetting and model plasticity
 further complicate scalability, requiring careful consideration in
 algorithm design.
 
-\textbf{Labeling Quality Assurance:} The effectiveness of most online AL
+Labeling Quality Assurance: The effectiveness of most online AL
 strategies hinges on the quality of labeled data. Ensuring labeling
 accuracy in real-world scenarios is challenging, with human annotators
 prone to errors, biases, and diverse interpretations. Addressing
@@ -4504,47 +4163,47 @@ imperfections in labeling through considerations of oracle imperfections
 becomes essential in real-life AL applications. Solutions for cleaning
 up data and verifying its quality need to be more aggressively pursued.
 
-\textbf{Data Drift Challenges:} Real-world settings introduce data
-drift, where distributions shift over time, challenging models to adapt
-for accurate predictions. These shifts can impact the quality of labeled
-data acquired in the AL process. For example, the criterion or proxy
-used for selecting informative instances may be thrown off when the
-distribution a model is trained on, and the distribution we want it to
-perform well on, are too far away from one another.
+Data Drift Challenges: Real-world settings introduce data drift, where
+distributions shift over time, challenging models to adapt for accurate
+predictions. These shifts can impact the quality of labeled data
+acquired in the AL process. For example, the criterion or proxy used for
+selecting informative instances may be thrown off when the distribution
+a model is trained on, and the distribution we want it to perform well
+on, are too far away from one another.
 
-\textbf{Evaluation in Real-Life Scenarios}: While AL methods are often
-evaluated assuming access to ground-truth labels, the real motivation
-for AL lies in label scarcity. Assessing the effectiveness of AL
-strategies becomes challenging in real-life scenarios where ground-truth
-labels may be limited. In other words, one may verify the goodness of an
-AL algorithm within the lab, but once the algorithm is deployed for
-improving all sorts of models on all sorts of data distributions,
-verifying whether AL is actually improving a model is tricky, especially
-when collecting and labeling data from the target distribution is
-expensive and defeats the purpose of using AL in the first place.
+Evaluation in Real-Life Scenarios: While AL methods are often evaluated
+assuming access to ground-truth labels, the real motivation for AL lies
+in label scarcity. Assessing the effectiveness of AL strategies becomes
+challenging in real-life scenarios where ground-truth labels may be
+limited. In other words, one may verify the goodness of an AL algorithm
+within the lab, but once the algorithm is deployed for improving all
+sorts of models on all sorts of data distributions, verifying whether AL
+is actually improving a model is tricky, especially when collecting and
+labeling data from the target distribution is expensive and defeats the
+purpose of using AL in the first place.
 
-By systematically addressing these challenges, the field of active
-learning in AI can progress towards more effective and practical
-applications. In summary, active learning is a promising modern tool to
-model training that presents potential benefits. As was mentioned at the
-start, there are numerous approaches that can be employed by active
-learning, starting from reducing error of model's prediction, reducing
-variance, to more conformal predictions. The flavor of active learning
-heavily depends on the applications, which include robotics, LLM,
+By systematically addressing these challenges, the field of AL in AI can
+progress towards more effective and practical applications. In summary,
+AL is a promising modern tool to model training that presents potential
+benefits. As was mentioned at the start, there are numerous approaches
+that can be employed by AL, starting from reducing error of model's
+prediction, reducing variance, to more conformal predictions. The flavor
+of AL heavily depends on the applications, which include robotics, LLM,
 autonomous vehicles, and more. We discussed in more detail how to
-perform active learning for variance reduction in the case of predicting
-kinematics of the robotic arms, which showed decrease in MSE as well as
-more stable reduction in it. Next we talked about using active learning
-for reducing the number of comparisons required to create a ranking of
-objects, and the examples discussed were able to achieve that but with
-some loss in the prediction accuracy. Finally, we discussed how active
-learning can be used for modeling of reward functions within a dynamical
-system, which demonstrated improvements in performance and time required
-to achieve it. For a more hands-on experience with active learning and
-demonstrated example, we encourage the readers to explore a blogpost by
-Max Halford (\citeproc{ref-max_halford}{Halford 2023}).
+perform AL for variance reduction in the case of predicting kinematics
+of the robotic arms, which showed decrease in MSE as well as more stable
+reduction in it. Next we talked about using AL for reducing the number
+of comparisons required to create a ranking of objects, and the examples
+discussed were able to achieve that but with some loss in the prediction
+accuracy. Finally, we discussed how AL can be used for modeling of
+reward functions within a dynamical system, which demonstrated
+improvements in performance and time required to achieve it. For a more
+hands-on experience with AL and demonstrated example, we encourage the
+readers to explore a blogpost by Max Halford
+(\citeproc{ref-max_halford}{Halford 2023}).
 
-\section{Metric Elicitation}\label{sec-metric-elicitation}
+\section{Case Study 2: Performance Metric
+Elicitation}\label{sec-metric-elicitation}
 
 In binary classification problems, selecting an appropriate performance
 metric that aligns with the real-world task is crucial. The problem of
@@ -4727,10 +4386,8 @@ upper and lower boundaries
 to \(\theta \in (0, \pi/2)\) and \(\theta \in (\pi, 3\pi/2)\)
 respectively (and whether \(m_{00}, m_{11}\) are positive or negative).
 
-\subsubsection*{Bayes Optimal and Inverse-Optimal
+\subsubsection{Bayes Optimal and Inverse-Optimal
 Classifiers}\label{bayes-optimal-and-inverse-optimal-classifiers}
-\addcontentsline{toc}{subsubsection}{Bayes Optimal and Inverse-Optimal
-Classifiers}
 
 We also define the notions of Bayes optimal and inverse-optimal
 classifiers. Given a performance metric \(\phi\), we define:
@@ -4860,16 +4517,15 @@ on concavity and convexity. Their main useful property in our setting is
 that they are unimodal (they have a singular extremum), so we can devise
 a binary-search-style algorithm for eliciting the Bayes optimal and
 inverse-optimal confusion matrices for a given setting, as well as the
-corresponding \(\phi\)'s.
-
-We first note that to maximize a quasiconcave metric, in which \(\phi\)
-is monotonically increasing in \(TP\) and \(TN\), we note that the
-resulting maximizer (and supporting hyperplane) will occur on the upper
-boundary of \(\mathcal{C}\). We thus set our initial search range to be
-\([0, \pi/2]\) and repeatedly divide it into four regions. Then, we
-calculate the resulting confusion matrix on the 5 resulting boundaries
-of these regions and query the oracle \(4\) times. We repeat this in
-each iteration of the binary search until a maximizer is found.
+corresponding \(\phi\)'s. We first note that to maximize a quasiconcave
+metric, in which \(\phi\) is monotonically increasing in \(TP\) and
+\(TN\), we note that the resulting maximizer (and supporting hyperplane)
+will occur on the upper boundary of \(\mathcal{C}\). We thus set our
+initial search range to be \([0, \pi/2]\) and repeatedly divide it into
+four regions. Then, we calculate the resulting confusion matrix on the 5
+resulting boundaries of these regions and query the oracle \(4\) times.
+We repeat this in each iteration of the binary search until a maximizer
+is found.
 
 \begin{tcolorbox}[colframe=.grey, title=\faQuestion \enspace Remark]
 
@@ -5225,17 +4881,13 @@ can be used to approximate \(\phi^*\) if one parameter (\(p_{11}'\)) is
 found, and that this parameter can be found using an oracle-independent
 grid search.
 
-\subsubsection*{Guarantees}\label{guarantees}
-\addcontentsline{toc}{subsubsection}{Guarantees}
-
 Importantly, these algorithms can be shown to satisfy significant
 theoretical guarantees. We provide formal statement and intuitive
 interpretation of these guarantees here, with their proofs available in
-the appendix of the original paper.
-
-First, we define the oracle noise \(\epsilon_{\Omega}\), which arises
-from the oracle potentially flipping the comparison output on two
-confusion matrices that are close enough in utility.
+the appendix of the original paper. First, we define the oracle noise
+\(\epsilon_{\Omega}\), which arises from the oracle potentially flipping
+the comparison output on two confusion matrices that are close enough in
+utility.
 
 \begin{tcolorbox}[colframe=.grey, title=\faPenSquare \enspace Theorem]
 
@@ -5294,9 +4946,8 @@ These three guarantees together ensure that oracle noise and sample
 noise do not amplify drops in performance when using metric elicitation;
 rather, these drops in performance are bounded by the drops that would
 typically occur when using the standard machine learning paradigm of
-training a decision boundary and using a pre-established metric.
-
-For further interesting exploration of the types of problems that can be
+training a decision boundary and using a pre-established metric. For
+further interesting exploration of the types of problems that can be
 solved using the framework of metric elicitation, we refer the reader to
 (\citeproc{ref-nips}{Hiranandani, Narasimhan, and Koyejo 2020}), which
 performs metric elicitation to determine the oracle's ideal tradeoff
@@ -5311,7 +4962,6 @@ binary classification problems, the general framework can still be
 applied to multiclass classification problems, as described in
 ``Multiclass Performance Metric Elicitation'' by
 (\citeproc{ref-NEURIPS2019_1fd09c5f}{Hiranandani et al. 2019b}).
-
 Consider the case of classifying subtypes of leukemia
 (\citeproc{ref-YangNaiman+2014+477+496}{Yang and Naiman 2014}). We can
 train a neural network to predict conditional probability of a certain
@@ -5322,48 +4972,31 @@ C1 may be perfect for cases of C1, but it may be ineffective or harmful
 for certain other subtypes. Therefore, the final response from the
 classifier may not be as simple as as choosing the class with the
 highest conditional probability, just like how the threshold for binary
-classification may not always be 50\%.
+classification may not always be 50\%. With multiclass metric
+elicitation, we can show confusion matrices to an oracle (like the
+doctor in the leukemia example) to determine which classifier has the
+best tradeoffs. In (\citeproc{ref-NEURIPS2019_1fd09c5f}{Hiranandani et
+al. 2019b}), the authors focus on eliciting linear performance metrics,
+which is what we will describe in this chapter. Most of the notation
+from Binary Metric Elicitation still persists, just modified to provide
+categorical responses. \(X \in \mathcal{X}\) is the input random
+variable. \(Y \in [k]\) is the output random variable, where \([k]\) is
+the index set \(\{1, 2, \dots, k\}\).
 
-With multiclass metric elicitation, we can show confusion matrices to an
-oracle (like the doctor in the leukemia example) to determine which
-classifier has the best tradeoffs. In
-(\citeproc{ref-NEURIPS2019_1fd09c5f}{Hiranandani et al. 2019b}), the
-authors focus on eliciting linear performance metrics, which is what we
-will describe in this chapter.
+The dataset of size \(n\) is denoted by \(\{(\vec{x}, y)\}_{i=1}^n\)
+generated independently and identically from \(\mathbb{P}(X, Y)\).
+\(\eta_i(\vec{x}) = \mathbb{P}(Y=i | X=\vec{x})\) gives the conditional
+probability of class \(i \in [k]\) given an observation.
+\(\xi_i = \mathbb{P}(Y=i)\) is the marginal probability of class
+\(i \in [k]\). The set of all classifiers is
+\(\mathcal{H} = \{h : \mathcal{X} \rightarrow \Delta_k\}\), where
+\(\Delta_k\) is (k-1) dimensional simplex. In this case, the outputs of
+classifiers are 1-hot vectors of size \(k\) where the only index with
+value 1 is the predicted class and all other positions have a value of
+0. The confusion matrix for a classifier, \(h\), is
+\(C(h, \mathbb{P}) \in \mathbb{R}^{k \times k}\), where:
 
-\subsubsection*{Preliminaries}\label{preliminaries}
-\addcontentsline{toc}{subsubsection}{Preliminaries}
-
-Most of the notation from Binary Metric Elicitation still persists, just
-modified to provide categorical responses:
-
-\begin{itemize}
-\item
-  \(X \in \mathcal{X}\) is the input random variable.
-\item
-  \(Y \in [k]\) is the output random variable, where \([k]\) is the
-  index set \(\{1, 2, \dots, k\}\).
-\item
-  The dataset of size \(n\) is denoted by \(\{(\vec{x}, y)\}_{i=1}^n\)
-  generated independently and identically from \(\mathbb{P}(X, Y)\).
-\item
-  \(\eta_i(\vec{x}) = \mathbb{P}(Y=i | X=\vec{x})\) gives the
-  conditional probability of class \(i \in [k]\) given an observation.
-\item
-  \(\xi_i = \mathbb{P}(Y=i)\) is the marginal probability of class
-  \(i \in [k]\).
-\item
-  The set of all classifiers is
-  \(\mathcal{H} = \{h : \mathcal{X} \rightarrow \Delta_k\}\), where
-  \(\Delta_k\) is (k-1) dimensional simplex. In this case, the outputs
-  of classifiers are 1-hot vectors of size \(k\) where the only index
-  with value 1 is the predicted class and all other positions have a
-  value of 0.
-\item
-  The confusion matrix for a classifier, \(h\), is
-  \(C(h, \mathbb{P}) \in \mathbb{R}^{k \times k}\), where:
-  \begin{equation}\phantomsection\label{eq-eq3.59}{C_{ij}(h, \mathbb{P}) = \mathbb{P}(Y=i, h=j) \text{\qquad for } i, j \in [k]}\end{equation}
-\end{itemize}
+\begin{equation}\phantomsection\label{eq-eq3.59}{C_{ij}(h, \mathbb{P}) = \mathbb{P}(Y=i, h=j) \text{\qquad for } i, j \in [k]}\end{equation}
 
 Note that the confusion matrices are \(k\times k\) and store the joint
 probabilities of each type of classification for each possible class.
@@ -5398,42 +5031,28 @@ comparing confusion matrices, which returns 1 if the first classifier is
 better and 0 otherwise. We still assume that the oracle behaves
 according to some unknown performance metric, and we wish to recover
 this metric up to some small error tolerance (based on a suitable norm).
-
 The two different types of confusion vectors result in different
 algorithms for metric elicitation, which we will explore in later
 sections.
-
-\subsubsection*{Introduction to Diagonal Linear Performance Metric
-Elicitation}\label{introduction-to-diagonal-linear-performance-metric-elicitation}
-\addcontentsline{toc}{subsubsection}{Introduction to Diagonal Linear
-Performance Metric Elicitation}
 
 A Diagonal Linear Performance Metric (DLPM) is a performance metric that
 only considers the diagonal elements in the confusion matrix. The metric
 is defined as \(\psi(\vec{d}) = \langle \vec{a}, \vec{d} \rangle\),
 where \(\vec{a} \in \mathbb{R}^k\) such that \(||\vec{a}||_1 = 1\). It
 is also called weighted accuracy
-(\citeproc{ref-pmlr-v37-narasimhanb15}{Narasimhan et al. 2015}).
-
-The family of DLPMs is denoted as \(\varphi_{DLPM}\). Since these only
+(\citeproc{ref-pmlr-v37-narasimhanb15}{Narasimhan et al. 2015}). The
+family of DLPMs is denoted as \(\varphi_{DLPM}\). Since these only
 consider the diagonal elements, which we want to maximize, we can focus
 on only eliciting monotonically increasing DLPMs, meaning that all
 elements in \(\vec{a}\) are non-negative.
-
-\subsubsection*{\texorpdfstring{Geometry of Space of Diagonal Confusions
-\(\mathcal{D}\)}{Geometry of Space of Diagonal Confusions \textbackslash mathcal\{D\}}}\label{geometry-of-space-of-diagonal-confusions-mathcald}
-\addcontentsline{toc}{subsubsection}{Geometry of Space of Diagonal
-Confusions \(\mathcal{D}\)}
 
 Consider the trivial classifiers that only predict a single class at all
 times. The diagonal confusions when only predicting class \(i\) are
 \(\vec{v}_i \in \mathbb{R}^k\) with \(\xi_i\) at index \(i\) and zero
 elsewhere. Note that this is the maximum possible value in index \(i\),
 because this represents perfectly classifying all points that have a
-true class of \(i\).
-
-We can consider the space of diagonal confusions, visualized in
-Figure~\ref{fig-diag_geom} (taken from
+true class of \(i\). We can consider the space of diagonal confusions,
+visualized in Figure~\ref{fig-diag_geom} (taken from
 (\citeproc{ref-NEURIPS2019_1fd09c5f}{Hiranandani et al. 2019b})). The
 space of \(\mathcal{D}\) is strictly convex, closed, and contained in
 the box \([0, \xi_1] \times \dots \times [0, \xi_k]\). We also know that
@@ -5488,10 +5107,8 @@ Equation~\ref{eq-rbo_eq}, we can get the diagonal confusions, so varying
 \(m\) parameterizes \(\partial \mathcal{D}^{+}_{k_1, k_2}\). The
 parameterization is denoted as \(\nu(m; k_1, k_2)\).
 
-\subsubsection*{Diagonal Linear Performance Metric
+\subsubsection{Diagonal Linear Performance Metric
 Elicitation}\label{diagonal-linear-performance-metric-elicitation}
-\addcontentsline{toc}{subsubsection}{Diagonal Linear Performance Metric
-Elicitation}
 
 Suppose the oracle follows a true metric, \(\psi\), that is linear and
 monotone increasing across all axes. If we consider the composition
@@ -5599,9 +5216,6 @@ the DLPM weights, following the principles of the RBO classifier from
 Equation~\ref{eq-rbo_eq}, and calculate the confusion matrix from a
 validation set.
 
-\subsubsection*{Guarantees}\label{guarantees-1}
-\addcontentsline{toc}{subsubsection}{Guarantees}
-
 Using the same oracle feedback noise model from the binary metric
 elicitation, we can make the following guarantees:
 
@@ -5623,19 +5237,14 @@ value along any component (indicated by the L-infinity norm) is linearly
 bounded by the sum of the epsilon specified by the algorithm and the
 square root of the oracle's correctness guarantee (\(\epsilon_\Omega\)).
 
-\subsection{Linear Reward Estimation}\label{linear-reward-estimation}
+\section{Linear Reward Estimation}\label{linear-reward-estimation}
 
 How exactly do robots learn human preferences from just the pairwise
 comparisons, if they need to learn how to act in the environment itself?
 The comparisons in turn help robots learn the reward function of the
-human, which allows them to further take actions in real settings.
-
-\subsubsection*{Geometry of Pairwise
-Comparisons}\label{geometry-of-pairwise-comparisons}
-\addcontentsline{toc}{subsubsection}{Geometry of Pairwise Comparisons}
-
-Let's say there are two trajectories \(\xi_A\) and \(\xi_B\) that might
-be taken as the next course of action in any context, like choosing the
+human, which allows them to further take actions in real settings. Let's
+say there are two trajectories \(\xi_A\) and \(\xi_B\) that might be
+taken as the next course of action in any context, like choosing the
 next turn, or choosing the next chatGPT response. The robot is offering
 both to a human for comparison. To answer which of them is better, the
 human would ask themselves if \(R(\xi_A)\) or \(R(\xi_B)\) is bigger,
@@ -5652,41 +5261,16 @@ Alternatively, if one preferred \(\xi_2\) more than \(\xi_1\), the signs
 would be flipped, resulting in \(0 > w * \Phi\). The two results can be
 represented in the N-dimensional space, where when it is split by the
 decision boundary, it creates half-spaces indicating preferences for
-each of the sides. For example in Figure~\ref{fig-2dcomp} we can see how
-a query between two objects can split the plain into two halves,
-indicating preference towards one of the objects. Such an image can be
-extended into bigger dimensions, where a line would become a separating
-hyperplane like in Figure~\ref{fig-2dcomp}.
-
-\begin{figure}
-
-\begin{minipage}{0.50\linewidth}
-
-\includegraphics[width=0.4\linewidth,height=\textheight,keepaspectratio]{src/Figures/2D-comp.jpg}
-
-\subcaption{\label{}A single query for a comparison between the two
-objects splits 2D space into two halves, each of which prefers one of
-the objects based on feature weights \(w_1\) and \(w_2\).}
-\end{minipage}%
-%
-\begin{minipage}{0.50\linewidth}
-
-\includegraphics[width=0.4\linewidth,height=\textheight,keepaspectratio]{src/Figures/3D-comp.png}
-
-\subcaption{\label{}Extension into 3D space}
-\end{minipage}%
-
-\caption{\label{fig-2dcomp}Comparison in 2D and 3D}
-
-\end{figure}%
-
-If one is to truly believe the answers of one person, they would remove
-everything from the other side of the hyperplane that does not agree
-with the received human preference. But since humans are noisy, that
-approach is not optimal, thus most applications up-weight the indicated
-side of the plane to emphasize that points on that side are better, and
-down-weight the other side as they do not agree with the provided
-comparison.
+each of the sides. For example we can see how a query between two
+objects can split the plain into two halves, indicating preference
+towards one of the objects. Such an image can be extended into bigger
+dimensions, where a line would become a separating hyperplane. If one is
+to truly believe the answers of one person, they would remove everything
+from the other side of the hyperplane that does not agree with the
+received human preference. But since humans are noisy, that approach is
+not optimal, thus most applications up-weight the indicated side of the
+plane to emphasize that points on that side are better, and down-weight
+the other side as they do not agree with the provided comparison.
 
 How should someone choose which queries to conduct, otherwise, what is
 the most informative query sequence? After completing one query, the
@@ -5695,12 +5279,10 @@ potential space consistent with the preferences decreases in half. The
 intuition behind that is the potential space has all of the reward
 functions that agree with the provided answers, so to find a specific
 reward function for a human, decreasing the space narrows down the
-possible options. For example, orthogonal query to the query in
-Figure~\ref{fig-2dcomp} is shown in Figure~\ref{fig-2dspace}. The
-original query created the blue space, and a new one created a red
-space, resulting in a purple intersection of the two which is still
-consistent with both of the queries's results. The image shows that the
-purple portion is exactly half of the blue portion.
+possible options. The original query created the blue space, and a new
+one created a red space, resulting in a purple intersection of the two
+which is still consistent with both of the queries's results. The image
+shows that the purple portion is exactly half of the blue portion.
 
 \begin{figure}
 
@@ -5743,41 +5325,21 @@ require extra constraints, however in robotics one might want to add
 more constraints that satisfy certain rules, so that the resulting query
 follows the dynamics of the physical world.
 
-\subsubsection*{Driving Simulator
-Example}\label{driving-simulator-example}
-\addcontentsline{toc}{subsubsection}{Driving Simulator Example}
-
 The first real example of learning reward functions from pairwise
 comparisons is a 2D driving simulator from
 (\citeproc{ref-pmlr-v87-biyik18a}{Biyik and Sadigh 2018}). In
-Figure~\ref{fig-car_direct} you can see the setting of a 3-lane road
-with the orange car being controlled by the computer.
-
-\begin{figure}
-
-\centering{
-
-\includegraphics[width=0.4\linewidth,height=\textheight,keepaspectratio]{src/Figures/car_dir.png}
-
-}
-
-\caption{\label{fig-car_direct}The choices presented to a human for
-feedback are represented by green and red trajectories. White trajectory
-demonstrates the lane change of another vehicle in the space.
-(\citeproc{ref-pmlr-v87-biyik18a}{Biyik and Sadigh 2018})}
-
-\end{figure}%
-
-The queries conducted for this problem are two different trajectories
-presented to the human, and they are asked to evaluate which one of them
-is better. For the features that contribute to the reward function, it
-is important to consider that robots might not find some of the
-information as informative for the learning process as a human would.
-For this example, the underlying features included the distance between
-lane boundaries, distance to other cars, and the heading and speed of
-the controlled car. The weights toward the last feature were weighted
-the highest according to the authors, since it takes a lot of effort for
-the car to change or correct its direction.
+\textbf{?@fig-car\_direct} you can see the setting of a 3-lane road with
+the orange car being controlled by the computer. The queries conducted
+for this problem are two different trajectories presented to the human,
+and they are asked to evaluate which one of them is better. For the
+features that contribute to the reward function, it is important to
+consider that robots might not find some of the information as
+informative for the learning process as a human would. For this example,
+the underlying features included the distance between lane boundaries,
+distance to other cars, and the heading and speed of the controlled car.
+The weights toward the last feature were weighted the highest according
+to the authors, since it takes a lot of effort for the car to change or
+correct its direction.
 
 At the start of the learning process, the car had no direction learned
 and was moving all over the road. In the middle of learning after 30
@@ -5786,25 +5348,23 @@ go straight but still experienced collisions. After 70 queries, the
 simulator learned to avoid collisions, as well as keep the car within
 the lane without swerving.
 
-\subsubsection*{Active Learning for Pairwise
+\subsubsection{Active Learning for Pairwise
 Comparisons}\label{active-learning-for-pairwise-comparisons}
-\addcontentsline{toc}{subsubsection}{Active Learning for Pairwise
-Comparisons}
 
 We have discussed that pairwise comparisons should be selected to
 maximize the minimum volume of remaining options removed. The question
 that can come out of the driving example is does it really matter to
 follow that goal or does random choice of queries performs as well? It
-turns out that indeed most active learning algorithms (purposefully
-selecting queries) over time converge with the performance of the random
-query selection, so in long term the performance is similar. However,
-what is different is that active learning achieves better performance
-earlier, which in time-sensitive tasks can be a critical factor. One
-example of such a setting can be exoskeletons for humans as part of the
-rehabilitation after surgery (\citeproc{ref-Li_2021}{Li et al. 2021}).
-Different people have significantly different walking patterns as well
-as rehabilitation requirements, so the exoskeleton needs to adapt to the
-human as soon as possible for a more successful rehabilitation. Figure
+turns out that indeed most AL algorithms (purposefully selecting
+queries) over time converge with the performance of the random query
+selection, so in long term the performance is similar. However, what is
+different is that AL achieves better performance earlier, which in
+time-sensitive tasks can be a critical factor. One example of such a
+setting can be exoskeletons for humans as part of the rehabilitation
+after surgery (\citeproc{ref-Li_2021}{Li et al. 2021}). Different people
+have significantly different walking patterns as well as rehabilitation
+requirements, so the exoskeleton needs to adapt to the human as soon as
+possible for a more successful rehabilitation. Figure
 Figure~\ref{fig-robotics} demonstrates the difference in the time needed
 between the two approaches. In general, in robotics, the time
 differences that might seem small to a human might be detrimental to the
@@ -5818,19 +5378,19 @@ final performance.
 
 }
 
-\caption{\label{fig-robotics}Performance of active learning and random
-query selection algorithms in the task of exoskeleton learning with
-human preferences. (\citeproc{ref-Li_2021}{Li et al. 2021})}
+\caption{\label{fig-robotics}Performance of AL and random query
+selection algorithms in the task of exoskeleton learning with human
+preferences. (\citeproc{ref-Li_2021}{Li et al. 2021})}
 
 \end{figure}%
 
 In conclusion, pairwise comparisons show to be a great way of learning
 linear reward functions, but at times present challenges or
 incapabilities that can be further improved with additional
-incorporations of approaches like Active Learning. That improves many
-applications in terms of time spent getting to the result in case of
-exoskeleton adjustments, as well as getting to a middle ground between
-polar behaviors in applications like negotiations.
+incorporations of approaches like AL. That improves many applications in
+terms of time spent getting to the result in case of exoskeleton
+adjustments, as well as getting to a middle ground between polar
+behaviors in applications like negotiations.
 
 \subsection{Application: Guiding Human Demonstrations in
 Robotics}\label{application-guiding-human-demonstrations-in-robotics}
@@ -5884,8 +5444,7 @@ compatible demonstrations. In the following subsections, we describe the
 process of estimating compatibility and active elicitation in more
 detal.
 
-\subsubsection*{Estimating Compatiblity}\label{estimating-compatiblity}
-\addcontentsline{toc}{subsubsection}{Estimating Compatiblity}
+\subsubsection{Estimating Compatiblity}\label{estimating-compatiblity}
 
 We want to define a compatibility measure \(\mathcal{M}\), that
 estimates the performance of policy \(\pi_{base}\) that is retrained on
@@ -5946,9 +5505,8 @@ incompatible} demonstrations to identify reasonable thresholds that
 remove the most datapoints in the incompatible demonstrations while
 keeping the most datapoints in the compatible demonstrations.
 
-\subsubsection*{Case Studies with Fixed
+\subsubsection{Case Studies with Fixed
 Sets}\label{case-studies-with-fixed-sets}
-\addcontentsline{toc}{subsubsection}{Case Studies with Fixed Sets}
 
 The researchers evaluate the utility of the compatibility metric on
 three tasks: placing a square nut on a square peg, placing a round nut
@@ -5976,9 +5534,8 @@ filtering by compatibility (\(\mathcal{M}\)-Filtered)
 \endhead
 \bottomrule\noalign{}
 \endlastfoot
-& \textbf{Square Nut} & & \textbf{Round Nut} & & \textbf{Hammer
-Placement} & \\
-\textbf{Operator} & Naive & \(\mathcal{M}\)-Filtered & Naive &
+& Square Nut & & Round Nut & & Hammer Placement & \\
+Operator & Naive & \(\mathcal{M}\)-Filtered & Naive &
 \(\mathcal{M}\)-Filtered & Naive & \(\mathcal{M}\)-Filtered \\
 Base Operator & 38.7 (2.1) & - & 13.3 (2.3) & - & 24.7 (6.1) & - \\
 Operator 1 & 54.3 (1.5) & 61.0 (4.4) & 26.7 (11.7) & 32.0 (12.2) & 38.0
@@ -6006,10 +5563,8 @@ live feedback, and (c) corrective feedback
 
 \end{figure}%
 
-\subsubsection*{Actively Eliciting Compatible
+\subsubsection{Actively Eliciting Compatible
 Demonstrations}\label{actively-eliciting-compatible-demonstrations}
-\addcontentsline{toc}{subsubsection}{Actively Eliciting Compatible
-Demonstrations}
 
 In the previous section, we assume access to a dataset that has already
 been collected, and we see how filtering out incompatible demonstrations
@@ -6044,35 +5599,28 @@ naive data collection by 55\%. Overall, active elicitation is a powerful
 tool to ensure that data collected for imitation learning improves the
 quality of the learned policy.
 
-\begin{longtable}[]{@{}lcccc@{}}
+\begin{longtable}[]{@{}llrll@{}}
 \caption{Success rates (mean/std across users) for policies trained on
 \(\mathcal{D}_{new}\) by using all the data (Naive), filtering by
 compatibility (\(\mathcal{M}\)-Filtered), or using informed
 demonstration collection (\citeproc{ref-gandhi2022eliciting}{Gandhi et
 al. 2022})}\label{tbl-active_elicitation_results}\tabularnewline
 \toprule\noalign{}
-\textbf{Task} & \textbf{Base} & \textbf{Naive} & \textbf{Naive +
-Filtered} & \textbf{Informed} \\
+Task Ba & se Naive & Naive + Fil & tered Informed & \\
 \midrule\noalign{}
 \endfirsthead
 \toprule\noalign{}
-\textbf{Task} & \textbf{Base} & \textbf{Naive} & \textbf{Naive +
-Filtered} & \textbf{Informed} \\
+Task Ba & se Naive & Naive + Fil & tered Informed & \\
 \midrule\noalign{}
 \endhead
 \bottomrule\noalign{}
 \endlastfoot
-\textbf{Round Nut} & 13.3 (2.3) & 9.6 (4.6) & 9.7 (4.2) & 15.7 (6.0) \\
-\textbf{Hammer Placement} & 24.7 (6.1) & 20.8 (15.7) & 22.0 (15.5) &
-31.8 (16.3) \\
-\textbf{\(\left[ \textup{Real} \right]\) Food Plating} & 60.0 & 30.0
-(17.3) & - & 85.0 (9.6) \\
+Round Nut 13. & 3 (2.3) 9. & 6 (4.6) & 9.7 (4.2) 15 & .7 (6.0) \\
+Hammer Placement 24. & 7 (6.1) 20. & 8 (15.7) & 22.0 (15.5) 31. & 8
+(16.3) \\
+\(\left[ \textup{Real} \right]\) Food Plating & 60.0 30. & 0 (17.3) & -
+85 & .0 (9.6) \\
 \end{longtable}
-
-\subsubsection*{Limitations and Future Work for Active
-Elicitation}\label{limitations-and-future-work-for-active-elicitation}
-\addcontentsline{toc}{subsubsection}{Limitations and Future Work for
-Active Elicitation}
 
 A fundamental limitation of eliciting compatible demonstrations is the
 fact that the ``base'' demonstrator is considered the ground truth. When
@@ -6092,14 +5640,12 @@ Looking forward, active elicitation provides a foundation for allowing
 robots to query humans about the type of data needed, enabling more
 efficient data collection through transparency.
 
-\subsection{Conclusion}\label{conclusion}
-
 In summary, this chapter has explored the complexities and innovations
-in interactive learning as applied to large models within robotics. It
-begins by investigating pairwise comparisons and their role in
-efficiently learning linear reward functions from large datasets,
-overcoming limitations in supervised learning. When combined with active
-learning techniques, these comparisons supply timely, targeted, and
+in interAL as applied to large models within robotics. It begins by
+investigating pairwise comparisons and their role in efficiently
+learning linear reward functions from large datasets, overcoming
+limitations in supervised learning. When combined with active learning
+techniques, these comparisons supply timely, targeted, and
 context-appropriate feedback, enhancing performance in time-critical
 applications like exoskeleton adjustments during rehabilitation.
 
@@ -8074,8 +7620,7 @@ Language Processing} 18:1323--31.
 
 \bookmarksetup{startatroot}
 
-\chapter{Alignment of Policy with
-Preferences}\label{alignment-of-policy-with-preferences}
+\chapter{Learning Model of Decisions}\label{learning-model-of-decisions}
 
 \section{Dueling Bandit}\label{dueling-bandit}
 
@@ -11147,7 +10692,8 @@ International Publishing.
 
 \chapter{Aggregation of Preferences}\label{aggregation-of-preferences}
 
-\section{Social Choice Theory}\label{sec-choices-aggregation}
+\section{Social Choice Theory and Implications for AI Preference
+Aggregation}\label{social-choice-theory-and-implications-for-ai-preference-aggregation}
 
 In many applications, human preferences must be aggregated across
 multiple individuals to determine a collective decision or ranking. This
@@ -11157,9 +10703,9 @@ preference modeling, which focuses on how a single person makes
 decisions, social choice theory addresses the challenge of combining
 multiple preference profiles into a single coherent outcome. A social
 welfare function (SWF) takes as input each individual's preference
-ranking over a set of alternatives and produces a \emph{social ranking}
-of those alternatives. A related concept is a social choice function
-(SCF), which selects a single winning alternative given individuals'
+ranking over a set of alternatives and produces a social ranking of
+those alternatives. A related concept is a social choice function (SCF),
+which selects a single winning alternative given individuals'
 preferences. Many voting rules can be seen as social choice functions
 that aim to reflect the group's preferences. Formally, let
 \(N=\{1,2,\dots,n\}\) be a set of \(n\) voters (agents) and
@@ -11213,10 +10759,10 @@ axioms have been proposed. Three classical fairness criteria are:
 \def\labelenumi{\arabic{enumi}.}
 \tightlist
 \item
-  Unanimity (Pareto efficiency): If \emph{all} individuals strictly
-  prefer one alternative \(x\) over another \(y\) (i.e.~\(x \succ_i y\)
-  for every voter \(i\)), then the group ranking should prefer \(x\)
-  over \(y\) as well (\(x \succ^* y\)).
+  Unanimity (Pareto efficiency): If all individuals strictly prefer one
+  alternative \(x\) over another \(y\) (i.e.~\(x \succ_i y\) for every
+  voter \(i\)), then the group ranking should prefer \(x\) over \(y\) as
+  well (\(x \succ^* y\)).
 \item
   Independence of Irrelevant Alternatives (IIA): The social preference
   between any two alternatives \(x\) and \(y\) should depend only on the
@@ -11240,35 +10786,30 @@ voting rule exists that satisfies all the above properties for three or
 more alternatives. Surprisingly, a seminal negative result shows this is
 impossible.
 
-\subsection{Arrow's Impossibility
-Theorem}\label{arrows-impossibility-theorem}
-
-Arrow's Impossibility Theorem (Arrow, 1951) is a cornerstone of social
-choice theory. It states that when there are three or more alternatives
-(\(m\ge 3\)), no social welfare function can simultaneously satisfy
-Unanimity, IIA, and Non-dictatorship -- unless it is a trivial
-dictatorial rule (\citeproc{ref-arrow1951}{\textbf{arrow1951?}}). In
-other words, any aggregation mechanism that is not dictatorial will
-inevitably violate at least one of the fairness criteria. The theorem is
-usually proven by contradiction: assuming a social welfare function
-satisfies all conditions, one can show that one voter's preferences
-always decide the outcome, hence the rule is dictatorial.
-
-Intuitively, Arrow's theorem is driven by the possibility of preference
-cycles in majority voting. Even if individual preferences are
-transitive, aggregated majorities can prefer \(A\) to \(B\), \(B\) to
-\(C\), and \(C\) to \(A\) in a cycle, as in the Condorcet paradox. Under
-Unanimity and IIA, the social ranking must locally match these pairwise
-preferences, but this produces a contradiction with transitivity unless
-one voter's ranking is given overriding authority. A sketch of Arrow's
-proof is as follows: one shows that under the axioms, the social ranking
-between any two alternatives \(x\) and \(y\) must agree with some
-particular voter's preference (the ``pivotal'' voter for that pair).
-With IIA, the identity of the pivotal voter must be the same across all
-pairs of alternatives, otherwise by cleverly constructing profiles one
-can derive a conflict. This single pivotal voter then effectively
-dictates the entire social order, violating Non-dictatorship. Hence, the
-axioms are incompatible.
+Arrow's Impossibility Theorem (\citeproc{ref-arrow1951}{Arrow 1951}) is
+a cornerstone of social choice theory. It states that when there are
+three or more alternatives (\(m\ge 3\)), no social welfare function can
+simultaneously satisfy Unanimity, IIA, and Non-dictatorship -- unless it
+is a trivial dictatorial rule. In other words, any aggregation mechanism
+that is not dictatorial will inevitably violate at least one of the
+fairness criteria. The theorem is usually proven by contradiction:
+assuming a social welfare function satisfies all conditions, one can
+show that one voter's preferences always decide the outcome, hence the
+rule is dictatorial. Intuitively, Arrow's theorem is driven by the
+possibility of preference cycles in majority voting. Even if individual
+preferences are transitive, aggregated majorities can prefer \(A\) to
+\(B\), \(B\) to \(C\), and \(C\) to \(A\) in a cycle, as in the
+Condorcet paradox. Under Unanimity and IIA, the social ranking must
+locally match these pairwise preferences, but this produces a
+contradiction with transitivity unless one voter's ranking is given
+overriding authority. A sketch of Arrow's proof is as follows: one shows
+that under the axioms, the social ranking between any two alternatives
+\(x\) and \(y\) must agree with some particular voter's preference (the
+``pivotal'' voter for that pair). With IIA, the identity of the pivotal
+voter must be the same across all pairs of alternatives, otherwise by
+cleverly constructing profiles one can derive a conflict. This single
+pivotal voter then effectively dictates the entire social order,
+violating Non-dictatorship. Hence, the axioms are incompatible.
 
 Arrow's Impossibility Theorem has profound implications: it formalizes
 the inherent trade-offs in designing any fair aggregation scheme. In
@@ -11282,34 +10823,28 @@ frameworks (such as allowing interpersonal comparisons of utility or
 cardinal preference aggregation) to escape the impossibility by
 weakening assumptions.
 
-\subsection{Gibbard--Satterthwaite
-Theorem}\label{gibbardsatterthwaite-theorem}
-
-Another fundamental result is the Gibbard--Satterthwaite Theorem
-(Gibbard, 1973; Satterthwaite, 1975), which deals with strategic
-manipulation in voting systems. It considers any deterministic social
-choice function \(f\) that chooses a single winner from the set of
-\(m\ge 3\) alternatives. The theorem states that if \(f\) is
-strategy-proof (incentive compatible) and onto (its range of outcomes is
-the entire set of alternatives), then \(f\) must be dictatorial
-(\citeproc{ref-gibbard1973}{\textbf{gibbard1973?}};
-\citeproc{ref-satterthwaite1975}{\textbf{satterthwaite1975?}}).
-Strategy-proofness (also called truthfulness or dominant-strategy
-incentive compatibility) means that no voter can ever benefit by
-misrepresenting their true preferences, regardless of what others do. In
-other words, reporting their genuine ranking is a (weakly) dominant
-strategy for each voter. The theorem implies that for any realistic
-voting rule where every alternative can possibly win, either one voter
-effectively decides the outcome (a dictatorship) or else the rule is
-susceptible to strategic manipulation by voters.
-
-The Gibbard--Satterthwaite result complements Arrow's theorem by
-focusing on incentives. It tells us that every non-dictatorial voting
-rule for 3 or more alternatives is manipulable: there will exist some
-election scenario where a voter can gain a more preferred outcome by
-voting insincerely (i.e.~not according to their true preferences). For
-example, in a simple plurality vote, a voter whose true favorite is a
-long-shot candidate might vote for a more viable candidate to avoid a
+Complementing Arrow's theorem, the Gibbard--Satterthwaite theorem
+focuses on incentives and strategic manipulation in voting systems
+(\citeproc{ref-gibbard1973}{Gibbard 1973};
+\citeproc{ref-satterthwaite1975}{Satterthwaite 1975}). It considers any
+deterministic social choice function \(f\) that chooses a single winner
+from the set of \(m\ge 3\) alternatives. The theorem states that if
+\(f\) is strategy-proof (incentive compatible) and onto (its range of
+outcomes is the entire set of alternatives), then \(f\) must be
+dictatorial. Strategy-proofness (also called truthfulness or
+dominant-strategy incentive compatibility) means that no voter can ever
+benefit by misrepresenting their true preferences, regardless of what
+others do. In other words, reporting their genuine ranking is a (weakly)
+dominant strategy for each voter. The theorem implies that for any
+realistic voting rule where every alternative can possibly win, either
+one voter effectively decides the outcome (a dictatorship) or else the
+rule is susceptible to strategic manipulation by voters. The
+Gibbard--Satterthwaite theorem tells us that every non-dictatorial
+voting rule for 3 or more alternatives is manipulable: there will exist
+some election scenario where a voter can gain a more preferred outcome
+by voting insincerely (i.e.~not according to their true preferences).
+For example, in a simple plurality vote, a voter whose true favorite is
+a long-shot candidate might vote for a more viable candidate to avoid a
 worst-case outcome (``lesser of two evils'' voting). In a Borda count
 election, voters might strategically raise a competitor in their ranking
 to push down an even stronger rival. The only way to avoid all such
@@ -11324,17 +10859,14 @@ onto property, one finds a situation where a single voter can change the
 outcome by switching their order of two candidates, demonstrating
 manipulability. The theorem is robust -- even if we allow ties or weaker
 conditions, similar impossibility results hold (Gibbard's 1978 extension
-handles randomized rules). The practical takeaway is that \emph{all}
-meaningful voting protocols encourage tactical voting in some
-situations. Nonetheless, certain systems are considered ``harder to
-manipulate'' or more resistant due to complexity or uncertainty. For
-instance, while STV (ranked-choice voting) can be manipulated in theory,
-determining a beneficial strategic vote can be NP-hard in worst cases,
-which arguably provides some practical deterrence to manipulation
-(\citeproc{ref-bartholdi1989}{\textbf{bartholdi1989?}}).
-
-\subsection{Implications for Preference Aggregation in
-AI}\label{implications-for-preference-aggregation-in-ai}
+handles randomized rules). The practical takeaway is that all meaningful
+voting protocols encourage tactical voting in some situations.
+Nonetheless, certain systems are considered ``harder to manipulate'' or
+more resistant due to complexity or uncertainty. For instance, while STV
+(ranked-choice voting) can be manipulated in theory, determining a
+beneficial strategic vote can be NP-hard in worst cases, which arguably
+provides some practical deterrence to manipulation
+(\citeproc{ref-bartholdi1989}{Bartholdi, Tovey, and Trick 1989}).
 
 Arrow's and Gibbard--Satterthwaite's theorems highlight the limitations
 any preference aggregation method must face. In domains like
@@ -11357,8 +10889,8 @@ raises the question of how to set the weights without introducing
 dictator-like influence. Recent research has proposed methods like jury
 learning -- which integrates dissenting voices by having a panel
 (``jury'') of models or human subgroups whose aggregated judgment guides
-the learning (\citeproc{ref-gordon2022jury}{\textbf{gordon2022jury?}})
--- to ensure minority preferences are not entirely ignored. Another
+the learning (\citeproc{ref-gordon2022jury}{Gordon et al. 2022}) -- to
+ensure minority preferences are not entirely ignored. Another
 perspective is social choice in AI alignment, which suggests using
 social choice theory to design AI systems that respect a plurality of
 human values instead of collapsing everything into a single objective.
@@ -11386,11 +10918,10 @@ theory (to understand trade-offs and failure modes) combined with
 machine learning techniques (to model and learn from preference data).
 In summary, social choice theory provides cautionary guidance as we
 build systems that learn from human preferences: we need to be conscious
-of \emph{which} fairness criteria we relax and be transparent about the
+of which fairness criteria we relax and be transparent about the
 compromises being made in any preference aggregation pipeline.
 
-\section{Auction Theory and Mechanism
-Design}\label{single-item-auctions}
+\section{Mechanism Design}\label{single-item-auctions}
 
 While voting rules aggregate ordinal rank preferences to select a social
 outcome, another class of preference aggregation occurs in economic
@@ -11407,35 +10938,31 @@ on auctions as a prime example of preference aggregation with money, and
 highlight classical results including Vickrey--Clarke--Groves (VCG)
 mechanisms and Myerson's optimal auction.
 
-\subsection{Single-Item Auctions and Vickrey's Second-Price
-Auction}\label{single-item-auctions-and-vickreys-second-price-auction}
-
 Consider a single-item auction with one item for sale and \(n\) bidders.
 Bidder \(i\) has a private valuation \(v_i\) for the item (how much the
 item is worth to them). Each bidder's goal is to maximize their own
-\emph{utility}, defined as \(v_i - p_i\) if they win and pay price
-\(p_i\), or \(0\) if they do not win (assuming quasilinear utility where
-money is the transferable utility). The auction's task is to allocate
-the item to one of the bidders and possibly determine payments. We can
-think of an auction as a mechanism that asks each bidder for a
-``message'' (typically a bid representing how much they are willing to
-pay), then selects a winner and a price based on the bids. A key
-objective might be social welfare maximization -- allocate the item to
-the bidder who values it most (maximizing \(v_i\) of the winner).
-Another possible objective is revenue maximization for the seller --
-choose the allocation and price to maximize the seller's expected
-payment.
+utility, defined as \(v_i - p_i\) if they win and pay price \(p_i\), or
+\(0\) if they do not win (assuming quasilinear utility where money is
+the transferable utility). The auction's task is to allocate the item to
+one of the bidders and possibly determine payments. We can think of an
+auction as a mechanism that asks each bidder for a ``message''
+(typically a bid representing how much they are willing to pay), then
+selects a winner and a price based on the bids. A key objective might be
+social welfare maximization -- allocate the item to the bidder who
+values it most (maximizing \(v_i\) of the winner). Another possible
+objective is revenue maximization for the seller -- choose the
+allocation and price to maximize the seller's expected payment.
 
 A classic result in auction theory is that to maximize social welfare in
 a single-item private-value setting, one should award the item to the
 highest valuer -- and this can be done in an incentive-compatible way by
-using a \emph{second-price auction}. The Vickrey second-price auction
-works as follows: (1) All bidders submit sealed bids
-\(b_1, b_2, \ldots, b_n\). (2) The bidder with the highest bid wins the
-item. (3) The price paid by the winner is the \emph{second-highest} bid.
-For example, if the bids are \((2,\, 6,\, 4,\, 1)\) (in some currency
-units), the highest bid is \(6\) (by bidder 2, say) and the
-second-highest is \(4\). Bidder 2 wins the item and pays \(4\).
+using a second-price auction. The Vickrey second-price auction works as
+follows: (1) All bidders submit sealed bids \(b_1, b_2, \ldots, b_n\).
+(2) The bidder with the highest bid wins the item. (3) The price paid by
+the winner is the second-highest bid. For example, if the bids are
+\((2,\, 6,\, 4,\, 1)\) (in some currency units), the highest bid is
+\(6\) (by bidder 2, say) and the second-highest is \(4\). Bidder 2 wins
+the item and pays \(4\).
 
 Under this mechanism, it turns out that bidding truthfully \(b_i = v_i\)
 is a dominant strategy for each bidder. In other words, the auction is
@@ -11456,33 +10983,30 @@ as high as the second-highest bid \(p\) they pay -- guaranteeing
 non-negative utility \(v_i - p \ge 0\). If they lose, it means someone
 else had a higher bid (hence higher value, if others are truthful), so
 bidder \(i\) wouldn't have gained anyway. This argument, made rigorous
-by Vickrey (\citeproc{ref-vickrey1961}{\textbf{vickrey1961?}}),
-establishes that truth-telling is a dominant strategy in the
-second-price auction. As a consequence, when everyone bids truthfully,
-the item is allocated to the bidder with the highest \(v_i\), achieving
-maximum social surplus (allocative efficiency). The second-price auction
-is thus an elegant mechanism that aligns individual incentives with
-social welfare maximization.
+by Vickrey (\citeproc{ref-vickrey1961}{Vickrey 1961}), establishes that
+truth-telling is a dominant strategy in the second-price auction. As a
+consequence, when everyone bids truthfully, the item is allocated to the
+bidder with the highest \(v_i\), achieving maximum social surplus
+(allocative efficiency). The second-price auction is thus an elegant
+mechanism that aligns individual incentives with social welfare
+maximization.
 
 It is worth contrasting this with a first-price auction, where the
 winner pays their own bid. In a first-price auction, bidders have an
-incentive to bid \emph{below} their true value (to avoid the winner's
-curse of paying too much), in a Nash equilibrium that involves bid
-shading. The first-price auction can still allocate to the highest
-valuer in equilibrium, but only through strategic behavior (and it is
-not DSIC). By charging the second-highest bid, the Vickrey auction
-removes the incentive to shade bids, since the price does not directly
-depend on one's own bid beyond the fact of winning or losing.
-
-\subsection{Optimal Auction Design and Myerson's
-Theorem}\label{optimal-auction-design-and-myersons-theorem}
+incentive to bid below their true value (to avoid the winner's curse of
+paying too much), in a Nash equilibrium that involves bid shading. The
+first-price auction can still allocate to the highest valuer in
+equilibrium, but only through strategic behavior (and it is not DSIC).
+By charging the second-highest bid, the Vickrey auction removes the
+incentive to shade bids, since the price does not directly depend on
+one's own bid beyond the fact of winning or losing.
 
 So far, we discussed auctions aimed at maximizing social welfare. In
 many cases, the auctioneer (seller) is interested in maximizing revenue.
 A foundational result by Roger Myerson (1981) provides a
 characterization of optimal auctions (those that maximize the seller's
 expected revenue) for single-item settings under certain assumptions
-(\citeproc{ref-myerson1981}{\textbf{myerson1981?}}). The problem can be
+(\citeproc{ref-myerson1981}{Myerson 1981}). The problem can be
 formulated as follows: suppose each bidder's private value \(v_i\) is
 drawn independently from a known distribution \(F_i\) (for simplicity,
 assume identical distribution \(F\) for all bidders, i.i.d.). We seek a
@@ -11492,11 +11016,11 @@ rationality (participants should not expect negative utility from
 truthful participation).
 
 Myerson's theorem states that the optimal auction in such a setting is a
-threshold auction characterized by \emph{virtual valuations}. Define the
-\emph{virtual value} for a bidder with value \(v\) as
+threshold auction characterized by virtual valuations. Define the
+virtual value for a bidder with value \(v\) as
 \(\varphi(v) = v - \frac{1-F(v)}{f(v)}\), where \(f\) is the probability
 density function of \(F\) (assuming it is continuous). An assumption
-called \emph{regularity} (which holds for many distributions) is that
+called regularity (which holds for many distributions) is that
 \(\varphi(v)\) is non-decreasing in \(v\). Myerson showed that the
 revenue-maximizing strategy is: treat \(\varphi(v)\) as the effective
 ``score'' of a bid, allocate the item to the bidder with the highest
@@ -11506,12 +11030,12 @@ they would still win (the payment is essentially the critical bid where
 \(\varphi\) of that bid equals the second-highest virtual value or the
 zero cutoff). In practice, for i.i.d. bidders, this reduces to: there is
 an optimal reserve price \(r\) such that you sell to the highest bidder
-\emph{if and only if} their bid \(b_{\max} \ge r\); if sold, the price
-is the max of the second-highest bid and \(r\).
+if and only if their bid \(b_{\max} \ge r\); if sold, the price is the
+max of the second-highest bid and \(r\).
 
 In the case of \(n\) bidders with values i.i.d. uniform on \([0,1]\)
-(which is a \emph{regular} distribution), one can compute the optimal
-reserve price. The virtual value function for uniform \([0,1]\) is
+(which is a regular distribution), one can compute the optimal reserve
+price. The virtual value function for uniform \([0,1]\) is
 \(\varphi(v) = v - \frac{1-v}{1} = 2v - 1\). Setting \(\varphi(v)\ge 0\)
 gives \(v \ge 0.5\). So Myerson's mechanism says: don't sell the item if
 all bids are below 0.5; otherwise, sell to the highest bidder at at
@@ -11542,11 +11066,10 @@ without a reserve (just a plain second-price with two bidders uniform
 the reserve has increased revenue. Myerson's theory tells us that indeed
 the second-price auction with an optimally chosen reserve maximizes
 revenue among all DSIC mechanisms for this setting. A notable special
-case result is that when bidder distributions are i.i.d. and
-\emph{regular}, an optimal auction is essentially ``allocatively
-efficient with a reserve price'' -- i.e.~aside from possibly excluding
-low-value bidders via a reserve, it allocates to the highest remaining
-bid.
+case result is that when bidder distributions are i.i.d. and regular, an
+optimal auction is essentially ``allocatively efficient with a reserve
+price'' -- i.e.~aside from possibly excluding low-value bidders via a
+reserve, it allocates to the highest remaining bid.
 
 Myerson's work also highlighted the gap between revenue maximization and
 welfare maximization. The price of optimality (in revenue) is that the
@@ -11580,9 +11103,6 @@ Vickrey auction or other transparent mechanism) and putting effort into
 attracting more bidders, rather than using a complex optimal mechanism
 that might discourage participation.
 
-\subsection{The VCG Mechanism for Social
-Welfare}\label{the-vcg-mechanism-for-social-welfare}
-
 Vickrey's second-price auction can be generalized to multiple items and
 more complex outcomes by the Vickrey--Clarke--Groves (VCG) mechanism.
 The VCG mechanism is a cornerstone of mechanism design that provides a
@@ -11605,9 +11125,9 @@ if they are truthful). The mechanism then chooses an outcome
 
 i.e.~\(\omega^*\) is the outcome that would be socially optimal if the
 \(b_i\) were true values. To induce truth-telling, VCG sets payments
-such that each agent pays the \emph{externality} they impose on others
-by their presence. Specifically, one convenient form of the VCG payment
-for agent \(i\) is:
+such that each agent pays the externality they impose on others by their
+presence. Specifically, one convenient form of the VCG payment for agent
+\(i\) is:
 
 \[
 p_i(b) = \max_{\omega \in \Omega} \sum_{j \neq i} b_j(\omega)\;-\;\sum_{j \neq i} b_j(\omega^*) \,,
@@ -11617,7 +11137,7 @@ which can be interpreted as: what would the total value of others be if
 \(i\) were not present (first term, maximizing without \(i\)) minus the
 total value others actually get in the chosen outcome \(\omega^*\).
 Equivalently, we can write the payment as the agent's bid for the chosen
-outcome minus a \emph{rebate} term:
+outcome minus a rebate term:
 
 \[
 p_i(b) = b_i(\omega^*) \;-\; \Big[\sum_{j=1}^n b_j(\omega^*) - \max_{\omega \in \Omega} \sum_{j \neq i} b_j(\omega)\Big] \,. \tag{4.2}\label{eq-eq3.67}
@@ -11638,10 +11158,10 @@ incentive compatible (DSIC) and produces an outcome that maximizes
 \(\sum_i v_i(\omega)\), achieving social welfare maximization.
 
 VCG provides a powerful existence result: under broad conditions, there
-\emph{is} a mechanism that achieves efficient allocation with
-truth-telling (in fact, VCG is essentially the \emph{unique} one, aside
-from adding harmless constant transfers). However, implementing VCG in
-practice can be difficult. One challenge is computational: finding
+is a mechanism that achieves efficient allocation with truth-telling (in
+fact, VCG is essentially the unique one, aside from adding harmless
+constant transfers). However, implementing VCG in practice can be
+difficult. One challenge is computational: finding
 \(\arg\max_{\omega}\sum_i b_i(\omega)\) can be NP-hard if \(\Omega\) is
 a combinatorially large space (as in many combinatorial auctions).
 Another issue is budget balance and revenue: VCG payments might not
@@ -11661,7 +11181,7 @@ possible allocations of items to bidders, and have bidders report
 \(b_i(S)\) for each bundle \(S\) of items. VCG would allocate the items
 in the way that maximizes total reported value and charge each bidder
 the opportunity cost their presence imposes on others. In practice, as
-mentioned, combinatorial auctions face \emph{exponential complexity} in
+mentioned, combinatorial auctions face exponential complexity in
 preference reporting (each bidder potentially has to specify a value for
 every subset of items) and winner determination (solving an NP-hard
 combinatorial optimization). Heuristic or restricted approaches (like
@@ -11693,8 +11213,8 @@ have been observed. These practical complications underscore that while
 VCG is a beautiful theoretical ideal, real-world mechanism design often
 involves compromises and tweaks.
 
-\subsection{Case Study: Classroom Peer Grading
-Mechanism}\label{case-study-classroom-peer-grading-mechanism}
+\subsection{Case Study 1: Mechanism for Peer
+Grading}\label{case-study-1-mechanism-for-peer-grading}
 
 To illustrate an application of mechanism design beyond auctions,
 consider a classroom setting where students grade each other's work
@@ -11703,10 +11223,10 @@ produces fair and accurate grades while incentivizing students to put
 effort into grading. Jason Hartline and colleagues (2020) studied such a
 scenario, examining how to optimize scoring rules for peer grading
 (\citeproc{ref-jasonH2020}{Hartline et al. 2020}). In this setting,
-students are both \emph{agents} (who might strategize to maximize their
-own grade or minimize their effort) and \emph{graders}. The ``outcome''
-we want is a set of final grades for students, ideally reflecting the
-true quality of their work.
+students are both agents (who might strategize to maximize their own
+grade or minimize their effort) and graders. The ``outcome'' we want is
+a set of final grades for students, ideally reflecting the true quality
+of their work.
 
 One idea is to use proper scoring rules to evaluate the peer graders. A
 proper scoring rule is a concept from forecast evaluation that gives
@@ -11717,8 +11237,8 @@ application of proper scoring can backfire. Hartline et al.~observed a
 ``lazy peer grader'' problem: if students figure out that always giving
 an average score (say 80\%) yields a decent reward under the scoring
 rule, they might not bother to carefully distinguish good and bad work.
-In one experiment, giving all peers an 80\% could yield a 96\%
-\emph{accuracy score} for the grader under a certain scoring rule
+In one experiment, giving all peers an 80\% could yield a 96\% accuracy
+score for the grader under a certain scoring rule
 (\citeproc{ref-jasonH2023}{Hartline et al. 2023}). This clearly
 undermines the goal -- the grader is basically cheating the system by
 always predicting the class average.
@@ -11757,14 +11277,14 @@ satisfies no one perfectly. There is active research on scalable
 oversight: techniques to gather and aggregate human feedback on tasks
 that are too complex for any single person to evaluate reliably. This
 includes approaches like recursive reward modeling, iterated
-amplification
-(\citeproc{ref-christiano2018supervising}{\textbf{christiano2018supervising?}}),
-and AI-assisted debate
-(\citeproc{ref-irving2018ai}{\textbf{irving2018ai?}}), where AI systems
-help humans provide better feedback or break down tasks. The goal of
-scalable oversight is to leverage human preferences and principles in
-guiding AI even as AI systems tackle increasingly complex or open-ended
-tasks, while mitigating the human burden and bias in evaluation.
+amplification (\citeproc{ref-christiano2018supervising}{Christiano,
+Shlegeris, and Amodei 2018}), and AI-assisted debate
+(\citeproc{ref-irving2018ai}{Irving, Christiano, and Amodei 2018}),
+where AI systems help humans provide better feedback or break down
+tasks. The goal of scalable oversight is to leverage human preferences
+and principles in guiding AI even as AI systems tackle increasingly
+complex or open-ended tasks, while mitigating the human burden and bias
+in evaluation.
 
 In summary, preference aggregation in machine learning spans from simple
 models like Bradley--Terry for pairwise comparisons to elaborate RLHF
@@ -11780,8 +11300,8 @@ values, building on the mechanisms and learning algorithms discussed
 here to ensure AI systems remain beneficial and in line with what people
 truly want.
 
-\section{Incentive-Compatible Online
-Learning}\label{incentive-compatible-online-learning}
+\subsection{Case Study 2: Incentive-Compatible Online
+Learning}\label{case-study-2-incentive-compatible-online-learning}
 
 To address this problem, we seek to create a model. We first outline the
 key criteria that our model must achieve. The model revolves around
@@ -11791,24 +11311,24 @@ set of available options to choose from. These options could vary widely
 depending on the application of the model, such as routes in a
 transportation network, a selection of hotels in a travel booking
 system, or even entertainment choices in a streaming service. The
-\emph{interaction process} is straightforward but crucial: agents
-arrive, select an action from the provided options, and then report
-feedback based on their experience. This feedback is vital as it forms
-the basis upon which the planner improves and evolves its
-recommendations. The agents in this model are considered strategic; they
-aim to maximize their reward based on the information available to them.
-This aspect of the model acknowledges the real-world scenario where
-users are typically self-interested and seek to optimize their own
-outcomes. The \emph{planner}, on the other hand, has a broader
-objective. It aims to learn which alternatives are best in a given
-context and works to maximize the overall welfare of all agents. This
-involves a complex balancing act: the planner must accurately interpret
-feedback from a diverse set of agents, each with their own preferences
-and biases, and use this information to refine and improve the set of
-options available. The ultimate goal of the planner is to create a
-dynamic, responsive system that not only caters to the immediate needs
-of individual agents but also enhances the collective experience over
-time, leading to a continually improving recommendation ecosystem.
+interaction process is straightforward but crucial: agents arrive,
+select an action from the provided options, and then report feedback
+based on their experience. This feedback is vital as it forms the basis
+upon which the planner improves and evolves its recommendations. The
+agents in this model are considered strategic; they aim to maximize
+their reward based on the information available to them. This aspect of
+the model acknowledges the real-world scenario where users are typically
+self-interested and seek to optimize their own outcomes. The planner, on
+the other hand, has a broader objective. It aims to learn which
+alternatives are best in a given context and works to maximize the
+overall welfare of all agents. This involves a complex balancing act:
+the planner must accurately interpret feedback from a diverse set of
+agents, each with their own preferences and biases, and use this
+information to refine and improve the set of options available. The
+ultimate goal of the planner is to create a dynamic, responsive system
+that not only caters to the immediate needs of individual agents but
+also enhances the collective experience over time, leading to a
+continually improving recommendation ecosystem.
 
 Here, we seek to address the inherent limitations faced by the planner,
 particularly in scenarios where monetary transfers are not an option,
@@ -11899,9 +11419,9 @@ compatibility, is \(O(\sqrt{T})\) regret still achievable? We illustrate
 such an algorithm in the following.
 
 The main result here is a black-box reduction algorithm to turn any
-bandit algorithm into an \emph{incentive compatible} one, with only a
-constant increase in Bayesian regret. Since, as mentioned earlier, there
-are bandit algorithms with \(O(\sqrt{T})\) Bayesian regret, black-box
+bandit algorithm into an incentive compatible one, with only a constant
+increase in Bayesian regret. Since, as mentioned earlier, there are
+bandit algorithms with \(O(\sqrt{T})\) Bayesian regret, black-box
 reduction will also allow us to get incentive-compatible algorithms with
 \(O(\sqrt{T})\) regret. The idea of black-box reduction will be to
 simulate \(T\) steps of any bandit algorithm in an incentive-compatible
@@ -11913,11 +11433,11 @@ action 1 has reward \(\mu_1\) with prior \(U[1/3, 1]\) and mean
 \(\mathbb{E}[\mu_1] = 2/3\), and action 2 has reward \(\mu_2\) with
 prior \(U[0, 1]\) and mean \(\mathbb{E}[\mu_2] = 1/2\). Without the
 planner intervention and with full observability, users would simply
-always pick \(A_1\), so how can the planner \emph{incentivize} users to
-play \(A_2\)?
+always pick \(A_1\), so how can the planner incentivize users to play
+\(A_2\)?
 
-The key insight is going to be to \emph{hide exploration in a pool of
-exploitation}. The users are only going to receive a recommendation from
+The key insight is going to be to hide exploration in a pool of
+exploitation. The users are only going to receive a recommendation from
 the planner, and no other observations. After deterministically
 recommending the action with the highest expected reward (\(A_1\)), the
 planner will pick one guinea pig to recommend the exploratory action of
@@ -11943,23 +11463,23 @@ formally, if \(I_t\) is the recommendation that a user receives at time
 \]
 
 This holds when \(L \geq 12\). It means that the gains from not taking
-the recommended action are \emph{negative}, which implies that users
-should always take the recommendation. So far we have considered the
-case where rewards are deterministic, but what about stochastic rewards?
-We are now going to consider the case where rewards are independent and
-identically distributed from some distribution, and where each action
-\(A_i\) has some reward distribution
-\(r_i^t \sim D_i, \mathbb{E}[r_i^t] = \mu_i\). Back to the case where
-there are only two actions, we are going to adapt the prior algorithm of
-guinea pig-picking to the stochastic reward setting. Since one reward
-observation is not enough to fully know \(\mu_1\) anymore, we'll instead
-observe the outcome of the first action \(M\) times to form a strong
-posterior \(\mathbb{E}[\mu_1 | r_1^1, \ldots r_1^M]\). We can use with
-stochastic rewards when there are two actions. Similarly, as before, we
-pick one guinea pig uniformly at random from the next \(L\) users and
-use the reward we get as the exploratory signal.~In a very similar
-manner, we can generalize this algorithm from always having two actions
-to the general multi-armed bandit problem. Now suppose we have a general
+the recommended action are negative, which implies that users should
+always take the recommendation. So far we have considered the case where
+rewards are deterministic, but what about stochastic rewards? We are now
+going to consider the case where rewards are independent and identically
+distributed from some distribution, and where each action \(A_i\) has
+some reward distribution \(r_i^t \sim D_i, \mathbb{E}[r_i^t] = \mu_i\).
+Back to the case where there are only two actions, we are going to adapt
+the prior algorithm of guinea pig-picking to the stochastic reward
+setting. Since one reward observation is not enough to fully know
+\(\mu_1\) anymore, we'll instead observe the outcome of the first action
+\(M\) times to form a strong posterior
+\(\mathbb{E}[\mu_1 | r_1^1, \ldots r_1^M]\). We can use with stochastic
+rewards when there are two actions. Similarly, as before, we pick one
+guinea pig uniformly at random from the next \(L\) users and use the
+reward we get as the exploratory signal.~In a very similar manner, we
+can generalize this algorithm from always having two actions to the
+general multi-armed bandit problem. Now suppose we have a general
 multi-armed bandit algorithm \(A\). We will wrap this algorithm around
 our black box reduction algorithm to make it incentive-compatible. We
 wrap every decision that \(A\) would make by exactly \(L-1\)
@@ -12028,6 +11548,108 @@ MIP-based approaches have significant potential to improve preference
 elicitation and aggregation in real-world applications lacking
 verifiable ground truth.
 
+\section{Exercises}\label{exercises-3}
+
+\subsection{Question 1: Pairwise Feedback Mechanisms for Digital
+Goods}\label{question-1-pairwise-feedback-mechanisms-for-digital-goods}
+
+Consider a marketplace for digital goods (such as personalized articles,
+artwork, or AI-generated data), where the exact utility derived from
+these goods is only revealed to buyers after the goods have been
+generated and delivered. To elicit truthful preferences from buyers who
+find it difficult to precisely quantify their valuations beforehand, the
+marketplace implements a pairwise feedback mechanism, inspired by the
+work of Robertson and Koyejo (2023).
+
+Formally, each buyer requests a personalized digital good and, upon
+receiving the good, provides feedback by indicating whether their
+realized utility is higher or lower than a randomly chosen reference
+price \(c \in [0,1]\). The mechanism utilizes this binary feedback to
+estimate valuations and allocate future goods accordingly.
+
+Answer the following:
+
+\begin{enumerate}
+\def\labelenumi{(\alph{enumi})}
+\item
+  \textbf{Formalize the Problem:} Let \(u_i\) denote the true valuation
+  of buyer \(i\), and let \(r_i(c)\) denote the buyer's reported
+  feedback (\(r_i(c) = 1\) if \(u_i \geq c\), 0 otherwise). Prove that,
+  under uniform random selection of the reference price \(c\), the
+  expected value \(\mathbb{E}[r_i(c)]\) is equal to the true valuation
+  \(u_i\).
+\item
+  \textbf{Incentive Compatibility Analysis:} Discuss conditions under
+  which this feedback-based mechanism is incentive compatible, i.e.,
+  buyers have no incentive to misreport their preferences. Specifically,
+  analyze why strategic misreporting (reporting \(r_i(c)\) incorrectly
+  for some reference prices) would not increase a buyer's expected
+  payoff.
+\item
+  \textbf{Regret Analysis:} Suppose the mechanism estimates buyers'
+  utilities from past feedback and allocates future goods using an
+  epsilon-greedy strategy (exploration rate \(\eta_t\)). Provide an
+  informal discussion of the trade-off involved in choosing the
+  exploration rate, and how it affects the social welfare and revenue of
+  the marketplace over time.
+\item
+  \textbf{Practical Implications:} Suggest one practical scenario
+  outside the digital-goods marketplace where such a feedback-driven,
+  pairwise comparison approach would be beneficial. Briefly justify your
+  choice, mentioning challenges and benefits.
+\end{enumerate}
+
+\subsection{Question 2: Scalable Oversight in Complex
+Decision-Making}\label{question-2-scalable-oversight-in-complex-decision-making}
+
+In scenarios involving complex or high-dimensional outcomes (such as
+summarizing lengthy texts, assessing the quality of detailed
+AI-generated reports, or reviewing scientific papers), evaluating the
+quality of outputs can become infeasible for a single human overseer.
+One practical solution is scalable oversight, where the evaluation task
+is decomposed and distributed among multiple human evaluators or even
+assisted by AI agents. Consider a scalable oversight scenario inspired
+by recursive reward modeling, where complex evaluations are
+hierarchically decomposed into simpler tasks. Specifically, suppose you
+want to evaluate a lengthy report generated by an AI system. Answer the
+following:
+
+\textbf{(a) Decomposition of the Task:} Propose a formal recursive
+decomposition strategy to evaluate a long AI-generated report of length
+(N) paragraphs. Specifically, describe a hierarchical evaluation method
+that decomposes the original evaluation into simpler subtasks at
+multiple hierarchical levels. Clearly describe how many subtasks you
+have at each level and how the final aggregated evaluation is computed.
+
+\textbf{(b) Statistical Aggregation Method:} Suppose each evaluation
+subtask yields a binary score (s\_i \in \{0,1\}), where (1) indicates
+acceptable quality and (0) indicates unacceptable quality. Propose a
+simple statistical aggregation method (e.g., majority voting, threshold
+voting, weighted aggregation, etc.) to combine subtask evaluations into
+a single global quality assessment at the top level. Justify your choice
+mathematically.
+
+\textbf{(c) Computational Simulation:} Implement a Python simulation of
+your hierarchical decomposition and aggregation method described in
+parts (a) and (b). Assume each subtask is evaluated with some fixed
+probability (p) of being correct (representing human evaluators with
+bounded accuracy).
+
+Specifically, your simulation should: - Implement a hierarchical
+evaluation scheme (e.g., binary-tree decomposition). - Assume evaluators
+have accuracy (p = 0.8) (i.e., probability of correctly identifying
+paragraph quality). - Simulate how evaluator accuracy at the leaf nodes
+affects the reliability of the global evaluation at the root node. -
+Plot how the reliability of the top-level evaluation (accuracy at the
+root) varies as you increase the depth of hierarchy for a report of
+fixed length (e.g., (N = 64) paragraphs).
+
+\textbf{(d) Practical Discussion:} Briefly discuss advantages and
+potential drawbacks of scalable oversight approaches such as recursive
+decomposition in the context of AI alignment. Include considerations
+such as evaluator fatigue, consistency, cost, and vulnerability to
+manipulation or collusion.
+
 \section*{References}\label{bibliography-5}
 \addcontentsline{toc}{section}{References}
 
@@ -12035,15 +11657,40 @@ verifiable ground truth.
 
 \phantomsection\label{refs-5}
 \begin{CSLReferences}{1}{0}
+\bibitem[\citeproctext]{ref-arrow1951}
+Arrow, Kenneth J. 1951. \emph{Social Choice and Individual Values}. John
+Wiley; Sons.
+
 \bibitem[\citeproctext]{ref-auer_cesa-bianchi_fischer_2002}
 Auer, Peter, Nicolò Cesa-Bianchi, and Paul Fischer. 2002. {``Finite-Time
 Analysis of the Multiarmed Bandit Problem.''} \emph{Machine Learning} 47
 (2). \url{https://doi.org/10.1023/A:1013689704352}.
 
+\bibitem[\citeproctext]{ref-bartholdi1989}
+Bartholdi, John J., Craig A. Tovey, and Michael A. Trick. 1989. {``The
+Computational Difficulty of Manipulating an Election.''} \emph{Social
+Choice and Welfare} 6 (3): 227--41.
+
 \bibitem[\citeproctext]{ref-bulow-klemperer1996}
 Bulow, Jeremy, and Paul Klemperer. 1996. {``Auctions Versus
 Negotiations.''} \emph{The American Economic Review} 86 (1): 180--94.
 \url{http://www.jstor.org/stable/2118262}.
+
+\bibitem[\citeproctext]{ref-christiano2018supervising}
+Christiano, Paul, Buck Shlegeris, and Dario Amodei. 2018. {``Supervising
+Strong Learners by Amplifying Weak Experts.''} \emph{arXiv Preprint
+arXiv:1810.08575}.
+
+\bibitem[\citeproctext]{ref-gibbard1973}
+Gibbard, Allan. 1973. {``Manipulation of Voting Schemes: A General
+Result.''} \emph{Econometrica} 41 (4): 587--601.
+
+\bibitem[\citeproctext]{ref-gordon2022jury}
+Gordon, Noah J., Vaishnavh Nagarajan Shankar, Shi Feng, Yejin Choi, and
+Noah A. Smith. 2022. {``Jury Learning: Integrating Dissenting Voices
+into Machine Learning Models.''} In \emph{Proceedings of the 2022
+Conference on Empirical Methods in Natural Language Processing (EMNLP)},
+2658--73. Association for Computational Linguistics.
 
 \bibitem[\citeproctext]{ref-jasonH2020}
 Hartline, Jason D., Yingkai Li, Liren Shan, and Yifan Wu. 2020.
@@ -12057,6 +11704,10 @@ Hartline, Jason D., Liren Shan, Yingkai Li, and Yifan Wu. 2023.
 by Gergely Neu and Lorenzo Rosasco, 195:2624--50. Proceedings of Machine
 Learning Research. PMLR.
 \url{https://proceedings.mlr.press/v195/hartline23a.html}.
+
+\bibitem[\citeproctext]{ref-irving2018ai}
+Irving, Geoffrey, Paul Christiano, and Dario Amodei. 2018. {``AI Safety
+via Debate.''} \emph{arXiv Preprint arXiv:1805.00899}.
 
 \bibitem[\citeproctext]{ref-kongschoenebeck2019}
 Kong, Yuqing, and Grant Schoenebeck. 2019. {``An Information Theoretic
@@ -12080,9 +11731,23 @@ Mansour, Yishay, Aleksandrs Slivkins, Vasilis Syrgkanis, and Zhiwei
 Steven Wu. 2021. {``Bayesian Exploration: Incentivizing Exploration in
 Bayesian Games.''} \url{https://arxiv.org/abs/1602.07570}.
 
+\bibitem[\citeproctext]{ref-myerson1981}
+Myerson, Roger B. 1981. {``Optimal Auction Design.''} \emph{Mathematics
+of Operations Research} 6 (1): 58--73.
+
 \bibitem[\citeproctext]{ref-russo2015informationtheoreticanalysisthompsonsampling}
 Russo, Daniel, and Benjamin Van Roy. 2015. {``An Information-Theoretic
 Analysis of Thompson Sampling.''} \url{https://arxiv.org/abs/1403.5341}.
+
+\bibitem[\citeproctext]{ref-satterthwaite1975}
+Satterthwaite, Mark Allen. 1975. {``Strategy-Proofness and Arrow's
+Conditions: Existence and Correspondence Theorems for Voting Procedures
+and Social Welfare Functions.''} \emph{Journal of Economic Theory} 10
+(2): 187--217.
+
+\bibitem[\citeproctext]{ref-vickrey1961}
+Vickrey, William. 1961. {``Counterspeculation, Auctions, and Competitive
+Sealed Tenders.''} \emph{Journal of Finance} 16 (1): 8--37.
 
 \end{CSLReferences}
 
