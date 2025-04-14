@@ -1,5 +1,5 @@
 ---
-title: Learning Model of Decisions
+title: Learning
 format: html
 filters:
   - pyodide
@@ -7,1364 +7,665 @@ execute:
   engine: pyodide
   pyodide:
     auto: true
+
 ---
 
-::: {.content-visible when-format="html"}
+Designing a good utility function (or reward function) by hand for a complex AI or robotics task is notoriously difficult and error-prone. Instead of manually specifying what is “good” behavior, we can learn a utility function from human preferences. In this chapter, we explore how an agent can infer a human’s underlying utility function (their preferences or reward criteria) from various forms of feedback. We discuss both supervised learning and Bayesian approaches to utility learning, and examine techniques motivated by robotics—learning from demonstrations, physical corrections, trajectory evaluations, and pairwise comparisons. Throughout, we include mathematical formulations and code examples to illustrate the learning process.
 
-<iframe
-  src="https://web.stanford.edu/class/cs329h/slides/4.1.dueling_bandit/#/"
-  style="width:45%; height:225px;"
-></iframe>
-<iframe
-  src="https://web.stanford.edu/class/cs329h/slides/4.2.preferential_baysian_optimization/#/"
-  style="width:45%; height:225px;"
-></iframe>
-[Fullscreen Part 1](https://web.stanford.edu/class/cs329h/slides/4.1.dueling_bandit/#/){.btn .btn-outline-primary .btn role="button"}
-[Fullscreen Part 2](https://web.stanford.edu/class/cs329h/slides/4.2.preferential_baysian_optimization/#/){.btn .btn-outline-primary .btn role="button"}
+## The Supervised Learning Problem
 
+Supervised learning approaches treat human feedback as labeled data to directly fit a utility function. The core idea is to assume there exists a true utility function $u^*(x)$ (over states, outcomes, or trajectories $x$) that explains a human’s choices. We then choose a parameterized model $u_\theta(x)$ and adjust $\theta$ so that $u_\theta$ agrees with the human-provided preferences.
+
+A common feedback format is pairwise comparisons: the human is shown two options (outcomes or trajectories) $A$ and $B$ and indicates which is preferred. We can model the probability that the human prefers $A$ over $B$ using a logistic or Bradley–Terry model:
+
+$$
+P(A \succ B \mid u_\theta) \;=\; \sigma\!\Big(u_\theta(A) - u_\theta(B)\Big)\,,
+$$
+
+where $\sigma(z)=\frac{1}{1+e^{-z}}$ is the sigmoid function. This implies the human is more likely to prefer $A$ if $u_\theta(A)$ is much larger than $u_\theta(B)$.
+
+At the heart of learning from human preferences lies a latent utility function — a function that assigns numerical value to states, trajectories, or outcomes according to a human’s (possibly unspoken) preferences. The goal of a learning algorithm is to infer this function from observed feedback, which may come in the form of demonstrations, ratings, rankings, or pairwise comparisons. But how exactly do we represent and update our belief about this hidden utility function?
+
+Two major paradigms in statistical learning provide different answers: point estimation and posterior estimation.
+
+In point estimation, we seek a single "best guess" for the utility function — typically a function $u_\theta(x)$ from a parameterized family (e.g. linear models, neural nets), with parameters $\theta \in \mathbb{R}^d$. Given data $\mathcal{D}$ from human feedback (e.g. preferences), we choose the parameter $\hat{\theta}$ that best explains the observed behavior. Formally:
+
+$$
+\hat{\theta} = \arg\max_\theta \; p(\mathcal{D} \mid \theta)
+$$
+
+This is maximum likelihood estimation (MLE): we pick the parameters that make the observed data most probable under our model. Once $\hat{\theta}$ is selected, we treat $u_{\hat{\theta}}$ as the agent’s utility function, and optimize or sample behavior accordingly. This approach is straightforward and computationally efficient. It is the foundation of most supervised learning methods (like logistic regression or deep learning), and it provides a natural interpretation: we’re directly finding the utility function that agrees with the human feedback. However, it discards uncertainty: it assumes the data is sufficient to pin down a single utility function, which may not be true in practice.
+
+In contrast, posterior estimation takes a fully Bayesian view. Instead of committing to one estimate, we maintain a distribution over utility functions. That is, we place a prior $p(\theta)$ over parameters (or over functions $u$ more generally), and update this to a posterior after observing data $\mathcal{D}$:
+
+$$
+p(\theta \mid \mathcal{D}) \;=\; \frac{p(\mathcal{D} \mid \theta)\, p(\theta)}{p(\mathcal{D})}
+$$
+
+This posterior expresses our uncertainty over which utility functions are compatible with the human feedback. From this distribution, we can make predictions (e.g., using the posterior mean utility), quantify confidence, or even actively select new queries to reduce uncertainty (active learning). For instance, if we model utilities with a Gaussian Process (GP), then the posterior over $u(x)$ is also a GP after observing comparisons or evaluations. If we use a neural network for $u_\theta(x)$, we can approximate the posterior with ensembles, variational inference, or MCMC. Posterior estimation is especially valuable when human feedback is sparse, noisy, or ambiguous — as is often the case in real-world preference learning. It allows the agent to reason about what it doesn’t know and to take cautious or exploratory actions accordingly.
+
+The next two sections instantiate these two perspectives. In Section 4.1, we explore point estimation via supervised learning — treating preference data as labeled examples and fitting a utility model. In Section 4.2, we shift to posterior estimation with Bayesian methods like Gaussian processes and Bayesian neural networks, which model both our current estimate and the uncertainty around it.
+
+## Point Estimation via Maximum Likelihood
+Given a dataset of comparisons $D=\{(A_i, B_i, y_i)\}$ (with $y_i=1$ if $A_i$ was preferred and $0$ if $B_i$ was preferred), we can fit $\theta$ by maximizing the likelihood of the human’s choices. Equivalently, we minimize a binary cross-entropy loss:
+
+$$
+\mathcal{L}(\theta) = -\sum_{i} \Big[\,y_i \log \sigma(u_\theta(A_i)\!-\!u_\theta(B_i)) + (1-y_i)\log(1-\sigma(u_\theta(A_i)\!-\!u_\theta(B_i)))\Big]\,,
+$$
+
+often with a regularization term to prevent overfitting. This is a straightforward supervised learning problem – essentially logistic regression – on pairwise difference features.
+
+Example: Suppose a human’s utility for an outcome can be described by a quadratic function (unknown to the learning algorithm). We collect some pairwise preferences and then train a utility model $u_\theta(x)$ to predict those preferences. The code below simulates this scenario:
+
+```{python}
+import numpy as np
+
+# True utility function (unknown to learner), e.g. u*(x) = -(x-5)^2 + constant 
+def true_utility(x):
+    return -(x-5)**2  # (peak at x=5)
+
+# Generate synthetic pairwise preference data
+np.random.seed(42)
+n_pairs = 20
+X1 = np.random.uniform(0, 10, size=n_pairs)  # 20 random x-values
+X2 = np.random.uniform(0, 10, size=n_pairs)  # 20 more random x-values
+# Determine preferences according to true utility
+prefs = (true_utility(X1) > true_utility(X2)).astype(int)  # 1 if X1 preferred, else 0
+
+# Parametric model for utility: u_theta(x) = w0 + w1*x + w2*x^2  (quadratic form)
+# Initialize weights
+w = np.zeros(3)
+lr = 0.01       # learning rate
+reg = 1e-3      # L2 regularization strength
+for epoch in range(1000):
+    # Compute predictions via logistic model
+    util_diff = (w[0] + w[1]*X1 + w[2]*X1**2) - (w[0] + w[1]*X2 + w[2]*X2**2)
+    pred = 1 / (1 + np.exp(-util_diff))      # σ(w·(phi(X1)-phi(X2)))
+    # Gradient of cross-entropy loss
+    grad = np.array([0.0, 0.0, 0.0])
+    error = pred - prefs  # (sigma - y)
+    # Features for X1 and X2
+    phi1 = np.vstack([np.ones(n_pairs), X1, X1**2]).T
+    phi2 = np.vstack([np.ones(n_pairs), X2, X2**2]).T
+    phi_diff = phi1 - phi2
+    # Gradient: derivative of loss w.rt w = (sigma - y)*φ_diff (averaged) + reg
+    grad = phi_diff.T.dot(error) / n_pairs + reg * w
+    # Update weights
+    w -= lr * grad
+
+print("Learned weights:", w)
+```
+
+After training, we can compare the learned utility function $u_\theta(x)$ to the true utility $u^*(x)$. Below we plot the two functions:
+
+```{python}
+import matplotlib.pyplot as plt
+
+# Plot true vs learned utility curves
+xs = np.linspace(0, 10, 200)
+true_vals = true_utility(xs)
+learned_vals = w[0] + w[1]*xs + w[2]*xs**2
+
+plt.figure(figsize=(6,4))
+plt.plot(xs, true_vals, label="True Utility", linewidth=3)
+plt.plot(xs, learned_vals, label="Learned Utility", linestyle="--", linewidth=3)
+plt.xlabel("State x")
+plt.ylabel("Utility")
+plt.title("True vs. Learned Utility Function")
+plt.legend()
+plt.show()
+```
+
+The learned curve closely matches the true utility up to an arbitrary scaling factor (utility is only defined up to affine transform when inferred from comparisons). The algorithm successfully recovered a utility function that orders states almost the same as the true utility $u^*(x)$. In general, learning from comparisons can infer the *relative* utility of options (which item is preferred), although the absolute scale of $u_\theta$ is unidentifiable without further assumptions. Supervised learning on preferences has been widely used for ranking problems and preference-based reward learning.
+
+While the above approach learns a utility and could then use it for decision-making, an alternative in some domains is to directly optimize the policy based on preferences, bypassing an explicit reward model. Direct Preference Optimization (DPO) is a recent technique introduced for aligning language models to human preferences [@rafailov2023direct]. The insight of DPO is that we can fold the reward model into the policy itself, and then update the policy via a simple supervised objective on preference data.
+
+In the context of DPO for language models, one has a base policy $\pi_{\text{ref}}$ (e.g. the pre-trained model) and a new policy $\pi_\theta$ we want to fine-tune. Given a human preference between two model outputs (responses) $y_+$ (preferred) vs $y_-$ for the same prompt $x$, DPO adjusts $\pi_\theta$ to increase the log-probability of $y_+$ and decrease that of $y_-$. Formally, the *DPO loss* for a single preference is:
+
+$$
+\mathcal{L}_{\text{DPO}}(\theta) \;=\; -\log \sigma\!\Big(\underbrace{\log \pi_\theta(y_+|x) - \log \pi_\theta(y_-|x)}_{\text{policy preference score}}\Big)\,.
+$$
+
+Intuitively, this is the same logistic loss as before, now directly in terms of the policy’s log-likelihood scores for each option. The overall objective is the average of this loss over a dataset of human preference comparisons. Optimizing this loss via gradient descent on $\pi_\theta$ effectively *bakes in* a reward model: $\log \pi_\theta(y|x) - \log \pi_{\text{ref}}(y|x)$ plays the role of a learned reward. In fact, one can show that DPO is implicitly fitting a reward function that $\pi_\theta$ is maximizing. Crucially, DPO does *not* require a separate reinforcement learning loop; it treats preference data as direct supervision for the policy, using a simple binary classification objective.
+
+In practice, DPO has been shown to achieve similar or better alignment performance compared to reinforcement learning from human feedback (RLHF) while being more stable and easier to implement. It avoids the need to sample from the model during training or tune delicate hyperparameters of RL. Conceptually, DPO demonstrates that if we structure our utility model cleverly (here, as the log-ratio of policy and reference), we can extract an optimal policy in closed-form and learn utilities via supervised learning.
+
+DPO’s formulation is related to the Bradley–Terry model for preferences and to the idea of *maximum entropy* policies. If we imagine a reward function $R_\theta(y|x) = \log \pi_\theta(y|x) - \log \pi_{\text{ref}}(y|x)$, DPO’s loss is pushing $R_\theta(y_+) > R_\theta(y_-)$ for preferred pairs. The optimal $\pi_\theta$ under this criterion turns out to be $\pi_\theta(y|x) \propto \pi_{\text{ref}}(y|x)\exp\{R_\theta(y|x)\}$. In other words, $\pi_\theta$ is proportional to the reference policy re-weighted by an exponentiated reward – a result consistent with the principle of maximum entropy (softmax) optimization. DPO thus blurs the line between learning a utility function and learning a policy; it directly outputs a policy that (implicitly) encodes the learned utility. 
+
+The pairwise logistic approach can be extended to other feedback types. If humans provide numeric *ratings* or *scores* for options, one can treat utility learning as a regression problem: fit $u_\theta(x)$ to predict those scores (perhaps with a suitable bounded output or ordinal regression if scores are ordinal). If humans rank multiple options at once, algorithms like *RankNet* or *RankSVM* generalize the pairwise approach to listwise ranking losses. All these methods boil down to defining a loss that penalizes disagreements between the predicted utility order and the human-provided preferences, then optimizing $\theta$ to minimize that loss.
+
+Supervised learning of utility is powerful due to its simplicity, but it typically provides point estimates of $u_\theta$. Next, we consider Bayesian approaches that maintain uncertainty over the utility function.
+
+## Posterior Estimation
+
+When feedback data is sparse, as is common in preference learning, it can be advantageous to model uncertainty over the utility function. Bayesian approaches place a prior on the utility function and update a posterior as human feedback is observed. This yields not only a best-guess utility function but also a measure of confidence or uncertainty, which is valuable for active learning (deciding which queries to ask next) and for safety (knowing when the learned reward might be wrong).
+
+A popular Bayesian approach assumes that the human’s utility function can be modeled as a Gaussian Process (GP) – a distribution over functions. A GP prior is defined by a mean function (often taken to be 0 for convenience) and a kernel (covariance function) $k(x,x')$ which encodes assumptions about the smoothness or structure of the utility function. For example, one might assume $u(x)$ is a smooth function of state, and choose a radial basis function (RBF) kernel $k(x,x') = \sigma_f^2 \exp(-\|x-x'\|^2/(2\ell^2))$ with some length-scale $\ell$.
+
+After observing some preference data, Bayes’ rule gives a posterior over the function $u(x)$. In the case of pairwise comparisons, the likelihood of a comparison $(A \succ B)$ given an underlying utility function $u$ can be modeled via the same logistic function: $P(A \succ B \mid u) = \sigma(u(A)-u(B))$. Combining this likelihood with the GP prior is analytically intractable (due to the non-Gaussian logistic likelihood), but one can use approximation techniques (Laplace approximation or MCMC) to obtain a posterior GP. The result is a *Gaussian process preference model* that can predict the utility of any new option with an uncertainty interval.
+
+If we have direct evaluations of utility (e.g., the human provides a numeric reward for some states), the GP inference is simpler – it reduces to standard GP regression. However, in many real-world scenarios, humans are better at making relative judgments than assigning absolute utility values. This change in feedback type transforms the inference problem fundamentally. Instead of having a Gaussian likelihood (as in standard GP regression), we now have a non-Gaussian likelihood, typically modeled using a probit or logistic function. The observed data no longer provide direct samples of the latent utility function, but instead impose constraints on the *relative* ordering of latent values.
+
+Due to this non-Gaussian likelihood, exact Bayesian inference is no longer tractable: the posterior over the latent utility function given the pairwise data does not have a closed-form expression. The GP prior is still Gaussian, but the posterior becomes non-Gaussian and multi-modal, particularly as the number of comparisons grows.
+
+To address this, we must turn to approximate inference methods. One common and computationally efficient choice is the Laplace approximation, which approximates the true posterior with a Gaussian centered at the maximum a posteriori (MAP) estimate. This involves:
+1. Finding the mode of the posterior (i.e., the most probable utility values given the data),
+2. Approximating the curvature of the log-posterior around this mode using the Hessian (second derivative),
+3. Using this local curvature to construct a Gaussian approximation.
+
+While not exact, this method works well in practice, especially when the posterior is unimodal and the number of comparison pairs is moderate. Other alternatives such as variational inference or sampling-based methods (e.g., Hamiltonian Monte Carlo) can yield more accurate results but often require more complex implementation and computational resources.
+
+```{python}
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.stats import norm
+from scipy.optimize import minimize
+
+# --- True latent utility function ---
+def true_u(x):
+    return np.sin(x) + 0.1 * x
+
+# --- RBF Kernel function ---
+def rbf_kernel(x1, x2, length_scale=0.8, sigma_f=1.0):
+    x1, x2 = np.atleast_2d(x1).T, np.atleast_2d(x2).T
+    sqdist = (x1 - x2.T) ** 2
+    return sigma_f**2 * np.exp(-0.5 * sqdist / length_scale**2)
+
+# --- Generate synthetic preference data ---
+np.random.seed(42)
+num_pairs = 10
+X_candidates = np.linspace(0, 10, 100)
+true_utilities = true_u(X_candidates)
+
+# Sample preference pairs
+idx_pairs = np.random.choice(len(X_candidates), size=(num_pairs, 2), replace=True)
+X_pref_pairs = []
+for i, j in idx_pairs:
+    xi, xj = X_candidates[i], X_candidates[j]
+    if true_utilities[i] > true_utilities[j]:
+        X_pref_pairs.append((xi, xj))
+    else:
+        X_pref_pairs.append((xj, xi))
+X_pref_pairs = np.array(X_pref_pairs)
+
+# --- Unique x values and indexing ---
+X_all = np.unique(X_pref_pairs.flatten())
+n = len(X_all)
+x_to_idx = {x: i for i, x in enumerate(X_all)}
+
+# --- GP prior kernel matrix ---
+length_scale = 0.8
+sigma_f = 1.0
+sigma_noise = 1e-6
+K = rbf_kernel(X_all, X_all, length_scale, sigma_f) + sigma_noise * np.eye(n)
+
+# --- Negative log-posterior function ---
+def neg_log_posterior(f):
+    prior_term = 0.5 * f.T @ np.linalg.solve(K, f)
+    lik_term = 0.0
+    for xi, xj in X_pref_pairs:
+        fi, fj = f[x_to_idx[xi]], f[x_to_idx[xj]]
+        delta = (fi - fj) / np.sqrt(2)
+        lik_term -= np.log(norm.cdf(delta) + 1e-6)
+    return prior_term + lik_term
+
+# --- MAP estimation of latent utilities ---
+f_init = np.zeros(n)
+res = minimize(neg_log_posterior, f_init, method="L-BFGS-B")
+f_map = res.x
+
+# --- Laplace approximation: compute W (Hessian of neg log likelihood) ---
+W = np.zeros((n, n))
+for xi, xj in X_pref_pairs:
+    i, j = x_to_idx[xi], x_to_idx[xj]
+    fi, fj = f_map[i], f_map[j]
+    delta = (fi - fj) / np.sqrt(2)
+    phi = norm.pdf(delta)
+    Phi = norm.cdf(delta) + 1e-6
+    w = (phi / Phi)**2 + delta * phi / Phi
+    w /= 2  # adjust for sqrt(2)
+    W[i, i] += w
+    W[j, j] += w
+    W[i, j] -= w
+    W[j, i] -= w
+
+# --- Posterior covariance approximation ---
+L = np.linalg.cholesky(K)
+K_inv = np.linalg.solve(L.T, np.linalg.solve(L, np.eye(n)))
+H = K_inv + W
+H_inv = np.linalg.inv(H)
+
+# --- Prediction at test points ---
+X_test = np.linspace(0, 10, 200)
+K_s = rbf_kernel(X_all, X_test, length_scale, sigma_f)
+K_ss_diag = np.diag(rbf_kernel(X_test, X_test, length_scale, sigma_f))
+
+# Posterior mean and variance
+posterior_mean = K_s.T @ K_inv @ f_map
+temp = np.linalg.solve(H, K_s)
+posterior_var = K_ss_diag - np.sum(K_s * temp, axis=0)
+posterior_std = np.sqrt(np.maximum(posterior_var, 0))
+
+# --- Visualization ---
+plt.figure(figsize=(8, 4))
+plt.plot(X_test, true_u(X_test), 'k--', label="True utility")
+plt.plot(X_test, posterior_mean, 'b-', label="Posterior mean")
+plt.fill_between(X_test,
+                 posterior_mean - 1.96 * posterior_std,
+                 posterior_mean + 1.96 * posterior_std,
+                 color='blue', alpha=0.2, label="95% CI")
+plt.scatter(X_all, [true_u(x) for x in X_all], c='red', marker='x', label="Observed x")
+plt.title("GP Preference Learning (Laplace Approximation, 100 Pairs)")
+plt.xlabel("x")
+plt.ylabel("Utility")
+plt.legend()
+plt.tight_layout()
+plt.show()
+```
+
+ ([image]()) *Gaussian Process posterior for a utility function (blue mean with 95% confidence band) after observing 5 points of noisy utility data (red ×). The true utility function (black dashed) is non-trivial. The GP correctly captures the function’s value around observed regions and expresses high uncertainty in the unobserved middle region. In practice, this uncertainty could guide an algorithm to query more feedback in the region $x\approx [4,7]$ to reduce ambiguity.* 
+
+Gaussian processes are a flexible way to learn utility functions. They naturally handle irregular data and provide principled uncertainty estimates. GP-based preference learning has been applied to tasks like interactive Bayesian optimization, where an algorithm seeks to find the maximum of $u(x)$ by iteratively querying a human which of two options is better [@christiano2023deep].
+
+Instead of GPs, one can use Bayesian neural networks or ensemble methods to model uncertainty in $u_\theta(x)$. For instance, a neural network can be trained on preference data, and techniques like Monte Carlo dropout or deep ensembles can provide uncertainty estimates for its predictions. These approaches scale to high-dimensional inputs (where GPs may be less practical) while still capturing epistemic uncertainty about the utility.
+
+One principled way to capture uncertainty in Bayesian neural networks is via Markov Chain Monte Carlo (MCMC) methods, which seek to approximate the posterior distribution over model parameters given the data. In this setting, we place a prior over the neural network weights, $p(\theta)$, and define a likelihood function based on observed preferences—typically using a probabilistic choice model such as the Bradley-Terry or probit model. Given a dataset $\mathcal{D} = \{(x_i, x_j) : x_i \succ x_j\}$, the posterior is defined as
+
+$$
+p(\theta \mid \mathcal{D}) \propto p(\mathcal{D} \mid \theta) \cdot p(\theta),
+$$
+
+where $p(\mathcal{D} \mid \theta)$ is the likelihood of observing the pairwise comparisons under the utility function $u_\theta(x)$, and $p(\theta)$ is the prior over the parameters.
+
+Unlike Gaussian processes, for which posterior inference is tractable in closed form under Gaussian likelihoods, inference in BNNs with non-Gaussian likelihoods is generally intractable. This is due to the non-conjugate nature of the neural network likelihood and the high-dimensional, nonlinear structure of the weight space. As a result, approximate inference methods are required.
+
+MCMC provides a general-purpose approach to approximate sampling from the posterior. The key idea is to construct a Markov chain whose stationary distribution is the target posterior. One of the most widely used algorithms is the Metropolis-Hastings (MH) algorithm. Given a current state $\theta_t$, a new proposal $\theta'$ is generated from a proposal distribution $q(\theta' \mid \theta_t)$, and accepted with probability
+
+$$
+A = \min\left(1, \frac{p(\mathcal{D} \mid \theta') \, p(\theta') \, q(\theta_t \mid \theta')}{p(\mathcal{D} \mid \theta_t) \, p(\theta_t) \, q(\theta' \mid \theta_t)}\right).
+$$
+
+When the proposal distribution is symmetric, i.e., $q(\theta' \mid \theta_t) = q(\theta_t \mid \theta')$, the acceptance probability simplifies to a ratio of posterior densities. Over time, the chain yields samples $\theta^{(1)}, \dots, \theta^{(T)} \sim p(\theta \mid \mathcal{D})$, which can be used to compute posterior predictive estimates for the utility function:
+
+$$
+\mathbb{E}[u(x)] \approx \frac{1}{T} \sum_{t=1}^T u_{\theta^{(t)}}(x),
+$$
+
+with corresponding uncertainty estimates captured via the variance of the predictions across samples.
+
+MCMC methods are particularly appealing for preference learning because they directly quantify epistemic uncertainty in the utility function, which is crucial for downstream tasks such as decision-making, active learning, and safe exploration. Furthermore, MCMC makes no restrictive assumptions on the form of the posterior and can be used with non-convex and multi-modal distributions that arise from complex neural network architectures.
+
+However, MCMC also faces significant computational challenges in practice. First, the convergence of the Markov chain can be slow, especially in high-dimensional parameter spaces. Second, naive random-walk proposals (as in the basic Metropolis-Hastings algorithm) may suffer from low acceptance rates and poor mixing. More advanced MCMC methods such as Hamiltonian Monte Carlo (HMC) and No-U-Turn Sampling (NUTS) can help address these issues by using gradient information to propose more efficient moves through the parameter space.
+
+Despite these limitations, MCMC remains a valuable tool for principled Bayesian inference in preference modeling, particularly in settings where uncertainty quantification is critical and computational cost is acceptable. In lower-dimensional settings or as a pedagogical tool, even simple MH-based approaches can offer intuitive and effective approximations to the posterior over preference functions.
+
+```{python}
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.stats import norm
+
+# --- True latent utility function ---
+def true_u(x):
+    return np.sin(x) + 0.1 * x
+
+# --- Generate synthetic preference data ---
+np.random.seed(0)
+X = np.linspace(0, 10, 40)
+y_true = true_u(X)
+
+# Create pairwise comparisons
+pairs = []
+for _ in range(50):
+    i, j = np.random.choice(len(X), 2, replace=False)
+    if y_true[i] > y_true[j]:
+        pairs.append((X[i], X[j], 1))  # x_i preferred over x_j
+    else:
+        pairs.append((X[j], X[i], 1))
+
+# --- Define a deep neural network: 3 hidden layers ---
+def init_deep_params(hidden_dims=[10, 10, 10]):
+    params = {}
+    layer_dims = [1] + hidden_dims + [1]
+    for i in range(len(layer_dims) - 1):
+        W_key = f"W{i+1}"
+        b_key = f"b{i+1}"
+        params[W_key] = np.random.randn(layer_dims[i+1], layer_dims[i]) * 0.1
+        params[b_key] = np.zeros((layer_dims[i+1], 1))
+    return params
+
+def deep_forward(x, params):
+    x = x.reshape(1, 1)
+    num_layers = len(params) // 2
+    h = x
+    for i in range(1, num_layers):
+        h = np.tanh(params[f"W{i}"] @ h + params[f"b{i}"])
+    out = params[f"W{num_layers}"] @ h + params[f"b{num_layers}"]
+    return out.squeeze()
+
+def deep_utility(x, params):
+    return np.array([deep_forward(np.array([xi]), params) for xi in x])
+
+# --- Log likelihood (Bradley-Terry) ---
+def deep_log_likelihood(params, pairs):
+    ll = 0.0
+    for xi, xj, _ in pairs:
+        ui = deep_forward(np.array([xi]), params)
+        uj = deep_forward(np.array([xj]), params)
+        ll += np.log(norm.cdf((ui - uj) / np.sqrt(2)) + 1e-6)
+    return ll
+
+# --- Gaussian prior on weights ---
+def deep_log_prior(params):
+    lp = 0.0
+    for v in params.values():
+        lp -= 0.5 * np.sum(v**2)
+    return lp
+
+# --- Proposal distribution ---
+def deep_propose(params, sigma=0.05):
+    new_params = {}
+    for k, v in params.items():
+        new_params[k] = v + np.random.randn(*v.shape) * sigma
+    return new_params
+
+# --- Metropolis-Hastings sampling ---
+def deep_mh(init_params, pairs, num_iters=2000, burn_in=500):
+    samples = []
+    current = init_params
+    current_lp = deep_log_likelihood(current, pairs) + deep_log_prior(current)
+
+    for i in range(num_iters):
+        proposal = deep_propose(current)
+        proposal_lp = deep_log_likelihood(proposal, pairs) + deep_log_prior(proposal)
+        accept_prob = np.exp(proposal_lp - current_lp)
+        if np.random.rand() < accept_prob:
+            current = proposal
+            current_lp = proposal_lp
+        if i >= burn_in:
+            samples.append(current)
+
+    return samples
+
+# --- Run MCMC ---
+deep_samples = deep_mh(init_deep_params(), pairs, num_iters=2000, burn_in=200)
+
+# --- Posterior predictions ---
+X_test = np.linspace(0, 10, 200)
+deep_preds = np.array([deep_utility(X_test, s) for s in deep_samples])
+deep_mean = deep_preds.mean(axis=0)
+deep_std = deep_preds.std(axis=0)
+
+# --- Plot results ---
+plt.figure(figsize=(8, 4))
+plt.plot(X_test, true_u(X_test), 'k--', label='True utility')
+plt.plot(X_test, deep_mean, 'b-', label='BNN (3-layer) mean')
+plt.fill_between(X_test, deep_mean - 1.96 * deep_std, deep_mean + 1.96 * deep_std,
+                 color='blue', alpha=0.2, label='95% CI')
+plt.title("3-layer Bayesian Neural Network via MCMC on Preference Data")
+plt.xlabel("x")
+plt.ylabel("Utility")
+plt.legend()
+plt.tight_layout()
+plt.show()
+```
+
+Another Bayesian approach is Bayesian Inverse Reinforcement Learning (IRL), where a prior is placed on the parameters of a reward function and Bayes’ rule is used to update this distribution given demonstrations or preferences [@iliad2019learning]. Early work like Ramachandran & Amir (2007) treated IRL as Bayesian inference, using MCMC to sample likely reward functions consistent with demonstrations. Such methods yield a posterior over reward functions, reflecting ambiguity when multiple rewards explain the human’s behavior.
+
+In summary, Bayesian utility learning methods acknowledge that with limited human feedback, many possible utility functions might be compatible with the data. They keep track of this ambiguity, which is crucial for making cautious decisions and for actively gathering more feedback.
+
+## Case Study: Learning from Human Feedback in Robotics
+
+Thus far, we discussed preference learning in general terms. We now focus on robotics, where an agent must learn a *reward/utility function* that captures the human’s objectives for a *sequential decision-making* task. Robotics brings additional challenges: the utility often depends on a trajectory of states and actions, and feedback can come in multiple forms. We outline several key forms of human feedback for robot learning and how to learn from them:
+
+- Learning from demonstrations – inferring utility from expert demonstrations of the task.
+- Learning from physical corrections – updating utility when a human physically intervenes in the robot’s behavior.
+- Learning from trajectory evaluations – using human-provided scores or critiques of full trajectories.
+- Learning from pairwise trajectory comparisons – inferring reward from which of two trajectories a human prefers.
+
+These are not mutually exclusive; in practice, combinations can be very powerful [@iliad2019learning]. We describe each mode and how utility functions can be derived.
+
+### Learning from Demonstrations (Inverse Reinforcement Learning)
+
+In Learning from Demonstrations, also known as Inverse Reinforcement Learning, the human provides examples of desired behavior (e.g. teleoperating a robot to show how to perform a task). The assumption is that the demonstrator is approximately optimizing some latent reward function $R^*(s,a)$ (or utility for trajectories). IRL algorithms then search for a reward function $R_\theta$ under which the given demonstrations $\tau_{demo}$ have high expected return [@iliad2019learning]. 
+
+One classic approach is *Maximum Margin IRL*, which finds a reward function that makes the return of the demonstration trajectories higher than that of any other trajectories by a large margin. Another is *Maximum Entropy IRL*, which models the demonstrator as noisily optimal (Boltzmann-rational) [@iliad2019learning]. In MaxEnt IRL, the probability of a trajectory $\tau$ under reward parameters $\theta$ is modeled as:
+
+$$
+P(\tau \mid \theta) = \frac{\exp\{R_\theta(\tau)\}}{\displaystyle \sum_{\tau'} \exp\{R_\theta(\tau')\}} \,,
+$$
+
+where $R_\theta(\tau) = \sum_{t} r_\theta(s_t, a_t)$ is the cumulative reward of $\tau$. The IRL algorithm then adjusts $\theta$ to maximize the likelihood of the human demonstrations (while often using techniques to approximate the denominator, since summing over all trajectories is intractable). The end result is a reward function $R_\theta(s,a)$ that rationalizes the demonstrations.
+
+*Key challenge:* unless demonstrations are *optimal* and cover the space well, IRL might recover an ambiguous or incorrect reward. In robotics, humans often have difficulty providing flawless demonstrations (due to hard-to-use interfaces or limited expertise) [@iliad2019learning]. For example, users teleoperating a robot arm might move jerkily or only accomplish part of the task [@iliad2019learning]. This makes sole reliance on demonstrations problematic. Nonetheless, demonstration data can provide a strong prior: it shows at least one way to succeed (or partial preferences for certain behaviors).
+
+### Learning from Preferences and Rankings of Trajectories
+
+When high-quality demonstrations are hard to obtain, preference queries on trajectories are a viable alternative [@iliad2019learning]. In preference-based learning for robotics, the robot (or algorithm) presents two (or more) trajectories of the task outcome, and the human chooses which one is better. Each such comparison provides a bit of information about the true underlying reward. By asking many queries, the algorithm can home in on the reward function that explains the human’s choices [@iliad2019learning].
+
+A concrete example is an agent learning to do a backflip in simulation [@christiano2023deep]. The agent initially performs random flails. The system then repeatedly shows the human *two video clips* of the agent’s behavior and asks which is closer to a proper backflip. From these comparisons, a reward model is learned that assigns higher value to behaviors more like backflips [@christiano2023deep]. The agent then uses reinforcement learning to optimize this learned reward, gradually performing better backflips. This process continues, with the human being asked comparisons on trajectories where the algorithm is most uncertain (to maximally inform the reward model) [@christiano2023deep].
+
+ ([Learning from human preferences | OpenAI](https://openai.com/index/learning-from-human-preferences/)) *Framework for learning from human preferences in robotics: a reward predictor (utility function) is learned from human feedback on trajectory comparisons, and an RL algorithm uses this learned reward to improve the policy [@christiano2023deep]. The loop is iterative: as the policy improves, new queries focus on areas of uncertainty to refine the reward model.* 
+
+Such preference-based reward learning has enabled complex skills without explicitly programmed rewards [@christiano2023deep]. Notably, Christiano *et al.* (2017) showed that an agent can learn Atari game policies and robotic manipulations from a few hundred comparison queries, achieving goals that are hard to specify but easy to judge [@christiano2023deep]. Preferences are often easier for humans than demonstrations: choosing between options is simpler than generating one from scratch [@iliad2019learning]. However, preference learning can be slow if each query only yields one bit of information. Active learning and combining preferences with other feedback can greatly improve efficiency [@iliad2019learning].
+
+### Learning from Trajectory Evaluations (Critiques and Ratings)
+
+Sometimes humans provide feedback in the form of *evaluative scores* or critiques on full trajectories (or partial trajectories). For example, after a robot finishes an attempt at a task, the human might give a reward signal (e.g. +1/-1, or a rating 1–5 stars, or say “too slow” vs “good job”). This is the premise of the TAMER framework (Training an Agent via Evaluative Reinforcement) and related approaches, where a human’s scalar reward signals are directly treated as the reward function for the agent in reinforcement learning.
+
+From a utility learning perspective, such feedback can be used to directly fit a utility model $u_\theta$ that predicts the human’s rating for a given trajectory. For instance, if a human provides a score $H(\tau)$ for trajectory $\tau$, one can treat it as a training target for $u_\theta(\tau)$ (possibly under a regression loss). However, because humans are inconsistent and may not precisely quantify their preferences, it’s often useful to model $H(\tau)$ as a noisy realization of the underlying utility, rather than a perfect label. A Bayesian approach could treat $H(\tau)$ as a noisy observation of $u(\tau)$ and update a posterior for $u$. Alternatively, classification approaches can be used (e.g. treat trajectories into “liked” vs “disliked” based on thresholded ratings).
+
+A challenge with trajectory-level feedback is *credit assignment*: the human’s single score must be attributed to the entire sequence of actions. Algorithms like COACH (Continuous cOaching of Automated Control Handlers) address this by allowing humans to give feedback at intermediate steps, thereby guiding the agent which specific part of the behavior was good or bad. In either case, learning from trajectory evaluations turns the human into a *reward function provider*, and the learning algorithm’s job is to infer the latent reward function that the human’s evaluations are trying to convey.
+
+### Learning from Physical Corrections
+
+Robots that physically collaborate with humans can receive physical corrections: the human may push the robot or otherwise intervene to adjust its behavior. Such corrections provide insight into the human’s desired utility. For example, if a household robot is carrying a fragile object too recklessly and the human physically slows it down or re-routes it, that indicates the human’s reward favors safety over speed at that moment.
+
+Learning from physical corrections can be formalized in different ways. One approach is to treat a correction as a demonstration on a small segment: the human’s intervention suggests a better action or trajectory than what the robot was doing. This can be converted into a comparison: “the trajectory after correction is preferred over the original trajectory” for that time segment. The robot can then update its reward function $\theta$ to satisfy $R_\theta(\text{human-corrected behavior}) > R_\theta(\text{robot’s initial behavior})$. Repeated corrections yield a dataset of such pairwise preferences, focused on the states where the robot was wrong [@losey2021corrections].
+
+Another approach is to infer the human’s intent through the sequence of corrections. Research by Losey *et al.* (2021) formalized learning from *sequences* of physical corrections, noting that each correction is not independent: a series of pushes might only make sense in aggregate [@losey2021corrections]. By analyzing the cumulative effect of multiple interventions, the algorithm can deduce the underlying objective more accurately (e.g. the human consistently steers the robot away from the table edges, implying a high negative reward for collisions). Their algorithm introduced an auxiliary reward term to capture the human’s trade-off: they will correct the robot if the immediate mistake is worth fixing relative to long-term performance [@losey2021corrections]. The conclusion was that reasoning over the sequence of corrections improved learning of the human’s objective [@losey2021corrections].
+
+Physical corrections are intuitive for humans – we often instinctively guide others or objects when they err. For the robot, interpreting this guidance requires converting it into constraints or examples for the utility function. It is a powerful signal because it is *active*: the human is not just telling preferences but directly imparting the desired direction of change.
+
+### Combining Multiple Feedback Types
+
+Each feedback modality has strengths and weaknesses. Demonstrations provide a lot of information but can be hard to perform; preferences are easy for humans but yield information slowly; corrections are very informative locally but require physical interaction; trajectory evaluations are straightforward but coarse. Combining these modes can lead to faster and more robust reward learning [@iliad2019learning]. For example, the DemPref algorithm [@iliad2019learning] first uses demonstrations to get an initial rough reward model, then uses preference queries to refine it quickly [@iliad2019learning]. In user studies, such combined approaches learned better rewards with fewer queries than using either alone [@iliad2019learning].
+
+In practical robot learning systems, one might start by asking for a demonstration. If the demo is suboptimal, the system can then ask preference questions on alternative attempts to clarify the true goal. During actual execution, if the human intervenes, the robot updates its reward function on the fly to avoid repeating the mistake. This *interactive reward learning* loop continues until the robot’s behavior aligns with human intent.
+
+## Summary
+
+Learning utility functions from human preferences enables value alignment: aligning an AI system’s objectives with what humans actually want, rather than what we *think* we want in abstract. We covered how supervised learning can extract utilities from comparisons or scores, and how Bayesian methods like Gaussian processes and Bayesian neural nets can capture uncertainty in our inferences. In robotics, we saw that feedback can come in many forms – demonstrations, comparisons, corrections, evaluations – each providing a unique window into the human’s utility function. By intelligently combining these signals, robots can efficiently learn complex reward functions that would be extremely difficult to hand-code.
+
+Key takeaways and best practices include:
+
+- *Use the right feedback for the problem:* If optimal examples are available, demonstrations jump-start learning. If not, pairwise preferences or scalar critiques might be easier to obtain.
+- *Model uncertainty:* Knowing what the system doesn’t know (via a Bayesian model) allows for smart query selection and avoids overconfidently optimizing the wrong objective.
+- *Iterate with the human:* Preference learning is fundamentally an interactive process. An agent can query a human in ambiguous cases and continuously refine the utility estimate [@christiano2023deep].
+- *Validate the learned utility:* Once a reward is learned, testing the robot’s policy and having humans verify or correct it is crucial. Even a few manual corrections can reveal if the learned reward misses a key aspect, allowing further refinement.
+- *Be aware of scaling and bias:* Human feedback can be noisy or biased. Techniques like DPO suggest ways to simplify learning and avoid instability, but one should monitor for issues like reward hacking or unintended solutions, intervening with additional feedback as needed.
+
+Learning from human preferences is a rich area of ongoing research. It lies at the intersection of machine learning, human-computer interaction, and ethics. As AI systems become more advanced, the importance of teaching them *our* utility functions (and not mis-specified proxies) grows. The methods discussed in this chapter are building blocks toward AI that truly understands and pursues what humans value, acquired through learning *with* humans in the loop rather than in isolation. By mastering these techniques, we move closer to AI and robots that can be trusted to make decisions aligned with human preferences and well-being. 
+
+<!--
+### Reward Learning in Robotics
+
+To help set up our basic reward learning problem, consider a user and a
+robot. The user's preferences or goals can be represented by an internal
+reward function, R($\xi$), which the robot needs to learn. Since the
+reward function isn't explicit, there are a variety of ways that the
+robot can learn this reward function, which we will discuss in the next
+section. An example method of learning a reward function from human data
+is using pairwise comparison. Consider the robot example from section
+one, but now, the robot shows the human two possible trajectories
+$\xi_A$ and $\xi_B$ as depicted in the diagram below.
+
+![Two different trajectories taken by a robot to prompt
+user ranking.](Figures/robots.png){#fig-reward-robot-1 width="70%"}
+
+The user is show both the trajectories above and asked to rank which one
+is better. Based on iterations of multiple trajectories and ranking, the
+robot is able to learn the user's internal reward function. There quite
+a lot of ways that models can learn a reward function from human data.
+Here's a list [@myers2021learning] of some of them:
+
+1.  Pairwise comparison: This is the method that we saw illustrated in
+    the previous example. The robot is able to learn based on a
+    comparison ranking provided by the user.
+
+2.  Expert demonstrations: Experts perform the task and the robot learns
+    the optimal reward function from these demonstrations.
+
+3.  Sub-optimal demonstrations: The robot is provided with
+    demonstrations that are not quite as good as the expert
+    demonstrations but it is still able to learn a noisy reward function
+    from the demonstrations.
+
+4.  Physical Corrections: While the robot is performing the task, at
+    each point in its trajectory (or at an arbitrary point in its
+    trajectory) its arm is corrected to a more suitable position. Based
+    on these corrections, the robot is able to learn the reward
+    function.
+
+5.  Ranking: This method is similar to pairwise comparison but involves
+    more trajectories than 2. All the trajectories may have subtle
+    differences from each other, but these differences help provide
+    insight to the model.
+
+6.  Trajectory Assessment: Given a single trajectory, the user rates how
+    close it is to optimal, typically using a ranking scale.
+
+    Each of these methods allows the robot to refine its understanding
+    of the user's reward function, but their effectiveness can vary
+    depending on the application. For instance, expert demonstrations
+    tend to produce more reliable results but may not always be feasible
+    in everyday tasks. Pairwise comparison and ranking methods offer
+    more flexibility but might require a higher number of iterations.
+
+### Direct Preference Optimization
+
+A modern method for estimating the parameters of a human preference
+model is direct preference optimization [@rafailov2023direct], which is
+used in the context of aligning language models to human preferences. A
+recent approach [@christiano2023deep] first trains a reward model that
+captures human preferences and then uses proximal policy optimization to
+train a language model-based policy to reflect those learned
+preferences. Direct Preference Optimization (DPO), on the other hand,
+removes the need for a reward model by directly using the model
+likelihood of two outcomes (a preferred or highly-ranked sequence and an
+unpreferred or low-ranked sequence) to capture the preference
+represented in the data. DPO provides a simpler framework than its
+reinforcement learning approach and results in comparable performance
+with improved stability. Furthermore, it obviates the need to train a
+reward model, instead using a language model policy and human preference
+dataset to align the policy directly to human preferences.
+
+<!--
+Through our exploration of human preference models, we will ground ourselves in
+building a health coaching system that can provide meal recommendations aligned with a user's dietary needs and preferences. Examples of scenarios which can benefit from a model of how humans make choices include:
+
+1.  **Health coaching:** Humans express their preferences every time
+    they pick lunch for consumption. Humans may have several goals
+    related to nutrition, such as weight loss and improving
+    concentration. We can learn how a given individual or set of
+    individuals prefer to eat to provide personalized recommendations to
+    help them attain their goals. This chapter will use this use case to
+    ground human preference modeling in a real-life application.
+
+2.  **Social media:** Platforms have a far greater amount of content
+    than one can consume in a lifetime, yet such products must aim to
+    maximize user engagement. To accomplish this, we can learn what
+    specific things people like to see in their feeds to optimize the
+    value they gain out of their time on social media. For example, the
+    video feed social media platform [TikTok](https://www.tiktok.com/)
+    has had viral adoption due to its notorious ability to personalize a
+    feed for its users based on their preferences.
+
+3.  **Shopping:** Retail corporations largely aim to maximize revenue by
+    making it easy for people to make purchases. Recommendation systems
+    on online shopping platforms provide a mechanism for curating
+    specific items based on an individual's previous purchases (or even
+    browsing history) to make shoppers aware of items they may like and,
+    therefore, purchase.
+
+Two key models used in pairwise sampling are the Thurstonian and Bradley-Terry models [@cattelan2012]. The Thurstonian model assumes each item $i$ has a true score $u_i$ following a normal distribution. The difference $d_{ij} = u_i - u_j$ is also normally distributed. The probability that item $i$ is preferred over item $j$ is given by $P(i \succ j) = \Phi \left( \frac{u_i - u_j}{\sqrt{2\sigma^2}} \right)$, where $\Phi$ is the cumulative normal distribution function. The denominator $\sqrt{2\sigma^2}$ is the standard deviation of the difference $d_{ij} = u_i - u_j$ when $u_i$ and $u_j$ are normally distributed with variance $\sigma^2$[@cattelan2012]. The Bradley-Terry model defines the probability of preference based on latent scores $\beta_i$ and $\beta_j$. The probability that item $i$ is preferred over item $j$ is $P(i \succ j) = \frac{e^{\beta_i}}{e^{\beta_i} + e^{\beta_j}}$. This model is used to estimate relative strengths or preferences based on latent scores. [@cattelan2012].
+
+::: {#tbl-philosophy}
+  -----------------------------------------------------------------------
+  Application                         Human Preference
+  ----------------------------------- -----------------------------------
+  Computer vision: train a neural     This is how humans process images
+  network to predict bounding boxes   by identifying the position and
+  delineating all instances of dogs   geometry of the things we see in
+  in an image                         them
+
+  Natural language processing: train  Coherent text is itself a
+  a model to generate coherent text   human-created and defined concept,
+                                      and we prefer that any
+                                      synthetically generated text
+                                      matches that of humans
+
+  Computer vision: train a diffusion  Humans prefer that images
+  model to generate realistic images  accurately capture the world as
+  of nature                           observed by humans, and this
+                                      generative model should reflect the
+                                      details that comprise that
+                                      preference
+  -----------------------------------------------------------------------
+
+  : Examples of machine learning tasks and their interpretation as
+  modeling human preferences.
 :::
-
-## Dueling Bandit
-
-The multi-armed bandit (MAB) problem involves a gambler deciding which lever to pull on an MAB 
-machine to maximize the winning rate, despite not knowing which machine is the most rewarding. 
-This scenario highlights the need to balance exploration (trying new machines to discover potential 
-higher rewards) and exploitation (using current knowledge to maximize gains). MAB algorithms 
-address this dilemma by making decisions under uncertainty to achieve the best possible outcomes 
-based on gathered data. At the core of the MAB problem is a set of actions, or 'arms,' denoted by 
-$\mathcal{A} = \{1, 2, \ldots, K\}$, where $K$ signifies the total number of arms. For each round $t$, 
-the agent selects an arm $a_t \in \mathcal{A}$ and receives a reward $r_t$, sampled from an arm-specific,
-unknown probability distribution. The expected reward of pulling arm $a$ is represented as $\mu_a = \mathbb{E}[r_t | a]$.
-
-The multi-armed bandit framework can be extended in various ways to model more complex scenarios. 
-In the infinite-armed bandit problem, the set of possible arms $\mathcal{A}$ is either very large 
-or infinite. This introduces significant challenges in exploration, as the agent cannot afford to 
-explore each arm even once. Algorithms for infinite-armed bandits typically assume some regularity 
-or structure of the reward function across arms to make the problem tractable. The contextual bandit 
-problem extends the bandit framework by incorporating observable external states or contexts that 
-influence the reward distributions of arms. The agent's task is to learn policies that map contexts 
-to arms to maximize reward. This model is particularly powerful for personalized recommendations, where 
-the context can include user features or historical interactions. In dueling bandit problems, the agent 
-chooses two arms to pull simultaneously and receives feedback only on which of the two is better, not 
-the actual reward values. This pairwise comparison model is especially useful in scenarios where absolute 
-evaluations are difficult, but relative preferences are easier to determine, such as in ranking systems.
-
-Contextual bandits extend the multi-armed bandits by making decisions conditional on the state of the 
-environment and previous observations. The benefit of such a model is that observing the environment 
-can provide additional information, potentially leading to better rewards and outcomes. In each 
-iteration, the agent is presented with the context of the environment, then decides on an action 
-based on the context and previous observations. Finally, the agent observes the action's outcome and 
-reward. Throughout this process, the agent aims to maximize the expected reward.
-
-In many real-world contexts, one may not have a real-valued reward (or at least a reliable one) 
-associated with a decision. Instead, we may only have observations indicating which of a set of 
-bandits was optimal in a given scenario. The assumption is that within these observations of 
-preferred choices among a set of options, there is an implicit reward or payoff encapsulated in that 
-decision. Consider the following examples:
-
-1.  **Dietary preferences**: When providing food recommendations to humans, it is often not possible 
-    to quantify an explicit reward from recommending a specific food item. Instead, we can offer meal 
-    options and observe which one the person selects.
-
-2.  **Video recommendation**: Websites like YouTube and TikTok recommend specific videos to users. It is 
-    typically not feasible to measure the reward a person gains from watching a video. However, we can infer 
-    that a user preferred one video over another. From these relative preference observations, we can develop 
-    a strategy to recommend videos they are likely to enjoy.
-
-3.  **Exoskeleton gait optimization**: Tucker et al. (2020) created a framework that uses human-evaluated 
-    preferences for an exoskeleton gait algorithm to develop an optimal strategy for the exoskeleton to assist
-    a human in walking. A human cannot reliably produce a numerical value for how well the exoskeleton helped 
-    them walk but can reliably indicate which option performed best according to their preferences.
-
-Generally, we assume access to a set of actions. A noteworthy assumption is that any observations we make
-are unbiased estimates of the payoff. This means that if we observe a human preferred one option over another 
-(or several others), the preferred option had a higher implicit reward or payoff than the alternatives. In the 
-case of dietary preferences, this may mean that a human liked the preferred option; in the case of video 
-recommendations, a user was more entertained, satisfied, or educated by the video they selected than the other options.
-
-The overarching context is that we do not have direct or reliable access to rewards. We may not have a 
-reward at all (for some decisions, it may be impossible to define a real value to the outcome), or it may be 
-noisy (for example, if we ask a human to rate their satisfaction on a scale of 1 to 10). We use relative 
-comparisons to evaluate the best of multiple options in this case. Our goal is to minimize total regret in 
-the face of noisy comparisons. Humans may not always provide consistent observations (since human decision-making 
-is not guaranteed to be consistent). However, we can still determine an optimal strategy with the observed 
-comparisons. We aim to minimize the frequency of sub-optimal decisions according to human preferences. In practice, 
-many formulations of bandits can allow for infinitely many bandits (for example, in continuous-value and high-dimensional 
-spaces). However, this situation can be intractable when determining an optimal decision strategy. With 
-infinite options, how can we always ensure we have chosen the best? We will constrain our bandits to a 
-discrete space to enable efficient exploration. We will assume that we have $k$ bandits, $b_i, i \in [1, k]$, 
-and our task is to choose the one that will minimize regret.
-
-With the framework outlined, we now define our approach more formally. This method was introduced by 
- [@YUE20121538], and proofs for the guarantees and derivations of parameters can be found in their work.
-
-To determine the optimal action, we will compare pairwise to ascertain the probability that an action $b_i$ is 
-preferred over another $b_j$, where $i \ne j$. Concretely, we assume access to a function $\epsilon$ that helps 
-determine this probability; in practice, this can be done with an oracle, such as asking a human which of two 
-options they prefer: $$P(b_i > b_j) = \varepsilon(b_i, b_j) + \frac{1}{2}.$$ With this model, three basic properties 
-govern the values provided by $\epsilon$:
-$$\epsilon(b_i, b_j) = -\epsilon(b_j, b_i), \epsilon(b_i, b_i) = 0, \epsilon(b_i, b_j) \in \left(-\frac{1}{2}, \frac{1}{2} \right).$$
-
-We assume there is a total ordering of bandits, such that $b_i \succ b_j$ implies $\epsilon(b_i, b_j) > 0$. We 
-impose two constraints to properly model comparisons:
-
--   **Strong Stochastic Transitivity**: We must maintain our total ordering of bandits, and as such, the comparison 
-    model also respects this ordering:
-    $$b_i \succ b_j \succ b_k \Rightarrow \epsilon(b_i, b_k) \ge \text{max}\{\epsilon(b_i, b_j), \epsilon(b_j, b_k)\}.$$ {#eq-stochastic-transitivity}
-
--   **Stochastic Triangle Inequality**: We also impose a triangle inequality, which captures the condition that the probability 
-    of a bandit winning (or losing) a comparison will exhibit diminishing returns as it becomes increasingly superior (or inferior) 
-    to the competing bandit:
-    $$b_i \succ b_j \succ b_k \Rightarrow \epsilon(b_i, b_k) \le \epsilon(b_i, b_j) + \epsilon(b_j, b_k).$$ {#eq-triangle-inequality}
-
-These assumptions may initially seem limiting; however, common models for comparisons satisfy these constraints. 
-For example, the Bradley-Terry Model follows $P(b_i > b_j) = \frac{\mu_i}{\mu_i + \mu_j}$. 
-The Gaussian model with unit variance also satisfies these constraints: $P(b_i > b_j) = P(X_i - X_j > 0)$, 
-where $X_i - X_j \sim N(\mu_i - \mu_j, 2)$.
-
-To accurately model the preferences between bandits in our framework of pairwise bandit comparisons and regret, 
-we must track certain parameters in our algorithm. First, we will maintain a running empirical estimate of the probability 
-of bandit preferences based on our observations. It is important to note that we do not have direct access to an $\epsilon$ 
-function. Instead, we must present two bandits to a human, who selects a winner. To do this, we define:
-$$\hat{P}_{i, j} = \frac{\# b_i\ \text{wins}}{\# \text{comparisons between}\ i \text{and}\ j}.$$
-
-We will also compute confidence intervals at each timestep for each of the entries in $\hat{P}$ as
-$$\hat{C}_t = \left( \hat{P}_t - c_t, \hat{P}_t + c_t \right),$$
-where $c_t = \sqrt{\frac{4\log(\frac{1}{\delta})}{t}}$. Note that $\delta = \frac{1}{TK^2}$, where $T$ is the 
-time horizon and $K$ is the number of bandits.
-
-Previously, we discussed approaches for finding the best action in a specific context. Now, we consider changing contexts, 
-which means there is no longer a static hidden preference matrix $P$. Instead, at every time step, there is a preference 
-matrix $P_C$ depending on context $C$. We consider a context $C$ and a preference matrix $P_C$ to be chosen by nature as a 
-result of the given environment (Yue et al., 2012). The goal of a contextual bandits algorithm is to find a policy $\pi$ that 
-maps contexts to a Von Neumann winner distribution over our bandits. That is, our policy $\pi$ should map any context to some 
-distribution over our bandits such that sampling from that distribution is preferred to a random action for that context.
-
-### Regret
-
-The agent aims to pick a sequence of arms $(a_1, a_2, \ldots, a_T)$
-across a succession of time steps $t = 1$ to $t = T$ to maximize the
-total accumulated reward. Formally, the strategy seeks to maximize the
-sum of the expected rewards:
-$\max_{a_1, \ldots, a_T} \mathbb{E} \left[\sum_{t=1}^{T} r_t\right]$.
-Regret is defined as the difference between the cumulative reward that
-could have been obtained by always pulling the best arm (in hindsight,
-after knowing the reward distributions) and the cumulative reward
-actually obtained by the algorithm. Formally, if $\mu^*$ is the expected
-reward of the best arm and $\mu_{a_t}$ is the expected reward of the arm
-chosen at time $t$, the regret after $T$ time steps is given by
-$R(T) = T \cdot \mu^* - \sum_{t=1}^{T} \mu_{a_t}$. The objective of a
-bandit algorithm is to minimize this regret over time, effectively
-learning to make decisions that are as close as possible to the
-decisions of an oracle that knows the reward distributions beforehand.
-Low regret indicates an algorithm that has often learned to choose
-well-performing arms, balancing the exploration of unknown arms with the
-exploitation of arms that are already known to perform well. Thus, an
-efficient bandit algorithm exhibits sub-linear regret growth, meaning
-that the average regret per round tends to zero as the number of rounds
-$T$ goes to infinity: $\lim_{T \to \infty} \frac{R(T)}{T} = 0$.
-Minimizing regret is a cornerstone in the design of bandit algorithms,
-and its analysis helps in understanding the long-term efficiency and
-effectiveness of different bandit strategies.
-
-As previously discussed, our goal is to select the bandit that minimizes
-a quantity that reflects regret or the cost of not selecting the optimal
-bandit at all times. We can leverage our comparison model to define a
-quantity for regret over some time horizon $T$, which is the number of
-decisions we make (selecting what we think is the best bandit at each
-iteration). Assuming we know the best bandit $b^*$ (and we know that
-there *is* a best bandit, since there is a total ordering of our
-discrete bandits), we can define two notions of regret:
-
--   Strong regret: aims to capture the fraction of users who would
-    prefer the optimal bandit $b^*$ over the *worse* of the options
-    $b_1, b_2$ we provide at a given
-    step:$R_T = \sum_{t = 1}^T \text{max} \left\{ \epsilon(b^*, b_1^{(t)}), \epsilon(b^*, b_2^{(t)}) \right\}$
-
--   Weak regret: aims to capture the fraction of users who would prefer
-    the optimal bandit $b^*$ over the *better* of the options $b_1, b_2$
-    we provide at a given
-    step:$\tilde{R}_T = \sum_{t = 1}^T \text{min} \left\{ \epsilon(b^*, b_1^{(t)}), \epsilon(b^*, b_2^{(t)}) \right\}$
-
-The best bandit described in our regret definition is called a
-**Condorcet Winner**. This is the strongest form of winner. It's the
-action **$A_{i}$** which is preferred to each other action **$A_j$**
-with $p > 0.5$ in a head-to-head election. While the above introduced
-notions of regret assume an overall best bandit to exist, there might be
-settings, where no bandit wins more than half head-to-head duels. A set
-of actions without a Condorcet winner is described by the following
-preference matrix, where each entry $\Delta_{jk}$ is
-$p(j \succ k) - 0.5$, the probability that action $j$ is preferred over
-action $k$ minus 0.5. There is no Condorcet winner as there is no action
-that is preferred with $p > 0.5$ over all other actions. Imagine, you
-want to find the best pizza to eat (=action). There may not be a pizza
-that wins more than half of the head-to-head duels against every other
-pizza.
-
-However, we might still have an intuition of the best pizza. Therefore
-Sui et al., 2018 introduce the concepts of different $\textit{winners}$
-in dueling bandit problems [@advancements_dueling]. In this example, we
-might define the best pizza as the most popular one. We call the Pizza
-receiving the most votes in a public vote the **Borda Winner**, or
-formally, Borda winner
-$j = \arg\max_{i \in A, i \neq j} \left(\sum p(j \succ i)\right)$. In
-contrast to the Condorcet Winner setting, there is always guaranteed to
-be one or more (in the case of a tie) Borda winners for a set of
-actions. However - if there is a Condorcet Winner, this might not
-necessarily be the same as a Borda Winner: In our Pizza example, a
-Pepperoni Pizza might win more than half of its head-to-head duels,
-while the Cheese-Pizza is still the most popular in a public poll.
-
-A more generic concept of winner is the **Von Neumann Winner**, which
-describes a probability distribution rather than a single bandit winner.
-A Von Neumann winner simply prescribes a probability distribution $W$
-such that sampling from this distribution 'beats' an action from the
-random uniform distribution with $p > 0.5$. In our pizza example, this
-would correspond to trusting a friend to order whichever Pizza he likes,
-because this may still be preferred to ordering randomly. Formally, $W$
-is a Von Neumann if $(j \sim W, k \sim R) [p(p(j \succ k) > 0.5) > 0.5]$
-where $R$ describes the uniform probability distribution over our
-actions. The concept of a Von Neumann winner is useful in contextual
-bandits, which will be introduced later. In these settings, the
-preference matrix depends on different context, which may have different
-Borda winners, just as different parties may vote for different pizzas.
-
-::: {#fig-condorcet_violation}
-         A        B           C         D       E      F
-  --- ------- ---------- ----------- ------- ------- ------
-   A     0     **0.03**   **-0.02**   0.06    0.10    0.11
-   B   -0.03      0       **0.03**    0.05    0.08    0.11
-   C            -0.03         0       0.04    0.07    0.09
-   D   -0.06    -0.05       -0.04       0     0.05    0.07
-   E   -0.10    -0.08       -0.07     -0.05     0     0.03
-   F   -0.11    -0.11       -0.09     -0.07   -0.03    0
-
-  : Violation of Condorcet Winner. Highlighted entries are different
-  from Table 1. No Condorcet winner exists as no arm could beat every
-  other arm.
-:::
-
-Next, we introduce two performance measures for the planner. The
-**asymptotic ex-post regret** is defined as
-$$\text{Regret}(\mu_1, \ldots \mu_K) = T\cdot \max_i \mu_i - \sum_{i=1}^T E[\mu_{I_t}].$$
-
-Intuitively, this represents the difference between the reward achieved
-by always taking the action with the highest possible reward and the
-expected welfare of the recommendation algorithm (based on the actions
-it recommends at each timestep).
-
-We also define a weaker performance measure, the **Bayesian regret**,
-which is defined as
-$$\text {Bayesian regret}=E_{\mu_1, \ldots, \mu_K \sim \text {Prior}}\left[\operatorname{Regret}\left(\mu_1, \ldots, \mu_K\right)\right]$$
-
-With a Bayesian optimal policy, we would like either definition of
-regret to vanish as $T\to \infty$; we are considering "large-market
-optimal\" settings where there are many short-lived, rather than a few
-long-term, users. Note the fact that ex-post regret is prior-free makes
-it robust to inaccuracies on the prior.
-
-### Acquisition Functions
-
-Various strategies have been developed to balance the
-exploration-exploitation trade-off. These strategies differ in selecting
-arms based on past experiences and rewards.
-
-#### Classical Acquisition Functions
-
-**Uniform** acquisition function is the most straightforward approach where
-each arm is selected uniformly randomly over time. This strategy does
-not consider the past rewards and treats each arm equally promising
-regardless of the observed outcomes. It is a purely explorative strategy
-that ensures each arm is sampled enough to estimate its expected reward,
-but it does not exploit the information to optimize rewards. In
-mathematical terms, if $N_t(a)$ denotes the number of times arm $a$ has
-been selected up to time $t$, the Uniform Strategy would ensure that
-$N_t(a) \approx \frac{t}{K}$ for all arms $a$ as $t$ grows large:
-$P(a_t = a) = \frac{1}{K}$
-
-The **Epsilon Greedy** is a popular method that introduces a
-balance between exploration and exploitation. With a small probability
-$\epsilon$, it explores by choosing an arm at random, and with a
-probability $1 - \epsilon$, it exploits by selecting the arm with the
-highest estimated reward so far. This strategy incrementally favors
-actions that have historically yielded higher rewards, but still allows
-for occasional exploration to discover better options potentially. The
-parameter $\epsilon$ is chosen based on the desired exploration level,
-often set between 0.01 and 0.1. $$P(a_t = a) =
-\begin{cases} 
-\frac{\epsilon}{K} + 1 - \epsilon & \text{if } a = \arg\max_{a'} \hat{\mu}_{a'} \\
-\frac{\epsilon}{K} & \text{otherwise}
-\end{cases}$$
-
-**Upper Confidence Bound** (UCB) acquisition function takes a more
-sophisticated approach to the exploration-exploitation dilemma. It
-selects arms based on both the estimated rewards and the uncertainty or
-variance associated with those estimates. Specifically, it favors arms
-with high upper confidence bounds on the estimated rewards, which is a
-sum of the estimated mean and a confidence interval that decreases with
-the number of times the arm has been played. This ensures that arms with
-less certainty (those played less often) are considered more often,
-naturally balancing exploration with exploitation as the uncertainty is
-reduced over time.
-
-$$P(a_t = a) =
-\begin{cases} 
-1 & \text{if } a = \arg\max_{a'} \left( \hat{\mu}_{a'} + \sqrt{\frac{2 \ln t}{N_t(a')}} \right) \\
-0 & \text{otherwise}
-\end{cases}$$
-
-#### Interleaved Filter
-
-This algorithm tries to find the best bandit (Condorcet Winner) in a
-discrete, limited bandit-space via pairwise comparisons of the bandits.
-We will now introduce the algorithm for the Interleaved Filter as
-provided in [@YUE20121538] to solve a dueling bandit setup. It starts
-with a randomly defined *best bandit* $\hat{b}$ and iteratively compares
-it to set $W$ containing the remaining bandits $b$ resulting in winning
-probabilities $\hat{P}_{\hat{b},b}$ and confidence interval
-$\hat{C}_{\hat{b},b}$. If a bandit $b$ is *confidently worse* than
-$\hat{b}$, it is removed from $W$. If a bandit $b'$ is *confidently
-better* than $\hat{b}$, it is set as new *best bandit* $\hat{b}$ and
-bandit $\hat{b}$ as well as every other bandit $b$ *worse* than
-$\hat{b}$ are removed from $W$. This is done, until $W$ is empty,
-leaving the final $\hat{b}$ as the predicted best bandit.
-
-:::: algorithm
-::: algorithmic
-**input:** $T$, $B=\{b_1, \dots, b_k\}$ $\delta \gets 1/(TK^2)$ 
-Choose $\hat{b} \in B$ randomly
-$W \gets \{b_1, \dots, b_k\} \backslash \{\hat{b}\}$ $\forall b \in W$,
-maintain estimate $\hat{P}_{\hat{b},b}$ of $P(\hat{b} > b)$ according to
-(6) $\forall b \in W$, maintain $1 - \delta$ confidence interval
-$\hat{C}_{\hat{b},b}$ of $\hat{P}_{\hat{b},b}$ according to (7), (8)
-compare $\hat{b}$ and $b$ update $\hat{P}_{\hat{b},b}$,
-$\hat{C}_{\hat{b},b}$ $W \gets W \backslash \{b\}$
-
-$W \gets W \backslash \{b\}$ $\hat{b} \gets b'$,
-$W \gets W \backslash \{b'\}$ $\forall b \in W$, reset
-$\hat{P}_{\hat{b},b}$ and $\hat{C}_{\hat{b},b}$ $\hat{T} \gets$ Total
-Comparisons Made $(\hat{b}, \hat{T})$
-:::
-::::
-
-Parameter Initialization
-
-:   In lines 1-6 of the algorithm, we take the inputs and first compute
-    the value $\delta$ which is used to compute our confidence
-    intervals. We select an initial guess of an optimal bandit $\hat{b}$
-    by uniformly sampling from all bandits $\mathcal{B}$. We also keep a
-    running set of bandit candidates $W$, which is initialized to be
-    $\mathcal{B} \setminus \{\hat{b}\}$. At this point, we also
-    initialize our empirical estimates for $\hat{P}, \hat{C}$.
-
-    Next, we will repeat several steps until our working set of bandit
-    candidates $W$ is empty.
-
-Update Estimates Based on Comparisons
-
-:   The first step at each iteration (lines 8-11) is to look at all
-    candidates in $W$, and compare them to our current guess $\hat{b}$
-    using an oracle (e.g. by asking a human which of $\hat{b}$ or
-    $b \in W$ is preferred). With this new set of wins and comparisons,
-    we update our estimates of $\hat{P}, \hat{C}$.
-
-Prune Suboptimal Bandits
-
-:   In lines 12-13, with updated comparison win probabilities and
-    corresponding confidence intervals, we can remove bandit candidates
-    from $W$ that we are *confident* $\hat{b}$ is better than. The
-    intuition here is that we are mostly sure that our current best
-    guess is better than some of the candidates, and we don't need to
-    consider those candidates in future iterations.
-
-Check for Better Bandits from Candidate Set
-
-:   Now that our candidate set of bandits may be smaller, in lines 15-21
-    we check if there are any bandits $b'$ that we are *confident* are
-    better than our current best guess. If we do find such a candidate,
-    we remove bandits which $\hat{P}$ indicates $b$ is *likely* worse
-    than $\hat{b}$. Note that in this step, we do not require the
-    probability to be outside the confidence interval, since we already
-    found one we believe to be significantly closer to optimal than our
-    current best guess.
-
-    Once we remove the candidates *likely* worse than $\hat{b}$, we
-    crown $b'$ as the new best guess, e.g. $\hat{b} := b'$.
-    Consequently, we remove $b'$ from $W$ and reset our empirical win
-    counters $\hat{P}, \hat{C}$.
-
-With this algorithm defined, let us look at some provisions of the
-method with respect to identifying the optimal strategy. Note that the
-proofs and derivations for these quantities are provided in
-[@YUE20121538].
-
-First, the method guarantees that for the provided time horizon $T$, the
-algorithm returns the correct bandit with probability
-$P \ge 1 - \frac{1}{T}$. It is interesting and useful to note that if
-one has a strict requirement for the probability of identifying the
-correct bandit, one can compute the time horizon $T$ that guarantees
-this outcome at that probability. Furthermore, a time horizon of 1
-leaves no probabilistic guarantee of a successful outcome, and
-increasing $T$ has diminishing returns. Second, in the event that the
-algorithm returns an incorrect bandit, the maximal regret incurred is
-linear with respect to $T$, e.g. $\mathcal(O)(T)$. This is also a useful
-provision as it allows us to estimate the overall cost in the worst case
-outcome. Based on these two provisions, we can compute the expected
-cumulative regret from running the Interleaved Filter algorithm, which
-is:
-$$\mathbb{E}\left[R_T\right] \le \left(1 - \frac{1}{T}\right) \mathbb{E}\left[ R_T^{IF} \right] + \frac{1}{T}\mathcal{O}(T) \\
-= \mathcal{O}\left(\mathbb{E}\left[ R_T^{IF} \right] + 1\right)$$
-
-Interestingly, the original work shows that these bounds hold for both
-strong and weak regret. As demonstrated, the Interleaved Filter
-algorithm [\[fig-if\]](#fig-if){reference-type="ref" reference="fig-if"}
-provides a robust method to ascertain the optimal bandit or strategy
-given a set of options and only noisy comparisons. In most real-world
-scenarios for modeling human preferences, it is not possible to observe
-a real-world reward value, or at least a reliable one and as such this
-method is a useful way to properly model human preferences.
-
-Furthermore, the algorithm provides strong guarantees for the
-probability of selecting the correct bandit, maximal regret, and the
-number of comparisons required. It is even more impressive that the
-method can do so without severely limiting constraints; as demonstrated,
-the most commonly used models satisfy the imposed constraints.
-
-As we look to model human preferences, we can certainly leverage this
-method for k-armed dueling bandits to identify the best strategy to
-solve human-centric challenges, from video recommendation to meal
-selection and exoskeleton-assisted walking.
-
-#### Dueling Bandit Gradient Descent
-
-This algorithm tries to find the best bandit in a continuous
-bandit-space. Here, the set of all bandits is regarded as an
-Information-Retrieval (IR) system with infinite bandits uniquely defined
-by $w$. We will cover the *Dueling Bandit Gradient Descent* algorithm
-from Yue and Joachims 2009 [@IR]. Yue and Joachims use the dueling
-bandits formulation for online IR optimization. They propose a retrieval
-system parameterized by a set of continuous variables lying in $W$, a
-$d$-dimensional unit-sphere. The DBGD algorithm adapts the current
-parameters $w_t$ of IR system by comparison with slightly altered
-parameters $w_t'$ both querying query $q_t$. Only if the IR outcome
-using $w_t'$ is preferred, the parameters are changed in their
-direction. We will now discuss the algorithm more detailed.
-
-:::: algorithm
-::: algorithmic
-**input:** $\gamma$, $\delta$, $w_1$ 
-
-Sample unit vector $u_t$ uniformly
-
-$w_t' \gets P_W(w_t + \delta u_t)$ 
-
-Compare $w_t$ and $w_t'$
-
-$w_{t+1} \gets P_W(w_t + \gamma u_t)$ 
-
-$w_{t+1} \gets w_t$
-:::
-::::
-
-We first choose exploration step length $\delta$, exploitation step
-length $\gamma$, and starting point (in unit-sphere) $w_1$. Choose a
-query and sample a random unit vector $u_t$. We duel $w_t$ and $w_t'$,
-where $w_t$ is our current point in the sphere, and $w_t'$ is our
-exploratory comparison, which is generated by taking a random step of
-length $\delta$, such that $w_t' = w_t + \delta u_t$. The objective of
-this duel is to ascertain the binary preference of users with respect to
-the results yielded by the IR systems parameterized by $w_t$ and $w_t'$
-respectively, taking query $q_t$ as an input. The parameters that get
-the majority of the votes in the head to head win. If $w_t$ wins, then
-we keep the parameters for the next iteration. If $w_t'$ wins the duel,
-we update our parameters in the direction of $u_t$ by taking a step of
-length $\gamma$. Note that the algorithm describes projection operation
-$P_W(\overrightarrow{v})$. Since $u_t$ is chosen randomly,
-$w_t + \delta u_t$ or $w_t + \gamma u_t$ could exist outside of the unit
-sphere where all possible parameter configurations lie. In this case, we
-simply project the point back onto the sphere using said projection
-$P_W(\overrightarrow{v})$.
-
-Yue and Joachims show that this algorithm has sublinear regret in $T$,
-the number of iterations. We note that the algorithm assumes that there
-exists a hidden reward function $R(w)$ that maps system parameters $w_t$
-to a reward value which is smooth and strictly concave over the input
-space $W$.
-
-Lastly, we would also like to give motivation behind $\delta$ and
-$\gamma$ being different values. We need a $\delta$ that is sufficiently
-large that the comparison between a system parameterized by $w_t$ and
-$w_t'$ is meaningful. On the other hand, we may wish to take a smaller
-step in the direction of $w_t'$ during our update step, as during a
-duel, we only score $w_t$ against $w_t'$ over the results on one query
-$q_t$. Having $\delta > \gamma$ allows us to get reward signal from
-meaningfully different points while also updating our belief of the best
-point $w_{\text{best}}$ gradually.
-
-#### Sparring EXP4 {#sparring-exp4 .unnumbered}
-
-Zoghi et al. 2015 propose one algorithm for this problem --- sparring
-EXP4, which duels two traditional EXP4 - algorithms. The (traditional)
-EXP4 algorithm solves the traditional contextual bandits --- the case
-where we can directly observe a reward for a choice of bandit given a
-context. The EXP4 algorithm embeds each bandit as a vector. When the
-algorithm sees the context (called 'advice' in this formulation), it
-produces a probability distribution over the choices based on an
-adjusted softmax function on the inner product between the context and
-the bandit vectors. The probability function is different from a softmax
-as we assign some minimum probability that any action gets chosen to
-enforce exploration. A reward is then observed for the choice and
-propagated back through the embedding of the chosen bandit.
-
-Sparring EXP4 runs two instances of the EXP4 algorithm against each
-other. Each EXP4 instance samples an action given a context, and then
-these choices are 'dueled' against each other. Instead of directly
-observing a reward, as for traditional EXP4, we instead observe two
-converse reward --- a positive reward for the choice that won the duel
-and a negative reward to the choice that lost. The reward is
-proportional to the degree to which the bandit wins the duel, i.e. how
-likely the bandit is to be preferred over the other when users are
-queried for binary preferences. Like in traditional EXP4, the reward or
-negative reward is then propagated back through the representations of
-the bandits.
-
-#### Feel-good Thompson sampling
-
-This algorithm is a solution for the contextual dueling bandit setting,
-and tries to minimize cumulative average regret (= find WHAT WINNER?!Von
-Neumann???):
-$$\text{Regret}(T) := \sum_{t=1}^{T} \left[ r_{*}(x_t, a_{t}^{*}) - \frac{r_{*}(x_t, a_{t}^{1}) + r_{*}(x_t, a_{t}^{2})}{2} \right],$$
-where $r_{*}(x_t, a_{t})$ is the true, hidden reward function of a
-context $x_t$ and action $a_t$. Thompson sampling is an iterative
-process of receiving preference over two actions, each maximizing a
-different approximation of the reward function based on past data and
-adding this new information to the data.
-
-Finding good approximations of the reward function at time $t$ is done
-by sampling two reward function parameters $\theta_t^{j=1}$ and
-$\theta_t^{j=2}$ from a posterior distribution based on all previous
-data $p_j(\cdot \mid S_{t-1})$. This posterior distribution is
-proportional to the multiplication of the prior and the likelihood
-function, which is a Gaussian in standard Thompson sampling. In
-Feel-Good Thompson sampling, an additional term called \"Feel-good
-exploration\" encourages parameters $\theta$ with a large maximum reward
-in previous rounds. This change to the likelihood function may increase
-probabilities in uncertain areas, thus exploring those regions. All
-that's left is to select an action maximizing each reward function
-approximation and receive a preference $y_t$ on one of them to add the
-new information to the dataset[@fgts_cdb].
-
-:::: algorithm
-::: algorithmic
-Initialize $S_0 = \varnothing$. Receive prompt $x_t$ and action space
-$\mathcal{A}_t$. Sample model parameter $\theta_t^j$ from the posterior
-distribution $p^j(\cdot \mid S_{t-1})$ Select response
-$a_t^j = \arg\max_{a \in \mathcal{A}_t} \langle \theta_t^j, \phi(x_t, a) \rangle$.
-Receive preference $y_t$. Update dataset
-$S_t \leftarrow S_{t-1} \cup \{(x_t, a_t^1, a_t^2, y_t)\}$.
-:::
-::::
-
-### Applications
-
-There are many applications where contextual bandits are used. Many of
-these applications can utilize human preferences. One particular
-application illustrates the benefits a contextual bandit would have over
-a multi-armed bandit: a website deciding which app to show someone
-visiting the website. A multi-armed bandit might decide to show someone
-an ad for a swimsuit because the swimsuit ads have gotten the most user
-clicks (which indicates human preference). A contextual bandit might
-choose differently, however. A contextual bandit will also take into
-account the context, which in this case might mean information about the
-user (location, previously visited pages, and device information). If it
-discovers the user lives in a cold environment, for example, it might
-suggest a sweater ad for the user instead and get a better chance of a
-click. There are many more examples of where contextual bandits can be
-applied. They can be applied in other web applications, such as to
-optimize search results, medical applications, such as how much of a
-medication to prescribe based on a patient's history, and gaming
-applications, such as basing moves off of the state of a chess board to
-try to win. In each of the above examples, human feedback could have
-been introduced during training and leveraged to learn a reward
-function.
-
-We explored different versions of bandits that address the
-exploration-exploitation trade-off in various real-world scenarios.
-These models have been employed across various fields, including but not
-limited to healthcare, finance, dynamic pricing, and anomaly detection.
-This section provides a deep dive into some real-world applications,
-emphasizing the value and advancements achieved by incorporating bandit
-methodologies. The content of this section draws upon the findings from
-the survey cited in reference [@bouneffouf2020survey].
-
-In healthcare, researchers have been applying bandits to address
-challenges in clinical trials and behavioral
-modeling [@bouneffouf2017bandit; @bastani2020online]. One of the
-examples is drug dosing. Warfarin, an oral anticoagulant, has
-traditionally been administered using fixed dosing protocols. Physicians
-would then make subsequent adjustments based on the patient's emerging
-symptoms. Nonetheless, inaccuracies in the initial dosage---whether too
-low or too high---can lead to serious complications like strokes and
-internal bleeding. In a pivotal study, researchers
-in [@bastani2020online] modeled the Warfarin initial dosing as a
-contextual bandit problem to assign dosages to individual patients
-appropriately based on their medication history. Their contributions
-include the adaptation of the LASSO estimator to the bandit setting,
-achieving a theoretical regret bound of $O({s_0}^2 \log^2(dT)$, where
-$d$ represents the number of covariates, $s_0 << d$ signifies the number
-of pertinent covariates, and $T$ indicates the total number of users.
-Additionally, they conducted empirical experiments to validate the
-robustness of their methodology.
-
-Within the finance sector, bandits have been instrumental in reshaping
-the landscape of portfolio optimization. Portfolio optimization is an
-approach to designing a portfolio based on the investor's return and
-risk criteria, which fits the exploration-exploitation nature of the
-bandit problems. [@shen2015portfolio] utilized multi-armed bandits to
-exploit correlations between the instruments. They constructed
-orthogonal portfolios and integrated them with the UCB policy to achieve
-a cumulative regret bound of $\frac{8n}{\Delta*} \ln(m) + 5n$, where
-$n$, $m$, and $\Delta*$ denotes the number of available assets, total
-time steps, and the gap between the best-expected reward and the
-expected reward. On the other hand, [@huo2017risk] focused on
-risk-awareness online portfolio optimization by incorporating a compute
-of the minimum spanning tree in the bipartite graph, which encodes a
-combination of financial institutions and assets that helps diversify
-and reduce exposure to systematic risk during the financial crisis.
-
-Dynamic pricing, also known as demand-based pricing, refers to the
-strategy of setting flexible prices for products or services based on
-current market demands. The application of bandits in dynamic pricing
-offers a systematic approach to making real-time pricing decisions while
-balancing the trade-off between exploring new price points and
-exploiting known optimal prices. [@misra2019dynamic] proposed a policy
-where the company has only incomplete demand information. They derived
-an algorithm that balances immediate and future profits by combining
-multi-armed bandits with partial identification of consumer demand from
-economic theory.
-
-are essential components of numerous online platforms, guiding users
-through vast content landscapes to deliver tailored suggestions. These
-systems are instrumental in platforms like e-commerce sites, streaming
-platforms, and social media networks. However, the challenge of
-effectively recommending items to users is non-trivial, given the
-dynamic nature of user preferences and the vast amount of content
-available.
-
-One of the most significant challenges in recommendation systems is the
-\"cold start\" problem. This issue arises when a new user joins a
-platform, and the system has limited or no information about the user's
-preferences. Traditional recommendation algorithms struggle in such
-scenarios since they rely on historical user-item interactions. As
-discussed in [@zhou2017large], the bandit setting is particularly
-suitable for large-scale recommender systems with a vast number of
-items. By continuously exploring user preferences and exploiting known
-interactions, bandit-based recommender systems can quickly adapt to new
-users, ensuring relevant recommendations in a few interactions. The
-continuous exploration inherent in bandit approaches also means that as
-a user's preferences evolve, the system can adapt, ensuring that
-recommendations remain relevant. Recommending content that is up to date
-is also another important aspect of a recommendation system.
-In [@bouneffouf2012a], the concept of \"freshness\" in content is
-explored through the lens of the bandit problem. The Freshness-Aware
-Thompson Sampling algorithm introduced in this study aims to manage the
-recommendation of fresh documents according to the user's risk of the
-situation.
-
-Dialogue systems, often termed conversational agents or chatbots, aim to
-simulate human-like conversations with users. These systems are deployed
-across various platforms, including customer support, virtual
-assistants, and entertainment applications, and they are crucial for
-enhancing user experience and engagement. Response selection is
-fundamental to creating a natural and coherent dialogue flow.
-Traditional dialogue systems rely on a predefined set of responses or
-rules, which can make interactions feel scripted and inauthentic.
-In [@liu2018customized], the authors proposed a contextual multi-armed
-bandit model for online learning of response selection. Specifically,
-they utilized bidirectional LSTM to produce the distributed
-representations of a dialogue context and responses and customized the
-Thompson sampling method.
-
-To create a more engaging and dynamic interaction, there's a growing
-interest in developing pro-active dialogue systems that can initiate
-conversations without user initiation. [@perez2018contextual] proposed a
-novel approach to this challenge with contextual bandits. By introducing
-memory models into the bandit framework, the system can recall past
-interactions, making its proactive responses more contextually relevant.
-Their contributions include the Contextual Attentive Memory Network,
-which implements a differentiable attention mechanism over past
-interactions.
-
-[@upadhyay2019a] addressed the challenge of orchestrating multiple
-independently trained dialogue agents or skills in a unified system.
-They attempted online posterior dialogue orchestration, defining it as
-selecting the most suitable subset of skills in response to a user's
-input, which studying a context-attentive bandit model that operates
-under a skill execution budget, ensuring efficient and accurate response
-selection.
-
-Anomaly detection refers to the task of identifying samples that behave
-differently from the majority. In [@ding2019interactive], the authors
-delve into anomaly detection in an interactive setting, allowing the
-system to actively engage with human experts through a limited number of
-queries about genuine anomalies. The goal is to present as many true
-anomalies to the human expert as possible after a fixed query budget is
-used up. They applied the multi-armed contextual bandit framework to
-address this issue. This algorithm adeptly integrates both nodal
-attributes and node dependencies into a unified model, efficiently
-managing the exploration-exploitation trade-off during anomaly queries.
-
-There are many challenges associated with contextual bandits. The first
-challenge is that each action only reveals the reward for that
-particular action. Therefore, the algorithm has to work with incomplete
-information. This leads to the dilemma of exploitation versus
-exploration: when should the algorithm choose the best-known option
-versus trying new options for potentially better outcomes? Another
-significant challenge for contextual bandits is using context
-effectively. The context the environment gives needs to be explored to
-figure out which action is best for each context.
-
-The overarching goal in systems designed for recommending options of
-high value to users is to achieve an optimal balance between exploration
-and exploitation. This dual approach is crucial in environments where
-user preferences and needs are dynamic and diverse. Exploration refers
-to the process of seeking out new options, learning about untried
-possibilities, and gathering fresh information that could lead to
-high-value recommendations. In contrast, exploitation involves utilizing
-existing knowledge and past experiences to recommend the best options
-currently known. This balance is key to maintaining a system that
-continuously adapts to changing user preferences while ensuring the
-reliability of its recommendations.
-
-A key observation in such systems is the dual role of users as both
-producers and consumers of information. Each user's experience
-contributes valuable data that informs future recommendations for
-others. For instance, platforms like Waze, Netflix, and Trip Advisor
-rely heavily on user input and feedback. Waze uses real-time traffic
-data from drivers to recommend optimal routes; Netflix suggests movies
-and shows based on viewing histories and ratings; Trip Advisor relies on
-traveler reviews to guide future tourists. In these examples, the
-balance between gathering new information (exploration) and recommending
-the best-known options (exploitation) is dynamically managed to enhance
-user experience and satisfaction. This approach underscores the
-importance of user engagement in systems where monetary incentives are
-not (or can not be) the primary driver.
-
-Recommendation systems often face the challenge of overcoming user
-biases that can lead to a narrow exploration of options. Users come with
-preconceived notions and preferences, which can cause them to overlook
-potentially valuable options that initially appear inferior or unaligned
-with their interests. This predisposition can significantly limit the
-effectiveness of recommendation systems, as users might miss out on
-high-value choices simply due to their existing biases.
-
-To counteract this, it is crucial for recommendation systems to actively
-incentivize exploration among users. One innovative approach to achieve
-this is through the strategic use of **information asymmetry**. By
-controlling and selectively presenting information, these systems can
-guide users to explore options they might not typically consider. This
-method aims to reveal the true potential of various options by nudging
-users out of their comfort zones and encouraging a broader exploration
-of available choices. An important note here is that the system is not
-lying to users - it only selectively reveals information it has.
-
-The concept of incentivizing exploration becomes even more complex when
-considering different types of users. For instance, systems often
-encounter short-lived users who have little to gain from contributing to
-the system's learning process, as their interactions are infrequent or
-based on immediate needs. Similarly, some users may operate under a
-'greedy' principle, primarily seeking immediate gratification rather
-than contributing to the long-term accuracy and effectiveness of the
-system. In such scenarios, managing information asymmetry can be a
-powerful tool. By selectively revealing information, recommendation
-systems can create a sense of novelty and interest, prompting even the
-most transient or self-interested users to engage in exploration,
-thereby enhancing the system's overall knowledge base and recommendation
-quality.
-
-## Preferential Bayesian Optimization
-
-The traditional Bayesian optimization (BO) problem is described as
-follows. There is a black-box objective function
-$g: \mathcal{X} \rightarrow \Re$ defined on a bounded subset
-$\mathcal{X} \subseteq \Re^q$ such that direct queries to the function
-are expensive or not possible. However, we would like to solve the
-global optimization problem of finding
-$\mathbf{x}_{\min }=\arg \min _{\mathbf{x} \in \mathcal{X}} g(\mathbf{x})$.
-This is highly analogous to modeling human preferences, since it is the
-case that direct access to a human's latent preference function is not
-possible but we would still like to find its optimum, such as in A/B
-tests or recommender systems.
-
-We approach this problem for human preferences with *Preferential
-Bayesian Optimization* (PBO), as the key difference is that we are able
-to query the preference function through pairwise comparisons of data
-points, i.e. *duels*. This is a form of indirect observation of the
-objective function, which models real-world scenarios closely: we
-commonly need to to optimize a function via data about preferences. With
-humans, it has been demonstrated that we are better at evaluating
-differences rather than absolute magnitudes [@kahneman_tversky_1979] and
-therefore PBO models can be applied in various contexts.
-
-### Problem statement
-
-The problem of finding the optimum of a latent preference function
-defined on $\mathcal{X}$ can be reduced to determining a sequence of
-duels on $\mathcal{X} \times \mathcal{X}$. From each duel
-$\left[\mathbf{x}, \mathbf{x}^{\prime}\right] \in$
-$\mathcal{X} \times \mathcal{X}$ we obtain binary feedback $\{0,1\}$
-indicating whether or not $\mathbf{x}$ is preferred over
-$\mathbf{x}^{\prime}$ ($g(\mathbf{x}) < g(\mathbf{x}^{\prime})$). We
-consider that $\mathbf{x}$ is the winner of the duel if the output is
-$\{1\}$ and that $\mathbf{x}^{\prime}$ wins the duel if the output is
-$\{0\}$. The aim is to find $\mathbf{x}_{\min }$ by reducing as much as
-possible the number of queried duels.
-
-The key idea in PBO is to learn a preference function in the space of
-duels using a Gaussian process. We define a joint reward
-$f\left(\left[\mathbf{x}, \mathbf{x}^{\prime}\right]\right)$ on each
-duel which is never directly observed. Instead, the feedback we obtain
-after each pair is a binary output $y \in$ $\{0,1\}$ indicating which of
-the two inputs is preferred. One definition of f we will use (though
-others are possible) is
-$f\left(\left[\mathbf{x}, \mathbf{x}^{\prime}\right]\right)=g\left(\mathbf{x}^{\prime}\right)-g(\mathbf{x})$.
-The more $\mathbf{x}^{\prime}$ is preferred over $\mathbf{x}$, the
-bigger the reward.
-
-We define the model of preference using a Bernoulli likelihood, where
-$p\left(y=1 \mid\left[\mathbf{x}, \mathbf{x}^{\prime}\right]\right)=\pi_f\left(\left[\mathbf{x}, \mathbf{x}^{\prime}\right]\right)$
-and
-$p\left(y=0 \mid\left[\mathbf{x}, \mathbf{x}^{\prime}\right]\right)=\pi_f\left(\left[\mathbf{x}^{\prime}, \mathbf{x}\right]\right)$
-for some inverse link function $\pi: \Re \times \Re \rightarrow[0,1]$.
-$\pi_f$ has the property that
-$\pi_f\left(\left[\mathbf{x}^{\prime}, \mathbf{x}\right]\right)=1-\pi_f\left(\left[\mathbf{x}, \mathbf{x}^{\prime}\right]\right)$.
-A natural choice for $\pi_f$ is the logistic function
-$$\label{eq:bernoulli_pref}
-\pi_f\left(\left[\mathbf{x}, \mathbf{x}^{\prime}\right]\right)=\sigma\left(f\left(\left[\mathbf{x}, \mathbf{x}^{\prime}\right]\right)\right)=\frac{1}{1+e^{-f\left(\left[\mathbf{x}, \mathbf{x}^{\prime}\right]\right)}},$$
-but others are possible. Therefore we have that for any duel
-$\left[\mathbf{x}, \mathbf{x}^{\prime}\right]$ in which
-$g(\mathbf{x}) \leq g\left(\mathbf{x}^{\prime}\right)$ it holds that
-$\pi_f\left(\left[\mathbf{x}, \mathbf{x}^{\prime}\right]\right) \geq 0.5$.
-$\pi_f$ is a preference function that maps each query
-$\left[\mathbf{x}, \mathbf{x}^{\prime}\right]$ to the probability of
-having a preference on the left input $\mathbf{x}$ over the right input
-$\mathbf{x}^{\prime}$.
-
-When we marginalize over the right input $\mathbf{x}^{\prime}$ of $f$
-(is this correct?), the global minimum of $f$ in $\mathcal{X}$ coincides
-with $\mathbf{x}_{\min }$. We also introduce the definition of the
-*Copeland score function* for a point $\mathbf{x}$ as
-$$S(\mathbf{x})=\operatorname{Vol}(\mathcal{X})^{-1} \int_{\mathcal{X}} \mathbb{I}_{\left\{\pi_f\left(\left[\mathbf{x}, \mathbf{x}^{\prime}\right]\right) \geq 0.5\right\}} d \mathbf{x}^{\prime}$$
-where
-$\operatorname{Vol}(\mathcal{X})=\int_{\mathcal{X}} d \mathbf{x}^{\prime}$
-is a normalizing constant that bounds $S(\mathbf{x})$ in the interval
-$[0,1]$. If $\mathcal{X}$ is a finite set, the Copeland score is simply
-the proportion of duels that a certain element $\mathbf{x}$ will win
-with probability larger than 0.5. A soft variant we will use instead of
-the Copeland score is the *soft-Copeland score*, defined as
-$$\label{eq:soft-copeland}
-C(\mathbf{x})=\operatorname{Vol}(\mathcal{X})^{-1} \int_{\mathcal{X}} \pi_f\left(\left[\mathbf{x}, \mathbf{x}^{\prime}\right]\right) d \mathbf{x}^{\prime}$$
-where the probability function $\pi_f$ is integrated over $\mathcal{X}$.
-This score aims to capture the average probability of $\mathbf{x}$ being
-the winner of a duel.
-
-We define the *Condorcet winner* $\mathbf{x}_c$ as the point with
-maximal soft-Copeland score. Note that this corresponds to the global
-minimum of $f$, since the defining integral takes maximum value for
-points $\mathbf{x} \in \mathcal{X}$ where
-$f\left(\left[\mathbf{x}, \mathbf{x}^{\prime}\right]\right)=$
-$g\left(\mathbf{x}^{\prime}\right)-g(\mathbf{x})>0$ or all
-$\mathbf{x}^{\prime}$, occurring only if $\mathbf{x}_c$ is a minimum of
-$f$. Therefore, if the preference function $\pi_f$ can be learned by
-observing the results of duels then our optimization problem of finding
-the minimum of $f$ can be solved by finding the Condorcet winner of the
-Copeland score.
-
-### Acquisition Functions
-
-We describe several acquisition functions for sequential learning of the
-Condorcet winner. Our dataset
-$\mathcal{D}=\left\{\left[\mathbf{x}_i, \mathbf{x}_i^{\prime}\right], y_i\right\}_{i=1}^N$
-represents the $N$ duels that have been performed so far. We aim to
-define a sequential policy
-$\alpha\left(\left[\mathbf{x}, \mathbf{x}^{\prime}\right] ; \mathcal{D}_j, \theta\right)$
-for querying duels, where $\theta$ is a vector of model
-hyper-parameters, in order to find the minimum of the latent function
-$g$ as quickly as possible. Using Gaussian processes (GP) for
-classification with our dataset $\mathcal{D}$ allows us to perform
-inference over $f$ and $\pi_f$.
-
-#### Pure Exploration {#pure-exploration .unnumbered}
-
-The output variable $y_{\star}$ of a prediction follows a Bernoulli
-distribution with probability given by the preference function $\pi_f$.
-To carry out exploration as a policy, one method is to search for the
-duel where GP is most uncertain about the probability of the outcome
-(has the highest variance of $\sigma\left(f_{\star}\right)$ ), which is
-the result of transforming out epistemic uncertainty about $f$, modeled
-by a GP, through the logistic function. The first order moment of this
-distribution coincides with the expectation of $y_{\star}$ but its
-variance is $$\begin{aligned}
-\mathbb{V}\left[\sigma\left(f_{\star}\right)\right] & =\int\left(\sigma\left(f_{\star}\right)-\mathbb{E}\left[\sigma\left(f_{\star}\right)\right]\right)^2 p\left(f_{\star} \mid \mathcal{D},\left[\mathbf{x}, \mathbf{x}^{\prime}\right]\right) d f_{\star} \\
-& =\int \sigma\left(f_{\star}\right)^2 p\left(f_{\star} \mid \mathcal{D},\left[\mathbf{x}, \mathbf{x}^{\prime}\right]\right) d f_{\star}-\mathbb{E}\left[\sigma\left(f_{\star}\right)\right]^2
-\end{aligned}$$ which explicitly takes into account the uncertainty over
-$f$. Hence, pure exploration of duels space can be carried out by
-maximizing
-$$\alpha_{\mathrm{PE}}\left(\left[\mathbf{x}, \mathbf{x}^{\prime}\right] \mid \mathcal{D}_j\right)=\mathbb{V}\left[\sigma\left(f_{\star}\right)\left|\left[\mathbf{x}_{\star}, \mathbf{x}_{\star}^{\prime}\right]\right| \mathcal{D}_j\right] .$$
-
-Note that in this case, duels that have been already visited will have a
-lower chance of being visited again even in cases in which the objective
-takes similar values in both players. In practice, this acquisition
-functions requires computation of an intractable integral, that we
-approximate using Monte-Carlo.
-
-#### Principled Optimistic Preferential Bayesian Optimization (POP-BO) {#principled-optimistic-preferential-bayesian-optimization-pop-bo .unnumbered}
-
-In a slightly modified problem setup
-[@xu2024principledpreferentialbayesianoptimization], the algorithm tries
-to solve for the MLE $\hat{g}$ and its confidence set $\mathcal{B}_g$
-where $g$ is the ground truth black-box function. Assumptions include
-that $g$ is a member of a reproducing kernel Hilbert space (RKHS)
-$\mathcal{H}_k$ for some kernel function
-$k: \mathbb{R}^d \times \mathbb{R}^d \rightarrow \mathbb{R}$, and
-$\|g\|_k \leq B$ so that
-$\mathcal{B}_g = \left\{\tilde{g} \in \mathcal{H}_k \mid\|\tilde{g}\|_k \leq B\right\}$.
-Similarly defining
-$f\left(\left[\mathbf{x}, \mathbf{x}^{\prime}\right]\right)=g\left(\mathbf{x}^{\prime}\right)-g(\mathbf{x})$,
-we model the preference function with a Bernoulli distribution as in
-Equation
-[\[eq:bernoulli_pref\]](#eq:bernoulli_pref){reference-type="ref"
-reference="eq:bernoulli_pref"} and also assume that probabilities follow
-the Bradley-Terry model, i.e.
-$$\pi_f\left(\left[\mathbf{x}, \mathbf{x}^{\prime}\right]\right)=\sigma\left(f\left(\left[\mathbf{x}, \mathbf{x}^{\prime}\right]\right)\right)=\frac{e^{g(\mathbf{x})}}{e^{g(\mathbf{x})}+e^{g\left(\mathbf{x^{\prime}}\right)}}$$
-
-The update rule for MLE $\hat{g}$ is (equation 8,6,5) $$\begin{aligned}
-\hat{g}_t^{\text {MLE }}&:= \arg \underset{\tilde{g} \in \mathcal{B}^t_g}{\max}\ell_t(\tilde{g}) \\
-\ell_t(\tilde{g}) &:= \log \prod_{\tau=1}^t y_\tau \pi_{\tilde{f}}([\mathbf{x_\tau}, \mathbf{x^{\prime}_\tau}])+\left(1-y_\tau\right)\left(1-\pi_{\tilde{f}}([\mathbf{x_\tau}, \mathbf{x^{\prime}_\tau}])\right) \\
-&=\sum_{\tau=1}^t \log \left(\frac{e^{\tilde{g}(\mathbf{x_\tau})} y_\tau+e^{\tilde{g}(\mathbf{x_\tau^\prime})}\left(1-y_\tau\right)}{e^{\tilde{g}(\mathbf{x_\tau})}+e^{\tilde{g}(\mathbf{x_\tau^\prime})}}\right) \\
-&=\sum_{\tau=1}^t\left(\tilde{g}(\mathbf{x_\tau}) y_\tau+\tilde{g}(\mathbf{x_\tau^\prime})\left(1-y_\tau\right)\right)-\sum_{\tau=1}^t \log \left(e^{\tilde{g}(\mathbf{x_\tau})}+e^{\tilde{g}(\mathbf{x_\tau^\prime})}\right)
-\end{aligned}$$
-
-(Eq 22 shows how to represent this as a convex optimisation problem so
-that it can be solved)
-
-The update rule for the confidence set $\mathcal{B}_f^{t+1}$ is, (eq 9,
-10?)
-
-$$\begin{aligned}
-&\forall \epsilon, \delta > 0 \\
-&\mathcal{B}_g^{t+1}:=\left\{\tilde{g} \in \mathcal{B}_g \mid \ell_t(\tilde{g}) \geq \ell_t\left(\hat{g}_t^{\mathrm{MLE}}\right)-\beta_1(\epsilon, \delta, t)\right\}
-\end{aligned}$$ where
-$$\beta_1(\epsilon, \delta, t):=\sqrt{32 t B^2 \log \frac{\pi^2 t^2 \mathcal{N}\left(\mathcal{B}_f, \epsilon,\|\cdot\|_{\infty}\right)}{6 \delta}}+ C_L \epsilon t=\mathcal{O}\left(\sqrt{t \log \frac{t \mathcal{N}\left(\mathcal{B}_f, \epsilon,\|\cdot\|_{\infty}\right)}{\delta}}+\epsilon t\right),$$
-with $C_L$ a constant independent of $\delta, t$ and $\epsilon$.
-$\epsilon$ is typically chosen to be $1 / T$, where T is the running
-horizon of the algorithm. This satisfies the theorem that,
-$$\mathbb{P}\left(g \in \mathcal{B}_g^{t+1}, \forall t \geq 1\right) \geq 1-\delta .$$
-
-Intuitively, the confidence set $\mathcal{B}_g^{t+1}$ includes the
-functions with the log-likelihood value that is only 'a little worse'
-than the maximum likelihood estimator, and the theorem states that
-$\mathcal{B}_g^{t+1}$ contains the ground-truth function $g$ with high
-probability.
-
-Inner level optimization in Line 4 of the algorithm can also be
-represented as a convex optimisation problem so that it can be solved,
-Eq 24, 25. The outer optimisation can be solved using grid search or Eq
-26 for medium size problems.
-
-:::: algorithm
-::: algorithmic
-Given the initial point $\mathbf{x_0} \in \mathcal{X}$ and set
-$\mathcal{B}_g^1 = \mathcal{B}_g$ Set the reference point
-$\mathbf{x_t^{\prime}} = \mathbf{x_{t-1}}$ Compute
-$\mathbf{x_t} \in \arg\max_{\mathbf{x} \in \mathcal{X}} \max_{\tilde{g} \in \mathcal{B}_g^t} (\tilde{g}(\mathbf{x}) - \tilde{g}(\mathbf{x_t^{\prime}}))$,
-with the inner optimal function denoted as $\tilde{g}_t$ Obtain the
-output of the duel $y_t$ and append the new data point to
-$\mathcal{D}_t$ Update the maximum likelihood estimator
-$\hat{g}_t^{\mathrm{MLE}}$ and the posterior confidence set
-$\mathcal{B}_g^{t+1}$.
-:::
-::::
-
-#### qEUBO: Decision-Theoretic EUBO {#qeubo-decision-theoretic-eubo .unnumbered}
-
-qEUBO [@astudillo2023qeubodecisiontheoreticacquisitionfunction] derives
-an acquisition function that extends duels to $q>2$ options which we
-call *queries*. Let
-$X=\left(\mathbf{x_1}, \ldots, \mathbf{x_q}\right) \in \mathcal{X}^q$
-denote a query containing two points or more, and let
-$g: \mathcal{X} \rightarrow \Re$ be the latent preference function. Then
-after $n$ user queries, we define the *expected utility of the best
-option* (qEUBO) as
-$$\mathrm{qEUBO}_n(X)=\mathbb{E}_n\left[\max \left\{g\left(x_1\right), \ldots, g\left(x_q\right)\right\}\right].$$
-
-We now show that qEUBO is one-step Bayes optimal, meaning that each step
-chooses the query that maximises the expected utility received by the
-human. For a query $X \in \mathcal{X}^q$, let
-$$V_n(X)=\mathbb{E}_n\left[\max _{x \in \mathbb{X}} \mathbb{E}_{n+1}[g(x)] \mid X_{n+1}=X\right] .$$
-Then $V_n$ defines the expected utility received if an additional query
-$X_{n+1}=X$ is performed, and maximizing $V_n$ is one-step Bayes
-optimal. Since $\max _{x \in \mathbb{X}} \mathbb{E}_n[f(x)]$ does not
-depend on $X_{n+1}$, we can also equivalently maximize
-$$\mathbb{E}_n\left[\max _{x \in \mathbb{X}} \mathbb{E}_{n+1}[g(x)]-\max _{x \in \mathbb{X}} \mathbb{E}_n[g(x)] \mid X_{n+1}=X\right],$$
-which takes the same form as the knowledge gradient acquisition function
-[@wu2018parallelknowledgegradientmethod] in standard Bayesian
-optimization.
-
-$V_n$ involves a nested stochastic optimization task, while qEUBO is a
-much simpler policy. When human responses are noise-free, we are able to
-use qEUBO as a sufficient policy due to the following theorem:
-
-::: theorem
-$$\underset{X \in \mathbb{X}^q}{\operatorname{argmax}} \mathrm{qEUBO}_n(X) \subseteq \underset{X \in \mathbb{X}^q}{\operatorname{argmax}} V_n(X) .$$
-:::
-
-::: proof
-*Proof.* For a query $X \in \mathcal{X}^q$, let
-$x^{+}(X, i) \in \operatorname{argmax}_{x \in \mathbb{X}} \mathbb{E}_n[g(x) \mid(X, i)]$
-and define $X^{+}(X)=$ $\left(x^{+}(X, 1), \ldots, x^{+}(X, q)\right)$.
-
-**Claim 1** $V_n(X) \leq \mathrm{qEUBO}_n\left(X^{+}(X)\right) .$ We see
-that $$\begin{aligned}
-V_n(X) & =\sum_{i=1}^q \mathbf{P}_n(r(X)=i) \mathbb{E}_n[g\left(x^{+}(X, i)\right) ] \\
-& \leq \sum_{i=1}^q \mathbf{P}_n(r(X)=i) \mathbb{E}_n[\max _{i=1, \ldots, q} g(x^{+}(X, i))] \\
-& =\mathbb{E}_n\left[\max _{i=1, \ldots, q} g\left(x^{+}(X, i)\right)\right] \\
-& =\mathrm{qEUBO}_n\left(X^{+}(X)\right),
-\end{aligned}$$ as claimed.
-
-**Claim 2** $\mathrm{qEUBO}_n(X) \leq V_n(X) .$ For any given
-$X \in \mathbb{X}^q$ we have
-$$\mathbb{E}_n\left[f\left(x_{r(X)}\right) \mid(X, r(X))\right] \leq \max _{x \in \mathbb{X}} \mathbb{E}_n[f(x) \mid(X, r(X))] .$$
-Since $f\left(x_{r(X)}\right)=\max _{i=1, \ldots, q} f\left(x_i\right)$,
-taking expectations over $r(X)$ on both sides obtains the required
-result.
-
-Now building on the arguments above, let
-$X^* \in \operatorname{argmax}_{X \in \mathbb{X}^q} \mathrm{qEUBO}_n(X)$
-and suppose for contradiction that
-$X^* \notin \operatorname{argmax}_{X \in \mathbb{X}^q} V_n(X)$. Then,
-there exists $\widetilde{X} \in \mathbb{X}^q$ such that
-$V_n(\widetilde{X})>V_n\left(X^*\right)$. We have $$\begin{aligned}
-\operatorname{qEUBO}_n\left(X^{+}(\tilde{X})\right) & \geq V_n(\tilde{X}) \\
-& >V_n\left(X^*\right) \\
-& \geq \operatorname{qEUBO}_n\left(X^*\right) \\
-& \geq \operatorname{qEUBO}_n\left(X^{+}(\tilde{X})\right) .
-\end{aligned}$$
-
-The first inequality follows from (1). The second inequality is due to
-our supposition for contradiction. The third inequality is due to (2).
-Finally, the fourth inequality holds since
-$X^* \in \operatorname{argmax}_{X \in \mathbb{X}^q} \mathrm{qEUBO}_n(X)$.
-This contradiction concludes the proof. ◻
-:::
-
-Therefore a sufficient condition for following one-step Bayes optimality
-is by maximizing $\text{qEUBO}_n$.
-
-In experiments that were ran comparing qEUBO to other state-of-the-art
-acquisition functions, qEUBO consistently outperformed on most problems
-and was closely followed by qEI and qTS. These results also extended to
-experiments with multiple options when $q>2$. In fact, there is faster
-convergence in regret when using more options in human queries. \[Prove
-Theorem 3: Regret analysis\]
-
-#### qEI: Batch Expected Improvement {#qei-batch-expected-improvement .unnumbered}
-
-$$\begin{aligned}
-\mathrm{qEI}= & \mathbb{E}_{\mathbf{y}}\left[\left(\max _{i \in[1, \ldots, q]}\left(\mu_{\min }-y_i\right)\right)_{+}\right] \\
-= & \sum_{i=1}^q \mathbb{E}_{\mathbf{y}}\left(\mu_{\min }-y_i \mid y_i \leq \mu_{\min }, y_i \leq y_j \forall j \neq i\right) \\
-& p\left(y_i \leq \mu_{\min }, y_i \leq y_j \forall j \neq i\right) .
-\end{aligned}$$
-
-#### qTS: Batch Thompson Sampling {#qts-batch-thompson-sampling .unnumbered}
-
-:::: algorithm
-::: algorithmic
-Initial data
-$\mathcal{D}_{\mathcal{I}(1)}=\{(\mathbf{x}_i, y_i)\}_{i \in \mathcal{I}(1)}$
-Compute current posterior
-$p(\boldsymbol{\theta} \mid \mathcal{D}_{\mathcal{I}(t)})$ Sample
-$\boldsymbol{\theta}$ from
-$p(\boldsymbol{\theta} \mid \mathcal{D}_{\mathcal{I}(t)})$ Select
-$k \leftarrow \arg \max_{j \notin \mathcal{I}(t)} \mathbb{E}[y_j \mid \mathbf{x}_j, \boldsymbol{\theta}]$
-Collect $y_k$ by evaluating $f$ at $\mathbf{x}_k$
-$\mathcal{D}_{\mathcal{I}(t+1)} \leftarrow \mathcal{D}_{\mathcal{I}(t)} \cup \{(\mathbf{x}_k, y_k)\}$
-:::
-::::
-
-:::: algorithm
-::: algorithmic
-Initial data
-$\mathcal{D}_{\mathcal{I}(1)}=\{\mathbf{x}_i, y_i\}_{i \in \mathcal{I}(1)}$,
-batch size $S$ Compute current posterior
-$p(\boldsymbol{\theta} \mid \mathcal{D}_{\mathcal{I}(t)})$ Sample
-$\boldsymbol{\theta}$ from
-$p(\boldsymbol{\theta} \mid \mathcal{D}_{\mathcal{I}(t)})$ Select
-$k(s) \leftarrow \arg \max_{j \notin \mathcal{I}(t)} \mathbb{E}[y_j \mid \mathbf{x}_j, \boldsymbol{\theta}]$
-$\mathcal{D}_{\mathcal{I}(t+1)} = \mathcal{D}_{\mathcal{I}(t)} \cup \{\mathbf{x}_{k(s)}, y_{k(s)}\}_{s=1}^S$
-:::
-::::
-
-### Regret Analysis
-
-#### qEUBO Regret {#qeubo-regret .unnumbered}
-
-With the definition of Bayesian simple regret, we have that qEUBO
-converges to zero at a rate of $o(1/n)$, i.e.
-
-::: theorem
-$$\label{th:quebo_regret}
-\mathbb{E}\left[f\left(x^*\right)-f\left(\widehat{x}_n^*\right)\right]=o(1 / n)$$
-:::
-
-where $x^*=\operatorname{argmax}_{x \in \mathrm{X}} f(x)$ and
-$\widehat{x}_n^* \in \operatorname{argmax}_{x \in \mathrm{X}} \mathbb{E}_n[f(x)]$.
-
-This theorem holds under the following assumptions:
-
-1.  **$f$ is injective** $\mathbf{P}(f(x)=f(y))=0$ for any
-    $x, y \in \mathbb{X}$ with $x \neq y$.
-
-2.  **$f$ represents the preferred option** $\exists a>1 / 2$ s.t.
-    $\mathbf{P}\left(r(X) \in \operatorname{argmax}_{i=1, \ldots, 2} f\left(x_i\right) \mid f(X)\right) \geq a \forall$
-    $X=\left(x_1, x_2\right) \in \mathbb{X}^2$ with $x_1 \neq x_2$
-    almost surely under the prior on $f$.
-
-3.  **Expected difference in utility is proportional to probability of
-    greater utility** $\exists \Delta \geq \delta>0$ s.t.
-    $\forall \mathcal{D}^{(n)} \text{and} \forall x, y \in \mathbb{X}$
-    (potentially depending on $\mathcal{D}^{(n)}$),
-    $$\delta \mathbf{P}^{(n)}(f(x)>f(y)) \leq \mathbb{E}^{(n)}\left[\{f(x)-f(y)\}^{+}\right] \leq \Delta \mathbf{P}^{(n)}(f(x)>f(y))$$
-    almost surely under the prior on $f$.
-
-Further lemmas leading to a proof of Theorem
-[\[th:quebo_regret\]](#th:quebo_regret){reference-type="ref"
-reference="th:quebo_regret"} is given in
-[@astudillo2023qeubodecisiontheoreticacquisitionfunction] Section B.
-
-#### qEI Regret {#qei-regret .unnumbered}
-
-The following theorem shows that, under the same assumptions used for
-qEUBO regret, simple regret of qEI can fail to converge to 0.
-
-::: theorem
-There exists a problem instance (i.e., $\mathbb{X}$ and Bayesian prior
-distribution over f) satisfying the assumptions described in Theorem
-[\[th:quebo_regret\]](#th:quebo_regret){reference-type="ref"
-reference="th:quebo_regret"} such that if the sequence of queries is
-chosen by maximizing qEI, then
-$\mathbb{E}\left[f\left(x^*\right)-\right.$
-$\left.f\left(\widehat{x}_n^*\right)\right] \geq R$ for all $n$, for a
-constant $R>0$.
-:::
-
-::: proof
-*Proof.* Let $X = \{1, 2, 3, 4\}$ and consider the functions
-$f_i:X \rightarrow R$, for $i=1,2,3,4$, given by $f_i(1) = -1$ and
-$f_i(2) = 0$ for all $i$, and $$\begin{aligned}
-    f_1(x) = \begin{cases}
-    1, &\ x=3\\
-    \frac{1}{2}, &\ x=4
-    \end{cases},
-\hspace{0.5cm}
-f_2(x) = \begin{cases}
-    \frac{1}{2}, &\ x=3\\
-    1, &\ x=4
-    \end{cases},
-\hspace{0.5cm}
-f_3(x) = \begin{cases}
-    -\frac{1}{2}, &\ x=3\\
-    -1, &\ x=4
-    \end{cases},
-\hspace{0.5cm}
-f_4(x) = \begin{cases}
-    -1, &\ x=3\\
-    -\frac{1}{2}, &\ x=4
-    \end{cases}.
-\end{aligned}$$
-
-Let $p$ be a number with $0 < p < 1/3$ and set $q=1-p$. We consider a
-prior distribution on $f$ with support $\{f_i\}_{i=1}^4$ such that
-$$\begin{aligned}
-p_i = Pr(f=f_i) = 
-    \begin{cases}
-        p/2, i =1,2,\\
-        q/2, i=3,4.
-    \end{cases}
-\end{aligned}$$ We also assume the user's response likelihood is given
-by $Pr(r(X)=1\mid f(x_1) > f(x_2)) = a$ for some $a$ such that
-$1/2 < a < 1$,
-
-Let $D^{(n)}$ denote the set of observations up to time $n$ and let
-$p_i^{(n)} = Pr(f=f_i \mid \mathbb{E}^{(n)})$ for $i=1,2,3,4$. We let the
-initial data set be $\mathcal{D}^{(0)} = \{(X^{(0)}, r^{(0)})\}$, where
-$X^{(0)}= (1,2)$. We will prove that the following statements are true
-for all $n\geq 0$.
-
-1.  $p_i^{(n)} > 0$ for $i=1,2,3,4$.
-
-2.  $p_1^{(n)} < \frac{1}{2}p_3^{(n)}$ and
-    $p_2^{(n)} < \frac{1}{2}p_4^{(n)}$.
-
-3.  $\arg \max_{x\in\mathcal{X}}\mathbb{E}^{(n)}[f(x)]=\{2\}$.
-
-4.  $\arg \max_{X\in\mathcal{X}^2}\text{qEI}^{(n)}(X) = \{(3, 4)\}$.
-
-We prove this by induction over $n$. We begin by proving this for $n=0$.
-Since $f_i(1) < f_i(2)$ for all $i$, the posterior distribution on $f$
-given $\mathcal{D}^{(0)}$ remains the same as the prior; i.e., $p_i^{(0)} = p_i$
-for $i=1,2,3,4$. Using this, statements 1 and 2 can be easily verified.
-Now note that $\mathbb{E}^{(0)}[f(1)]=-1$, $\mathbb{E}^{(0)}[f(2)]=0$, and
-$\mathbb{E}^{(0)}[f(3)] = \mathbb{E}^{(0)}[f(4)] = \frac{3}{2}(p - q)$. Since $p < q$,
-it follows that $\arg \max_{x\in\mathcal{X}}\mathbb{E}^{(n)}[f(x)]=\{2\}$; i.e., statement
-3 holds. Finally, since $\max_{x\in\{1,2\}}\mathbb{E}^{(0)}[f(x)] = 0$, the qEI
-acquisition function at time $n=0$ is given by
-$\text{qEI}^{(0)}(X) = \mathbb{E}^{(0)}[\{\max\{f(x_1), f(x_2)\}\}^+]$. A direct
-calculation can now be performed to verify that statement 4 holds. This
-completes the base case.
-
-Now suppose statements 1-4 hold for some $n\geq 0$. Since
-$X^{(n+1)} = (3, 4)$, the posterior distribution on $f$ given
-$D^{(n+1)}$ is given by $$\begin{aligned}
-p_i^{(n+1)} \propto \begin{cases}
-                        p_i^{(n)}\ell, \ i=1,3,\\
-                         p_i^{(n)} (1 - \ell), \ i=2,4,
-                        \end{cases}
-\end{aligned}$$ where
-$$\ell = a I\{r^{(n+1)} = 1\} + (1-a)I\{r^{(n+1)} = 2\}.$$ Observe that
-$0< \ell < 1$ since $0 < a < 1$. Thus, $\ell > 0$ and $1-\ell > 0$.
-Since $p_i^{(n)} > 0$ by the induction hypothesis, it follows from this
-that $p_i^{(n+1)} > 0$ for $i=1,2,3,4$. Moreover, since
-$p_i^{(n+1)} \propto p_i^{(n)}\ell$ for $i=1,3$ and
-$p_1^{(n)} < \frac{1}{2}p_3^{(n)}$ by the induction hypothesis, it
-follows that $p_1^{(n+1)} < \frac{1}{2}p_3^{(n+1)}$. Similarly,
-$p_2^{(n+1)} < \frac{1}{2}p_4^{(n+1)}$. Thus, statements 1 and 2 hold at
-time $n+1$.
-
-Now observe that $$\begin{aligned}
-    \mathbb{E}^{(n+1)}[f(3)] &= p_1^{(n+1)} + \frac{1}{2}p_2^{(n+1)} - \frac{1}{2}p_3^{(n+1)} - p_4^{(n+1)}\\
-    &= \left(p_1^{(n+1)} - \frac{1}{2}p_3^{(n+1)}\right) + \left(\frac{1}{2}p_2^{(n+1)} - p_4^{(n+1)}\right)\\
-    &\leq \left(p_1^{(n+1)} - \frac{1}{2}p_3^{(n+1)}\right) + \left(p_2^{(n+1)} - \frac{1}{2}p_4^{(n+1)}\right)\\
-    &\leq 0,
-\end{aligned}$$ where the last inequality holds since
-$p_1^{(n+1)} < \frac{1}{2}p_3^{(n+1)}$ and
-$p_2^{(n+1)} < \frac{1}{2}p_4^{(n+1)}$. Similarly, we see that
-$\mathbb{E}^{(n+1)}[f(4)] \leq 0$. Since $\mathbb{E}^{(n+1)}[f(1)]=-1$ and
-$\mathbb{E}^{(n+1)}[f(2)]=0$, it follows that
-$\arg \max_{x\in\mathcal{X}}\mathbb{E}^{(n+1)}[f(x)]=\{2\}$; i.e., statement 3 holds at
-time $n+1$.
-
-Since $\max_{x\in\mathcal{X}}\mathbb{E}^{(0)}[f(x)] = 0$, the qEI acquisition function at
-time $n+1$ is given by
-$\text{qEI}^{(n+1)}(X) = \mathbb{E}^{(n+1)}[\{\max\{f(x_1), f(x_2)\}\}^+]$. Since
-$f(1) \leq f(x)$ almost surely under the prior for all $x\in\mathcal{X}$, there
-is always a maximizer of qEI that does not contain $1$. Thus, to find
-the maximizer of qEI, it suffices to analyse its value at the pairs
-$(2, 3)$, $(3,4)$ and $(4,2)$. We have
-$$\text{qEI}^{(n+1)}(2, 3) = p_1^{(n+1)} + 1/2 p_2^{(n+1)},$$
-$$\operatorname{qEI}^{(n+1)}(3, 4) = p_1^{(n+1)} + p_2^{(n+1)}$$ and
-$$\operatorname{qEI}^{(n+1)}(4, 2) = 1/2p_1^{(n+1)} + p_2^{(n+1)}.$$
-Since $p_1^{(n+1)} > 0$ and $p_2^{(n+1)} > 0$, it follows that
-$\arg \max_{X \in X^2}\text{qEI}^{(n+1)}(X) = \{(3, 4)\}$, which concludes
-the proof by induction.
-
-Finally, since $\arg \max_{x\in X}\mathbb{E}^{(n)}[f(x)]=\{2\}$ for all $n$, the
-Bayesian simple regret of qEI is given by $$\begin{aligned}
-    \mathbb{E}\left[f(x^*) - f(2)\right] &= \sum_{i=1}p_i\left(\max_{x\in X}f_i(x) - f_i(2)\right)\\
-    &= p
-\end{aligned}$$ for all $n$. ◻
-:::
-
-#### POP-BO Regret {#pop-bo-regret .unnumbered}
-
-Commonly used kernel functions within the RKHS are:
-
-1.  Linear: $$k(x, \bar{x})=x^{\top} \bar{x} .$$
-
-2.  Squared Exponential (SE):
-    $$k(x, \bar{x})=\sigma_{\mathrm{SE}}^2 \exp \left\{-\frac{\|x-\bar{x}\|^2}{l^2}\right\},$$
-    where $\sigma_{\mathrm{SE}}^2$ is the variance parameter and $l$ is
-    the lengthscale parameter.
-
-3.  Matérn:
-    $$k(x, \bar{x})=\frac{2^{1-\nu}}{\Gamma(\nu)}\left(\sqrt{2 \nu} \frac{\|x-\bar{x}\|}{\rho}\right)^\nu K_\nu\left(\sqrt{2 \nu} \frac{\|x-\bar{x}\|}{\rho}\right),$$
-    where $\rho$ and $\nu$ are the two positive parameters of the kernel
-    function, $\Gamma$ is the gamma function, and $K_\nu$ is the
-    modified Bessel function of the second kind. $\nu$ captures the
-    smoothness of the kernel function.
-
-With the definition of Bayesian simple regret, we have the following
-theorem defining the regret bound:
-
-::: theorem
-With probability at least $1-\delta$, the cumulative regret of POP-BO
-satisfies,
-$$R_T=\mathcal{O}\left(\sqrt{\beta_T \gamma_T^{f f^{\prime}} T}\right),$$
-where
-$$\beta_T=\beta(1 / T, \delta, T)=\mathcal{O}\left(\sqrt{T \log \frac{T \mathcal{N}\left(\mathcal{B}_f, 1 / T,\|\cdot\|_{\infty}\right)}{\delta}}\right).$$
-:::
-
-The guaranteed convergence rate is characterised as:
-
-::: theorem
-[]{#th: popbo_converge label="th: popbo_converge"} Let $t^{\star}$ be
-defined as in Eq. (19). With probability at least $1-\delta$,
-$$f\left(x^{\star}\right)-f\left(x_{t^{\star}}\right) \leq \mathcal{O}\left(\frac{\sqrt{\beta_T \gamma_T^{f f^{\prime}}}}{\sqrt{T}}\right)$$
-:::
-
-Theorem
-[\[th: popbo_converge\]](#th: popbo_converge){reference-type="ref"
-reference="th: popbo_converge"} highlights that by minimizing the known
-term
-$2\left(2 B+\lambda^{-1 / 2} \sqrt{\beta\left(\epsilon, \frac{\delta}{2}, t\right)}\right) \sigma_t^{f f^{\prime}}\left(\left(x_t, x_t^{\prime}\right)\right)$,
-the reported final solution $x_{t^{\star}}$ has a guaranteed convergence
-rate.
-
-Further kernel-specific regret bounds for POP-BO are calculated as
-follows:
-
-::: theorem
-Setting $\epsilon=1 / T$ and running our POP-BO algorithm in Alg. 1,
-
-1.  If $k(x, y)=\langle x, y\rangle$, we have,
-    $$R_T=\mathcal{O}\left(T^{3 / 4}(\log T)^{3 / 4}\right) .$$
-
-2.  If $k(x, y)$ is a squared exponential kernel, we have,
-    $$R_T=\mathcal{O}\left(T^{3 / 4}(\log T)^{3 / 4(d+1)}\right) .$$
-
-3.  If $k(x, y)$ is a Matérn kernel, we have,
-    $$\left.R_T=\mathcal{O}\left(T^{3 / 4}(\log T)^{3 / 4} T^{\frac{d}{\nu}\left(\frac{1}{4}+\frac{d+1}{4+2(d+1)^d / \nu}\right.}\right)\right).$$
-:::
-
-## Case Study 1: Foundation Models for Robotics
-
-Modern foundation models have been ubiquitous in discussions of powerful, general purpose AI systems that can accomplish myriad tasks across many disciplines such as programming, medicine, law, open question-answering and much more, with rapidly increasing capabilities [@bommasani2022opportunities]. However, despite successes from large labs in controlled environments [@brohan2023rt2] foundation models have not seen ubiquitous use in robotics due to shifting robot morphology, lack of data, and the sim to real gap in robotics [@walke2023bridgedata]. For this subsection we explore two promising approaches known as R3M and Voltron which are the first to leverage pre-training on vast amounts of data towards performance improvement on downstream robotic tasks despite the aforementioned issues [@nair2022r3m; @karamcheti2023languagedriven].
-
-R3M represents a significant advancement in the field of robotic manipulation and learning. This model diverges from traditional approaches that rely on training from scratch within the same domain on the same robot data as instead it leverags pretraining on large datasets, akin to the practices in computer vision and natural language processing (NLP) where models are trained on diverse, large-scale datasets to create reusable, general-purpose representations. The core principle behind R3M is its training methodology. It is pre-trained on a wide array of human videos, encompassing various activities and interactions. This diverse dataset enables the model to capture a broad spectrum of physical interactions and dynamics, which are crucial for effective robotic manipulation known as EGO4D [@grauman2022ego4d]. However, prior papers could not fit this dataset well, and R3M leveraged. The training utilizes a unique objective that combines time contrastive learning, video-language alignment, and a sparsity penalty. This objective ensures that R3M not only understands the temporal dynamics of scenes (i.e., how states transition over time) but also focuses on semantically relevant features, such as objects and their interrelations, while maintaining a compact and efficient representation. What sets R3M apart in the realm of robotics is its efficiency and effectiveness in learning from a limited amount of data. The model demonstrates remarkable performance in learning tasks in the real world with minimal human supervision -- typically less than 10 minutes. This is a stark contrast to traditional models that require extensive and often prohibitively large datasets for training. Furthermore, R3M's pre-trained nature allows for its application across a variety of tasks and environments without the need for retraining from scratch, making it a versatile tool in robotic manipulation. The empirical results from using R3M are compelling, leading to a 10% improvement over training from a pretrained image-net model, self-supervised approaches such as MoCo or even CLIP [@deng2009imagenet; @he2020momentum; @radford2021learning]. Note however, that R3m does not use any language data which leaves quite a bit of supervision to be desired.
-
-Building off the success of R3M, Voltron proposes a further extension of leveraging self-supervision and advancements in foundation models, and multi-modality. Voltron takes on an intuitive and simple dual use objective, where the trained model alternates between predicting the task in an image through natural language and classifying images based on a natural text label. This forces a nuanced understanding of both modalities [@radford2021learning]. Voltron's approach is distinguished by its versatility and depth of learning. It is adept at handling a wide range of robotic tasks, from low-level spatial feature recognition to high-level semantic understanding required in language-conditioned imitation and intent scoring. This flexibility makes it suitable for various applications in robotic manipulation, from grasping objects based on descriptive language to performing complex sequences of actions in response to verbal instructions. The authors rigorously test Voltron in scenarios such as dense segmentation for grasp affordance prediction, object detection in cluttered scenes, and learning multi-task language-conditioned policies for real-world manipulation with up to 15% improvement over baselines. In each of these domains, Voltron has shown a remarkable ability to outperform existing models like MVP and R3M, showcasing its superior adaptability and learning capabilities [@xiao2022masked]. Moreover, Voltron's framework allows for a balance between encoding low-level and high-level features, which is critical in the context of robotics. This balance enables the model to excel in both control tasks and those requiring deeper semantic understanding, offering a comprehensive solution in the realm of robotic vision and manipulation.
-
-Voltron stands as a groundbreaking approach in the field of robotics, offering a language-driven, versatile, and efficient approach to learning and manipulation. Its ability to seamlessly integrate visual and linguistic data makes it a potent tool in the ever-evolving landscape of robotic technology, with potential applications that extend far beyond current capabilities. Interesting the authors show Voltron does not beat R3M off the shelf but only when trained on similar amounts of data. Nevertheless, Voltron's success in diverse tasks and environments heralds a new era in robotic manipulation, where language and vision coalesce to create more intelligent, adaptable, and capable robotic systems.
-
-On the note of applying AL to RL and environment settings, there have been many recent papers that have attempted to extend this to more modern RL environments. For example, the paper "When to Ask for Help" [@ask_help] examines the intersection of autonomous and AL. Instead of just expecting an RL agent to autonomously solve a task, making the assumption that an agent could get stuck and need human input to get "unstuck" is a key insight of the paper. In general, there has been an emphasis in recent literature in robotics on not just blindly using demonstration data as a form of human input, but rather actively querying a human and using this to better synthesize correct actions.
-
-AL holds promise for enhancing AI models in real-world scenarios, yet several challenges persist. This discussion aims to provide an overview of these challenges.
-
-Task-Specific Considerations: For certain tasks, the input space of a model may have some rare yet extremely important pockets which may never be discovered by AL and may cause severe blindspots in the model. In medical imaging for instance, there can be rare yet critical diseases. Designing AL strategies for medical image analysis must prioritize rare classes, such as various forms of cancers. Oftentimes, collecting data around those rare classes is not a recommendation of the AL process because these examples constitute heavy distribution drifts from the input distribution a model has seen.
-
-Complex Task Adaptation: AL has predominantly been adopted for simple classification tasks, leaving more other types of tasks (generative ones for instance), less explored. In Natural Language Processing, tasks like natural language inference, question-answering pose additional complexities that affect the direct application of the AL process. While machine translation has seen AL applications, generation tasks in NLP require more thorough exploration. Challenges arise in obtaining unlabeled data, particularly for tasks with intricate inputs.
-
-Unsupervised and Semi-Supervised Approaches: In the presence of large datasets without sufficient labels, unsupervised and semi-supervised approaches become crucial. These methods offer a means to extract information without relying on labeled data for every data point, potentially revolutionizing fields like medical image analysis. There is an ongoing need for methods that combine self/semi-supervised learning with AL.
-
-Algorithm Scalability: Scalability is a critical concern for online AL algorithms, particularly when dealing with large datasets and high-velocity data streams. The computational demands of AL can become prohibitive as data volume increases, posing challenges for practical deployment. Issues of catastrophic forgetting and model plasticity further complicate scalability, requiring careful consideration in algorithm design.
-
-Labeling Quality Assurance: The effectiveness of most online AL strategies hinges on the quality of labeled data. Ensuring labeling accuracy in real-world scenarios is challenging, with human annotators prone to errors, biases, and diverse interpretations. Addressing imperfections in labeling through considerations of oracle imperfections becomes essential in real-life AL applications. Solutions for cleaning up data and verifying its quality need to be more aggressively pursued.
-
-Data Drift Challenges: Real-world settings introduce data drift, where distributions shift over time, challenging models to adapt for accurate predictions. These shifts can impact the quality of labeled data acquired in the AL process. For example, the criterion or proxy used for selecting informative instances may be thrown off when the distribution a model is trained on, and the distribution we want it to perform well on, are too far away from one another.
-
-Evaluation in Real-Life Scenarios: While AL methods are often evaluated assuming access to ground-truth labels, the real motivation for AL lies in label scarcity. Assessing the effectiveness of AL strategies becomes challenging in real-life scenarios where ground-truth labels may be limited. In other words, one may verify the goodness of an AL algorithm within the lab, but once the algorithm is deployed for improving all sorts of models on all sorts of data distributions, verifying whether AL is actually improving a model is tricky, especially when collecting and labeling data from the target distribution is expensive and defeats the purpose of using AL in the first place.
-
-By systematically addressing these challenges, the field of AL in AI can progress towards more effective and practical applications. In summary, AL is a promising modern tool to model training that presents potential benefits. As was mentioned at the start, there are numerous approaches that can be employed by AL, starting from reducing error of model's prediction, reducing variance, to more conformal predictions. The flavor of AL heavily depends on the applications, which include robotics, LLM, autonomous vehicles, and more. We discussed in more detail how to perform AL for variance reduction in the case of predicting kinematics of the robotic arms, which showed decrease in MSE as well as more stable reduction in it. Next we talked about using AL for reducing the number of comparisons required to create a ranking of objects, and the examples discussed were able to achieve that but with some loss in the prediction accuracy. Finally, we discussed how AL can be used for modeling of reward functions within a dynamical system, which demonstrated improvements in performance and time required to achieve it. For a more hands-on experience with AL and demonstrated example, we encourage the readers to explore a blogpost by Max Halford [@max_halford].
-
-
-{{< include psets/pset3.qmd >}}
+-->
+
+<!--
+Game theory provides a mathematical framework for analyzing strategic
+interactions among rational agents. These models help in understanding
+and predicting human behavior by considering multiple criteria and the
+associated trade-offs. They enhance the understanding of preferences
+across multiple criteria and allow for richer and more accurate feedback
+through structured comparisons. Game-theory framings capture the
+complexity of preferences and interactions in decision-making processes
+[@bhatia2020preference].
+
+The most popular form of preference elicitation involves pairwise
+comparisons. Users are asked to choose between two options, such as
+product A or product B. This method is used in various applications like
+search engines, recommender systems, and interactive robotics. Key
+concepts include the Von Neumann Winner and the Blackwell Winner. The
+Von Neumann Winner refers to a distribution over objects that beats or
+ties every other object in the collection under the expected utility
+assumption. The Blackwell Winner generalizes the Von Neumann Winner for
+multi-criteria problems using a target set for acceptable payoff vectors
+[@bhatia2020preference].
+
+Game-theory framings provide a framework for preference learning along
+multiple criteria. These models use tools from vector-valued payoffs in
+game theory, with Blackwell's approach being a key concept. This
+approach allows for a more comprehensive understanding of preferences by
+considering multiple criteria simultaneously [@bhatia2020preference].
+
+In game-theory framings, pairwise preferences are modeled as random
+variables. Comparisons between objects along different criteria are
+captured in a preference tensor $P$. This tensor models the probability
+that one object is preferred over another along a specific criterion,
+allowing for a detailed understanding of preferences across multiple
+dimensions [@bhatia2020preference].
+
+The preference tensor $P$ captures object comparisons along different
+criteria. It is defined as:
+$$P(i_1, i_2; j) = P(i_1 \succ i_2 \text{ along criterion } j)$$ where
+$P(i_2, i_1; j) = 1 - P(i_1, i_2; j)$. These values are aggregated to
+form an overall preference matrix $P_{ov}$ [@bhatia2020preference].
+
+The Blackwell Winner is defined using a target set $S$ of acceptable
+score vectors. The goal is to find a distribution $\pi^*$ such that
+$P(\pi^*, \pi) \in S$ for all $\pi$. This method minimizes the maximum
+distance to the target set, providing a robust solution to
+multi-criteria preference problems [@bhatia2020preference].
+
+The optimization problem for finding the Blackwell Winner is defined as:
+$$\pi(P, S, \|\cdot\|) = \arg \min_{\pi \in \Delta_d} \left[ \max_{\pi' \in \Delta_d} \rho(P(\pi, \pi'), S) \right]$$
+where $\rho(u, v) = \|u - v\|$. This measures the distance to the target
+set, ensuring that the selected distribution is as close as possible to
+the ideal preference vector [@bhatia2020preference].
+-->
