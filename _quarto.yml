@@ -136,6 +136,7 @@ book:
     - index.qmd
     - src/chap1.qmd
     - src/chap2.qmd
+    - src/chap2reward.qmd
     - src/chap3.qmd
     - src/chap4.qmd
     - src/chap5.qmd
