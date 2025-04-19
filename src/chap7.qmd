@@ -1,5 +1,5 @@
 ---
-title: Beyond Preferences
+title: Alternatives
 format: html
 filters:
   - pyodide

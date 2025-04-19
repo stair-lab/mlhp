@@ -118,19 +118,153 @@ plt.show()
 
 The learned curve closely matches the true utility up to an arbitrary scaling factor (utility is only defined up to affine transform when inferred from comparisons). The algorithm successfully recovered a utility function that orders states almost the same as the true utility $u^*(x)$. In general, learning from comparisons can infer the *relative* utility of options (which item is preferred), although the absolute scale of $u_\theta$ is unidentifiable without further assumptions. Supervised learning on preferences has been widely used for ranking problems and preference-based reward learning.
 
-While the above approach learns a utility and could then use it for decision-making, an alternative in some domains is to directly optimize the policy based on preferences, bypassing an explicit reward model. Direct Preference Optimization (DPO) is a recent technique introduced for aligning language models to human preferences [@rafailov2023direct]. The insight of DPO is that we can fold the reward model into the policy itself, and then update the policy via a simple supervised objective on preference data.
+In standard preference learning, we often learn a utility function and then use it to define a policy. However, in some settings—especially those involving large models like language models—it is more effective to directly learn a policy that aligns with human preferences, bypassing the intermediate reward model. One such method is Direct Preference Optimization (DPO), which offers a simple, stable way to align a policy to preference data through supervised learning.
 
-In the context of DPO for language models, one has a base policy $\pi_{\text{ref}}$ (e.g. the pre-trained model) and a new policy $\pi_\theta$ we want to fine-tune. Given a human preference between two model outputs (responses) $y_+$ (preferred) vs $y_-$ for the same prompt $x$, DPO adjusts $\pi_\theta$ to increase the log-probability of $y_+$ and decrease that of $y_-$. Formally, the *DPO loss* for a single preference is:
+To understand DPO, consider the following setting:
+
+- We are given a reference policy $\pi_{\text{ref}}$, such as a pre-trained language model.
+- We want to learn a new policy $\pi_\theta$ that improves upon $\pi_{\text{ref}}$ by better reflecting human preferences.
+- Our data consists of pairwise comparisons: for each prompt $x$, a human expresses a preference between two outputs $y_+ \succ y_-$, where $y_+$ is the preferred response.
+
+Rather than learning an explicit reward function $R(x, y)$ and using it to optimize the policy via reinforcement learning, DPO treats this as a classification problem: we want to encourage the policy to assign higher likelihood to the preferred response.
+
+To formalize this, we define a preference score:
+$$
+s_\theta(x, y_+, y_-) = \log \pi_\theta(y_+ \mid x) - \log \pi_\theta(y_- \mid x)
+$$
+This is the difference in log-likelihood between the preferred and dispreferred outputs. We can then define the DPO loss as a logistic regression objective:
+$$
+\mathcal{L}_{\text{DPO}}(\theta) = -\log \sigma\left(s_\theta(x, y_+, y_-)\right)
+$$
+where $\sigma(z) = \frac{1}{1 + e^{-z}}$ is the sigmoid function.
+
+This loss encourages $\pi_\theta$ to assign greater probability mass to $y_+$ than $y_-$, pushing the policy toward outputs that align with human preferences. Because this is a differentiable, supervised loss, it can be optimized with standard gradient-based techniques, without needing to sample from the environment or estimate advantages, as in traditional RL.
+
+Although DPO does not explicitly define or optimize a reward function, we can interpret it as doing so implicitly. Suppose we define a reward function:
+$$
+R_\theta(y \mid x) = \log \pi_\theta(y \mid x) - \log \pi_{\text{ref}}(y \mid x)
+$$
+This reward encourages $\pi_\theta$ to move away from $\pi_{\text{ref}}$ in directions that increase the probability of preferred outputs. Under this formulation, the DPO objective can be interpreted as optimizing this reward difference directly from preferences.
+
+To understand why this implicit reward leads to a stable and interpretable policy, we can connect DPO to the principle of maximum entropy. This principle says that, among all distributions that satisfy certain constraints (e.g., achieving a particular expected reward), we should prefer the one with maximum entropy—that is, the most uncertain or uncommitted distribution consistent with our knowledge.
+
+Formally, consider the space $\mathcal{P}$ of distributions over responses $y$, and a reward function $R(y)$. The maximum entropy distribution that satisfies a reward constraint is the solution to:
 
 $$
-\mathcal{L}_{\text{DPO}}(\theta) \;=\; -\log \sigma\!\Big(\underbrace{\log \pi_\theta(y_+|x) - \log \pi_\theta(y_-|x)}_{\text{policy preference score}}\Big)\,.
+p^*(y) = \arg\max_{p \in \mathcal{P}} H(p) \quad \text{subject to} \quad \mathbb{E}_p[R(y)] \geq \rho
 $$
 
-Intuitively, this is the same logistic loss as before, now directly in terms of the policy’s log-likelihood scores for each option. The overall objective is the average of this loss over a dataset of human preference comparisons. Optimizing this loss via gradient descent on $\pi_\theta$ effectively *bakes in* a reward model: $\log \pi_\theta(y|x) - \log \pi_{\text{ref}}(y|x)$ plays the role of a learned reward. In fact, one can show that DPO is implicitly fitting a reward function that $\pi_\theta$ is maximizing. Crucially, DPO does *not* require a separate reinforcement learning loop; it treats preference data as direct supervision for the policy, using a simple binary classification objective.
+The solution to this constrained optimization problem is a Boltzmann distribution:
+$$
+p^*(y) \propto \exp\left(\frac{R(y)}{\tau}\right)
+$$
+for some temperature $\tau > 0$, where $\tau$ controls how deterministic the distribution is. As $\tau \to 0$, the distribution concentrates on the highest-reward outputs; as $\tau \to \infty$, it becomes uniform.
+
+Now suppose our reference policy $\pi_{\text{ref}}(y \mid x)$ already represents a reasonable starting point. Then the optimal policy $\pi_\theta$ can be viewed as a reward-weighted version of this reference policy:
+
+$$
+\pi_\theta(y \mid x) \propto \pi_{\text{ref}}(y \mid x) \cdot \exp\left(R_\theta(y \mid x)\right)
+$$
+
+This form ensures that $\pi_\theta$ remains close to $\pi_{\text{ref}}$ (via the KL term), while still assigning more mass to high-reward (preferred) outputs. Importantly, this form arises naturally from maximum entropy inference when the reference distribution is used as a baseline.
+
+DPO thus combines reward maximization with entropy regularization, encouraging the learned policy to prefer outcomes favored by human feedback while preserving diversity and stability. It sidesteps the challenges of explicitly learning a reward model or tuning complex RL pipelines, offering a direct and scalable method for preference-based alignment.
 
 In practice, DPO has been shown to achieve similar or better alignment performance compared to reinforcement learning from human feedback (RLHF) while being more stable and easier to implement. It avoids the need to sample from the model during training or tune delicate hyperparameters of RL. Conceptually, DPO demonstrates that if we structure our utility model cleverly (here, as the log-ratio of policy and reference), we can extract an optimal policy in closed-form and learn utilities via supervised learning.
 
-DPO’s formulation is related to the Bradley–Terry model for preferences and to the idea of *maximum entropy* policies. If we imagine a reward function $R_\theta(y|x) = \log \pi_\theta(y|x) - \log \pi_{\text{ref}}(y|x)$, DPO’s loss is pushing $R_\theta(y_+) > R_\theta(y_-)$ for preferred pairs. The optimal $\pi_\theta$ under this criterion turns out to be $\pi_\theta(y|x) \propto \pi_{\text{ref}}(y|x)\exp\{R_\theta(y|x)\}$. In other words, $\pi_\theta$ is proportional to the reference policy re-weighted by an exponentiated reward – a result consistent with the principle of maximum entropy (softmax) optimization. DPO thus blurs the line between learning a utility function and learning a policy; it directly outputs a policy that (implicitly) encodes the learned utility. 
+```{python}
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.animation as animation
+from scipy.special import logsumexp
+
+# --- Setup: 1D input x, discrete actions y ---
+np.random.seed(0)
+x = 5.0  # fixed input
+Y = np.linspace(-4, 4, 100)  # discrete action space
+n_actions = len(Y)
+
+# --- True reward function (unknown to learner) ---
+def true_reward(x, y):
+    return -((y - np.sin(x))**2)  # reward peak near y = sin(x)
+
+R_true = true_reward(x, Y)
+
+# --- Reference policy: fixed Gaussian-like distribution ---
+def ref_policy(y):
+    logits = -0.5 * (y / 2.0)**2  # log probs of N(0, 2^2)
+    return np.exp(logits - logsumexp(logits))
+
+pi_ref = ref_policy(Y)
+
+# --- Preference data from reward samples ---
+def sample_preference(x, Y, R_fn, temperature=1.0):
+    logits = R_fn(x, Y) / temperature
+    probs = np.exp(logits - logsumexp(logits))
+    sampled = np.random.choice(len(Y), size=2, replace=False, p=probs)
+    y_plus, y_minus = sampled if R_fn(x, Y[sampled[0]]) > R_fn(x, Y[sampled[1]]) else sampled[::-1]
+    return y_plus, y_minus
+
+n_pairs = 100
+pair_indices = [sample_preference(x, Y, true_reward) for _ in range(n_pairs)]
+
+# --- DPO loss and gradient ---
+def dpo_loss_and_grad(theta, y_pos_idx, y_neg_idx, pi_ref):
+    logits = theta + np.log(pi_ref + 1e-8)
+    logp_pos = logits[y_pos_idx] - logsumexp(logits)
+    logp_neg = logits[y_neg_idx] - logsumexp(logits)
+    s = logp_pos - logp_neg
+    sigma = 1 / (1 + np.exp(-s))
+    loss = -np.log(sigma + 1e-8)
+    softmax = np.exp(logits - logsumexp(logits))
+    grad = - (1 - sigma) * (np.eye(n_actions)[y_pos_idx] - np.eye(n_actions)[y_neg_idx]) + sigma * softmax
+    return loss, grad
+
+# --- Training loop with history tracking ---
+theta = np.zeros(n_actions)
+lr = 0.05
+n_steps = 100
+history = []
+
+for step in range(n_steps):
+    total_grad = np.zeros_like(theta)
+    for y_pos_idx, y_neg_idx in pair_indices:
+        _, grad = dpo_loss_and_grad(theta, y_pos_idx, y_neg_idx, pi_ref)
+        total_grad += grad
+    theta -= lr * total_grad / n_pairs
+    logits_snapshot = theta + np.log(pi_ref + 1e-8)
+    pi_snapshot = np.exp(logits_snapshot - logsumexp(logits_snapshot))
+    history.append(pi_snapshot)
+
+# --- Animation setup ---
+fig, ax = plt.subplots(figsize=(7, 4))
+line_true, = ax.plot(Y, R_true, 'k--', label='True Reward')
+line_ref, = ax.plot(Y, pi_ref, 'g-', label='Reference Policy')
+line_learned, = ax.plot([], [], 'b-', label='Learned Policy')
+
+# Add preference pair indicators
+pref_lines = [ax.axvline(Y[idx], color='blue', linestyle=':', alpha=0.3) for idx, _ in pair_indices]
+pref_lines += [ax.axvline(Y[idx], color='red', linestyle=':', alpha=0.3) for _, idx in pair_indices]
+
+ax.set_ylim(-0.025, 0.025)
+ax.set_title("DPO Policy Evolution")
+ax.set_ylabel("Probability")
+ax.set_xlabel("y")
+ax.legend()
+
+def update(frame):
+    pi_snapshot = history[frame]
+    line_learned.set_data(Y, pi_snapshot)
+    ax.set_title(f"DPO Policy Evolution (Step {frame + 1})")
+    return [line_learned]
+
+from IPython.display import HTML
+from matplotlib import rc
+rc('animation', html='jshtml')
+
+ani = animation.FuncAnimation(fig, update, frames=n_steps, interval=100, blit=True)
+HTML(ani.to_jshtml())
+```
 
 The pairwise logistic approach can be extended to other feedback types. If humans provide numeric *ratings* or *scores* for options, one can treat utility learning as a regression problem: fit $u_\theta(x)$ to predict those scores (perhaps with a suitable bounded output or ordinal regression if scores are ordinal). If humans rank multiple options at once, algorithms like *RankNet* or *RankSVM* generalize the pairwise approach to listwise ranking losses. All these methods boil down to defining a loss that penalizes disagreements between the predicted utility order and the human-provided preferences, then optimizing $\theta$ to minimize that loss.
 
@@ -263,7 +397,7 @@ plt.tight_layout()
 plt.show()
 ```
 
- ([image]()) *Gaussian Process posterior for a utility function (blue mean with 95% confidence band) after observing 5 points of noisy utility data (red ×). The true utility function (black dashed) is non-trivial. The GP correctly captures the function’s value around observed regions and expresses high uncertainty in the unobserved middle region. In practice, this uncertainty could guide an algorithm to query more feedback in the region $x\approx [4,7]$ to reduce ambiguity.* 
+Gaussian Process posterior for a utility function (blue mean with 95% confidence band) after observing 5 points of noisy utility data (red ×). The true utility function (black dashed) is non-trivial. The GP correctly captures the function’s value around observed regions and expresses high uncertainty in the unobserved middle region. In practice, this uncertainty could guide an algorithm to query more feedback in the region $x\approx [4,7]$ to reduce ambiguity.
 
 Gaussian processes are a flexible way to learn utility functions. They naturally handle irregular data and provide principled uncertainty estimates. GP-based preference learning has been applied to tasks like interactive Bayesian optimization, where an algorithm seeks to find the maximum of $u(x)$ by iteratively querying a human which of two options is better [@christiano2023deep].
 
@@ -413,7 +547,7 @@ Another Bayesian approach is Bayesian Inverse Reinforcement Learning (IRL), wher
 
 In summary, Bayesian utility learning methods acknowledge that with limited human feedback, many possible utility functions might be compatible with the data. They keep track of this ambiguity, which is crucial for making cautious decisions and for actively gathering more feedback.
 
-## Case Study: Learning from Human Feedback in Robotics
+## Case Study: Learning from Human Feedback in Robotics {.unnumbered}
 
 Thus far, we discussed preference learning in general terms. We now focus on robotics, where an agent must learn a *reward/utility function* that captures the human’s objectives for a *sequential decision-making* task. Robotics brings additional challenges: the utility often depends on a trajectory of states and actions, and feedback can come in multiple forms. We outline several key forms of human feedback for robot learning and how to learn from them:
 
@@ -424,7 +558,7 @@ Thus far, we discussed preference learning in general terms. We now focus on rob
 
 These are not mutually exclusive; in practice, combinations can be very powerful [@iliad2019learning]. We describe each mode and how utility functions can be derived.
 
-### Learning from Demonstrations (Inverse Reinforcement Learning)
+### Learning from Demonstrations (Inverse Reinforcement Learning) {.unnumbered}
 
 In Learning from Demonstrations, also known as Inverse Reinforcement Learning, the human provides examples of desired behavior (e.g. teleoperating a robot to show how to perform a task). The assumption is that the demonstrator is approximately optimizing some latent reward function $R^*(s,a)$ (or utility for trajectories). IRL algorithms then search for a reward function $R_\theta$ under which the given demonstrations $\tau_{demo}$ have high expected return [@iliad2019learning]. 
 
@@ -438,7 +572,7 @@ where $R_\theta(\tau) = \sum_{t} r_\theta(s_t, a_t)$ is the cumulative reward of
 
 *Key challenge:* unless demonstrations are *optimal* and cover the space well, IRL might recover an ambiguous or incorrect reward. In robotics, humans often have difficulty providing flawless demonstrations (due to hard-to-use interfaces or limited expertise) [@iliad2019learning]. For example, users teleoperating a robot arm might move jerkily or only accomplish part of the task [@iliad2019learning]. This makes sole reliance on demonstrations problematic. Nonetheless, demonstration data can provide a strong prior: it shows at least one way to succeed (or partial preferences for certain behaviors).
 
-### Learning from Preferences and Rankings of Trajectories
+### Learning from Preferences and Rankings of Trajectories {.unnumbered}
 
 When high-quality demonstrations are hard to obtain, preference queries on trajectories are a viable alternative [@iliad2019learning]. In preference-based learning for robotics, the robot (or algorithm) presents two (or more) trajectories of the task outcome, and the human chooses which one is better. Each such comparison provides a bit of information about the true underlying reward. By asking many queries, the algorithm can home in on the reward function that explains the human’s choices [@iliad2019learning].
 
@@ -448,7 +582,7 @@ A concrete example is an agent learning to do a backflip in simulation [@christi
 
 Such preference-based reward learning has enabled complex skills without explicitly programmed rewards [@christiano2023deep]. Notably, Christiano *et al.* (2017) showed that an agent can learn Atari game policies and robotic manipulations from a few hundred comparison queries, achieving goals that are hard to specify but easy to judge [@christiano2023deep]. Preferences are often easier for humans than demonstrations: choosing between options is simpler than generating one from scratch [@iliad2019learning]. However, preference learning can be slow if each query only yields one bit of information. Active learning and combining preferences with other feedback can greatly improve efficiency [@iliad2019learning].
 
-### Learning from Trajectory Evaluations (Critiques and Ratings)
+### Learning from Trajectory Evaluations (Critiques and Ratings) {.unnumbered}
 
 Sometimes humans provide feedback in the form of *evaluative scores* or critiques on full trajectories (or partial trajectories). For example, after a robot finishes an attempt at a task, the human might give a reward signal (e.g. +1/-1, or a rating 1–5 stars, or say “too slow” vs “good job”). This is the premise of the TAMER framework (Training an Agent via Evaluative Reinforcement) and related approaches, where a human’s scalar reward signals are directly treated as the reward function for the agent in reinforcement learning.
 
@@ -456,7 +590,7 @@ From a utility learning perspective, such feedback can be used to directly fit a
 
 A challenge with trajectory-level feedback is *credit assignment*: the human’s single score must be attributed to the entire sequence of actions. Algorithms like COACH (Continuous cOaching of Automated Control Handlers) address this by allowing humans to give feedback at intermediate steps, thereby guiding the agent which specific part of the behavior was good or bad. In either case, learning from trajectory evaluations turns the human into a *reward function provider*, and the learning algorithm’s job is to infer the latent reward function that the human’s evaluations are trying to convey.
 
-### Learning from Physical Corrections
+### Learning from Physical Corrections {.unnumbered}
 
 Robots that physically collaborate with humans can receive physical corrections: the human may push the robot or otherwise intervene to adjust its behavior. Such corrections provide insight into the human’s desired utility. For example, if a household robot is carrying a fragile object too recklessly and the human physically slows it down or re-routes it, that indicates the human’s reward favors safety over speed at that moment.
 
@@ -466,7 +600,7 @@ Another approach is to infer the human’s intent through the sequence of correc
 
 Physical corrections are intuitive for humans – we often instinctively guide others or objects when they err. For the robot, interpreting this guidance requires converting it into constraints or examples for the utility function. It is a powerful signal because it is *active*: the human is not just telling preferences but directly imparting the desired direction of change.
 
-### Combining Multiple Feedback Types
+### Combining Multiple Feedback Types {.unnumbered}
 
 Each feedback modality has strengths and weaknesses. Demonstrations provide a lot of information but can be hard to perform; preferences are easy for humans but yield information slowly; corrections are very informative locally but require physical interaction; trajectory evaluations are straightforward but coarse. Combining these modes can lead to faster and more robust reward learning [@iliad2019learning]. For example, the DemPref algorithm [@iliad2019learning] first uses demonstrations to get an initial rough reward model, then uses preference queries to refine it quickly [@iliad2019learning]. In user studies, such combined approaches learned better rewards with fewer queries than using either alone [@iliad2019learning].
 

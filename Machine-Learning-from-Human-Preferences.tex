@@ -392,10 +392,10 @@
 \floatname{codelisting}{Listing}
 \newcommand*\listoflistings{\listof{codelisting}{List of Listings}}
 \usepackage{amsthm}
-\theoremstyle{definition}
-\newtheorem{definition}{Definition}[chapter]
 \theoremstyle{plain}
 \newtheorem{proposition}{Proposition}[chapter]
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}[chapter]
 \theoremstyle{remark}
 \AtBeginDocument{\renewcommand*{\proofname}{Proof}}
 \newtheorem*{remark}{Remark}
@@ -438,7 +438,7 @@
 
 \title{Machine Learning from Human Preferences}
 \author{Sang T. Truong \and Sanmi Koyejo}
-\date{2025-04-14}
+\date{2025-04-19}
 
 \begin{document}
 \newgeometry{}
@@ -2904,39 +2904,104 @@ the absolute scale of \(u_\theta\) is unidentifiable without further
 assumptions. Supervised learning on preferences has been widely used for
 ranking problems and preference-based reward learning.
 
-While the above approach learns a utility and could then use it for
-decision-making, an alternative in some domains is to directly optimize
-the policy based on preferences, bypassing an explicit reward model.
-Direct Preference Optimization (DPO) is a recent technique introduced
-for aligning language models to human preferences
-(\citeproc{ref-rafailov2023direct}{Rafailov et al. 2023}). The insight
-of DPO is that we can fold the reward model into the policy itself, and
-then update the policy via a simple supervised objective on preference
-data.
+In standard preference learning, we often learn a utility function and
+then use it to define a policy. However, in some settings---especially
+those involving large models like language models---it is more effective
+to directly learn a policy that aligns with human preferences, bypassing
+the intermediate reward model. One such method is Direct Preference
+Optimization (DPO), which offers a simple, stable way to align a policy
+to preference data through supervised learning.
 
-In the context of DPO for language models, one has a base policy
-\(\pi_{\text{ref}}\) (e.g.~the pre-trained model) and a new policy
-\(\pi_\theta\) we want to fine-tune. Given a human preference between
-two model outputs (responses) \(y_+\) (preferred) vs \(y_-\) for the
-same prompt \(x\), DPO adjusts \(\pi_\theta\) to increase the
-log-probability of \(y_+\) and decrease that of \(y_-\). Formally, the
-\emph{DPO loss} for a single preference is:
+To understand DPO, consider the following setting:
+
+\begin{itemize}
+\tightlist
+\item
+  We are given a reference policy \(\pi_{\text{ref}}\), such as a
+  pre-trained language model.
+\item
+  We want to learn a new policy \(\pi_\theta\) that improves upon
+  \(\pi_{\text{ref}}\) by better reflecting human preferences.
+\item
+  Our data consists of pairwise comparisons: for each prompt \(x\), a
+  human expresses a preference between two outputs \(y_+ \succ y_-\),
+  where \(y_+\) is the preferred response.
+\end{itemize}
+
+Rather than learning an explicit reward function \(R(x, y)\) and using
+it to optimize the policy via reinforcement learning, DPO treats this as
+a classification problem: we want to encourage the policy to assign
+higher likelihood to the preferred response.
+
+To formalize this, we define a preference score: \[
+s_\theta(x, y_+, y_-) = \log \pi_\theta(y_+ \mid x) - \log \pi_\theta(y_- \mid x)
+\] This is the difference in log-likelihood between the preferred and
+dispreferred outputs. We can then define the DPO loss as a logistic
+regression objective: \[
+\mathcal{L}_{\text{DPO}}(\theta) = -\log \sigma\left(s_\theta(x, y_+, y_-)\right)
+\] where \(\sigma(z) = \frac{1}{1 + e^{-z}}\) is the sigmoid function.
+
+This loss encourages \(\pi_\theta\) to assign greater probability mass
+to \(y_+\) than \(y_-\), pushing the policy toward outputs that align
+with human preferences. Because this is a differentiable, supervised
+loss, it can be optimized with standard gradient-based techniques,
+without needing to sample from the environment or estimate advantages,
+as in traditional RL.
+
+Although DPO does not explicitly define or optimize a reward function,
+we can interpret it as doing so implicitly. Suppose we define a reward
+function: \[
+R_\theta(y \mid x) = \log \pi_\theta(y \mid x) - \log \pi_{\text{ref}}(y \mid x)
+\] This reward encourages \(\pi_\theta\) to move away from
+\(\pi_{\text{ref}}\) in directions that increase the probability of
+preferred outputs. Under this formulation, the DPO objective can be
+interpreted as optimizing this reward difference directly from
+preferences.
+
+To understand why this implicit reward leads to a stable and
+interpretable policy, we can connect DPO to the principle of maximum
+entropy. This principle says that, among all distributions that satisfy
+certain constraints (e.g., achieving a particular expected reward), we
+should prefer the one with maximum entropy---that is, the most uncertain
+or uncommitted distribution consistent with our knowledge.
+
+Formally, consider the space \(\mathcal{P}\) of distributions over
+responses \(y\), and a reward function \(R(y)\). The maximum entropy
+distribution that satisfies a reward constraint is the solution to:
 
 \[
-\mathcal{L}_{\text{DPO}}(\theta) \;=\; -\log \sigma\!\Big(\underbrace{\log \pi_\theta(y_+|x) - \log \pi_\theta(y_-|x)}_{\text{policy preference score}}\Big)\,.
+p^*(y) = \arg\max_{p \in \mathcal{P}} H(p) \quad \text{subject to} \quad \mathbb{E}_p[R(y)] \geq \rho
 \]
 
-Intuitively, this is the same logistic loss as before, now directly in
-terms of the policy's log-likelihood scores for each option. The overall
-objective is the average of this loss over a dataset of human preference
-comparisons. Optimizing this loss via gradient descent on \(\pi_\theta\)
-effectively \emph{bakes in} a reward model:
-\(\log \pi_\theta(y|x) - \log \pi_{\text{ref}}(y|x)\) plays the role of
-a learned reward. In fact, one can show that DPO is implicitly fitting a
-reward function that \(\pi_\theta\) is maximizing. Crucially, DPO does
-\emph{not} require a separate reinforcement learning loop; it treats
-preference data as direct supervision for the policy, using a simple
-binary classification objective.
+The solution to this constrained optimization problem is a Boltzmann
+distribution: \[
+p^*(y) \propto \exp\left(\frac{R(y)}{\tau}\right)
+\] for some temperature \(\tau > 0\), where \(\tau\) controls how
+deterministic the distribution is. As \(\tau \to 0\), the distribution
+concentrates on the highest-reward outputs; as \(\tau \to \infty\), it
+becomes uniform.
+
+Now suppose our reference policy \(\pi_{\text{ref}}(y \mid x)\) already
+represents a reasonable starting point. Then the optimal policy
+\(\pi_\theta\) can be viewed as a reward-weighted version of this
+reference policy:
+
+\[
+\pi_\theta(y \mid x) \propto \pi_{\text{ref}}(y \mid x) \cdot \exp\left(R_\theta(y \mid x)\right)
+\]
+
+This form ensures that \(\pi_\theta\) remains close to
+\(\pi_{\text{ref}}\) (via the KL term), while still assigning more mass
+to high-reward (preferred) outputs. Importantly, this form arises
+naturally from maximum entropy inference when the reference distribution
+is used as a baseline.
+
+DPO thus combines reward maximization with entropy regularization,
+encouraging the learned policy to prefer outcomes favored by human
+feedback while preserving diversity and stability. It sidesteps the
+challenges of explicitly learning a reward model or tuning complex RL
+pipelines, offering a direct and scalable method for preference-based
+alignment.
 
 In practice, DPO has been shown to achieve similar or better alignment
 performance compared to reinforcement learning from human feedback
@@ -2947,18 +3012,107 @@ structure our utility model cleverly (here, as the log-ratio of policy
 and reference), we can extract an optimal policy in closed-form and
 learn utilities via supervised learning.
 
-DPO's formulation is related to the Bradley--Terry model for preferences
-and to the idea of \emph{maximum entropy} policies. If we imagine a
-reward function
-\(R_\theta(y|x) = \log \pi_\theta(y|x) - \log \pi_{\text{ref}}(y|x)\),
-DPO's loss is pushing \(R_\theta(y_+) > R_\theta(y_-)\) for preferred
-pairs. The optimal \(\pi_\theta\) under this criterion turns out to be
-\(\pi_\theta(y|x) \propto \pi_{\text{ref}}(y|x)\exp\{R_\theta(y|x)\}\).
-In other words, \(\pi_\theta\) is proportional to the reference policy
-re-weighted by an exponentiated reward -- a result consistent with the
-principle of maximum entropy (softmax) optimization. DPO thus blurs the
-line between learning a utility function and learning a policy; it
-directly outputs a policy that (implicitly) encodes the learned utility.
+\begin{Shaded}
+\begin{Highlighting}[numbers=left,,]
+\ImportTok{import}\NormalTok{ numpy }\ImportTok{as}\NormalTok{ np}
+\ImportTok{import}\NormalTok{ matplotlib.pyplot }\ImportTok{as}\NormalTok{ plt}
+\ImportTok{import}\NormalTok{ matplotlib.animation }\ImportTok{as}\NormalTok{ animation}
+\ImportTok{from}\NormalTok{ scipy.special }\ImportTok{import}\NormalTok{ logsumexp}
+
+\CommentTok{\# {-}{-}{-} Setup: 1D input x, discrete actions y {-}{-}{-}}
+\NormalTok{np.random.seed(}\DecValTok{0}\NormalTok{)}
+\NormalTok{x }\OperatorTok{=} \FloatTok{5.0}  \CommentTok{\# fixed input}
+\NormalTok{Y }\OperatorTok{=}\NormalTok{ np.linspace(}\OperatorTok{{-}}\DecValTok{4}\NormalTok{, }\DecValTok{4}\NormalTok{, }\DecValTok{100}\NormalTok{)  }\CommentTok{\# discrete action space}
+\NormalTok{n\_actions }\OperatorTok{=} \BuiltInTok{len}\NormalTok{(Y)}
+
+\CommentTok{\# {-}{-}{-} True reward function (unknown to learner) {-}{-}{-}}
+\KeywordTok{def}\NormalTok{ true\_reward(x, y):}
+    \ControlFlowTok{return} \OperatorTok{{-}}\NormalTok{((y }\OperatorTok{{-}}\NormalTok{ np.sin(x))}\OperatorTok{**}\DecValTok{2}\NormalTok{)  }\CommentTok{\# reward peak near y = sin(x)}
+
+\NormalTok{R\_true }\OperatorTok{=}\NormalTok{ true\_reward(x, Y)}
+
+\CommentTok{\# {-}{-}{-} Reference policy: fixed Gaussian{-}like distribution {-}{-}{-}}
+\KeywordTok{def}\NormalTok{ ref\_policy(y):}
+\NormalTok{    logits }\OperatorTok{=} \OperatorTok{{-}}\FloatTok{0.5} \OperatorTok{*}\NormalTok{ (y }\OperatorTok{/} \FloatTok{2.0}\NormalTok{)}\OperatorTok{**}\DecValTok{2}  \CommentTok{\# log probs of N(0, 2\^{}2)}
+    \ControlFlowTok{return}\NormalTok{ np.exp(logits }\OperatorTok{{-}}\NormalTok{ logsumexp(logits))}
+
+\NormalTok{pi\_ref }\OperatorTok{=}\NormalTok{ ref\_policy(Y)}
+
+\CommentTok{\# {-}{-}{-} Preference data from reward samples {-}{-}{-}}
+\KeywordTok{def}\NormalTok{ sample\_preference(x, Y, R\_fn, temperature}\OperatorTok{=}\FloatTok{1.0}\NormalTok{):}
+\NormalTok{    logits }\OperatorTok{=}\NormalTok{ R\_fn(x, Y) }\OperatorTok{/}\NormalTok{ temperature}
+\NormalTok{    probs }\OperatorTok{=}\NormalTok{ np.exp(logits }\OperatorTok{{-}}\NormalTok{ logsumexp(logits))}
+\NormalTok{    sampled }\OperatorTok{=}\NormalTok{ np.random.choice(}\BuiltInTok{len}\NormalTok{(Y), size}\OperatorTok{=}\DecValTok{2}\NormalTok{, replace}\OperatorTok{=}\VariableTok{False}\NormalTok{, p}\OperatorTok{=}\NormalTok{probs)}
+\NormalTok{    y\_plus, y\_minus }\OperatorTok{=}\NormalTok{ sampled }\ControlFlowTok{if}\NormalTok{ R\_fn(x, Y[sampled[}\DecValTok{0}\NormalTok{]]) }\OperatorTok{\textgreater{}}\NormalTok{ R\_fn(x, Y[sampled[}\DecValTok{1}\NormalTok{]]) }\ControlFlowTok{else}\NormalTok{ sampled[::}\OperatorTok{{-}}\DecValTok{1}\NormalTok{]}
+    \ControlFlowTok{return}\NormalTok{ y\_plus, y\_minus}
+
+\NormalTok{n\_pairs }\OperatorTok{=} \DecValTok{100}
+\NormalTok{pair\_indices }\OperatorTok{=}\NormalTok{ [sample\_preference(x, Y, true\_reward) }\ControlFlowTok{for}\NormalTok{ \_ }\KeywordTok{in} \BuiltInTok{range}\NormalTok{(n\_pairs)]}
+
+\CommentTok{\# {-}{-}{-} DPO loss and gradient {-}{-}{-}}
+\KeywordTok{def}\NormalTok{ dpo\_loss\_and\_grad(theta, y\_pos\_idx, y\_neg\_idx, pi\_ref):}
+\NormalTok{    logits }\OperatorTok{=}\NormalTok{ theta }\OperatorTok{+}\NormalTok{ np.log(pi\_ref }\OperatorTok{+} \FloatTok{1e{-}8}\NormalTok{)}
+\NormalTok{    logp\_pos }\OperatorTok{=}\NormalTok{ logits[y\_pos\_idx] }\OperatorTok{{-}}\NormalTok{ logsumexp(logits)}
+\NormalTok{    logp\_neg }\OperatorTok{=}\NormalTok{ logits[y\_neg\_idx] }\OperatorTok{{-}}\NormalTok{ logsumexp(logits)}
+\NormalTok{    s }\OperatorTok{=}\NormalTok{ logp\_pos }\OperatorTok{{-}}\NormalTok{ logp\_neg}
+\NormalTok{    sigma }\OperatorTok{=} \DecValTok{1} \OperatorTok{/}\NormalTok{ (}\DecValTok{1} \OperatorTok{+}\NormalTok{ np.exp(}\OperatorTok{{-}}\NormalTok{s))}
+\NormalTok{    loss }\OperatorTok{=} \OperatorTok{{-}}\NormalTok{np.log(sigma }\OperatorTok{+} \FloatTok{1e{-}8}\NormalTok{)}
+\NormalTok{    softmax }\OperatorTok{=}\NormalTok{ np.exp(logits }\OperatorTok{{-}}\NormalTok{ logsumexp(logits))}
+\NormalTok{    grad }\OperatorTok{=} \OperatorTok{{-}}\NormalTok{ (}\DecValTok{1} \OperatorTok{{-}}\NormalTok{ sigma) }\OperatorTok{*}\NormalTok{ (np.eye(n\_actions)[y\_pos\_idx] }\OperatorTok{{-}}\NormalTok{ np.eye(n\_actions)[y\_neg\_idx]) }\OperatorTok{+}\NormalTok{ sigma }\OperatorTok{*}\NormalTok{ softmax}
+    \ControlFlowTok{return}\NormalTok{ loss, grad}
+
+\CommentTok{\# {-}{-}{-} Training loop with history tracking {-}{-}{-}}
+\NormalTok{theta }\OperatorTok{=}\NormalTok{ np.zeros(n\_actions)}
+\NormalTok{lr }\OperatorTok{=} \FloatTok{0.05}
+\NormalTok{n\_steps }\OperatorTok{=} \DecValTok{100}
+\NormalTok{history }\OperatorTok{=}\NormalTok{ []}
+
+\ControlFlowTok{for}\NormalTok{ step }\KeywordTok{in} \BuiltInTok{range}\NormalTok{(n\_steps):}
+\NormalTok{    total\_grad }\OperatorTok{=}\NormalTok{ np.zeros\_like(theta)}
+    \ControlFlowTok{for}\NormalTok{ y\_pos\_idx, y\_neg\_idx }\KeywordTok{in}\NormalTok{ pair\_indices:}
+\NormalTok{        \_, grad }\OperatorTok{=}\NormalTok{ dpo\_loss\_and\_grad(theta, y\_pos\_idx, y\_neg\_idx, pi\_ref)}
+\NormalTok{        total\_grad }\OperatorTok{+=}\NormalTok{ grad}
+\NormalTok{    theta }\OperatorTok{{-}=}\NormalTok{ lr }\OperatorTok{*}\NormalTok{ total\_grad }\OperatorTok{/}\NormalTok{ n\_pairs}
+\NormalTok{    logits\_snapshot }\OperatorTok{=}\NormalTok{ theta }\OperatorTok{+}\NormalTok{ np.log(pi\_ref }\OperatorTok{+} \FloatTok{1e{-}8}\NormalTok{)}
+\NormalTok{    pi\_snapshot }\OperatorTok{=}\NormalTok{ np.exp(logits\_snapshot }\OperatorTok{{-}}\NormalTok{ logsumexp(logits\_snapshot))}
+\NormalTok{    history.append(pi\_snapshot)}
+
+\CommentTok{\# {-}{-}{-} Animation setup {-}{-}{-}}
+\NormalTok{fig, ax }\OperatorTok{=}\NormalTok{ plt.subplots(figsize}\OperatorTok{=}\NormalTok{(}\DecValTok{7}\NormalTok{, }\DecValTok{4}\NormalTok{))}
+\NormalTok{line\_true, }\OperatorTok{=}\NormalTok{ ax.plot(Y, R\_true, }\StringTok{\textquotesingle{}k{-}{-}\textquotesingle{}}\NormalTok{, label}\OperatorTok{=}\StringTok{\textquotesingle{}True Reward\textquotesingle{}}\NormalTok{)}
+\NormalTok{line\_ref, }\OperatorTok{=}\NormalTok{ ax.plot(Y, pi\_ref, }\StringTok{\textquotesingle{}g{-}\textquotesingle{}}\NormalTok{, label}\OperatorTok{=}\StringTok{\textquotesingle{}Reference Policy\textquotesingle{}}\NormalTok{)}
+\NormalTok{line\_learned, }\OperatorTok{=}\NormalTok{ ax.plot([], [], }\StringTok{\textquotesingle{}b{-}\textquotesingle{}}\NormalTok{, label}\OperatorTok{=}\StringTok{\textquotesingle{}Learned Policy\textquotesingle{}}\NormalTok{)}
+
+\CommentTok{\# Add preference pair indicators}
+\NormalTok{pref\_lines }\OperatorTok{=}\NormalTok{ [ax.axvline(Y[idx], color}\OperatorTok{=}\StringTok{\textquotesingle{}blue\textquotesingle{}}\NormalTok{, linestyle}\OperatorTok{=}\StringTok{\textquotesingle{}:\textquotesingle{}}\NormalTok{, alpha}\OperatorTok{=}\FloatTok{0.3}\NormalTok{) }\ControlFlowTok{for}\NormalTok{ idx, \_ }\KeywordTok{in}\NormalTok{ pair\_indices]}
+\NormalTok{pref\_lines }\OperatorTok{+=}\NormalTok{ [ax.axvline(Y[idx], color}\OperatorTok{=}\StringTok{\textquotesingle{}red\textquotesingle{}}\NormalTok{, linestyle}\OperatorTok{=}\StringTok{\textquotesingle{}:\textquotesingle{}}\NormalTok{, alpha}\OperatorTok{=}\FloatTok{0.3}\NormalTok{) }\ControlFlowTok{for}\NormalTok{ \_, idx }\KeywordTok{in}\NormalTok{ pair\_indices]}
+
+\NormalTok{ax.set\_ylim(}\OperatorTok{{-}}\FloatTok{0.025}\NormalTok{, }\FloatTok{0.025}\NormalTok{)}
+\NormalTok{ax.set\_title(}\StringTok{"DPO Policy Evolution"}\NormalTok{)}
+\NormalTok{ax.set\_ylabel(}\StringTok{"Probability"}\NormalTok{)}
+\NormalTok{ax.set\_xlabel(}\StringTok{"y"}\NormalTok{)}
+\NormalTok{ax.legend()}
+
+\KeywordTok{def}\NormalTok{ update(frame):}
+\NormalTok{    pi\_snapshot }\OperatorTok{=}\NormalTok{ history[frame]}
+\NormalTok{    line\_learned.set\_data(Y, pi\_snapshot)}
+\NormalTok{    ax.set\_title(}\SpecialStringTok{f"DPO Policy Evolution (Step }\SpecialCharTok{\{}\NormalTok{frame }\OperatorTok{+} \DecValTok{1}\SpecialCharTok{\}}\SpecialStringTok{)"}\NormalTok{)}
+    \ControlFlowTok{return}\NormalTok{ [line\_learned]}
+
+\ImportTok{from}\NormalTok{ IPython.display }\ImportTok{import}\NormalTok{ HTML}
+\ImportTok{from}\NormalTok{ matplotlib }\ImportTok{import}\NormalTok{ rc}
+\NormalTok{rc(}\StringTok{\textquotesingle{}animation\textquotesingle{}}\NormalTok{, html}\OperatorTok{=}\StringTok{\textquotesingle{}jshtml\textquotesingle{}}\NormalTok{)}
+
+\NormalTok{ani }\OperatorTok{=}\NormalTok{ animation.FuncAnimation(fig, update, frames}\OperatorTok{=}\NormalTok{n\_steps, interval}\OperatorTok{=}\DecValTok{100}\NormalTok{, blit}\OperatorTok{=}\VariableTok{True}\NormalTok{)}
+\NormalTok{HTML(ani.to\_jshtml())}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+<IPython.core.display.HTML object>
+\end{verbatim}
+
+\pandocbounded{\includegraphics[keepaspectratio]{src/chap3_files/figure-pdf/cell-4-output-2.pdf}}
 
 The pairwise logistic approach can be extended to other feedback types.
 If humans provide numeric \emph{ratings} or \emph{scores} for options,
@@ -3151,15 +3305,15 @@ resources.
 \end{Highlighting}
 \end{Shaded}
 
-\pandocbounded{\includegraphics[keepaspectratio]{src/chap3_files/figure-pdf/cell-4-output-1.pdf}}
+\pandocbounded{\includegraphics[keepaspectratio]{src/chap3_files/figure-pdf/cell-5-output-1.pdf}}
 
-(\href{}{image}) \emph{Gaussian Process posterior for a utility function
-(blue mean with 95\% confidence band) after observing 5 points of noisy
-utility data (red ×). The true utility function (black dashed) is
-non-trivial. The GP correctly captures the function's value around
-observed regions and expresses high uncertainty in the unobserved middle
-region. In practice, this uncertainty could guide an algorithm to query
-more feedback in the region \(x\approx [4,7]\) to reduce ambiguity.}
+Gaussian Process posterior for a utility function (blue mean with 95\%
+confidence band) after observing 5 points of noisy utility data (red ×).
+The true utility function (black dashed) is non-trivial. The GP
+correctly captures the function's value around observed regions and
+expresses high uncertainty in the unobserved middle region. In practice,
+this uncertainty could guide an algorithm to query more feedback in the
+region \(x\approx [4,7]\) to reduce ambiguity.
 
 Gaussian processes are a flexible way to learn utility functions. They
 naturally handle irregular data and provide principled uncertainty
@@ -3364,7 +3518,7 @@ approximations to the posterior over preference functions.
 \end{Highlighting}
 \end{Shaded}
 
-\pandocbounded{\includegraphics[keepaspectratio]{src/chap3_files/figure-pdf/cell-5-output-1.pdf}}
+\pandocbounded{\includegraphics[keepaspectratio]{src/chap3_files/figure-pdf/cell-6-output-1.pdf}}
 
 Another Bayesian approach is Bayesian Inverse Reinforcement Learning
 (IRL), where a prior is placed on the parameters of a reward function
@@ -3382,8 +3536,12 @@ compatible with the data. They keep track of this ambiguity, which is
 crucial for making cautious decisions and for actively gathering more
 feedback.
 
-\section{Case Study: Learning from Human Feedback in
+\section*{Case Study: Learning from Human Feedback in
 Robotics}\label{case-study-learning-from-human-feedback-in-robotics}
+\addcontentsline{toc}{section}{Case Study: Learning from Human Feedback
+in Robotics}
+
+\markright{Case Study: Learning from Human Feedback in Robotics}
 
 Thus far, we discussed preference learning in general terms. We now
 focus on robotics, where an agent must learn a \emph{reward/utility
@@ -3414,8 +3572,10 @@ powerful
 (\citeproc{ref-iliad2019learning}{\textbf{iliad2019learning?}}). We
 describe each mode and how utility functions can be derived.
 
-\subsection{Learning from Demonstrations (Inverse Reinforcement
+\subsection*{Learning from Demonstrations (Inverse Reinforcement
 Learning)}\label{learning-from-demonstrations-inverse-reinforcement-learning}
+\addcontentsline{toc}{subsection}{Learning from Demonstrations (Inverse
+Reinforcement Learning)}
 
 In Learning from Demonstrations, also known as Inverse Reinforcement
 Learning, the human provides examples of desired behavior
@@ -3458,8 +3618,10 @@ makes sole reliance on demonstrations problematic. Nonetheless,
 demonstration data can provide a strong prior: it shows at least one way
 to succeed (or partial preferences for certain behaviors).
 
-\subsection{Learning from Preferences and Rankings of
+\subsection*{Learning from Preferences and Rankings of
 Trajectories}\label{learning-from-preferences-and-rankings-of-trajectories}
+\addcontentsline{toc}{subsection}{Learning from Preferences and Rankings
+of Trajectories}
 
 When high-quality demonstrations are hard to obtain, preference queries
 on trajectories are a viable alternative
@@ -3509,8 +3671,10 @@ bit of information. Active learning and combining preferences with other
 feedback can greatly improve efficiency
 (\citeproc{ref-iliad2019learning}{\textbf{iliad2019learning?}}).
 
-\subsection{Learning from Trajectory Evaluations (Critiques and
+\subsection*{Learning from Trajectory Evaluations (Critiques and
 Ratings)}\label{learning-from-trajectory-evaluations-critiques-and-ratings}
+\addcontentsline{toc}{subsection}{Learning from Trajectory Evaluations
+(Critiques and Ratings)}
 
 Sometimes humans provide feedback in the form of \emph{evaluative
 scores} or critiques on full trajectories (or partial trajectories). For
@@ -3544,8 +3708,9 @@ evaluations turns the human into a \emph{reward function provider}, and
 the learning algorithm's job is to infer the latent reward function that
 the human's evaluations are trying to convey.
 
-\subsection{Learning from Physical
+\subsection*{Learning from Physical
 Corrections}\label{learning-from-physical-corrections}
+\addcontentsline{toc}{subsection}{Learning from Physical Corrections}
 
 Robots that physically collaborate with humans can receive physical
 corrections: the human may push the robot or otherwise intervene to
@@ -3592,8 +3757,9 @@ utility function. It is a powerful signal because it is \emph{active}:
 the human is not just telling preferences but directly imparting the
 desired direction of change.
 
-\subsection{Combining Multiple Feedback
+\subsection*{Combining Multiple Feedback
 Types}\label{combining-multiple-feedback-types}
+\addcontentsline{toc}{subsection}{Combining Multiple Feedback Types}
 
 Each feedback modality has strengths and weaknesses. Demonstrations
 provide a lot of information but can be hard to perform; preferences are
@@ -3685,12 +3851,6 @@ preferences and well-being.
 Christiano, Paul, Jan Leike, Tom B. Brown, Miljan Martic, Shane Legg,
 and Dario Amodei. 2023. {``Deep Reinforcement Learning from Human
 Preferences.''} \url{https://arxiv.org/abs/1706.03741}.
-
-\bibitem[\citeproctext]{ref-rafailov2023direct}
-Rafailov, Rafael, Archit Sharma, Eric Mitchell, Stefano Ermon,
-Christopher D. Manning, and Chelsea Finn. 2023. {``Direct Preference
-Optimization: Your Language Model Is Secretly a Reward Model.''}
-\url{https://arxiv.org/abs/2305.18290}.
 
 \end{CSLReferences}
 
@@ -12193,7 +12353,7 @@ Sealed Tenders.''} \emph{Journal of Finance} 16 (1): 8--37.
 
 \bookmarksetup{startatroot}
 
-\chapter{Beyond Preferences}\label{beyond-preferences}
+\chapter{Alternatives}\label{alternatives}
 
 In recent years, the rapidly advancing capabilities of large models have
 led to increased discussion of aligning AI systems with human values.
