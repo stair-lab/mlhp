@@ -3411,6 +3411,12 @@ approximations to the posterior over preference functions.
 \ImportTok{import}\NormalTok{ numpy }\ImportTok{as}\NormalTok{ np}
 \ImportTok{import}\NormalTok{ matplotlib.pyplot }\ImportTok{as}\NormalTok{ plt}
 \ImportTok{from}\NormalTok{ scipy.stats }\ImportTok{import}\NormalTok{ norm}
+\ImportTok{from}\NormalTok{ IPython.display }\ImportTok{import}\NormalTok{ HTML}
+\ImportTok{from}\NormalTok{ matplotlib }\ImportTok{import}\NormalTok{ rc}
+\ImportTok{import}\NormalTok{ matplotlib.animation }\ImportTok{as}\NormalTok{ animation}
+\ImportTok{import}\NormalTok{ matplotlib.pyplot }\ImportTok{as}\NormalTok{ plt}
+\ImportTok{from}\NormalTok{ scipy.stats }\ImportTok{import}\NormalTok{ norm, gaussian\_kde}
+\ImportTok{from}\NormalTok{ sklearn.decomposition }\ImportTok{import}\NormalTok{ PCA}
 
 \CommentTok{\# {-}{-}{-} True latent utility function {-}{-}{-}}
 \KeywordTok{def}\NormalTok{ true\_u(x):}
@@ -3431,7 +3437,7 @@ approximations to the posterior over preference functions.
 \NormalTok{        pairs.append((X[j], X[i], }\DecValTok{1}\NormalTok{))}
 
 \CommentTok{\# {-}{-}{-} Define a deep neural network: 3 hidden layers {-}{-}{-}}
-\KeywordTok{def}\NormalTok{ init\_deep\_params(hidden\_dims}\OperatorTok{=}\NormalTok{[}\DecValTok{10}\NormalTok{, }\DecValTok{10}\NormalTok{, }\DecValTok{10}\NormalTok{]):}
+\KeywordTok{def}\NormalTok{ init\_deep\_params(hidden\_dims}\OperatorTok{=}\NormalTok{[}\DecValTok{4}\NormalTok{, }\DecValTok{4}\NormalTok{, }\DecValTok{4}\NormalTok{]):}
 \NormalTok{    params }\OperatorTok{=}\NormalTok{ \{\}}
 \NormalTok{    layer\_dims }\OperatorTok{=}\NormalTok{ [}\DecValTok{1}\NormalTok{] }\OperatorTok{+}\NormalTok{ hidden\_dims }\OperatorTok{+}\NormalTok{ [}\DecValTok{1}\NormalTok{]}
     \ControlFlowTok{for}\NormalTok{ i }\KeywordTok{in} \BuiltInTok{range}\NormalTok{(}\BuiltInTok{len}\NormalTok{(layer\_dims) }\OperatorTok{{-}} \DecValTok{1}\NormalTok{):}
@@ -3470,7 +3476,7 @@ approximations to the posterior over preference functions.
     \ControlFlowTok{return}\NormalTok{ lp}
 
 \CommentTok{\# {-}{-}{-} Proposal distribution {-}{-}{-}}
-\KeywordTok{def}\NormalTok{ deep\_propose(params, sigma}\OperatorTok{=}\FloatTok{0.05}\NormalTok{):}
+\KeywordTok{def}\NormalTok{ deep\_propose(params, sigma}\OperatorTok{=}\FloatTok{0.1}\NormalTok{):}
 \NormalTok{    new\_params }\OperatorTok{=}\NormalTok{ \{\}}
     \ControlFlowTok{for}\NormalTok{ k, v }\KeywordTok{in}\NormalTok{ params.items():}
 \NormalTok{        new\_params[k] }\OperatorTok{=}\NormalTok{ v }\OperatorTok{+}\NormalTok{ np.random.randn(}\OperatorTok{*}\NormalTok{v.shape) }\OperatorTok{*}\NormalTok{ sigma}
@@ -3495,7 +3501,7 @@ approximations to the posterior over preference functions.
     \ControlFlowTok{return}\NormalTok{ samples}
 
 \CommentTok{\# {-}{-}{-} Run MCMC {-}{-}{-}}
-\NormalTok{deep\_samples }\OperatorTok{=}\NormalTok{ deep\_mh(init\_deep\_params(), pairs, num\_iters}\OperatorTok{=}\DecValTok{2000}\NormalTok{, burn\_in}\OperatorTok{=}\DecValTok{200}\NormalTok{)}
+\NormalTok{deep\_samples }\OperatorTok{=}\NormalTok{ deep\_mh(init\_deep\_params(), pairs, num\_iters}\OperatorTok{=}\DecValTok{40000}\NormalTok{, burn\_in}\OperatorTok{=}\DecValTok{1000}\NormalTok{)}
 
 \CommentTok{\# {-}{-}{-} Posterior predictions {-}{-}{-}}
 \NormalTok{X\_test }\OperatorTok{=}\NormalTok{ np.linspace(}\DecValTok{0}\NormalTok{, }\DecValTok{10}\NormalTok{, }\DecValTok{200}\NormalTok{)}
@@ -3506,7 +3512,7 @@ approximations to the posterior over preference functions.
 \CommentTok{\# {-}{-}{-} Plot results {-}{-}{-}}
 \NormalTok{plt.figure(figsize}\OperatorTok{=}\NormalTok{(}\DecValTok{8}\NormalTok{, }\DecValTok{4}\NormalTok{))}
 \NormalTok{plt.plot(X\_test, true\_u(X\_test), }\StringTok{\textquotesingle{}k{-}{-}\textquotesingle{}}\NormalTok{, label}\OperatorTok{=}\StringTok{\textquotesingle{}True utility\textquotesingle{}}\NormalTok{)}
-\NormalTok{plt.plot(X\_test, deep\_mean, }\StringTok{\textquotesingle{}b{-}\textquotesingle{}}\NormalTok{, label}\OperatorTok{=}\StringTok{\textquotesingle{}BNN (3{-}layer) mean\textquotesingle{}}\NormalTok{)}
+\NormalTok{plt.plot(X\_test, deep\_mean, }\StringTok{\textquotesingle{}b{-}\textquotesingle{}}\NormalTok{, label}\OperatorTok{=}\StringTok{\textquotesingle{}Posterior mean\textquotesingle{}}\NormalTok{)}
 \NormalTok{plt.fill\_between(X\_test, deep\_mean }\OperatorTok{{-}} \FloatTok{1.96} \OperatorTok{*}\NormalTok{ deep\_std, deep\_mean }\OperatorTok{+} \FloatTok{1.96} \OperatorTok{*}\NormalTok{ deep\_std,}
 \NormalTok{                 color}\OperatorTok{=}\StringTok{\textquotesingle{}blue\textquotesingle{}}\NormalTok{, alpha}\OperatorTok{=}\FloatTok{0.2}\NormalTok{, label}\OperatorTok{=}\StringTok{\textquotesingle{}95\% CI\textquotesingle{}}\NormalTok{)}
 \NormalTok{plt.title(}\StringTok{"3{-}layer Bayesian Neural Network via MCMC on Preference Data"}\NormalTok{)}
@@ -3515,10 +3521,60 @@ approximations to the posterior over preference functions.
 \NormalTok{plt.legend()}
 \NormalTok{plt.tight\_layout()}
 \NormalTok{plt.show()}
+
+\CommentTok{\# Flatten and PCA}
+\KeywordTok{def}\NormalTok{ flatten\_params(params):}
+    \ControlFlowTok{return}\NormalTok{ np.concatenate([v.flatten() }\ControlFlowTok{for}\NormalTok{ v }\KeywordTok{in}\NormalTok{ params.values()])}
+
+\NormalTok{flat\_samples }\OperatorTok{=}\NormalTok{ np.array([flatten\_params(p) }\ControlFlowTok{for}\NormalTok{ p }\KeywordTok{in}\NormalTok{ deep\_samples])}
+\NormalTok{pca }\OperatorTok{=}\NormalTok{ PCA(n\_components}\OperatorTok{=}\DecValTok{2}\NormalTok{)}
+\NormalTok{proj\_samples }\OperatorTok{=}\NormalTok{ pca.fit\_transform(flat\_samples)}
+
+\CommentTok{\# Density heatmap from KDE}
+\NormalTok{kde }\OperatorTok{=}\NormalTok{ gaussian\_kde(proj\_samples.T)}
+\NormalTok{xmin, xmax }\OperatorTok{=}\NormalTok{ proj\_samples[:, }\DecValTok{0}\NormalTok{].}\BuiltInTok{min}\NormalTok{(), proj\_samples[:, }\DecValTok{0}\NormalTok{].}\BuiltInTok{max}\NormalTok{()}
+\NormalTok{ymin, ymax }\OperatorTok{=}\NormalTok{ proj\_samples[:, }\DecValTok{1}\NormalTok{].}\BuiltInTok{min}\NormalTok{(), proj\_samples[:, }\DecValTok{1}\NormalTok{].}\BuiltInTok{max}\NormalTok{()}
+\NormalTok{xx, yy }\OperatorTok{=}\NormalTok{ np.meshgrid(np.linspace(xmin, xmax, }\DecValTok{100}\NormalTok{), np.linspace(ymin, ymax, }\DecValTok{100}\NormalTok{))}
+\NormalTok{zz }\OperatorTok{=}\NormalTok{ kde(np.vstack([xx.ravel(), yy.ravel()])).reshape(xx.shape)}
+
+\CommentTok{\# Downsample to 80 frames}
+\NormalTok{n\_frames }\OperatorTok{=} \DecValTok{80}
+\NormalTok{idx }\OperatorTok{=}\NormalTok{ np.linspace(}\DecValTok{0}\NormalTok{, }\BuiltInTok{len}\NormalTok{(proj\_samples) }\OperatorTok{{-}} \DecValTok{1}\NormalTok{, n\_frames).astype(}\BuiltInTok{int}\NormalTok{)}
+\NormalTok{proj\_subset }\OperatorTok{=}\NormalTok{ proj\_samples[idx]}
+
+\CommentTok{\# Animation with heatmap}
+\NormalTok{fig, ax }\OperatorTok{=}\NormalTok{ plt.subplots(figsize}\OperatorTok{=}\NormalTok{(}\DecValTok{6}\NormalTok{, }\DecValTok{5}\NormalTok{))}
+\NormalTok{ax.contourf(xx, yy, zz, levels}\OperatorTok{=}\DecValTok{30}\NormalTok{, cmap}\OperatorTok{=}\StringTok{"Blues"}\NormalTok{, alpha}\OperatorTok{=}\FloatTok{0.5}\NormalTok{)}
+
+\NormalTok{line, }\OperatorTok{=}\NormalTok{ ax.plot([], [], }\StringTok{\textquotesingle{}r{-}o\textquotesingle{}}\NormalTok{, markersize}\OperatorTok{=}\DecValTok{3}\NormalTok{, alpha}\OperatorTok{=}\FloatTok{0.8}\NormalTok{, label}\OperatorTok{=}\StringTok{"Chain trajectory"}\NormalTok{)}
+\NormalTok{start\_point }\OperatorTok{=}\NormalTok{ ax.plot([], [], }\StringTok{\textquotesingle{}go\textquotesingle{}}\NormalTok{, label}\OperatorTok{=}\StringTok{\textquotesingle{}Start\textquotesingle{}}\NormalTok{)[}\DecValTok{0}\NormalTok{]}
+\NormalTok{end\_point }\OperatorTok{=}\NormalTok{ ax.plot([], [], }\StringTok{\textquotesingle{}ko\textquotesingle{}}\NormalTok{, label}\OperatorTok{=}\StringTok{\textquotesingle{}Current\textquotesingle{}}\NormalTok{)[}\DecValTok{0}\NormalTok{]}
+
+\NormalTok{ax.set\_xlim(xmin }\OperatorTok{{-}} \FloatTok{0.2}\NormalTok{, xmax }\OperatorTok{+} \FloatTok{0.2}\NormalTok{)}
+\NormalTok{ax.set\_ylim(ymin }\OperatorTok{{-}} \FloatTok{0.2}\NormalTok{, ymax }\OperatorTok{+} \FloatTok{0.2}\NormalTok{)}
+\NormalTok{ax.set\_title(}\StringTok{"Posterior exploration via Markov chain simulation"}\NormalTok{)}
+\NormalTok{ax.set\_xlabel(}\StringTok{"PCA1"}\NormalTok{)}
+\NormalTok{ax.set\_ylabel(}\StringTok{"PCA2"}\NormalTok{)}
+\NormalTok{ax.legend(loc}\OperatorTok{=}\StringTok{"upper left"}\NormalTok{)}
+
+\KeywordTok{def}\NormalTok{ update(frame):}
+\NormalTok{    line.set\_data(proj\_subset[:frame}\OperatorTok{+}\DecValTok{1}\NormalTok{, }\DecValTok{0}\NormalTok{], proj\_subset[:frame}\OperatorTok{+}\DecValTok{1}\NormalTok{, }\DecValTok{1}\NormalTok{])}
+\NormalTok{    start\_point.set\_data([proj\_subset[}\DecValTok{0}\NormalTok{, }\DecValTok{0}\NormalTok{]], [proj\_subset[}\DecValTok{0}\NormalTok{, }\DecValTok{1}\NormalTok{]])}
+\NormalTok{    end\_point.set\_data([proj\_subset[frame, }\DecValTok{0}\NormalTok{]], [proj\_subset[frame, }\DecValTok{1}\NormalTok{]])}
+    \ControlFlowTok{return}\NormalTok{ line, start\_point, end\_point}
+
+\NormalTok{ani }\OperatorTok{=}\NormalTok{ animation.FuncAnimation(fig, update, frames}\OperatorTok{=}\NormalTok{n\_frames, interval}\OperatorTok{=}\DecValTok{80}\NormalTok{, blit}\OperatorTok{=}\VariableTok{True}\NormalTok{)}
+\NormalTok{HTML(ani.to\_jshtml())}
 \end{Highlighting}
 \end{Shaded}
 
 \pandocbounded{\includegraphics[keepaspectratio]{src/chap3_files/figure-pdf/cell-6-output-1.pdf}}
+
+\begin{verbatim}
+<IPython.core.display.HTML object>
+\end{verbatim}
+
+\pandocbounded{\includegraphics[keepaspectratio]{src/chap3_files/figure-pdf/cell-6-output-3.pdf}}
 
 Another Bayesian approach is Bayesian Inverse Reinforcement Learning
 (IRL), where a prior is placed on the parameters of a reward function

@@ -437,6 +437,12 @@ Despite these limitations, MCMC remains a valuable tool for principled Bayesian 
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.stats import norm
+from IPython.display import HTML
+from matplotlib import rc
+import matplotlib.animation as animation
+import matplotlib.pyplot as plt
+from scipy.stats import norm, gaussian_kde
+from sklearn.decomposition import PCA
 
 # --- True latent utility function ---
 def true_u(x):
@@ -457,7 +463,7 @@ for _ in range(50):
         pairs.append((X[j], X[i], 1))
 
 # --- Define a deep neural network: 3 hidden layers ---
-def init_deep_params(hidden_dims=[10, 10, 10]):
+def init_deep_params(hidden_dims=[4, 4, 4]):
     params = {}
     layer_dims = [1] + hidden_dims + [1]
     for i in range(len(layer_dims) - 1):
@@ -496,7 +502,7 @@ def deep_log_prior(params):
     return lp
 
 # --- Proposal distribution ---
-def deep_propose(params, sigma=0.05):
+def deep_propose(params, sigma=0.1):
     new_params = {}
     for k, v in params.items():
         new_params[k] = v + np.random.randn(*v.shape) * sigma
@@ -521,7 +527,7 @@ def deep_mh(init_params, pairs, num_iters=2000, burn_in=500):
     return samples
 
 # --- Run MCMC ---
-deep_samples = deep_mh(init_deep_params(), pairs, num_iters=2000, burn_in=200)
+deep_samples = deep_mh(init_deep_params(), pairs, num_iters=40000, burn_in=1000)
 
 # --- Posterior predictions ---
 X_test = np.linspace(0, 10, 200)
@@ -532,7 +538,7 @@ deep_std = deep_preds.std(axis=0)
 # --- Plot results ---
 plt.figure(figsize=(8, 4))
 plt.plot(X_test, true_u(X_test), 'k--', label='True utility')
-plt.plot(X_test, deep_mean, 'b-', label='BNN (3-layer) mean')
+plt.plot(X_test, deep_mean, 'b-', label='Posterior mean')
 plt.fill_between(X_test, deep_mean - 1.96 * deep_std, deep_mean + 1.96 * deep_std,
                  color='blue', alpha=0.2, label='95% CI')
 plt.title("3-layer Bayesian Neural Network via MCMC on Preference Data")
@@ -541,6 +547,50 @@ plt.ylabel("Utility")
 plt.legend()
 plt.tight_layout()
 plt.show()
+
+# Flatten and PCA
+def flatten_params(params):
+    return np.concatenate([v.flatten() for v in params.values()])
+
+flat_samples = np.array([flatten_params(p) for p in deep_samples])
+pca = PCA(n_components=2)
+proj_samples = pca.fit_transform(flat_samples)
+
+# Density heatmap from KDE
+kde = gaussian_kde(proj_samples.T)
+xmin, xmax = proj_samples[:, 0].min(), proj_samples[:, 0].max()
+ymin, ymax = proj_samples[:, 1].min(), proj_samples[:, 1].max()
+xx, yy = np.meshgrid(np.linspace(xmin, xmax, 100), np.linspace(ymin, ymax, 100))
+zz = kde(np.vstack([xx.ravel(), yy.ravel()])).reshape(xx.shape)
+
+# Downsample to 80 frames
+n_frames = 80
+idx = np.linspace(0, len(proj_samples) - 1, n_frames).astype(int)
+proj_subset = proj_samples[idx]
+
+# Animation with heatmap
+fig, ax = plt.subplots(figsize=(6, 5))
+ax.contourf(xx, yy, zz, levels=30, cmap="Blues", alpha=0.5)
+
+line, = ax.plot([], [], 'r-o', markersize=3, alpha=0.8, label="Chain trajectory")
+start_point = ax.plot([], [], 'go', label='Start')[0]
+end_point = ax.plot([], [], 'ko', label='Current')[0]
+
+ax.set_xlim(xmin - 0.2, xmax + 0.2)
+ax.set_ylim(ymin - 0.2, ymax + 0.2)
+ax.set_title("Posterior exploration via Markov chain simulation")
+ax.set_xlabel("PCA1")
+ax.set_ylabel("PCA2")
+ax.legend(loc="upper left")
+
+def update(frame):
+    line.set_data(proj_subset[:frame+1, 0], proj_subset[:frame+1, 1])
+    start_point.set_data([proj_subset[0, 0]], [proj_subset[0, 1]])
+    end_point.set_data([proj_subset[frame, 0]], [proj_subset[frame, 1]])
+    return line, start_point, end_point
+
+ani = animation.FuncAnimation(fig, update, frames=n_frames, interval=80, blit=True)
+HTML(ani.to_jshtml())
 ```
 
 Another Bayesian approach is Bayesian Inverse Reinforcement Learning (IRL), where a prior is placed on the parameters of a reward function and Bayes’ rule is used to update this distribution given demonstrations or preferences [@iliad2019learning]. Early work like Ramachandran & Amir (2007) treated IRL as Bayesian inference, using MCMC to sample likely reward functions consistent with demonstrations. Such methods yield a posterior over reward functions, reflecting ambiguity when multiple rewards explain the human’s behavior.
