@@ -2,15 +2,16 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 
 <meta charset="utf-8">
-<meta name="generator" content="quarto-1.6.33">
+<meta name="generator" content="quarto-1.6.42">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
-<meta name="author" content="Sang T. Truong">
+<meta name="author" content="Andreas Haupt">
 <meta name="author" content="Sanmi Koyejo">
-<meta name="dcterms.date" content="2025-04-19">
+<meta name="author" content="Sang T. Truong">
+<meta name="dcterms.date" content="2025-05-08">
 
-<title>Machine Learning from Human Preferences</title>
+<title>Machine Learning from Comparisons</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -67,18 +68,18 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <script src="site_libs/quarto-search/fuse.min.js"></script>
 <script src="site_libs/quarto-search/quarto-search.js"></script>
 <meta name="quarto:offset" content="./">
-<link href="./src/chap2.html" rel="next">
+<link href="./src/ack.html" rel="next">
 <script src="site_libs/quarto-html/quarto.js"></script>
 <script src="site_libs/quarto-html/popper.min.js"></script>
 <script src="site_libs/quarto-html/tippy.umd.min.js"></script>
 <script src="site_libs/quarto-html/anchor.min.js"></script>
 <link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="site_libs/quarto-html/quarto-syntax-highlighting-07ba0ad10f5680c660e360ac31d2f3b6.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
-<link href="site_libs/quarto-html/quarto-syntax-highlighting-dark-8b864f0777c60eecff11d75b6b2e1175.css" rel="prefetch" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting-2f5df379a58b258e96c21c0638c20c03.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting-dark-b53751a350365c71b6c909e95f209ed1.css" rel="prefetch" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
 <script src="site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="site_libs/bootstrap/bootstrap-fa3d1c749edcb96cd5cb7d620f3e5237.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
-<link href="site_libs/bootstrap/bootstrap-dark-6f24586c8b15e78d85e3983c622e3e8a.min.css" rel="prefetch" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<link href="site_libs/bootstrap/bootstrap-a0aefded8822f1bee14b20ac4fd2b1d6.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="site_libs/bootstrap/bootstrap-dark-5c897cb370a42f0721f6bac59365aff2.min.css" rel="prefetch" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
 <script src="site_libs/quarto-contrib/pseudocode-2.4.1/pseudocode.min.js"></script>
 <link href="site_libs/quarto-contrib/pseudocode-2.4.1/pseudocode.min.css" rel="stylesheet">
 <script id="quarto-search-options" type="application/json">{
@@ -127,10 +128,39 @@ MathJax = {
 </script>
 <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
 
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
 
 </head>
 
-<body class="nav-sidebar docked fullcontent">
+<body class="nav-sidebar docked">
 
 <div id="quarto-search-results"></div>
   <header id="quarto-header" class="headroom fixed-top">
@@ -139,7 +169,7 @@ MathJax = {
       <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
         <i class="bi bi-layout-text-sidebar-reverse"></i>
       </button>
-        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./index.html"><span class="chapter-number">1</span>&nbsp; <span class="chapter-title">Introduction</span></a></li></ol></nav>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./index.html">Introduction</a></li></ol></nav>
         <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
         </a>
       <button type="button" class="btn quarto-search-button" aria-label="Search" onclick="window.quartoOpenSearch();">
@@ -154,10 +184,10 @@ MathJax = {
   <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation docked overflow-auto">
     <div class="pt-lg-2 mt-2 text-left sidebar-header">
     <div class="sidebar-title mb-0 py-0">
-      <a href="./">Machine Learning from Human Preferences</a> 
+      <a href="./">Machine Learning from Comparisons</a> 
         <div class="sidebar-tools-main tools-wide">
     <a href="https://github.com/sangttruong/mlhp" title="Source Code" class="quarto-navigation-tool px-1" aria-label="Source Code"><i class="bi bi-github"></i></a>
-    <a href="./Machine-Learning-from-Human-Preferences.pdf" title="Download PDF" class="quarto-navigation-tool px-1" aria-label="Download PDF"><i class="bi bi-file-pdf"></i></a>
+    <a href="./Machine-Learning-from-Comparisons.pdf" title="Download PDF" class="quarto-navigation-tool px-1" aria-label="Download PDF"><i class="bi bi-file-pdf"></i></a>
   <a href="" class="quarto-color-scheme-toggle quarto-navigation-tool  px-1" onclick="window.quartoToggleColorScheme(); return false;" title="Toggle dark mode"><i class="bi"></i></a>
 </div>
     </div>
@@ -172,49 +202,7 @@ MathJax = {
         <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./index.html" class="sidebar-item-text sidebar-link active">
- <span class="menu-text"><span class="chapter-number">1</span>&nbsp; <span class="chapter-title">Introduction</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="./src/chap2.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">2</span>&nbsp; <span class="chapter-title">Background</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="./src/chap3.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">3</span>&nbsp; <span class="chapter-title">Learning</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="./src/chap4.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">4</span>&nbsp; <span class="chapter-title">Elicitation</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="./src/chap5.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">5</span>&nbsp; <span class="chapter-title">Decisions</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="./src/chap6.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">6</span>&nbsp; <span class="chapter-title">Aggregation</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="./src/chap7.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">7</span>&nbsp; <span class="chapter-title">Alternatives</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="./src/chap8.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">8</span>&nbsp; <span class="chapter-title">Conclusion</span></span></a>
+ <span class="menu-text">Introduction</span></a>
   </div>
 </li>
         <li class="sidebar-item">
@@ -223,20 +211,75 @@ MathJax = {
  <span class="menu-text">Acknowledgments</span></a>
   </div>
 </li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./src/chap2.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">1</span>&nbsp; <span class="chapter-title">Background</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./src/chap3.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">2</span>&nbsp; <span class="chapter-title">Learning</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./src/chap4.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">3</span>&nbsp; <span class="chapter-title">Elicitation</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./src/chap6.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">4</span>&nbsp; <span class="chapter-title">Aggregation</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./src/chap7.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">5</span>&nbsp; <span class="chapter-title">Alternatives</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./src/chap8.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">6</span>&nbsp; <span class="chapter-title">Conclusion</span></span></a>
+  </div>
+</li>
     </ul>
     </div>
 <div class="quarto-sidebar-footer"><div class="sidebar-footer-item">
-<p>© 2024. This work is openly licensed via <a href="https://creativecommons.org/licenses/by-nc/4.0/">CC BY NC 4.0</a>.</p>
+<p>© 2025. This work is openly licensed via <a href="https://creativecommons.org/licenses/by-nc/4.0/">CC BY NC 4.0</a>.</p>
 </div></div></nav>
 <div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
 <!-- margin-sidebar -->
-    
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Table of contents</h2>
+   
+  <ul>
+  <li><a href="#sec-intro" id="toc-sec-intro" class="nav-link active" data-scroll-target="#sec-intro">Introduction</a>
+  <ul class="collapse">
+  <li><a href="#structure-of-this-book" id="toc-structure-of-this-book" class="nav-link" data-scroll-target="#structure-of-this-book">Structure of this book</a>
+  <ul class="collapse">
+  <li><a href="#background" id="toc-background" class="nav-link" data-scroll-target="#background">Background</a></li>
+  <li><a href="#learning" id="toc-learning" class="nav-link" data-scroll-target="#learning">Learning</a></li>
+  <li><a href="#reflection" id="toc-reflection" class="nav-link" data-scroll-target="#reflection">Reflection</a></li>
+  </ul></li>
+  <li><a href="#how-to-engage-with-this-book" id="toc-how-to-engage-with-this-book" class="nav-link" data-scroll-target="#how-to-engage-with-this-book">How to engage with this book</a></li>
+  <li><a href="#prior-knowledge" id="toc-prior-knowledge" class="nav-link" data-scroll-target="#prior-knowledge">Prior knowledge</a></li>
+  <li><a href="#additional-materials" id="toc-additional-materials" class="nav-link" data-scroll-target="#additional-materials">Additional Materials</a></li>
+  </ul></li>
+  </ul>
+<div class="toc-actions"><ul><li><a href="https://github.com/sangttruong/mlhp/blob/main/index.qmd" class="toc-action"><i class="bi bi-github"></i>View source</a></li><li><a href="https://github.com/sangttruong/mlhp/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></nav>
+    </div>
 <!-- main -->
 <main class="content" id="quarto-document-content">
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<div class="quarto-title-block"><div><h1 class="title">Machine Learning from Human Preferences</h1><button type="button" class="btn code-tools-button" id="quarto-code-tools-source"><i class="bi"></i> Code</button></div></div>
+<div class="quarto-title-block"><div><h1 class="title">Machine Learning from Comparisons</h1><button type="button" class="btn code-tools-button" id="quarto-code-tools-source"><i class="bi"></i> Code</button></div></div>
 </div>
 
 
@@ -246,15 +289,16 @@ MathJax = {
     <div>
     <div class="quarto-title-meta-heading">Authors</div>
     <div class="quarto-title-meta-contents">
-             <p>Sang T. Truong <a href="https://orcid.org/0000-0001-8069-9410" class="quarto-title-author-orcid"> <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAA2ZpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuMC1jMDYwIDYxLjEzNDc3NywgMjAxMC8wMi8xMi0xNzozMjowMCAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wTU09Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9tbS8iIHhtbG5zOnN0UmVmPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvc1R5cGUvUmVzb3VyY2VSZWYjIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtcE1NOk9yaWdpbmFsRG9jdW1lbnRJRD0ieG1wLmRpZDo1N0NEMjA4MDI1MjA2ODExOTk0QzkzNTEzRjZEQTg1NyIgeG1wTU06RG9jdW1lbnRJRD0ieG1wLmRpZDozM0NDOEJGNEZGNTcxMUUxODdBOEVCODg2RjdCQ0QwOSIgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDozM0NDOEJGM0ZGNTcxMUUxODdBOEVCODg2RjdCQ0QwOSIgeG1wOkNyZWF0b3JUb29sPSJBZG9iZSBQaG90b3Nob3AgQ1M1IE1hY2ludG9zaCI+IDx4bXBNTTpEZXJpdmVkRnJvbSBzdFJlZjppbnN0YW5jZUlEPSJ4bXAuaWlkOkZDN0YxMTc0MDcyMDY4MTE5NUZFRDc5MUM2MUUwNEREIiBzdFJlZjpkb2N1bWVudElEPSJ4bXAuZGlkOjU3Q0QyMDgwMjUyMDY4MTE5OTRDOTM1MTNGNkRBODU3Ii8+IDwvcmRmOkRlc2NyaXB0aW9uPiA8L3JkZjpSREY+IDwveDp4bXBtZXRhPiA8P3hwYWNrZXQgZW5kPSJyIj8+84NovQAAAR1JREFUeNpiZEADy85ZJgCpeCB2QJM6AMQLo4yOL0AWZETSqACk1gOxAQN+cAGIA4EGPQBxmJA0nwdpjjQ8xqArmczw5tMHXAaALDgP1QMxAGqzAAPxQACqh4ER6uf5MBlkm0X4EGayMfMw/Pr7Bd2gRBZogMFBrv01hisv5jLsv9nLAPIOMnjy8RDDyYctyAbFM2EJbRQw+aAWw/LzVgx7b+cwCHKqMhjJFCBLOzAR6+lXX84xnHjYyqAo5IUizkRCwIENQQckGSDGY4TVgAPEaraQr2a4/24bSuoExcJCfAEJihXkWDj3ZAKy9EJGaEo8T0QSxkjSwORsCAuDQCD+QILmD1A9kECEZgxDaEZhICIzGcIyEyOl2RkgwAAhkmC+eAm0TAAAAABJRU5ErkJggg=="></a></p>
+             <p>Andreas Haupt <a href="https://orcid.org/0000-0002-2952-4188" class="quarto-title-author-orcid"> <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAA2ZpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuMC1jMDYwIDYxLjEzNDc3NywgMjAxMC8wMi8xMi0xNzozMjowMCAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wTU09Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9tbS8iIHhtbG5zOnN0UmVmPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvc1R5cGUvUmVzb3VyY2VSZWYjIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtcE1NOk9yaWdpbmFsRG9jdW1lbnRJRD0ieG1wLmRpZDo1N0NEMjA4MDI1MjA2ODExOTk0QzkzNTEzRjZEQTg1NyIgeG1wTU06RG9jdW1lbnRJRD0ieG1wLmRpZDozM0NDOEJGNEZGNTcxMUUxODdBOEVCODg2RjdCQ0QwOSIgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDozM0NDOEJGM0ZGNTcxMUUxODdBOEVCODg2RjdCQ0QwOSIgeG1wOkNyZWF0b3JUb29sPSJBZG9iZSBQaG90b3Nob3AgQ1M1IE1hY2ludG9zaCI+IDx4bXBNTTpEZXJpdmVkRnJvbSBzdFJlZjppbnN0YW5jZUlEPSJ4bXAuaWlkOkZDN0YxMTc0MDcyMDY4MTE5NUZFRDc5MUM2MUUwNEREIiBzdFJlZjpkb2N1bWVudElEPSJ4bXAuZGlkOjU3Q0QyMDgwMjUyMDY4MTE5OTRDOTM1MTNGNkRBODU3Ii8+IDwvcmRmOkRlc2NyaXB0aW9uPiA8L3JkZjpSREY+IDwveDp4bXBtZXRhPiA8P3hwYWNrZXQgZW5kPSJyIj8+84NovQAAAR1JREFUeNpiZEADy85ZJgCpeCB2QJM6AMQLo4yOL0AWZETSqACk1gOxAQN+cAGIA4EGPQBxmJA0nwdpjjQ8xqArmczw5tMHXAaALDgP1QMxAGqzAAPxQACqh4ER6uf5MBlkm0X4EGayMfMw/Pr7Bd2gRBZogMFBrv01hisv5jLsv9nLAPIOMnjy8RDDyYctyAbFM2EJbRQw+aAWw/LzVgx7b+cwCHKqMhjJFCBLOzAR6+lXX84xnHjYyqAo5IUizkRCwIENQQckGSDGY4TVgAPEaraQr2a4/24bSuoExcJCfAEJihXkWDj3ZAKy9EJGaEo8T0QSxkjSwORsCAuDQCD+QILmD1A9kECEZgxDaEZhICIzGcIyEyOl2RkgwAAhkmC+eAm0TAAAAABJRU5ErkJggg=="></a></p>
              <p>Sanmi Koyejo <a href="https://orcid.org/0000-0002-4023-419X" class="quarto-title-author-orcid"> <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAA2ZpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuMC1jMDYwIDYxLjEzNDc3NywgMjAxMC8wMi8xMi0xNzozMjowMCAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wTU09Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9tbS8iIHhtbG5zOnN0UmVmPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvc1R5cGUvUmVzb3VyY2VSZWYjIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtcE1NOk9yaWdpbmFsRG9jdW1lbnRJRD0ieG1wLmRpZDo1N0NEMjA4MDI1MjA2ODExOTk0QzkzNTEzRjZEQTg1NyIgeG1wTU06RG9jdW1lbnRJRD0ieG1wLmRpZDozM0NDOEJGNEZGNTcxMUUxODdBOEVCODg2RjdCQ0QwOSIgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDozM0NDOEJGM0ZGNTcxMUUxODdBOEVCODg2RjdCQ0QwOSIgeG1wOkNyZWF0b3JUb29sPSJBZG9iZSBQaG90b3Nob3AgQ1M1IE1hY2ludG9zaCI+IDx4bXBNTTpEZXJpdmVkRnJvbSBzdFJlZjppbnN0YW5jZUlEPSJ4bXAuaWlkOkZDN0YxMTc0MDcyMDY4MTE5NUZFRDc5MUM2MUUwNEREIiBzdFJlZjpkb2N1bWVudElEPSJ4bXAuZGlkOjU3Q0QyMDgwMjUyMDY4MTE5OTRDOTM1MTNGNkRBODU3Ii8+IDwvcmRmOkRlc2NyaXB0aW9uPiA8L3JkZjpSREY+IDwveDp4bXBtZXRhPiA8P3hwYWNrZXQgZW5kPSJyIj8+84NovQAAAR1JREFUeNpiZEADy85ZJgCpeCB2QJM6AMQLo4yOL0AWZETSqACk1gOxAQN+cAGIA4EGPQBxmJA0nwdpjjQ8xqArmczw5tMHXAaALDgP1QMxAGqzAAPxQACqh4ER6uf5MBlkm0X4EGayMfMw/Pr7Bd2gRBZogMFBrv01hisv5jLsv9nLAPIOMnjy8RDDyYctyAbFM2EJbRQw+aAWw/LzVgx7b+cwCHKqMhjJFCBLOzAR6+lXX84xnHjYyqAo5IUizkRCwIENQQckGSDGY4TVgAPEaraQr2a4/24bSuoExcJCfAEJihXkWDj3ZAKy9EJGaEo8T0QSxkjSwORsCAuDQCD+QILmD1A9kECEZgxDaEZhICIzGcIyEyOl2RkgwAAhkmC+eAm0TAAAAABJRU5ErkJggg=="></a></p>
+             <p>Sang T. Truong <a href="https://orcid.org/0000-0001-8069-9410" class="quarto-title-author-orcid"> <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAA2ZpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuMC1jMDYwIDYxLjEzNDc3NywgMjAxMC8wMi8xMi0xNzozMjowMCAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wTU09Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9tbS8iIHhtbG5zOnN0UmVmPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvc1R5cGUvUmVzb3VyY2VSZWYjIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtcE1NOk9yaWdpbmFsRG9jdW1lbnRJRD0ieG1wLmRpZDo1N0NEMjA4MDI1MjA2ODExOTk0QzkzNTEzRjZEQTg1NyIgeG1wTU06RG9jdW1lbnRJRD0ieG1wLmRpZDozM0NDOEJGNEZGNTcxMUUxODdBOEVCODg2RjdCQ0QwOSIgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDozM0NDOEJGM0ZGNTcxMUUxODdBOEVCODg2RjdCQ0QwOSIgeG1wOkNyZWF0b3JUb29sPSJBZG9iZSBQaG90b3Nob3AgQ1M1IE1hY2ludG9zaCI+IDx4bXBNTTpEZXJpdmVkRnJvbSBzdFJlZjppbnN0YW5jZUlEPSJ4bXAuaWlkOkZDN0YxMTc0MDcyMDY4MTE5NUZFRDc5MUM2MUUwNEREIiBzdFJlZjpkb2N1bWVudElEPSJ4bXAuZGlkOjU3Q0QyMDgwMjUyMDY4MTE5OTRDOTM1MTNGNkRBODU3Ii8+IDwvcmRmOkRlc2NyaXB0aW9uPiA8L3JkZjpSREY+IDwveDp4bXBtZXRhPiA8P3hwYWNrZXQgZW5kPSJyIj8+84NovQAAAR1JREFUeNpiZEADy85ZJgCpeCB2QJM6AMQLo4yOL0AWZETSqACk1gOxAQN+cAGIA4EGPQBxmJA0nwdpjjQ8xqArmczw5tMHXAaALDgP1QMxAGqzAAPxQACqh4ER6uf5MBlkm0X4EGayMfMw/Pr7Bd2gRBZogMFBrv01hisv5jLsv9nLAPIOMnjy8RDDyYctyAbFM2EJbRQw+aAWw/LzVgx7b+cwCHKqMhjJFCBLOzAR6+lXX84xnHjYyqAo5IUizkRCwIENQQckGSDGY4TVgAPEaraQr2a4/24bSuoExcJCfAEJihXkWDj3ZAKy9EJGaEo8T0QSxkjSwORsCAuDQCD+QILmD1A9kECEZgxDaEZhICIzGcIyEyOl2RkgwAAhkmC+eAm0TAAAAABJRU5ErkJggg=="></a></p>
           </div>
   </div>
     
     <div>
     <div class="quarto-title-meta-heading">Updated</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">April 19, 2025</p>
+      <p class="date">May 8, 2025</p>
     </div>
   </div>
   
@@ -266,57 +310,66 @@ MathJax = {
 </header>
 
 
+<section id="sec-intro" class="level1 unnumbered">
+<h1 class="unnumbered">Introduction</h1>
 <iframe src="https://web.stanford.edu/class/cs329h/slides/1.introduction/#/" style="width:50%; height:250px;">
 </iframe>
 <p><a href="https://web.stanford.edu/class/cs329h/slides/1.introduction/#/" class="btn btn-outline-primary" role="button">Fullscreen Slide</a></p>
-<p>Machine learning is increasingly shaping various aspects of our lives, from education and healthcare to scientific discovery. A key challenge in developing trustworthy intelligent systems is ensuring they align with human preferences. Learning from human feedback offers a promising solution to this challenge. This book introduces the foundations and practical applications of machine learning from human preferences. Instead of manually predefining the learning goal, the book presents preference-based learning that incorporates human feedback to guide the learning process, drawing insights from related fields such as economics, psychology, and human-computer interaction. By the end of this book, readers will be equipped with the key concepts and tools needed to design systems that effectively align with human preferences.</p>
-<p>The book is intended for researchers, practitioners, and students who are interested in intergrating machine learning with human-centered application. We assume some basic knowledge of probability and statistics, but provides sufficient background and references for the readers to follow the main ideas. The book also provides illustrative program examples and datasets. The field of machine learning from human preference is a vibrant area of research and practice with many open challenges and opportunities, and we hope that this book will inspire readers to further explore and advance this exciting field. The book is divided into 4 chapters:</p>
+<p>Machine learning reaches into many areas of human lives. This brings also new data modalities. Mainstream machine learning allows for many ways to consider models. In <em>supervised learning</em>, as classical setting will be to have labelled data <span class="math inline">\((X, y)\)</span> where <span class="math inline">\(X\)</span> are <em>features</em> and <span class="math inline">\(y\)</span> are <em>labels</em> which may be discrete or continuous. Or, “data” is given by a function to be maximized, as in reinforcement learning. This boook is about comparisons as data, where two objects <span class="math inline">\(A\)</span> and <span class="math inline">\(B\)</span> are compared, and the goal of learning is to learn this order.</p>
+<p>Order can be about desirability. Is ice cream (A) more desirable than tomato soup (B)? If yes, then we write <span class="math inline">\(A \succ B\)</span>. Ideally, we would like to learn from data to generalize that for Panna Cotta (C) and minestrone (D) we have <span class="math inline">\(C \succ D\)</span>. Our approach, however, is more general, and can capture cases where the order is “safer”, “more diverse”, “more creative”, or something else, judged by a human, an AI, or another dta source.</p>
+<p>Learning from comparisons (or learning from preferences) has gained popularity in recent years due to the relative simplicity of eliciting choice data. Asking humans to pick their favourite from a set of options, or asking which of two options they prefer is much easier than asking humans for a numerical score. The gain in simplicity from eliciting comparisons is particularly pronounced when trying to use human common sense for hard-to-codify concepts such as “helpfulness”, “harmlessness”, or “do a backflip”. This strength has led to success of comparison-based machine learning in preference models</p>
+<p>The examples in this book will come from several application domains, from robotics to language models and recommendation systems. By presenting case studies of their application, we allow to complement theoretical understanding with practical implementation.</p>
+<p>We hope with the present book to both allow more use of human preferences in machine learning, and new data modalities as Artificial Intelligence systems become increasingly important.</p>
+<p>Stanford, May 2025, HKT</p>
+<section id="structure-of-this-book" class="level2">
+<h2 class="anchored" data-anchor-id="structure-of-this-book">Structure of this book</h2>
+<p>The book has three parts which introduce fundamental models, present learning paradigms, and discuss assumptions.</p>
+<section id="background" class="level3">
+<h3 class="anchored" data-anchor-id="background">Background</h3>
+<p>We provide background on axioms underlying comparisons in <strong>Chapter 1</strong>. We discover key modeling assumptions It covers random preference models the Independence of Irrelevant Alternatives (IIA), and types of comparison data (binary rankings, accept-reject, lists). The chapter also discusses the main limitations of IIA based on heterogeneity.</p>
+</section>
+<section id="learning" class="level3">
+<h3 class="anchored" data-anchor-id="learning">Learning</h3>
+<p>The second part introduces several approaches to learning from comparisons.</p>
 <ul>
-<li><p><strong>Chapter 1</strong> lays the foundation for probabilistic modeling of preferences and decisions. It covers key model assumptions (e.g., bounded rationality), along with methods for preference data collection (e.g., pairwise comparisons), and models to interpret the data (e.g., Bradley-Terry model). The chapter also explore preference aggregation through the lense of social choice theory.</p></li>
-<li><p><strong>Chapter 2</strong> examines various functional form and learning of reward modeling via examples from the field of language modeling and robotics. We discuss the challenges in learning multimodal rewards, meta-reward learning, human biases in reward models, and strategies to leverage both rational and irrational behavior.</p></li>
-<li><p><strong>Chapter 3</strong> focused on a process where the end goal is to elicit the utility function. Since human is involved in the data collection, we concentrate on active learning methods that elicit the most preference information with a minimal amount of human query. Various strategies are explored, including reducing the learner’s variance, exploiting ambiguity and domain knowledge in ranking, with examples from robotics and machine learning systems.</p></li>
-<li><p><strong>Chapter 4</strong> focuses on process where preference is a signal guiding decision. We discuss dueling bandits, an algorithm for decision making from pairwise preferences, as well as reinforcement learning from human feedback (RLHF) to align language models. Moreover, addressing the challenges of modeling uncertainty in reward models emerges as a crucial area for improvement. We also discuss decision making setting beyond a single reward frameworks to accommodate the oversight of diverse objectives. Embracing multi-objective is pivotal to representing the multifaceted goals of varied stakeholders within AI systems.</p></li>
-<li><p><strong>Chapter 5</strong> analyzes principles from human-computer interaction (HCI) for systems that learn from humans, like cognitive constraints and user experience. We discuss ethical issues that arise in interaction models and approaches for designing preference elicitation systems considering fairness, privacy, and other socio-technical factors. We tackle challenges around aligning learned models with values from diverse expert and non-expert stakeholders. Ethical considerations in learning from human preference are addressed. We discuss the potential benefits and risks of learning from human preferences and how to address them responsibly and fairly. We also raise questions about the selection and protection of human participants and the possible consequences of exploiting or manipulating human responses.</p></li>
+<li><p><strong>Chapter 2</strong> considers a setting where comparison data is given and studies both maximum likelihood and posterior-based learning of comparison models. It uses case studies from language modeling and robotics. We discuss the challenges in learning multimodal/heterogenous rewards that fail to satisfy IIA.</p></li>
+<li><p><strong>Chapter 3</strong> considers active data collection of comparisons with the goal of optimal inference on comparison models using Various strategies are explored, including reducing the learner’s variance, exploiting ambiguity and domain knowledge in ranking, with a case study from robotics.</p></li>
+<li><p><strong>Chapter 4</strong> studies processes where comparisons are used to guide decisions. We first set up the bandit approach to recommending maximal objects with respect to comparisons, and discuss dueling bandits. We then consider as well as reinforcement learning from human feedback (RLHF) to align language models that decide on which text to generate. We highlight the role of uncertainty quantification and exploration for decision-making.</p></li>
+<li><p><strong>Chapter 5</strong> considers decision-making in the presence of heterogeneity. We first focus on dealing with heterogeneity to maximize average utility using <strong>personalization</strong>. We then discuss aggregation mechanisms that are voting-based and decisions that are independent of some some features of the outcome.</p></li>
 </ul>
-<p>This book covers various topics, from the statistical foundations and strategies for interactively querying humans to applications for eliciting preference. We review the relevant foundations in statistics, psychology, economics and other disciplines and explore their applications to various domains, such as natural language and robotics, and more. We adopt the machine learning perspective for modeling, estimating, and evaluating the learning processes. This book is used at Stanford University for a quarter-long class CS329H: Machine Learning from Human Preferences. We include the lecture slides and homework at the begining and end of each chapter, respectively.</p>
-<!-- 
-
-Ensuring truthfulness and fairness in eliciting human preferences is crucial, and the book discusses mechanism design principles and techniques to incentivize truthful feedback from humans. The integration of human computing techniques in learning from human preference is also explored, highlighting the use of human intelligence to solve complex problems and improve machine learning algorithms.
-
-**Chapter 7** discusses adaptive user interfaces, which aim to provide personalized experiences by learning individual user preferences from interactions. It presents the design of adaptive interfaces as involving modeling users, collecting user traces, learning models from the data, and applying the models to adapt recommendations. The applications of adaptive interfaces mentioned include route advisors, destination selection assistants, and scheduling tools, with the goal of improving systems through intelligent personalization.
-
--   **Chapter 1** is an introductory chapter providing an overview of the field and motivations and outlines what will be covered.
-
--   **Chapter 12** focuses on mechanism design theory and how it can be applied to develop protocols and systems for truthfully learning preferences at scale.
-
--   **Chapter 13** looks at how human computation frameworks can enable large-scale preference elicitation by crowd-sourcing tasks to many individuals.
-
--   **Chapter 14** presents applications of inverse reinforcement learning using human feedback for robotics, such as learning helicopter control policies from demonstrations.
-
-Human feedback -- whether from individuals' preferences, judgments, ratings, or other responses -- plays a pivotal role in guiding AI systems
-through their learning across various tasks. The following three examples show the importance of human feedback to different systems. First, human feedback could guide AI agents in creating appealing and diverse content by assessing the quality, originality, and relevance of the content. Second, human feedback could also ensure that AI agents align with human needs and values by rectifying potential biases, errors, and harm caused by agents. Third, human feedback could help AI agents learn better policies in complex environments, such as those with sparse or noisy rewards, by encouraging agents to explore and learn in those environments.
-
-Returning to human feedback, their integration can occur at various stages of the learning process, spanning from data collection and labeling to model selection, training, and evaluation. Incorporating these feedbacks enables fine-tuning the model to align with their hidden insights. The utilization of human feedback is crucial due to its ability to offer valuable signals that are challenging to acquire or delineate through other means, such as data or predefined cost functions. There are many ways to update models based on human feedback, depending on the type and level of feedback and the objective and structure of the model. A general taxonomy of feedback-update interactions can be divided into six categories:
-
--   Observation-level & Active data collection & Asking humans for feedback on specific features, such as collecting expert labels on features.
-
--   Observation-level & Constraint elicitation & Inferring optimization constraints from insights extracted from feedback.
-
--   Observation-level & Feature modification & Adding, removing, or preprocessing features of training/finetuning datasets.
-
--   Domain-level & Dataset modification & Generating synthetic data that satisfy certain constraints specified by human feedback, such as fairness or weak supervision.
-
--   Domain-level & Constraint specification & Modifying the loss function for optimizing the model based on human feedback, such as imposing fairness, interpretability, or resource constraints.
-
--   Domain-level & Model editing & Changing the rules or weights of the model based on human feedback, such as incorporating domain knowledge or preferences.
-
-These ways of updating models based on human feedback can help to improve the performance, behavior, and alignment of the models with human values and goals. However, they pose challenges and risks, such as communication barriers, feedback quality, and ethical issues. Therefore, designing and evaluating the feedback-update interactions carefully and responsibly is important.
-
--->
+</section>
+<section id="reflection" class="level3">
+<h3 class="anchored" data-anchor-id="reflection">Reflection</h3>
+<p>The final part of the book discusses limitations of comparison data, and opportunities resulting from stated preference data.</p>
+<ul>
+<li><p><strong>Chapter 6</strong> critiques machine learning from comparisons. It takes different disciplinary lenses, from social psychology, philosophy, and critical studies, to highlight where comparisons are limited in the expression of human preferences, and what are alternatives.</p></li>
+<li><p><strong>Chapter 7</strong> considers models that are broader than comparisons in our model, many of which we can think of as <strong>stated preferences</strong>. These are models in which value judgments are given in terms of Likert scales or textual descriptions. We propose ways in how such feedback can be merged with comparison data to better express preferences.</p></li>
+</ul>
+</section>
+</section>
+<section id="how-to-engage-with-this-book" class="level2">
+<h2 class="anchored" data-anchor-id="how-to-engage-with-this-book">How to engage with this book</h2>
+<p>Threre are three models of reading, and teaching with, this book. Chapter 1 is underlying all of the book, so is part of all of these pathways.</p>
+<ul>
+<li><p>For practitioners and those teaching applied AI content, we recommend a reading of Chapters 1, 2, 4, and 7, which can be used as a sequence in an early graduate course on Machine Learning. It allows to highlight human data sources in an introductory machine learning course.</p></li>
+<li><p>For people with background in discrete choice, we propose to skim Chapter 1, and study Chapters 2 and 4. These studies allow readers to integrate machine learning in their studies of discrete choice, demand models, and Industrial Organization.</p></li>
+<li><p>For those with deep background in machine learning, we propose to study chapters 1-4 and 7. These chapters maximize the amount of machine learning covered, and is suitable for a deep learning-based course of machine learning.</p></li>
+<li><p>For those interested in the methodological and theoretical foundations of machine leraning from comparisons, we recommend a reading of chapters 1, 5, 6, and 7. Chapter 1 and 5 study the underpinnings of revealed preferences and aggregation, chapter 6 critiques these assumptions, and chapter 7 looks at broader ways of eliciting preferences. It is suitable for critical study in a course on Computation and Society.</p></li>
+</ul>
+</section>
+<section id="prior-knowledge" class="level2">
+<h2 class="anchored" data-anchor-id="prior-knowledge">Prior knowledge</h2>
+<p>The book assumes knowledge of the fundamentals of statistics, linear algebra and machine learning. Many example code excerpts are written in <code>python</code>, and make experience in the <code>python</code> programming language valuable for readers.</p>
+</section>
+<section id="additional-materials" class="level2">
+<h2 class="anchored" data-anchor-id="additional-materials">Additional Materials</h2>
+<p>Every chapter has problems for readers and slides for teaching of the material available. They are available on the book’s website.</p>
 
 
 <!-- -->
 
+</section>
+</section>
 
 </main> <!-- /main -->
 <script id="quarto-html-after-body" type="application/javascript">
@@ -545,8 +598,6 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
   });
   clipboard.on('success', onCopySuccess);
   if (window.document.getElementById('quarto-embedded-source-code-modal')) {
-    // For code content inside modals, clipBoardJS needs to be initialized with a container option
-    // TODO: Check when it could be a function (https://github.com/zenorocha/clipboard.js/issues/860)
     const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
       text: getTextToCopy,
       container: window.document.getElementById('quarto-embedded-source-code-modal')
@@ -708,7 +759,6 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
       if (window.Quarto?.typesetMath) {
         window.Quarto.typesetMath(note);
       }
-      // TODO in 1.5, we should make sure this works without a callout special case
       if (note.classList.contains("callout")) {
         return note.outerHTML;
       } else {
@@ -938,81 +988,78 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
   <div class="nav-page nav-page-previous">
   </div>
   <div class="nav-page nav-page-next">
-      <a href="./src/chap2.html" class="pagination-link" aria-label="Background">
-        <span class="nav-page-text"><span class="chapter-number">2</span>&nbsp; <span class="chapter-title">Background</span></span> <i class="bi bi-arrow-right-short"></i>
+      <a href="./src/ack.html" class="pagination-link" aria-label="Acknowledgments">
+        <span class="nav-page-text">Acknowledgments</span> <i class="bi bi-arrow-right-short"></i>
       </a>
   </div>
 </nav><div class="modal fade" id="quarto-embedded-source-code-modal" tabindex="-1" aria-labelledby="quarto-embedded-source-code-modal-label" aria-hidden="true"><div class="modal-dialog modal-dialog-scrollable"><div class="modal-content"><div class="modal-header"><h5 class="modal-title" id="quarto-embedded-source-code-modal-label">Source Code</h5><button class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><div class="">
-<div class="sourceCode" id="cb1" data-shortcodes="false"><pre class="sourceCode numberSource markdown number-lines code-with-copy"><code class="sourceCode markdown"><span id="cb1-1"><a href="#cb1-1"></a><span class="co">---</span></span>
-<span id="cb1-2"><a href="#cb1-2"></a><span class="an">title:</span><span class="co"> Introduction</span></span>
-<span id="cb1-3"><a href="#cb1-3"></a><span class="an">format:</span><span class="co"> html</span></span>
-<span id="cb1-4"><a href="#cb1-4"></a><span class="an">filters:</span></span>
-<span id="cb1-5"><a href="#cb1-5"></a><span class="co">  - pyodide</span></span>
-<span id="cb1-6"><a href="#cb1-6"></a><span class="co">---</span></span>
-<span id="cb1-7"><a href="#cb1-7"></a></span>
-<span id="cb1-8"><a href="#cb1-8"></a>::: {.content-visible when-format="html"}</span>
-<span id="cb1-9"><a href="#cb1-9"></a></span>
-<span id="cb1-10"><a href="#cb1-10"></a>&lt;iframe</span>
-<span id="cb1-11"><a href="#cb1-11"></a>  src="https://web.stanford.edu/class/cs329h/slides/1.introduction/#/"</span>
-<span id="cb1-12"><a href="#cb1-12"></a>  style="width:50%; height:250px;"</span>
-<span id="cb1-13"><a href="#cb1-13"></a>&gt;&lt;/iframe&gt;</span>
-<span id="cb1-14"><a href="#cb1-14"></a><span class="co">[</span><span class="ot">Fullscreen Slide</span><span class="co">](https://web.stanford.edu/class/cs329h/slides/1.introduction/#/)</span>{.btn .btn-outline-primary .btn role="button"}</span>
-<span id="cb1-15"><a href="#cb1-15"></a></span>
-<span id="cb1-16"><a href="#cb1-16"></a>:::</span>
-<span id="cb1-17"><a href="#cb1-17"></a></span>
-<span id="cb1-18"><a href="#cb1-18"></a>Machine learning is increasingly shaping various aspects of our lives, from education and healthcare to scientific discovery. A key challenge in developing trustworthy intelligent systems is ensuring they align with human preferences. Learning from human feedback offers a promising solution to this challenge. This book introduces the foundations and practical applications of machine learning from human preferences. Instead of manually predefining the learning goal, the book presents preference-based learning that incorporates human feedback to guide the learning process, drawing insights from related fields such as economics, psychology, and human-computer interaction. By the end of this book, readers will be equipped with the key concepts and tools needed to design systems that effectively align with human preferences. </span>
-<span id="cb1-19"><a href="#cb1-19"></a></span>
-<span id="cb1-20"><a href="#cb1-20"></a>The book is intended for researchers, practitioners, and students who are interested in intergrating machine learning with human-centered application. We assume some basic knowledge of probability and statistics, but provides sufficient background and references for the readers to follow the main ideas. The book also provides illustrative program examples and datasets. The field of machine learning from human preference is a vibrant area of research and practice with many open challenges and opportunities, and we hope that this book will inspire readers to further explore and advance this exciting field. The book is divided into 4 chapters:</span>
-<span id="cb1-21"><a href="#cb1-21"></a></span>
-<span id="cb1-22"><a href="#cb1-22"></a><span class="ss">-   </span>**Chapter 1** lays the foundation for probabilistic modeling of preferences and decisions. It covers key model assumptions (e.g., bounded rationality), along with methods for preference data collection (e.g., pairwise comparisons), and models to interpret the data (e.g., Bradley-Terry model). The chapter also explore preference aggregation through the lense of social choice theory.</span>
-<span id="cb1-23"><a href="#cb1-23"></a></span>
-<span id="cb1-24"><a href="#cb1-24"></a><span class="ss">-   </span>**Chapter 2** examines various functional form and learning of reward modeling via examples from the field of language modeling and robotics. We discuss the challenges in learning multimodal rewards, meta-reward learning, human biases in reward models, and strategies to leverage both rational and irrational behavior.</span>
-<span id="cb1-25"><a href="#cb1-25"></a></span>
-<span id="cb1-26"><a href="#cb1-26"></a><span class="ss">-   </span>**Chapter 3** focused on a process where the end goal is to elicit the utility function. Since human is involved in the data collection, we concentrate on active learning methods that elicit the most preference information with a minimal amount of human query. Various strategies are explored, including reducing the learner's variance, exploiting ambiguity and domain knowledge in ranking, with examples from robotics and machine learning systems.</span>
+<div class="sourceCode" id="cb1" data-shortcodes="false"><pre class="sourceCode numberSource markdown number-lines code-with-copy"><code class="sourceCode markdown"><span id="cb1-1"><a href="#cb1-1"></a><span class="fu"># Introduction {.unnumbered #sec-intro}</span></span>
+<span id="cb1-2"><a href="#cb1-2"></a></span>
+<span id="cb1-3"><a href="#cb1-3"></a>::: {.content-visible when-format="html"}</span>
+<span id="cb1-4"><a href="#cb1-4"></a></span>
+<span id="cb1-5"><a href="#cb1-5"></a>&lt;iframe</span>
+<span id="cb1-6"><a href="#cb1-6"></a>  src="https://web.stanford.edu/class/cs329h/slides/1.introduction/#/"</span>
+<span id="cb1-7"><a href="#cb1-7"></a>  style="width:50%; height:250px;"</span>
+<span id="cb1-8"><a href="#cb1-8"></a>&gt;&lt;/iframe&gt;</span>
+<span id="cb1-9"><a href="#cb1-9"></a><span class="co">[</span><span class="ot">Fullscreen Slide</span><span class="co">](https://web.stanford.edu/class/cs329h/slides/1.introduction/#/)</span>{.btn .btn-outline-primary .btn role="button"}</span>
+<span id="cb1-10"><a href="#cb1-10"></a></span>
+<span id="cb1-11"><a href="#cb1-11"></a>:::</span>
+<span id="cb1-12"><a href="#cb1-12"></a></span>
+<span id="cb1-13"><a href="#cb1-13"></a>Machine learning reaches into many areas of human lives. This brings also new data modalities. Mainstream machine learning allows for many ways to consider models. In *supervised learning*, as classical setting will be to have labelled data $(X, y)$ where $X$ are *features* and $y$ are *labels* which may be discrete or continuous. Or, "data" is given by a function to be maximized, as in reinforcement learning. This boook is about comparisons as data, where two objects $A$ and $B$ are compared, and the goal of learning is to learn this order. </span>
+<span id="cb1-14"><a href="#cb1-14"></a></span>
+<span id="cb1-15"><a href="#cb1-15"></a>Order can be about desirability. Is ice cream (A) more desirable than tomato soup (B)? If yes, then we write $A \succ B$. Ideally, we would like to learn from data to generalize that for Panna Cotta (C) and minestrone (D) we have $C \succ D$. Our approach, however, is more general, and can capture cases where the order is "safer", "more diverse", "more creative", or something else, judged by a human, an AI, or another dta source.</span>
+<span id="cb1-16"><a href="#cb1-16"></a></span>
+<span id="cb1-17"><a href="#cb1-17"></a>Learning from comparisons (or learning from preferences) has gained popularity in recent years due to the relative simplicity of eliciting choice data. Asking humans to pick their favourite  from a set of options, or asking which of two options they prefer is much easier than asking humans for a numerical score. The gain in simplicity from eliciting comparisons is particularly pronounced when trying to use human common sense for hard-to-codify concepts such as "helpfulness", "harmlessness", or "do a backflip". This strength has led to success of comparison-based machine learning in preference models </span>
+<span id="cb1-18"><a href="#cb1-18"></a></span>
+<span id="cb1-19"><a href="#cb1-19"></a>The examples in this book will come from several application domains, from robotics to language models and recommendation systems. By presenting case studies of their application, we allow to complement theoretical understanding with practical implementation.</span>
+<span id="cb1-20"><a href="#cb1-20"></a></span>
+<span id="cb1-21"><a href="#cb1-21"></a>We hope with the present book to both allow more use of human preferences in machine learning, and new data modalities as Artificial Intelligence systems become increasingly important.</span>
+<span id="cb1-22"><a href="#cb1-22"></a></span>
+<span id="cb1-23"><a href="#cb1-23"></a>Stanford, May 2025, HKT</span>
+<span id="cb1-24"><a href="#cb1-24"></a></span>
+<span id="cb1-25"><a href="#cb1-25"></a><span class="fu">## Structure of this book</span></span>
+<span id="cb1-26"><a href="#cb1-26"></a>The book has three parts which introduce fundamental models, present learning paradigms, and discuss assumptions.</span>
 <span id="cb1-27"><a href="#cb1-27"></a></span>
-<span id="cb1-28"><a href="#cb1-28"></a><span class="ss">-   </span>**Chapter 4** focuses on process where preference is a signal guiding decision. We discuss dueling bandits, an algorithm for decision making from pairwise preferences, as well as reinforcement learning from human feedback (RLHF) to align language models. Moreover, addressing the challenges of modeling uncertainty in reward models emerges as a crucial area for improvement. We also discuss decision making setting beyond a single reward frameworks to accommodate the oversight of diverse objectives. Embracing multi-objective is pivotal to representing the multifaceted goals of varied stakeholders within AI systems.</span>
-<span id="cb1-29"><a href="#cb1-29"></a></span>
-<span id="cb1-30"><a href="#cb1-30"></a><span class="ss">-   </span>**Chapter 5** analyzes principles from human-computer interaction (HCI) for systems that learn from humans, like cognitive constraints and user experience. We discuss ethical issues that arise in interaction models and approaches for designing preference elicitation systems considering fairness, privacy, and other socio-technical factors. We tackle challenges around aligning learned models with values from diverse expert and non-expert stakeholders. Ethical considerations in learning from human preference are addressed. We discuss the potential benefits and risks of learning from human preferences and how to address them responsibly and fairly. We also raise questions about the selection and protection of human participants and the possible consequences of exploiting or manipulating human responses.</span>
-<span id="cb1-31"><a href="#cb1-31"></a></span>
-<span id="cb1-32"><a href="#cb1-32"></a>This book covers various topics, from the statistical foundations and strategies for interactively querying humans to applications for eliciting preference. We review the relevant foundations in statistics, psychology, economics and other disciplines and explore their applications to various domains, such as natural language and robotics, and more. We adopt the machine learning perspective for modeling, estimating, and evaluating the learning processes. This book is used at Stanford University for a quarter-long class CS329H: Machine Learning from Human Preferences. We include the lecture slides and homework at the begining and end of each chapter, respectively.</span>
+<span id="cb1-28"><a href="#cb1-28"></a><span class="fu">### Background </span></span>
+<span id="cb1-29"><a href="#cb1-29"></a>We provide background on axioms underlying comparisons in **Chapter 1**. We discover key modeling assumptions It covers random preference models the Independence of Irrelevant Alternatives (IIA), and types of comparison data (binary rankings, accept-reject, lists). The chapter also discusses the main limitations of IIA based on heterogeneity.</span>
+<span id="cb1-30"><a href="#cb1-30"></a></span>
+<span id="cb1-31"><a href="#cb1-31"></a><span class="fu">### Learning</span></span>
+<span id="cb1-32"><a href="#cb1-32"></a>The second part introduces several approaches to learning from comparisons.</span>
 <span id="cb1-33"><a href="#cb1-33"></a></span>
-<span id="cb1-34"><a href="#cb1-34"></a><span class="co">&lt;!-- </span></span>
+<span id="cb1-34"><a href="#cb1-34"></a><span class="ss">-   </span>**Chapter 2** considers a setting where comparison data is given and studies both maximum likelihood and posterior-based learning of comparison models. It uses case studies from language modeling and robotics. We discuss the challenges in learning multimodal/heterogenous rewards that fail to satisfy IIA.</span>
 <span id="cb1-35"><a href="#cb1-35"></a></span>
-<span id="cb1-36"><a href="#cb1-36"></a><span class="co">Ensuring truthfulness and fairness in eliciting human preferences is crucial, and the book discusses mechanism design principles and techniques to incentivize truthful feedback from humans. The integration of human computing techniques in learning from human preference is also explored, highlighting the use of human intelligence to solve complex problems and improve machine learning algorithms.</span></span>
+<span id="cb1-36"><a href="#cb1-36"></a><span class="ss">-   </span>**Chapter 3** considers active data collection of comparisons with the goal of optimal inference on comparison models using  Various strategies are explored, including reducing the learner's variance, exploiting ambiguity and domain knowledge in ranking, with a case study from robotics.</span>
 <span id="cb1-37"><a href="#cb1-37"></a></span>
-<span id="cb1-38"><a href="#cb1-38"></a><span class="co">**Chapter 7** discusses adaptive user interfaces, which aim to provide personalized experiences by learning individual user preferences from interactions. It presents the design of adaptive interfaces as involving modeling users, collecting user traces, learning models from the data, and applying the models to adapt recommendations. The applications of adaptive interfaces mentioned include route advisors, destination selection assistants, and scheduling tools, with the goal of improving systems through intelligent personalization.</span></span>
+<span id="cb1-38"><a href="#cb1-38"></a><span class="ss">-   </span>**Chapter 4** studies processes where comparisons are used to guide decisions. We first set up the bandit approach to recommending maximal objects with respect to comparisons, and discuss dueling bandits. We then consider as well as reinforcement learning from human feedback (RLHF) to align language models that decide on which text to generate. We highlight the role of uncertainty quantification and exploration for decision-making.</span>
 <span id="cb1-39"><a href="#cb1-39"></a></span>
-<span id="cb1-40"><a href="#cb1-40"></a><span class="co">-   **Chapter 1** is an introductory chapter providing an overview of the field and motivations and outlines what will be covered.</span></span>
+<span id="cb1-40"><a href="#cb1-40"></a><span class="ss">-   </span>**Chapter 5** considers decision-making in the presence of heterogeneity. We first focus on dealing with heterogeneity to maximize average utility using **personalization**. We then discuss aggregation mechanisms that are voting-based and decisions that are independent of some some features of the outcome.</span>
 <span id="cb1-41"><a href="#cb1-41"></a></span>
-<span id="cb1-42"><a href="#cb1-42"></a><span class="co">-   **Chapter 12** focuses on mechanism design theory and how it can be applied to develop protocols and systems for truthfully learning preferences at scale.</span></span>
-<span id="cb1-43"><a href="#cb1-43"></a></span>
-<span id="cb1-44"><a href="#cb1-44"></a><span class="co">-   **Chapter 13** looks at how human computation frameworks can enable large-scale preference elicitation by crowd-sourcing tasks to many individuals.</span></span>
-<span id="cb1-45"><a href="#cb1-45"></a></span>
-<span id="cb1-46"><a href="#cb1-46"></a><span class="co">-   **Chapter 14** presents applications of inverse reinforcement learning using human feedback for robotics, such as learning helicopter control policies from demonstrations.</span></span>
-<span id="cb1-47"><a href="#cb1-47"></a></span>
-<span id="cb1-48"><a href="#cb1-48"></a><span class="co">Human feedback -- whether from individuals' preferences, judgments, ratings, or other responses -- plays a pivotal role in guiding AI systems</span></span>
-<span id="cb1-49"><a href="#cb1-49"></a><span class="co">through their learning across various tasks. The following three examples show the importance of human feedback to different systems. First, human feedback could guide AI agents in creating appealing and diverse content by assessing the quality, originality, and relevance of the content. Second, human feedback could also ensure that AI agents align with human needs and values by rectifying potential biases, errors, and harm caused by agents. Third, human feedback could help AI agents learn better policies in complex environments, such as those with sparse or noisy rewards, by encouraging agents to explore and learn in those environments.</span></span>
-<span id="cb1-50"><a href="#cb1-50"></a></span>
-<span id="cb1-51"><a href="#cb1-51"></a><span class="co">Returning to human feedback, their integration can occur at various stages of the learning process, spanning from data collection and labeling to model selection, training, and evaluation. Incorporating these feedbacks enables fine-tuning the model to align with their hidden insights. The utilization of human feedback is crucial due to its ability to offer valuable signals that are challenging to acquire or delineate through other means, such as data or predefined cost functions. There are many ways to update models based on human feedback, depending on the type and level of feedback and the objective and structure of the model. A general taxonomy of feedback-update interactions can be divided into six categories:</span></span>
-<span id="cb1-52"><a href="#cb1-52"></a></span>
-<span id="cb1-53"><a href="#cb1-53"></a><span class="co">-   Observation-level &amp; Active data collection &amp; Asking humans for feedback on specific features, such as collecting expert labels on features.</span></span>
-<span id="cb1-54"><a href="#cb1-54"></a></span>
-<span id="cb1-55"><a href="#cb1-55"></a><span class="co">-   Observation-level &amp; Constraint elicitation &amp; Inferring optimization constraints from insights extracted from feedback.</span></span>
-<span id="cb1-56"><a href="#cb1-56"></a></span>
-<span id="cb1-57"><a href="#cb1-57"></a><span class="co">-   Observation-level &amp; Feature modification &amp; Adding, removing, or preprocessing features of training/finetuning datasets.</span></span>
-<span id="cb1-58"><a href="#cb1-58"></a></span>
-<span id="cb1-59"><a href="#cb1-59"></a><span class="co">-   Domain-level &amp; Dataset modification &amp; Generating synthetic data that satisfy certain constraints specified by human feedback, such as fairness or weak supervision.</span></span>
-<span id="cb1-60"><a href="#cb1-60"></a></span>
-<span id="cb1-61"><a href="#cb1-61"></a><span class="co">-   Domain-level &amp; Constraint specification &amp; Modifying the loss function for optimizing the model based on human feedback, such as imposing fairness, interpretability, or resource constraints.</span></span>
+<span id="cb1-42"><a href="#cb1-42"></a><span class="fu">### Reflection</span></span>
+<span id="cb1-43"><a href="#cb1-43"></a>The final part of the book discusses limitations of comparison data, and opportunities resulting from stated preference data.</span>
+<span id="cb1-44"><a href="#cb1-44"></a></span>
+<span id="cb1-45"><a href="#cb1-45"></a><span class="ss">-   </span>**Chapter 6** critiques machine learning from comparisons. It takes different disciplinary lenses, from social psychology, philosophy, and critical studies, to highlight where comparisons are limited in the expression of human preferences, and what are alternatives.</span>
+<span id="cb1-46"><a href="#cb1-46"></a></span>
+<span id="cb1-47"><a href="#cb1-47"></a><span class="ss">-   </span>**Chapter 7** considers models that are broader than comparisons in our model, many of which we can think of as **stated preferences**. These are models in which value judgments are given in terms of Likert scales or textual descriptions. We propose ways in how such feedback can be merged with comparison data to better express preferences.</span>
+<span id="cb1-48"><a href="#cb1-48"></a></span>
+<span id="cb1-49"><a href="#cb1-49"></a><span class="fu">## How to engage with this book</span></span>
+<span id="cb1-50"><a href="#cb1-50"></a>Threre are three models of reading, and teaching with, this book. Chapter 1 is underlying all of the book, so is part of all of these pathways. </span>
+<span id="cb1-51"><a href="#cb1-51"></a></span>
+<span id="cb1-52"><a href="#cb1-52"></a><span class="ss"> - </span>For practitioners and those teaching applied AI content, we recommend a reading of Chapters 1, 2, 4, and 7, which can be used as a sequence in an early graduate course on Machine Learning. It allows to highlight human data sources in an introductory machine learning course.</span>
+<span id="cb1-53"><a href="#cb1-53"></a></span>
+<span id="cb1-54"><a href="#cb1-54"></a><span class="ss"> - </span>For people with background in discrete choice, we propose to skim Chapter 1, and study Chapters 2 and 4. These studies allow readers to integrate machine learning in their studies of discrete choice, demand models, and Industrial Organization.</span>
+<span id="cb1-55"><a href="#cb1-55"></a></span>
+<span id="cb1-56"><a href="#cb1-56"></a><span class="ss"> - </span>For those with deep background in machine learning, we propose to study chapters 1-4 and 7. These chapters maximize the amount of machine learning covered, and is suitable for a deep learning-based course of machine learning.</span>
+<span id="cb1-57"><a href="#cb1-57"></a></span>
+<span id="cb1-58"><a href="#cb1-58"></a><span class="ss"> - </span>For those interested in the methodological and theoretical foundations of machine leraning from comparisons, we recommend a reading of chapters 1, 5, 6, and 7. Chapter 1 and 5 study the underpinnings of revealed preferences and aggregation, chapter 6 critiques these assumptions, and chapter 7 looks at broader ways of eliciting preferences. It is suitable for critical study in a course on Computation and Society. </span>
+<span id="cb1-59"><a href="#cb1-59"></a></span>
+<span id="cb1-60"><a href="#cb1-60"></a><span class="fu">## Prior knowledge</span></span>
+<span id="cb1-61"><a href="#cb1-61"></a>The book assumes knowledge of the fundamentals of statistics, linear algebra and machine learning. Many example code excerpts are written in <span class="in">`python`</span>, and make experience in the <span class="in">`python`</span> programming language valuable for readers.</span>
 <span id="cb1-62"><a href="#cb1-62"></a></span>
-<span id="cb1-63"><a href="#cb1-63"></a><span class="co">-   Domain-level &amp; Model editing &amp; Changing the rules or weights of the model based on human feedback, such as incorporating domain knowledge or preferences.</span></span>
-<span id="cb1-64"><a href="#cb1-64"></a></span>
-<span id="cb1-65"><a href="#cb1-65"></a><span class="co">These ways of updating models based on human feedback can help to improve the performance, behavior, and alignment of the models with human values and goals. However, they pose challenges and risks, such as communication barriers, feedback quality, and ethical issues. Therefore, designing and evaluating the feedback-update interactions carefully and responsibly is important.</span></span>
-<span id="cb1-66"><a href="#cb1-66"></a></span>
-<span id="cb1-67"><a href="#cb1-67"></a><span class="co">--&gt;</span></span></code><button title="Copy to Clipboard" class="code-copy-button" data-in-quarto-modal=""><i class="bi"></i></button></pre></div>
+<span id="cb1-63"><a href="#cb1-63"></a><span class="fu">## Additional Materials</span></span>
+<span id="cb1-64"><a href="#cb1-64"></a>Every chapter has problems for readers and slides for teaching of the material available. They are available on the book's website.</span></code><button title="Copy to Clipboard" class="code-copy-button" data-in-quarto-modal=""><i class="bi"></i></button></pre></div>
 </div></div></div></div></div>
 </div> <!-- /content -->
-    <footer class="footer"><div class="nav-footer"><div class="nav-footer-center"><div class="toc-actions"><ul><li><a href="https://github.com/sangttruong/mlhp/blob/main/index.qmd" class="toc-action"><i class="bi bi-github"></i>View source</a></li><li><a href="https://github.com/sangttruong/mlhp/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></div></div></footer><script type="text/javascript">
+    <footer class="footer"><div class="nav-footer"><div class="nav-footer-center"><div class="toc-actions d-sm-block d-md-none"><ul><li><a href="https://github.com/sangttruong/mlhp/blob/main/index.qmd" class="toc-action"><i class="bi bi-github"></i>View source</a></li><li><a href="https://github.com/sangttruong/mlhp/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></div></div></footer><script type="text/javascript">
     (function(d) {
       d.querySelectorAll(".pseudocode-container").forEach(function(el) {
         let pseudocodeOptions = {

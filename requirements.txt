@@ -3,3 +3,5 @@ botorch
 numpy
 matplotlib
 tueplots
+jupyter
+jupyter-cache

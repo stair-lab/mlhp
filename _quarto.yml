@@ -115,33 +115,36 @@ execute:
   tidy: true
 
 book:
-  title: "Machine Learning from Human Preferences"
+  title: "Machine Learning from Comparisons"
   subtitle: ""
   author:
-    - name: Sang T. Truong
-      orcid: 0000-0001-8069-9410
+    - name: Andreas Haupt
+      orcid: 0000-0002-2952-4188
     - name: Sanmi Koyejo
       orcid: 0000-0002-4023-419X
+    - name: Sang T. Truong
+      orcid: 0000-0001-8069-9410
+
   date: last-modified
-  # doi: 10.25936/3jp6-5m50
   repo-url: https://github.com/sangttruong/mlhp
   repo-actions: [source, issue]
   downloads: [pdf]
   sidebar:
     style: "docked"
     footer: license.qmd
-  # google-analytics:
-  # cookie-consent: true
+  # google-analytics: false
+  # cookie-consent: false
   chapters:
     - index.qmd
+    - src/ack.qmd
     - src/chap2.qmd
     - src/chap3.qmd
     - src/chap4.qmd
-    - src/chap5.qmd
+    # - src/chap5.qmd
     - src/chap6.qmd
     - src/chap7.qmd
     - src/chap8.qmd
-    - src/ack.qmd
+
 
 # Set default options for every webpage that may or may not include Pyodide.
 pyodide: 
