@@ -68,12 +68,12 @@ Sometimes, particularly when a decision-maker is offered an object or "nothing",
 Choices are often conditional, and data is given by $(x, L)$ (for list-based data), $(x, y, Y')$ (for general choice based data), or $(x, y, y')$ for binary data. $x \in X$ is some *context*: the environment of a purchase, the goal of a robot, or a user prompt for a large language model. It can also be a prompt to the decision-maker, e.g., to human raters on whether they should pick preferences based on helplessness or harmlessness (@hhlrhf). Inclusion of context in learning allows for generalization of preferences, as we will see in subsequent chapters.
 
 ## Random Utility Models
-An equivalent way to represent random preferences is to identify a sample $\prec$ with a vector $u_{\prec} = (u_{\mathord{\prec}y})_{y \in Y} \in \mathbb R^Y$ where $y \succ y'$ if and only if $u_y > u_{y'}$. (For the concerned reader: We assume that $u_y = u_{y'}$ happens with zero probability; and for discrete $Y$ such a vector always exists.)
+An equivalent way to represent random preferences is to identify a sample $\prec$ with a vector $u_{\prec} = (u_{\mathord{\prec}} (y))_{y \in Y} \in \mathbb R^Y$ where $y \succ y'$ if and only if $u(y) > u(y')$. (For the concerned reader: We assume that $u(y) = u(y')$ happens with zero probability; and for discrete $Y$ such a vector always exists.)
 
 To get a sense for different random utility models, we consider a particular model that has the complexity of many models in modern machine learning: The Ackley function. In this model, each alternative is represented by a $d$-dimensional vector $(x_1, \ldots, x_d) \in \mathbb{R}^d$, the Ackley function is given by
-\[
+$$
 \text{Ackley}(x_1, x_2, \dots, x_d) = -a e^{-b \sqrt{\frac{1}{d} \sum_{j=1}^d x_j^2}} - e^{\frac{1}{d} \sum_{j=1}^d \cos(c x_j)} + a + e.
-\]
+$$
 for some constants $a, b, c \in \mathbb{R}$. By stacking a number $k$ of human preferences, we can compute for $k$ samples from a random model the function in a vectorized way.
 
 ::: {.callout-note title="code"}
@@ -299,24 +299,26 @@ Similarly, we can sample data for $(y, Y')$ for $y \in Y' \subseteq Y$.
 
 ## Mean Utilities 
 
-We can view a random utility model $u_{\mathord{\prec}y}$ as a deterministic part and a random part:
+We can view a random utility model $u_{\mathord{\prec}}$ as a deterministic part and a random part:
 $$
-u_{\mathord{\prec}y} = u_y + \varepsilon_{\mathord{\prec}y}.
+u_{\mathord{\prec}} (y) = u(y) + \varepsilon_{\mathord{\prec}y}.
 $$
-The vector $u_y$ is deterministic, and a vector $(\varepsilon_{\mathord{\prec}y})_{y \in Y}$ of noise is independent for different $\prec$. We say that $u_y$ is the mean utility and $\varepsilon_{\mathord{\prec}y}$.
+The vector $u(y)$ is deterministic, and a vector $(\varepsilon_{\mathord{\prec}y})_{y \in Y}$ of noise is independent for different $\prec$. We say that $u(y)$ is the mean utility and $\varepsilon_{\mathord{\prec}y}$.
 
 There are (at least) three different ways to view this noise: 
 
  - Either it is capturing heterogeneity of different decisionmakers---a view that is taken in the Economics field of Industrial Organization. Under this view, observing $(y, Y')$ more frequently than $(y', Y')$ is a sign of there being a higher number of decision-makers preferring $y$ over $y'$ than the other way around. 
- - or as errors of a decision-maker's optimization of utilities $u_y$. This view is endorsed in a literature on Bounded Rationality. Under this view, it cannot be directly concluded from frequent observation of $(y, Y')$ compared to $(y', Y')$ that $y$ is preferred to $y$. It might have been chosen in error.
- - We can also view it as a belief of the designer about the preferences $(u_y)_{y \in Y}$. In this view, the posterior after observing data can be used to make claims about relative preferences. 
+ - or as errors of a decision-maker's optimization of utilities $u(y)$. This view is endorsed in a literature on Bounded Rationality. Under this view, it cannot be directly concluded from frequent observation of $(y, Y')$ compared to $(y', Y')$ that $y$ is preferred to $y$. It might have been chosen in error.
+ - We can also view it as a belief of the designer about the preferences $(u(y))_{y \in Y}$. In this view, the posterior after observing data can be used to make claims about relative preferences. 
 
 The interpretation will guide our decision-making predictions in Chapters 4 and 5.
 
 We next introduce a main way to simplify learning utility functions: The axiom of Independence of Irrelevant Alternatives.
 
 ## Independence of Irrelevant Alternatives
-We are interested in learning random strict partial orders. Without any restrictions, this is a large object (a vector with $n!-1$ entries, to be concrete) which is impractical for learning. An assumption that simplifies representation and learning considerably is that relative choice probabilities should not be affected by whether another alternative is added. Formally, for every $Y' \subseteq Y$, $y,z \in Y'$, and $w \in Y \setminus Y'$,
+In later chapters, we will consider cases where we sample from the most preferred elements from all objects $(y,Y)$, which we call generation task. A simple assumption will allow us to recover the probabilities of $(y, Y)$, and in fact the full distribution of $\prec$ from binary comparisons: The so-called Independence of Irrelevant Alternatives. This assumption not only allows us to easily identify a preference model, it will also massively reduce what is needed to be estimated from data: Instead of the full $n!-1$-dimensional object, it will be sufficient to learn $n$ values. 
+
+IIA assumes that the relative likelihood of choosing $y$ compared to z does not change whether a third alternative $w$ is in the choice set or not. Formally, for every $Y' \subseteq Y$, $y,z \in Y'$, and $w \in Y \setminus Y'$,
 $$
 \frac{\mathbb{P}[(y, Y')]}{\mathbb{P}[(z, Y')]} = \frac{\mathbb{P}[(y, Y' \cup \{w\})]}{\mathbb{P}[(z, Y' \cup \{w\})]}.
 $$
@@ -325,19 +327,19 @@ $$
 First, to our primary example: All random utility models with *independent and identically distributed* noise terms satisfy IIA. (We ask the reader to convince themselves that the Ackerman function does not satisfy IIA.)
 
 ::: {.callout-tip title="theorem"}
-A random utility model $u_{\mathord{\prec}y}$ satisfies IIA if and only if we can write it as $u_{\mathord{\prec}y} = u_y + \varepsilon_{\mathord{\prec}y}$, where $u_y$ is deterministic and $\varepsilon_{\mathord{\prec}y}$ is sampled independently and identically from the Gumbel distribution. The Gumbel distribution has cumulative distribution function $F(x) = e^{-e^{-x}}$.
+A random utility model $u_{\mathord{\prec}}(y)$ satisfies IIA if and only if we can write it as $u_{\mathord{\prec}}(y) = u(y) + \varepsilon_{\mathord{\prec}y}$, where $u(y)$ is deterministic and $\varepsilon_{\mathord{\prec}y}$ is sampled independently and identically from the Gumbel distribution. The Gumbel distribution has cumulative distribution function $F(x) = e^{-e^{-x}}$.
 ::: 
 
 This is quite strong, and an **equivalence**. If we are willing to assume IIA, it is sufficient to learn $n$ parameters to characterize the full distribution---an exponential decrease in parameters to learn. The Gumbel model may be unusual in particular for those with a stronger background in machine learning. A more familiar formulation arises for the probabilities of choice. 
 
 ::: {.callout-tip title="theorem"}
-Assume a random preference model satisfies IIA, hence $u_{\mathord{\prec}y} = u_y + \varepsilon_{\mathord{\prec}y}$. Then, the probabilities of lists are:
+Assume a random preference model satisfies IIA, hence $u_{\mathord{\prec}} (y)= u(y) + \varepsilon_{\mathord{\prec}y}$. Then, the probabilities of lists are:
 $$
 \mathbb{P}[(y_1 \succ y_2 \succ \cdots \succ y_n)] = \frac{e^{u(y_1)}}{\sum_{i=1}^n e^{u(y_1)}} \cdot \frac{e^{u(y_2)}}{\sum_{i=2}^n e^{u(y_i)}}\cdot \frac{e^{u(y_3)}}{\sum_{i=3}^n e^{u(y_1)}} \cdots \frac{e^{u(y_{n-1})}}{ e^{u(y_{n-1})} +  e^{u(y_{n})}}.
 $$
 For choices from sets, 
 $$
-\mathbb{P} [(y, Y')] = \frac{e^{u(y)}}{\sum_{y' \in Y'} e^{u_{y'}}} = \operatorname{softmax}_y ((u_{y'})_{y' \in Y'}).
+\mathbb{P} [(y, Y')] = \frac{e^{u(y)}}{\sum_{y' \in Y'} e^{u(y')}} = \operatorname{softmax}_y ((u(y'))_{y' \in Y'}).
 $$
 In particular, for binary comparisons
 $$
@@ -345,11 +347,13 @@ $$
 $$
 where $\sigma = 1/(1 + e^x)$ is the sigmoid function.
 :::
-In particular, the choice probabilities $\mathbb{P} [(y, Y)]$ are equivalent to the multi-class logistic regression model (also called multinomial logit model).
+In particular, the choice probabilities $\mathbb{P} [(y, Y)]$ are equivalent to the multi-class logistic regression model (also called multinomial logit model), and generation from this model, that is, sampling $y$ with probability $\mathbb{P}[(y, Y)]$ is given by softmax-sampling $\softmax((u(y))_{y \in Y})$. 
 
-If data is binary comparisons, it is called Bradley-Terry. If data is in forms of list, it is also called Plackett-Luce. For accept-reject sampling it is also called logistic regression.
+This model has many names, depending on the feedback type we consider. For binary comparison data, it is the Bradley-Terry model. If data is in forms of list, it is called the Plackett-Luce model. For accept-reject sampling it is also called logistic regression. For choices from subsets $Y$, is is called the (discrete choice) logit model. We will usually call the model the **logit model** and specify the feedback type.
 
-The IIA assumption has many normatively desirable properties, stochastic transitity and relativity, which are additional exercises to this chapter. The learning of, and optimization based on, the mean utilities $(u_y)_{y \in Y}$ is one of the central goal of this book.
+The IIA assumption has many desirable properties, such as stochastic transitity and relativity. The reader is asked to prove them in the exercises to this chapter. The learning of, and optimization based on, the mean utilities $(u(y))_{y \in Y}$ is one of the central goal of this book. Supervised learning based on it will be covered in the next chapter.
+
+One note on identification, that is, whether different utility functions $u$ generate the same random preference model $\prec$. The models that are implied by $u(y)$ and by $u(y) + c$ for any constant $c \in \mathbb{R}$ are the same, which means that any learning of the function $u$, which we will engage in in the next chapters, will need to fix one of the values $u(y)$. If there is an outside option $y_0$, then, it is typically chosen $u(y_0) = 0$ and all mean utilities are in comparison to the outside option.
 
 IIA has limitations, which might require to allow for more flexible specifications of noise and heterogeneity. 
 
@@ -509,9 +513,9 @@ plt.grid(True)
 plt.show()
 ```
 
-Classic ways to solve this concern is to consider a model with explicit representation of heterogeneity, where $y \prec y'$ holds if $\alpha \sim F$ for some distribution $F$, and $(u_y)_{y \in Y} \alpha$ is a random utility model with independent error terms. For example, consider a logit random utility model 
+Classic ways to solve this concern is to consider a model with explicit representation of heterogeneity, where $y \prec y'$ holds if $\alpha \sim F$ for some distribution $F$, and $(u(y))_{y \in Y} \alpha$ is a random utility model with independent error terms. For example, consider a logit random utility model 
 $$
-u_y = \beta^\top x + \varepsilon_y
+u(y) = \beta^\top x + \varepsilon_y
 $$
 and assume $\beta \sim N(\mu, \Sigma)$ is a normally distributed vector, a model called the random coefficients logit model. Equivalently, we can view this as a model with correlated utility shocks.
 
@@ -591,9 +595,9 @@ Prove that if a preference model satisfies IIA, it will also satisfy $\mathbb{P}
 
 ### Discrete Choice Models
 
-Consider a linear random utility model $u_y=\beta_i^\top x+\epsilon_i$ for $i=1, 2, \cdots, N$, where $\varepsilon_y$ is i.i.d. sampled from a Gumbel distribution. We would like to compute $\mathbb{P}[(y, Y)]$ and connect it to multi-class logistic regression.
+Consider a linear random utility model $u(y)=\beta_i^\top x+\epsilon_i$ for $i=1, 2, \cdots, N$, where $\varepsilon_y$ is i.i.d. sampled from a Gumbel distribution. We would like to compute $\mathbb{P}[(y, Y)]$ and connect it to multi-class logistic regression.
 
-(a) First $\mathbb{P}[u_y<t]$ for any $ for $j\neq i$ in terms of $F$. Use this probability to provide a formula for $\mathbb{P}[(y, Y)]$ over $t$ in terms of $f$ and $F$.
+(a) First $\mathbb{P}[u(y)<t]$ for any $ for $j\neq i$ in terms of $F$. Use this probability to provide a formula for $\mathbb{P}[(y, Y)]$ over $t$ in terms of $f$ and $F$.
 
 (b) Compute the integral derived in part (a) with the appropriate $u$-substitution. You should arrive at the multi-class logistic regression model.
 
@@ -606,11 +610,11 @@ Prove that the class of random preferences induced by the following two are iden
 (b) Shows that this is not the case for binary comparisons. That is, give an example of two different preference models that induce the same probabilities $\mathbb{P}[y, \{x, y\}]$. 
 
 ### Non-Random Utility Models
-Give an example of a preference model that cannot be realized as a random utility model.
+Not all probability assignments for binary comparisons $p_{y_1y_2} = \mathbb{P}[y_1 \prec y_1]$ can be realized with a random preference model. Give an example of binary comparisons $(p_{y_1y_2}, p_{y_2y_3}, p_{y_3y_1})$ that cannot be a result of a random preference model.
 
 ### Posterior Inference for Mixture Preferences
 
-(This exercises previews some of the aspects for learning utility functions from the next chapter, but is self-contained.) You are part of the ML team on the movie streaming site "Preferential". You receive full preference orderings in the form $y_1 \succ y_2 \succ \cdots \succ y_n$, where $y_1$ is the most, and $y_n$ the least preferred option. The preferences come from $600$ distinct users with $50$ examples per user. Each movie has a $10$-dimensional feature vector $m_y$, and each user has a $10$-dimensional weight vector $v_i$. The preferences for user $i$ follow the random utility model $u_y = v_i^\top m_y + \varepsilon_y$, where $\varepsilon_y$ is i.i.d. Gumbel distributed. 
+(This exercises previews some of the aspects for learning utility functions from the next chapter, but is self-contained.) You are part of the ML team on the movie streaming site "Preferential". You receive full preference orderings in the form $y_1 \succ y_2 \succ \cdots \succ y_n$, where $y_1$ is the most, and $y_n$ the least preferred option. The preferences come from $600$ distinct users with $50$ examples per user. Each movie has a $10$-dimensional feature vector $m_y$, and each user has a $10$-dimensional weight vector $v_i$. The preferences for user $i$ follow the random utility model $u(y) = v_i^\top m_y + \varepsilon_y$, where $\varepsilon_y$ is i.i.d. Gumbel distributed. 
 
 Sadly, you lost all user identifiers. Unashamedly, you assume a model where a proportion $p$ of the users have weights $w_1$, a proportion $1-p$ have weights $w_2$. Each user belongs to one of two groups: users with weights $w_1$ are part of Group 1, and users with weights $w_2$ are part of Group 2.
 

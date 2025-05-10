@@ -10,52 +10,53 @@ execute:
 
 ---
 
-Designing a good utility function (or reward function) by hand for a complex AI or robotics task is notoriously difficult and error-prone. Instead of manually specifying what is “good” behavior, we can learn a utility function from human preferences. In this chapter, we explore how an agent can infer a human’s underlying utility function (their preferences or reward criteria) from various forms of feedback. We discuss both supervised learning and Bayesian approaches to utility learning, and examine techniques motivated by robotics—learning from demonstrations, physical corrections, trajectory evaluations, and pairwise comparisons. Throughout, we include mathematical formulations and code examples to illustrate the learning process.
+The last chapter introduced the main models for preferences. This chapter considers **supervised learning** from preference data. We are given a dataset $\mathcal D = ((y_1 \succ y'_1), (y_2 \succ y_2'), \dots, (y_n \succ y_n'))$ (for binary or accept-reject feedback), or lists $\mathcal D = (L_1, L_2, \dots, L_n)$ and would like to estimate the distribution of $\prec$ as best as possible. In the first part of our discussion, we will assume that our model satisfies IIA, and hence can be represented as a logit model. Then, we consider posterior inference for more general models. 
 
-## The Supervised Learning Problem
+## Two Approaches for the Binary Case
 
-Supervised learning approaches treat human feedback as labeled data to directly fit a utility function. The core idea is to assume there exists a true utility function $u^*(x)$ (over states, outcomes, or trajectories $x$) that explains a human’s choices. We then choose a parameterized model $u_\theta(x)$ and adjust $\theta$ so that $u_\theta$ agrees with the human-provided preferences.
+Consider a case in which we are given a dataset $\mathcal D = ((y_1 \succ y'_1), (y_2 \succ y_2'), \dots, (y_n \succ y_n'))$. We would like to identify a model 
+$$
+P(y \succ y') = \sigma (u_\theta(A) - u_\theta(B)),
+$$
+where $\sigma(z)=\frac{1}{1+e^{-z}}$ is the sigmoid function. As we saw in the last chapter, this identifies the full distribution of preferences $\prec$, and allows us to generate, among others, outcomes $(y, Y)$. 
 
-A common feedback format is pairwise comparisons: the human is shown two options (outcomes or trajectories) $A$ and $B$ and indicates which is preferred. We can model the probability that the human prefers $A$ over $B$ using a logistic or Bradley–Terry model:
+As common in machine learning, we will assume that the function $u$ is chosen from a *hypothesis class* $u_\theta$, $\theta \in \Theta$. $\theta$ can be weights of a neural network or weights in a support-vector machine. The first goal of this chapter is to learn $\theta$ so that $\mathcal{D}$ "agrees" with the human-provided preference data.
+
+### Maximum Likelihood Estimation
+
+How do we measure agreement? One way is to pick the parameter $\theta \in \Theta$ that maximizes the probability of our observed data, the **Maximum Likelihood Estimator**,
+$$
+\hat{\theta} = \operatorname{arg\,max}_{\theta \in \Theta} \P[\mathcal{D} \mid \theta].
+$$
+For the Bradley-Terry model, this approach is straightforward and computationally efficient, and allows for easy estimation of the choice model.
+
+### Bayesian Estimation
+
+The maximum likelihood approach cannot leverage any information we might have about the utility function $u$. In this case, Bayesian approaches might allow us to better evaluate our uncertainty in utility estimates. Instead of committing to one estimate, we maintain a distribution over utility functions. That is, we place a prior $\mathbb{P}[\theta]$ over parameters, and update this to a posterior after observing data $\mathcal{D}$, according to Bayes' rule:
 
 $$
-P(A \succ B \mid u_\theta) \;=\; \sigma\!\Big(u_\theta(A) - u_\theta(B)\Big)\,,
+p(\theta \mid \mathcal{D}) \propto \frac{p(\mathcal{D} \mid \theta)\, p(\theta)}{p(\mathcal{D})}
 $$
 
-where $\sigma(z)=\frac{1}{1+e^{-z}}$ is the sigmoid function. This implies the human is more likely to prefer $A$ if $u_\theta(A)$ is much larger than $u_\theta(B)$.
+This posterior expresses our uncertainty over which utility functions are compatible with the human feedback. From this distribution, we can make predictions (e.g., using the posterior mean utility) or quantify confidence. It will also help us select which data to obtain, the topic of the next chapter. We will show cases in which posterior inference is tractable, for example when assuming that random utilities form a Gaussian Process (GP), and general methods for neural networks: ensembles, variational inference, and MCMC. Posterior estimation is especially valuable when human feedback is sparse, noisy, or ambiguous---as is often the case in real-world preference learning. The prior complements human data.
 
-At the heart of learning from human preferences lies a latent utility function — a function that assigns numerical value to states, trajectories, or outcomes according to a human’s (possibly unspoken) preferences. The goal of a learning algorithm is to infer this function from observed feedback, which may come in the form of demonstrations, ratings, rankings, or pairwise comparisons. But how exactly do we represent and update our belief about this hidden utility function?
-
-Two major paradigms in statistical learning provide different answers: point estimation and posterior estimation.
-
-In point estimation, we seek a single "best guess" for the utility function — typically a function $u_\theta(x)$ from a parameterized family (e.g. linear models, neural nets), with parameters $\theta \in \mathbb{R}^d$. Given data $\mathcal{D}$ from human feedback (e.g. preferences), we choose the parameter $\hat{\theta}$ that best explains the observed behavior. Formally:
+## The Maximum Likelihood Approach
+Given a dataset of comparisons $D=\{(y_1 \succ y_1'), (y_2 \succ y_2'), \dots, (y_n \succ y_n')\}$, we can fit $\theta$ by maximizing the likelihood of the human’s choices. That is, maximize
 
 $$
-\hat{\theta} = \arg\max_\theta \; p(\mathcal{D} \mid \theta)
+\prod_{i=1}^n \sigma (u_\theta (y_i) - u_\theta (y_i')).
 $$
 
-This is maximum likelihood estimation (MLE): we pick the parameters that make the observed data most probable under our model. Once $\hat{\theta}$ is selected, we treat $u_{\hat{\theta}}$ as the agent’s utility function, and optimize or sample behavior accordingly. This approach is straightforward and computationally efficient. It is the foundation of most supervised learning methods (like logistic regression or deep learning), and it provides a natural interpretation: we’re directly finding the utility function that agrees with the human feedback. However, it discards uncertainty: it assumes the data is sufficient to pin down a single utility function, which may not be true in practice.
-
-In contrast, posterior estimation takes a fully Bayesian view. Instead of committing to one estimate, we maintain a distribution over utility functions. That is, we place a prior $p(\theta)$ over parameters (or over functions $u$ more generally), and update this to a posterior after observing data $\mathcal{D}$:
+By taking logarithms, we can minimize equivalently a binary cross-entropy loss:
 
 $$
-p(\theta \mid \mathcal{D}) \;=\; \frac{p(\mathcal{D} \mid \theta)\, p(\theta)}{p(\mathcal{D})}
+\mathcal{L}(\theta) = -\sum_{i=1}^n \log \sigma (u_\theta(y_i)\!-\!u_\theta(y_i')).
 $$
 
-This posterior expresses our uncertainty over which utility functions are compatible with the human feedback. From this distribution, we can make predictions (e.g., using the posterior mean utility), quantify confidence, or even actively select new queries to reduce uncertainty (active learning). For instance, if we model utilities with a Gaussian Process (GP), then the posterior over $u(x)$ is also a GP after observing comparisons or evaluations. If we use a neural network for $u_\theta(x)$, we can approximate the posterior with ensembles, variational inference, or MCMC. Posterior estimation is especially valuable when human feedback is sparse, noisy, or ambiguous — as is often the case in real-world preference learning. It allows the agent to reason about what it doesn’t know and to take cautious or exploratory actions accordingly.
+This is a straightforward supervised learning problem based on our dataset.
 
-The next two sections instantiate these two perspectives. In Section 4.1, we explore point estimation via supervised learning — treating preference data as labeled examples and fitting a utility model. In Section 4.2, we shift to posterior estimation with Bayesian methods like Gaussian processes and Bayesian neural networks, which model both our current estimate and the uncertainty around it.
-
-## Point Estimation via Maximum Likelihood
-Given a dataset of comparisons $D=\{(A_i, B_i, y_i)\}$ (with $y_i=1$ if $A_i$ was preferred and $0$ if $B_i$ was preferred), we can fit $\theta$ by maximizing the likelihood of the human’s choices. Equivalently, we minimize a binary cross-entropy loss:
-
-$$
-\mathcal{L}(\theta) = -\sum_{i} \Big[\,y_i \log \sigma(u_\theta(A_i)\!-\!u_\theta(B_i)) + (1-y_i)\log(1-\sigma(u_\theta(A_i)\!-\!u_\theta(B_i)))\Big]\,,
-$$
-
-often with a regularization term to prevent overfitting. This is a straightforward supervised learning problem – essentially logistic regression – on pairwise difference features.
-
-Example: Suppose a human’s utility for an outcome can be described by a quadratic function (unknown to the learning algorithm). We collect some pairwise preferences and then train a utility model $u_\theta(x)$ to predict those preferences. The code below simulates this scenario:
+::: {.callout-note title="Example"}
+Suppose a human’s utility for an outcome can be described by a quadratic function (unknown to the learning algorithm). We collect some pairwise preferences and then train a utility model $u_\theta(x)$ to predict those preferences. The code below simulates this scenario:
 
 ```{python}
 import numpy as np
@@ -116,50 +117,28 @@ plt.legend()
 plt.show()
 ```
 
-The learned curve closely matches the true utility up to an arbitrary scaling factor (utility is only defined up to affine transform when inferred from comparisons). The algorithm successfully recovered a utility function that orders states almost the same as the true utility $u^*(x)$. In general, learning from comparisons can infer the *relative* utility of options (which item is preferred), although the absolute scale of $u_\theta$ is unidentifiable without further assumptions. Supervised learning on preferences has been widely used for ranking problems and preference-based reward learning.
+The learned curve closely matches the true utility up to an arbitrary scaling factor (utility is only defined up to affine transform when inferred from comparisons). The algorithm successfully recovered a utility function that orders states almost the same as the true utility $u^*(x)$.
+::: 
+
+In general, learning from comparisons can infer the mean utility of options up to an additive shift to all $y \in Y$. If there is an outside option $y_0 \in Y$, then we can set $u_\theta(y_0) = 0$.
 
 In standard preference learning, we often learn a utility function and then use it to define a policy. However, in some settings—especially those involving large models like language models—it is more effective to directly learn a policy that aligns with human preferences, bypassing the intermediate reward model. One such method is Direct Preference Optimization (DPO), which offers a simple, stable way to align a policy to preference data through supervised learning.
 
-To understand DPO, consider the following setting:
+### Interpreting utilities as generation probabilities: Direct Preference Optimization
 
-- We are given a reference policy $\pi_{\text{ref}}$, such as a pre-trained language model.
-- We want to learn a new policy $\pi_\theta$ that improves upon $\pi_{\text{ref}}$ by better reflecting human preferences.
-- Our data consists of pairwise comparisons: for each prompt $x$, a human expresses a preference between two outputs $y_+ \succ y_-$, where $y_+$ is the preferred response.
-
-Rather than learning an explicit reward function $R(x, y)$ and using it to optimize the policy via reinforcement learning, DPO treats this as a classification problem: we want to encourage the policy to assign higher likelihood to the preferred response.
-
-To formalize this, we define a preference score:
+In some cases, it is helpful to reparameterize the mean utilities as choice probabilities . In particular, for a logit model, we have:
 $$
-s_\theta(x, y_+, y_-) = \log \pi_\theta(y_+ \mid x) - \log \pi_\theta(y_- \mid x)
+\P_\theta[y \prec y'] = \sigma (u_\theta(y) - u_\theta(y')) = \frac{e^{u_\theta(y)}}{e^{u_\theta(y)} + e^{u_\theta(y')}} = \frac{\mathbb{P}_\theta[(y, Y)]}{\mathbb{P}_\theta[(y, Y)] + \mathbb{P}_\theta[(y',Y)]} =  \sigma ( \mathbb{P}_\theta[(y', Y)] -  \mathbb{P}_\theta[(y, Y)]).
 $$
-This is the difference in log-likelihood between the preferred and dispreferred outputs. We can then define the DPO loss as a logistic regression objective:
+This reparameterization leads to the maximum likelihood problem of 
 $$
-\mathcal{L}_{\text{DPO}}(\theta) = -\log \sigma\left(s_\theta(x, y_+, y_-)\right)
+\max_{\theta \in \Theta} =  \sum_{i=1}^n \ln \sigma ( \mathbb{P}_\theta[(y_i', Y)] -  \mathbb{P}_\theta[(y_i, Y)]).
 $$
-where $\sigma(z) = \frac{1}{1 + e^{-z}}$ is the sigmoid function.
-
-This loss encourages $\pi_\theta$ to assign greater probability mass to $y_+$ than $y_-$, pushing the policy toward outputs that align with human preferences. Because this is a differentiable, supervised loss, it can be optimized with standard gradient-based techniques, without needing to sample from the environment or estimate advantages, as in traditional RL.
-
-Although DPO does not explicitly define or optimize a reward function, we can interpret it as doing so implicitly. Suppose we define a reward function:
+We often write $\pi_\theta(y) \coloneqq \mathbb{P}_\theta[(y_i, Y)]$ and balance the maximum likelihood term with a regularization $d_{\operatorname{KL}} (\pi_\theta \| \pi_{\operatorname{base}}) for some base model $\pi_{\operatorname{base}}$, leading to the Direct Preference Optimisation loss
 $$
-R_\theta(y \mid x) = \log \pi_\theta(y \mid x) - \log \pi_{\text{ref}}(y \mid x)
+\max_{\theta \in \Theta} d_{\operatorname{KL}} (\pi_\theta \| \pi_{\operatorname{base}}) +\beta\sum_{i=1}^n \log \sigma (\pi_theta(y_i') -  \pi_\theta(y_i)).
 $$
-This reward encourages $\pi_\theta$ to move away from $\pi_{\text{ref}}$ in directions that increase the probability of preferred outputs. Under this formulation, the DPO objective can be interpreted as optimizing this reward difference directly from preferences.
-
-To understand why this implicit reward leads to a stable and interpretable policy, we can connect DPO to the principle of maximum entropy. This principle says that, among all distributions that satisfy certain constraints (e.g., achieving a particular expected reward), we should prefer the one with maximum entropy—that is, the most uncertain or uncommitted distribution consistent with our knowledge.
-
-Formally, consider the space $\mathcal{P}$ of distributions over responses $y$, and a reward function $R(y)$. The maximum entropy distribution that satisfies a reward constraint is the solution to:
-
-$$
-p^*(y) = \arg\max_{p \in \mathcal{P}} H(p) \quad \text{subject to} \quad \mathbb{E}_p[R(y)] \geq \rho
-$$
-
-The solution to this constrained optimization problem is a Boltzmann distribution:
-$$
-p^*(y) \propto \exp\left(\frac{R(y)}{\tau}\right)
-$$
-for some temperature $\tau > 0$, where $\tau$ controls how deterministic the distribution is. As $\tau \to 0$, the distribution concentrates on the highest-reward outputs; as $\tau \to \infty$, it becomes uniform.
-
+We can interpret this loss as yielding 
 Now suppose our reference policy $\pi_{\text{ref}}(y \mid x)$ already represents a reasonable starting point. Then the optimal policy $\pi_\theta$ can be viewed as a reward-weighted version of this reference policy:
 
 $$
@@ -853,3 +832,217 @@ where $\rho(u, v) = \|u - v\|$. This measures the distance to the target
 set, ensuring that the selected distribution is as close as possible to
 the ideal preference vector [@bhatia2020preference].
 -->
+
+Next, you will implement logistic regression to predict preferred completions. We will use the preference dataset from [RewardBench](<https://huggingface.co/datasets/allenai/reward-bench>). Notice the provided `data/chosen_embeddings.pt` and `data/rejected_embeddings.pt` files. These files were constructed by feeding the prompt alongside the chosen/rejected responses through Llama3-8B-Instruct and selecting the last token's final hidden embedding. For now assume a utility model $u_y=w^\top e_y + \varepsilon_y$, for $\varepsilon_y$ independent Gumbel. 
+
+and use the Bradley-Terry model to predict the preferred item. We can view maximum likelihood across the preference dataset with this model as logistic regression on $e_1-e_2$ and all labels being $1$. Here, we are given a dataset $X$ with $N$ rows of datapoints and $D$ features per datapoint. The weights of the model are parametrized by $w$, a $d$-dimensional column vector. Given binary labels $y$ of shape $N$ by $1$, the negative log likelihood function and the corresponding gradient is 
+
+$$p(y, X| w)=-\frac{1}{N}(y^\top \log(\sigma(X^\top w)) + (1-y)^\tau \log(1-\sigma(X^\top w))), \quad \nabla_w p(y, X | w)=\frac{1}{N}X^T(\sigma(X^\top w)-y),$$
+
+where $\sigma$ is the sigmoid function and is applied element-wise along with $\log$. As usual, we use maximum likelihood to learn the parameter.
+
+1.  **(Coding, 5 points)**. Implement the functions `train` and the `predict_probs` in `LogisticRegression` class. The starter code is provided below.
+
+::: {.callout-note title="code"}
+```{pyodide-python}
+from sklearn.model_selection import train_test_split
+import torch
+
+class LogisticRegression:
+    def __init__(self):
+        self.weights = None  # Initialized during training
+
+    def train(self, X, y, learning_rate, num_iterations):
+        """
+        Train the logistic regression model using full batch gradient-based optimization.
+
+        Parameters:
+        - X (torch.Tensor): Training data of shape (n_samples, n_features).
+        - y (torch.Tensor): Target labels of shape (n_samples,).
+        """
+        n_samples, n_features = X.shape
+
+        # Initialize weights without the bias term
+        self.weights = torch.zeros(n_features)
+
+        for i in range(num_iterations):
+            # YOUR CODE HERE (~4-5 lines)
+                pass
+            # END OF YOUR CODE
+
+    def predict_probs(self, X):
+        """
+        Predict probabilities for samples in X.
+
+        Parameters:
+        - X (torch.Tensor): Input data of shape (n_samples, n_features).
+
+        Returns:
+        - y_probs (torch.Tensor): Predicted probabilities.
+        """
+        y_probs = None
+
+        # YOUR CODE HERE (~2-3 lines)
+        pass
+        # END OF YOUR CODE
+
+        return y_probs
+
+
+if __name__ == "__main__":
+    # Load in Llama3 embeddings of prompt + completions on RewardBench
+    chosen_embeddings = torch.load('data/chosen_embeddings.pt')
+    rejected_embeddings = torch.load('data/rejected_embeddings.pt')
+
+    # Subtract the embeddings according to the Bradley-Terry reward model setup presented in the problem 
+    X = (chosen_embeddings - rejected_embeddings).to(torch.float)
+    y = torch.ones(X.shape[0])
+    X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.2, random_state=42)  
+
+    # Tune the learning_rate and num_iterations
+    learning_rate = None
+    num_iterations = None
+    model = LogisticRegression()
+    model.train(X_train, y_train, learning_rate=learning_rate, num_iterations=num_iterations)
+    print(f"Expected Train Accuracy: {model.predict_probs(X_train).mean()}")
+    print(f"Expected Validation Accuracy: {del.predict_probs(X_val).mean()}") # Should reach at least 90%
+```
+:::
+
+3.  **(Written, 4 points)**. Open the notebook `rewardbench_preferences.ipynb` and run all the cells. Make sure to tune the `learning_rate` and `num_iterations`. Report your final expected accuracy on the training and validation sets. How close are the two expected accuracies? You should be able to achieve $\approx 90\%$ expected accuracy on validation. You may add loss reporting to the `train` function to verify your model is improving over time.
+
+
+### Question 2: Revealed and Stated Preferences (20 points) {#question-2-revealed-and-stated-preferences-20-points .unnumbered}
+
+Alice and Bob are running for president. For $R$ voters, we can access their revealed candidate preferences through some means (e.g., social media, blogs, event history). Assume there is an unknown probability $z$ of voting for Alice among the population. The aim of this question is to estimate $z$ through *maximum likelihood estimation* by also incorporating stated preferences. In this scenario, we collect stated preferences through surveys. 
+
+(a) **(Written, 5 points)**. Suppose there are $R_A$ revealed preferences for Alice, $R_B$ revealed preferences for Bob, $S_A$ stated preferences for Alice, and $S_B$ stated preferences for Bob. Note $R=R_A+R_B$. Compute the log-likelihood of observing such preferences in terms of $z, R_A, R_B, S_A, S_B$.
+
+(b) **(Coding, 1 point)**. Implement the short function `stated_prob` in the file `voting/simulation.py`.
+
+(c) **(Coding, 5 points)**. Implement the class `VotingSimulation`.
+
+(d) **(Coding, 7 points)**. Implement your derived expression from part (a) in the `log_likelihoods` function.
+
+(e) **(Written, 2 points)**. Finally, implement the `average_mae_mle` method that will allow us to visualize the mean absolute error (MAE) of our maximum likelihood estimate $\hat{z}$ (i.e., $|\hat{z}-z|$) as the number of voters surveyed increases. Open `voting/visualize_sim.ipynb` and run the cells to get a plot of MAE vs. voters surveyed averaged across $100$ simulations. Attach the plot to this question and briefly explain what you notice.
+
+::: {.callout-note title="code"}
+```{pyodide-python}
+import torch
+import random
+import matplotlib.pyplot as plt
+from tqdm import tqdm
+random.seed(42)
+torch.manual_seed(42)
+
+def stated_prob(z_values):
+    """
+    Computes the probability of stated preferences based on z values.
+    
+    Args:
+        z_values (torch.Tensor): The z value(s), where z represents the true probability of voting for Alice.
+
+    Returns:
+        torch.Tensor: Probability for stated preferences, derived from z values.
+    """
+    # YOUR CODE HERE (~1 line)
+    # END OF YOUR CODE
+
+class VotingSimulation:
+    """
+    A class to simulate the voting process where revealed and stated preferences are generated.
+    
+    Attributes:
+        R (int): Number of revealed preferences.
+        z (float): The true probability of voting for Alice.
+        revealed_preferences (torch.Tensor): Simulated revealed preferences of R voters using Bernoulli distribution.
+                                             Takes on 1 for Alice, and 0 for Bob.
+        stated_preferences (torch.Tensor): Simulated stated preferences, initialized as an empty tensor.
+                                           Takes on 1 for Alice, and 0 for Bob.
+    """
+    def __init__(self, R, z):
+        self.R = R
+        self.z = z
+        self.revealed_preferences = None # YOUR CODE HERE (~1 line)
+        self.stated_preferences = torch.tensor([])
+
+    def add_survey(self):
+        """
+        Simulates an additional stated preference based on stated_prob and adds it to the list.
+        This updates the self.stated_preferences tensor by concatenating on a new simulated survey result.
+        """
+        # YOUR CODE HERE (~3 lines)
+        # END OF YOUR CODE
+
+def log_likelihoods(revealed_preferences, stated_preferences, z_values):
+    """
+    Computes the log likelihoods across both revealed and stated preferences.
+    Use your answer in part (a) to help.
+    
+    Args:
+        revealed_preferences (torch.Tensor): Tensor containing revealed preferences (0 or 1).
+        stated_preferences (torch.Tensor): Tensor containing stated preferences (0 or 1).
+        z_values (torch.Tensor): Tensor of underlying z values to calculate likelihood for.
+
+    Returns:
+        torch.Tensor: Log likelihood for each z value.
+    """
+    # YOUR CODE HERE (~10-16 lines)
+    pass
+    # END OF YOUR CODE 
+
+def average_mae_mle(R, z, survey_count, num_sims, z_sweep):
+    """
+    Runs multiple simulations to compute the average mean absolute error (MAE) of Maximum Likelihood Estimation (MLE) 
+    for z after increasing number of surveys.
+    
+    Args:
+        R (int): Number of revealed preferences.
+        z (float): The true probability of voting for Alice.
+        survey_count (int): Number of additional surveys to perform.
+        num_sims (int): Number of simulation runs to average over.
+        z_sweep (torch.Tensor): Range of z values to consider for maximum likelihood estimation.
+
+    Returns:
+        torch.Tensor: Tensor of mean absolute errors averaged over simulations.
+                      Should have shape (survey_count, )
+    """
+    all_errors = []
+    for _ in tqdm(range(num_sims)):
+        errors = []
+        vote_simulator = VotingSimulation(R=R, z=z)
+
+        for _ in range(survey_count):
+            revealed_preferences = vote_simulator.revealed_preferences
+            stated_preferences = vote_simulator.stated_preferences
+
+            # YOUR CODE HERE (~6-8 lines)
+            pass # Compute log_likelihoods across z_sweep. Argmax to find MLE for z. 
+                 # Append the absolute error to errors and add a survey to the simulator.
+            # END OF YOUR CODE
+
+        errors_tensor = torch.stack(errors) 
+        all_errors.append(errors_tensor)
+
+    # Calculate the average error across simulations 
+    mean_errors = torch.stack(all_errors).mean(dim=0)
+    return mean_errors
+
+if __name__ == "__main__":
+    # DO NOT CHANGE!
+    max_surveys = 2000
+    z = 0.5
+    R = 10
+    num_sims = 100
+    z_sweep = torch.linspace(0.01, 0.99, 981)
+
+    # Compute and plot the errors. Attach this plot to part (d).
+    mean_errors = average_mae_mle(R, z, max_surveys, num_sims, z_sweep)
+    plt.plot(mean_errors)
+
+    plt.xlabel('Surveys Conducted')
+    plt.ylabel('Average Error')
+    plt.title(f'MLE MAE Error (z={z}, {num_sims} simulations)')
+    plt.show()
+```
+:::
