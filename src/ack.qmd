@@ -1,8 +1,7 @@
 # Acknowledgments {.unnumbered #sec-ack}
 
-## Acknowledgments
 
-This book was compiled during CS329H: Machine Learning from Human Preferences at Stanford University in Fall 2023 and Fall 2024. We thank Rehaan Ahmad, Ahmed Ahmed, Jirayu Burapacheep, Michael Byun, Akash Chaurasia, Andrew Conkey, Tanvi Deshpande, Eric Han, Laya Iyer, Adarsh Jeewajee, Shreyas Kar, Arjun Karanam, Jared Moore, Aashiq Muhamed, Bidipta Sarkar, William Shabecoff, Stephan Sharkov, Max Sobol Mark, Kushal Thaman, Joe Vincent, Yibo Zhang, Duc Nguyen (VNU-HCM University of Technology), Grace Sodunke (University of Oxford), and Ky Nguyen (DePauw University) for their help in compiling this book. We appreciate the time of our guest speakers, including Pat Langley (Institute for the Study of Learning and Expertise), Meredith Ringel Morris (Google DeepMind), Vasilis Syrgkanis (Stanford), Jason Hartline (Northwestern), Dorsa Sadigh (Stanford), Diyi Yang (Stanford), and Nathan Lambert (AI2).
+Initial versions of this book were compiled as lecture notes to the class CS329H: Machine Learning from Human Preferences at Stanford University taught in Fall 2023 and Fall 2024. We thank Rehaan Ahmad, Ahmed Ahmed, Jirayu Burapacheep, Michael Byun, Akash Chaurasia, Andrew Conkey, Tanvi Deshpande, Eric Han, Laya Iyer, Adarsh Jeewajee, Shreyas Kar, Arjun Karanam, Jared Moore, Aashiq Muhamed, Bidipta Sarkar, William Shabecoff, Stephan Sharkov, Max Sobol Mark, Kushal Thaman, Joe Vincent, Yibo Zhang, Duc Nguyen, Grace Sodunke, Ky Nguyen, and Mykkel Kochenderfer for their early contributions and feedback.
 
 ::: {.content-visible when-format="html"}
 
@@ -12,9 +11,9 @@ Thanks for reading our book! We hope you find this book useful in your research 
 ::: {#quarto-appendix .default}
 BibTeX citation:
 <pre class="sourceCode code-with-copy quarto-appendix-bibtex"><code class="sourceCode bibtex">@book{mlhp,
-  author    = {Truong, Sang and Koyejo, Sanmi},
-  title     = {{Machine Learning from Human Preferences}},
-  year      = {2024},
+  author    = {Koyejo, Sanmi, Truong, Sang and Haupt, Andreas},
+  title     = {{Machine Learning from Comparisons}},
+  year      = {2025},
   publisher = {Stanford University},
   doi       = {},
   note      = {}
@@ -22,7 +21,7 @@ BibTeX citation:
 
 For attribution, please cite this work as:
 <div id="ref-mlhp" class="csl-entry quarto-appendix-citeas">
-  S. Truong and S. Koyejo. 2024. Machine Learning from Human Preferences. Stanford University.
+  S. Koyejo, and S. Truong, and A. Haupt. 2025. Machine Learning from Human Preferences. Stanford University.
 </div>
 :::
 
