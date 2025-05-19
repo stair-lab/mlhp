@@ -20,7 +20,7 @@ The examples in this book will come from several application domains, from robot
 
 We hope with the present book to both allow more use of human preferences in machine learning, and new data modalities as Artificial Intelligence systems become increasingly important.
 
-Stanford, May 2025, HKT
+Stanford, May 2025, THK
 
 ## Structure of this book
 The book has three parts which introduce fundamental models, present learning paradigms, and discuss assumptions.
