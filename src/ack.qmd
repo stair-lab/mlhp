@@ -11,7 +11,7 @@ Thanks for reading our book! We hope you find this book useful in your research 
 ::: {#quarto-appendix .default}
 BibTeX citation:
 <pre class="sourceCode code-with-copy quarto-appendix-bibtex"><code class="sourceCode bibtex">@book{mlhp,
-  author    = {Truong, Sang, Haupt, Andreas and Koyejo, Sanmi},
+  author    = {Truong, Sang and Haupt, Andreas and Koyejo, Sanmi},
   title     = {{Machine Learning from Human Preferences}},
   year      = {2025},
   publisher = {Stanford University},
