@@ -21,7 +21,7 @@ BibTeX citation:
 
 For attribution, please cite this work as:
 <div id="ref-mlhp" class="csl-entry quarto-appendix-citeas">
-  S. Koyejo, and S. Truong, and A. Haupt. 2025. Machine Learning from Human Preferences. Stanford University.
+  S. Koyejo, A. Haupt, and S. Truong. 2025. Machine Learning from Human Preferences. Stanford University.
 </div>
 :::
 
