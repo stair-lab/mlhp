@@ -11,8 +11,8 @@ Thanks for reading our book! We hope you find this book useful in your research 
 ::: {#quarto-appendix .default}
 BibTeX citation:
 <pre class="sourceCode code-with-copy quarto-appendix-bibtex"><code class="sourceCode bibtex">@book{mlhp,
-  author    = {Koyejo, Sanmi, Truong, Sang and Haupt, Andreas},
-  title     = {{Machine Learning from Comparisons}},
+  author    = {Truong, Sang, Haupt, Andreas and Koyejo, Sanmi},
+  title     = {{Machine Learning from Human Preferences}},
   year      = {2025},
   publisher = {Stanford University},
   doi       = {},
@@ -21,7 +21,7 @@ BibTeX citation:
 
 For attribution, please cite this work as:
 <div id="ref-mlhp" class="csl-entry quarto-appendix-citeas">
-  S. Koyejo, A. Haupt, and S. Truong. 2025. Machine Learning from Human Preferences. Stanford University.
+  S. Truong, A. Haupt, and S. Koyejo. 2025. Machine Learning from Human Preferences. Stanford University.
 </div>
 :::
 
