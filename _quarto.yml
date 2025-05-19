@@ -118,12 +118,13 @@ book:
   title: "Machine Learning from Human Preferences"
   subtitle: ""
   author:
-    - name: Sanmi Koyejo
-      orcid: 0000-0002-4023-419X
     - name: Sang T. Truong
       orcid: 0000-0001-8069-9410
     - name: Andreas Haupt
       orcid: 0000-0002-2952-4188
+    - name: Sanmi Koyejo
+      orcid: 0000-0002-4023-419X
+    
   date: last-modified
   # doi: 10.25936/3jp6-5m50
   repo-url: https://github.com/sangttruong/mlhp
