@@ -10,13 +10,9 @@
 
 :::
 
-Machine learning reaches into many areas of human lives. This brings also new data modalities. Mainstream machine learning allows for many ways to consider models. In *supervised learning*, as classical setting will be to have labelled data $(X, y)$ where $X$ are *features* and $y$ are *labels* which may be discrete or continuous. Or, "data" is given by a function to be maximized, as in reinforcement learning. This boook is about comparisons as data, where two objects $A$ and $B$ are compared, and the goal of learning is to learn this order. 
+Machine learning is increasingly shaping various aspects of our lives, from education and healthcare to scientific discovery. A key challenge in developing trustworthy intelligent systems is ensuring they align with human preferences. Learning from human feedback offers a promising solution to this challenge. This book introduces the foundations and practical applications of machine learning from human preferences. Instead of manually predefining the learning goal, the book presents preference-based learning that incorporates human feedback to guide the learning process, drawing insights from related fields such as economics, psychology, and human-computer interaction. By the end of this book, readers will be equipped with the key concepts and tools needed to design systems that effectively align with human preferences. 
 
-Order can be about desirability. Is ice cream (A) more desirable than tomato soup (B)? If yes, then we write $A \succ B$. Ideally, we would like to learn from data to generalize that for Panna Cotta (C) and minestrone (D) we have $C \succ D$. Our approach, however, is more general, and can capture cases where the order is "safer", "more diverse", "more creative", or something else, judged by a human, an AI, or another dta source.
-
-Learning from comparisons (or learning from preferences) has gained popularity in recent years due to the relative simplicity of eliciting choice data. Asking humans to pick their favourite  from a set of options, or asking which of two options they prefer is much easier than asking humans for a numerical score. The gain in simplicity from eliciting comparisons is particularly pronounced when trying to use human common sense for hard-to-codify concepts such as "helpfulness", "harmlessness", or "do a backflip". This strength has led to success of comparison-based machine learning in preference models 
-
-The examples in this book will come from several application domains, from robotics to language models and recommendation systems. By presenting case studies of their application, we allow to complement theoretical understanding with practical implementation.
+The book is intended for researchers, practitioners, and students who are interested in intergrating machine learning with human-centered application. We assume some basic knowledge of probability and statistics, but provides sufficient background and references for the readers to follow the main ideas. The book also provides illustrative program examples and datasets. The field of machine learning from human preference is a vibrant area of research and practice with many open challenges and opportunities, and we hope that this book will inspire readers to further explore and advance this exciting field.
 
 We hope with the present book to both allow more use of human preferences in machine learning, and new data modalities as Artificial Intelligence systems become increasingly important.
 
@@ -53,7 +49,7 @@ Threre are three models of reading, and teaching with, this book. Chapter 1 is u
 
  - For people with background in discrete choice, we propose to skim Chapter 1, and study Chapters 2 and 4. These studies allow readers to integrate machine learning in their studies of discrete choice, demand models, and Industrial Organization.
 
- - For those with deep background in machine learning, we propose to study chapters 1-4 and 7. These chapters maximize the amount of machine learning covered, and is suitable for a deep learning-based course of machine learning.
+ - For those with deep background in machine learning, we propose to study chapters 2-4 and 7. These chapters maximize the amount of machine learning covered, and is suitable for a deep learning-based course of machine learning.
 
  - For those interested in the methodological and theoretical foundations of machine leraning from comparisons, we recommend a reading of chapters 1, 5, 6, and 7. Chapter 1 and 5 study the underpinnings of revealed preferences and aggregation, chapter 6 critiques these assumptions, and chapter 7 looks at broader ways of eliciting preferences. It is suitable for critical study in a course on Computation and Society. 
 
@@ -61,4 +57,4 @@ Threre are three models of reading, and teaching with, this book. Chapter 1 is u
 The book assumes knowledge of the fundamentals of statistics, linear algebra and machine learning. Many example code excerpts are written in `python`, and make experience in the `python` programming language valuable for readers.
 
 ## Additional Materials
-Every chapter has problems for readers and slides for teaching of the material available. They are available on the book's website.
+Every chapter has problems for readers and slides for teaching of the material available. They are available on the [book's website](mlhp.stanford.edu).

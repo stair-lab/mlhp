@@ -438,7 +438,7 @@
 
 \title{Machine Learning from Human Preferences}
 \author{Sang T. Truong \and Sanmi Koyejo}
-\date{2025-04-19}
+\date{2025-05-20}
 
 \begin{document}
 \newgeometry{}
@@ -496,9 +496,13 @@ Preferences\par}
 \tableofcontents
 }
 
+\phantomsection\label{sec-intro}
 \bookmarksetup{startatroot}
 
-\chapter{Introduction}\label{introduction}
+\chapter*{Introduction}
+\addcontentsline{toc}{chapter}{Introduction}
+
+\markboth{Introduction}{Introduction}
 
 Machine learning is increasingly shaping various aspects of our lives,
 from education and healthcare to scientific discovery. A key challenge
@@ -521,72 +525,148 @@ readers to follow the main ideas. The book also provides illustrative
 program examples and datasets. The field of machine learning from human
 preference is a vibrant area of research and practice with many open
 challenges and opportunities, and we hope that this book will inspire
-readers to further explore and advance this exciting field. The book is
-divided into 4 chapters:
+readers to further explore and advance this exciting field.
+
+We hope with the present book to both allow more use of human
+preferences in machine learning, and new data modalities as Artificial
+Intelligence systems become increasingly important.
+
+Stanford, May 2025, THK
+
+\section*{Structure of this book}\label{structure-of-this-book}
+\addcontentsline{toc}{section}{Structure of this book}
+
+\markright{Structure of this book}
+
+The book has three parts which introduce fundamental models, present
+learning paradigms, and discuss assumptions.
+
+\subsection*{Background}\label{background}
+\addcontentsline{toc}{subsection}{Background}
+
+We provide background on axioms underlying comparisons in
+\textbf{Chapter 1}. We discover key modeling assumptions It covers
+random preference models the Independence of Irrelevant Alternatives
+(IIA), and types of comparison data (binary rankings, accept-reject,
+lists). The chapter also discusses the main limitations of IIA based on
+heterogeneity.
+
+\subsection*{Learning}\label{learning}
+\addcontentsline{toc}{subsection}{Learning}
+
+The second part introduces several approaches to learning from
+comparisons.
 
 \begin{itemize}
 \item
-  \textbf{Chapter 1} lays the foundation for probabilistic modeling of
-  preferences and decisions. It covers key model assumptions (e.g.,
-  bounded rationality), along with methods for preference data
-  collection (e.g., pairwise comparisons), and models to interpret the
-  data (e.g., Bradley-Terry model). The chapter also explore preference
-  aggregation through the lense of social choice theory.
+  \textbf{Chapter 2} considers a setting where comparison data is given
+  and studies both maximum likelihood and posterior-based learning of
+  comparison models. It uses case studies from language modeling and
+  robotics. We discuss the challenges in learning
+  multimodal/heterogenous rewards that fail to satisfy IIA.
 \item
-  \textbf{Chapter 2} examines various functional form and learning of
-  reward modeling via examples from the field of language modeling and
-  robotics. We discuss the challenges in learning multimodal rewards,
-  meta-reward learning, human biases in reward models, and strategies to
-  leverage both rational and irrational behavior.
+  \textbf{Chapter 3} considers active data collection of comparisons
+  with the goal of optimal inference on comparison models using Various
+  strategies are explored, including reducing the learner's variance,
+  exploiting ambiguity and domain knowledge in ranking, with a case
+  study from robotics.
 \item
-  \textbf{Chapter 3} focused on a process where the end goal is to
-  elicit the utility function. Since human is involved in the data
-  collection, we concentrate on active learning methods that elicit the
-  most preference information with a minimal amount of human query.
-  Various strategies are explored, including reducing the learner's
-  variance, exploiting ambiguity and domain knowledge in ranking, with
-  examples from robotics and machine learning systems.
+  \textbf{Chapter 4} studies processes where comparisons are used to
+  guide decisions. We first set up the bandit approach to recommending
+  maximal objects with respect to comparisons, and discuss dueling
+  bandits. We then consider as well as reinforcement learning from human
+  feedback (RLHF) to align language models that decide on which text to
+  generate. We highlight the role of uncertainty quantification and
+  exploration for decision-making.
 \item
-  \textbf{Chapter 4} focuses on process where preference is a signal
-  guiding decision. We discuss dueling bandits, an algorithm for
-  decision making from pairwise preferences, as well as reinforcement
-  learning from human feedback (RLHF) to align language models.
-  Moreover, addressing the challenges of modeling uncertainty in reward
-  models emerges as a crucial area for improvement. We also discuss
-  decision making setting beyond a single reward frameworks to
-  accommodate the oversight of diverse objectives. Embracing
-  multi-objective is pivotal to representing the multifaceted goals of
-  varied stakeholders within AI systems.
-\item
-  \textbf{Chapter 5} analyzes principles from human-computer interaction
-  (HCI) for systems that learn from humans, like cognitive constraints
-  and user experience. We discuss ethical issues that arise in
-  interaction models and approaches for designing preference elicitation
-  systems considering fairness, privacy, and other socio-technical
-  factors. We tackle challenges around aligning learned models with
-  values from diverse expert and non-expert stakeholders. Ethical
-  considerations in learning from human preference are addressed. We
-  discuss the potential benefits and risks of learning from human
-  preferences and how to address them responsibly and fairly. We also
-  raise questions about the selection and protection of human
-  participants and the possible consequences of exploiting or
-  manipulating human responses.
+  \textbf{Chapter 5} considers decision-making in the presence of
+  heterogeneity. We first focus on dealing with heterogeneity to
+  maximize average utility using \textbf{personalization}. We then
+  discuss aggregation mechanisms that are voting-based and decisions
+  that are independent of some some features of the outcome.
 \end{itemize}
 
-This book covers various topics, from the statistical foundations and
-strategies for interactively querying humans to applications for
-eliciting preference. We review the relevant foundations in statistics,
-psychology, economics and other disciplines and explore their
-applications to various domains, such as natural language and robotics,
-and more. We adopt the machine learning perspective for modeling,
-estimating, and evaluating the learning processes. This book is used at
-Stanford University for a quarter-long class CS329H: Machine Learning
-from Human Preferences. We include the lecture slides and homework at
-the begining and end of each chapter, respectively.
+\subsection*{Reflection}\label{reflection}
+\addcontentsline{toc}{subsection}{Reflection}
+
+The final part of the book discusses limitations of comparison data, and
+opportunities resulting from stated preference data.
+
+\begin{itemize}
+\item
+  \textbf{Chapter 6} critiques machine learning from comparisons. It
+  takes different disciplinary lenses, from social psychology,
+  philosophy, and critical studies, to highlight where comparisons are
+  limited in the expression of human preferences, and what are
+  alternatives.
+\item
+  \textbf{Chapter 7} considers models that are broader than comparisons
+  in our model, many of which we can think of as \textbf{stated
+  preferences}. These are models in which value judgments are given in
+  terms of Likert scales or textual descriptions. We propose ways in how
+  such feedback can be merged with comparison data to better express
+  preferences.
+\end{itemize}
+
+\section*{How to engage with this
+book}\label{how-to-engage-with-this-book}
+\addcontentsline{toc}{section}{How to engage with this book}
+
+\markright{How to engage with this book}
+
+Threre are three models of reading, and teaching with, this book.
+Chapter 1 is underlying all of the book, so is part of all of these
+pathways.
+
+\begin{itemize}
+\item
+  For practitioners and those teaching applied AI content, we recommend
+  a reading of Chapters 1, 2, 4, and 7, which can be used as a sequence
+  in an early graduate course on Machine Learning. It allows to
+  highlight human data sources in an introductory machine learning
+  course.
+\item
+  For people with background in discrete choice, we propose to skim
+  Chapter 1, and study Chapters 2 and 4. These studies allow readers to
+  integrate machine learning in their studies of discrete choice, demand
+  models, and Industrial Organization.
+\item
+  For those with deep background in machine learning, we propose to
+  study chapters 2-4 and 7. These chapters maximize the amount of
+  machine learning covered, and is suitable for a deep learning-based
+  course of machine learning.
+\item
+  For those interested in the methodological and theoretical foundations
+  of machine leraning from comparisons, we recommend a reading of
+  chapters 1, 5, 6, and 7. Chapter 1 and 5 study the underpinnings of
+  revealed preferences and aggregation, chapter 6 critiques these
+  assumptions, and chapter 7 looks at broader ways of eliciting
+  preferences. It is suitable for critical study in a course on
+  Computation and Society.
+\end{itemize}
+
+\section*{Prior knowledge}\label{prior-knowledge}
+\addcontentsline{toc}{section}{Prior knowledge}
+
+\markright{Prior knowledge}
+
+The book assumes knowledge of the fundamentals of statistics, linear
+algebra and machine learning. Many example code excerpts are written in
+\texttt{python}, and make experience in the \texttt{python} programming
+language valuable for readers.
+
+\section*{Additional Materials}\label{additional-materials}
+\addcontentsline{toc}{section}{Additional Materials}
+
+\markright{Additional Materials}
+
+Every chapter has problems for readers and slides for teaching of the
+material available. They are available on the
+\href{mlhp.stanford.edu}{book's website}.
 
 \bookmarksetup{startatroot}
 
-\chapter{Background}\label{background}
+\chapter{Background}\label{background-1}
 
 Human preference modeling aims to capture humans' decision making
 processes in a probabilistic framework. Many problems would benefit from
@@ -2542,12 +2622,12 @@ why MCMC is commonly used to sample from posteriors!
 
 \end{tcolorbox}
 
-\section*{References}\label{bibliography-2}
+\section*{References}\label{bibliography-1}
 \addcontentsline{toc}{section}{References}
 
 \markright{References}
 
-\phantomsection\label{refs-2}
+\phantomsection\label{refs-1}
 \begin{CSLReferences}{1}{0}
 \bibitem[\citeproctext]{ref-book_estimation_bock}
 Bock, Hans Georg, Thomas Carraro, Willi Jäger, Stefan Körkel, Rolf
@@ -2700,7 +2780,7 @@ Representations}.
 
 \bookmarksetup{startatroot}
 
-\chapter{Learning}\label{learning}
+\chapter{Learning}\label{learning-1}
 
 Designing a good utility function (or reward function) by hand for a
 complex AI or robotics task is notoriously difficult and error-prone.
@@ -3896,12 +3976,12 @@ than in isolation. By mastering these techniques, we move closer to AI
 and robots that can be trusted to make decisions aligned with human
 preferences and well-being.
 
-\section*{References}\label{bibliography-3}
+\section*{References}\label{bibliography-2}
 \addcontentsline{toc}{section}{References}
 
 \markright{References}
 
-\phantomsection\label{refs-3}
+\phantomsection\label{refs-2}
 \begin{CSLReferences}{1}{0}
 \bibitem[\citeproctext]{ref-christiano2023deep}
 Christiano, Paul, Jan Leike, Tom B. Brown, Miljan Martic, Shane Legg,
@@ -7827,12 +7907,12 @@ slice sampling for posterior inference.
 
 \end{tcolorbox}
 
-\section*{References}\label{bibliography-4}
+\section*{References}\label{bibliography-3}
 \addcontentsline{toc}{section}{References}
 
 \markright{References}
 
-\phantomsection\label{refs-4}
+\phantomsection\label{refs-3}
 \begin{CSLReferences}{1}{0}
 \bibitem[\citeproctext]{ref-unnoisy_humans}
 Amershi, Saleema, Maya Cakmak, W. Bradley Knox, and Todd Kulesza. 2014.
@@ -11150,12 +11230,12 @@ while ensuring full resource utilization.
 
 \end{tcolorbox}
 
-\section*{References}\label{bibliography-5}
+\section*{References}\label{bibliography-4}
 \addcontentsline{toc}{section}{References}
 
 \markright{References}
 
-\phantomsection\label{refs-5}
+\phantomsection\label{refs-4}
 \begin{CSLReferences}{1}{0}
 \bibitem[\citeproctext]{ref-astudillo2023qeubodecisiontheoreticacquisitionfunction}
 Astudillo, Raul, Zhiyuan Jerry Lin, Eytan Bakshy, and Peter I. Frazier.
@@ -12306,12 +12386,12 @@ decomposition in the context of AI alignment. Include considerations
 such as evaluator fatigue, consistency, cost, and vulnerability to
 manipulation or collusion.
 
-\section*{References}\label{bibliography-6}
+\section*{References}\label{bibliography-5}
 \addcontentsline{toc}{section}{References}
 
 \markright{References}
 
-\phantomsection\label{refs-6}
+\phantomsection\label{refs-5}
 \begin{CSLReferences}{1}{0}
 \bibitem[\citeproctext]{ref-arrow1951}
 Arrow, Kenneth J. 1951. \emph{Social Choice and Individual Values}. John
@@ -14870,12 +14950,12 @@ tool to enhance their counseling skills effectively.
 
 \section{Practice Exercises}\label{practice-exercises}
 
-\section*{References}\label{bibliography-7}
+\section*{References}\label{bibliography-6}
 \addcontentsline{toc}{section}{References}
 
 \markright{References}
 
-\phantomsection\label{refs-7}
+\phantomsection\label{refs-6}
 \begin{CSLReferences}{1}{0}
 \bibitem[\citeproctext]{ref-amodei2016concrete}
 Amodei, Dario, Chris Olah, Jacob Steinhardt, Paul Christiano, John
