@@ -7,849 +7,506 @@ execute:
   engine: pyodide
   pyodide:
     auto: true
-
 ---
 
-Designing a good utility function (or reward function) by hand for a complex AI or robotics task is notoriously difficult and error-prone. Instead of manually specifying what is “good” behavior, we can learn a utility function from human preferences. In this chapter, we explore how an agent can infer a human’s underlying utility function (their preferences or reward criteria) from various forms of feedback. We discuss both supervised learning and Bayesian approaches to utility learning, and examine techniques motivated by robotics—learning from demonstrations, physical corrections, trajectory evaluations, and pairwise comparisons. Throughout, we include mathematical formulations and code examples to illustrate the learning process.
+Designing a good reward signal by hand for a complex AI system is difficult and error-prone. Instead of manually specifying desirable behavior, we can learn a utility signal from preference data. In this chapter, we explore how to infer an underlying utility from various forms of feedback. Throughout, we include mathematical formulations and code examples to illustrate the learning process.
 
-## The Supervised Learning Problem
+## Data Generating Process: A Latent Variable Perspective
+Before introducing models for preference data, it is useful to begin with some stylized empirical observations. For example, surveys indicate that only a small fraction of the US population report liking durian, while a much larger fraction endorse liking banana or strawberry. Some people appear to have a general fondness for fruit, while others are relatively indifferent or even averse. Interestingly, even within fruit-likers, there is heterogeneity: some prefer durian over banana, while others show the opposite ordering. These facts suggest several latent forces at work (appetites, baseline appeal, trait heterogeneity) that any plausible data-generating process (DGP) for preference must accommodate. Below we propose one such DGP as a conceptual scaffold for understanding the observed patterns.
 
-Supervised learning approaches treat human feedback as labeled data to directly fit a utility function. The core idea is to assume there exists a true utility function $u^*(x)$ (over states, outcomes, or trajectories $x$) that explains a human’s choices. We then choose a parameterized model $u_\theta(x)$ and adjust $\theta$ so that $u_\theta$ agrees with the human-provided preferences.
-
-A common feedback format is pairwise comparisons: the human is shown two options (outcomes or trajectories) $A$ and $B$ and indicates which is preferred. We can model the probability that the human prefers $A$ over $B$ using a logistic or Bradley–Terry model:
-
-$$
-P(A \succ B \mid u_\theta) \;=\; \sigma\!\Big(u_\theta(A) - u_\theta(B)\Big)\,,
-$$
-
-where $\sigma(z)=\frac{1}{1+e^{-z}}$ is the sigmoid function. This implies the human is more likely to prefer $A$ if $u_\theta(A)$ is much larger than $u_\theta(B)$.
-
-At the heart of learning from human preferences lies a latent utility function — a function that assigns numerical value to states, trajectories, or outcomes according to a human’s (possibly unspoken) preferences. The goal of a learning algorithm is to infer this function from observed feedback, which may come in the form of demonstrations, ratings, rankings, or pairwise comparisons. But how exactly do we represent and update our belief about this hidden utility function?
-
-Two major paradigms in statistical learning provide different answers: point estimation and posterior estimation.
-
-In point estimation, we seek a single "best guess" for the utility function — typically a function $u_\theta(x)$ from a parameterized family (e.g. linear models, neural nets), with parameters $\theta \in \mathbb{R}^d$. Given data $\mathcal{D}$ from human feedback (e.g. preferences), we choose the parameter $\hat{\theta}$ that best explains the observed behavior. Formally:
+We denote $Y_{i,j}$ to be the response of user $i$ to item $j$, which is drawn from a collection of $M$ items. The response is $1$ if the user likes the item and zero otherwise. The Rasch model posits that response is a Bernoulli random variable governed by user's appetite $U_i \in \mathbb{R}$ and item's appeal $V_j \in \mathbb{R}$: 
 
 $$
-\hat{\theta} = \arg\max_\theta \; p(\mathcal{D} \mid \theta)
+p(Y_{i,j} = 1 | U_i, V_j) = \sigma(H_{i,j}), \quad H_{ij} = U_i + V_j
+$$
+where $\sigma$ is the logistic function. The user appetite is a latent variable represents the appetite construct, which is the tendency of the user to like items in the collection in general, and the item appeal is how easy it is for the item to be like by the population of users.
+
+The user can express their affinity via several mechanisms. For example: thumbs-up/down on an e-commerce site, swiping on a dating site, or skipping a track on a music app. User- and item-specific parameters do not need to be unidimensional. When appetide and appeal are $K$ dimensional, the data generating process is
+$$
+p(Y_{i,j} = 1 | U_i, V_j, Z_j) = \sigma(H_{i,j}), \quad H_{ij} = d(U_i, V_j + Z_j),
+$$
+where $d$ is some distance function in the $K$ dimensional space, $U_i$ is the user-specific appetide for each dimension, $V_j$ is the item loading, and $Z_j$ is the offset. When $d$ is the negative Euclidean distance, the model is know as the Ideal Point Model, which is popular in political sciences and psychometrics:
+$$
+H_{ij} = -||U_i -  V_j ||_2 + Z_j
+$$
+In this case, $U_i$ is the user embedding and $V_j$ is the item embedding with some scalar offset $Z_j$. When the distance function is the dot product, the above generating process is known as the logistic factor model, a popular class of model in psychometrics:
+$$
+H_{ij} = U_i^\top V_j + Z_j
 $$
 
-This is maximum likelihood estimation (MLE): we pick the parameters that make the observed data most probable under our model. Once $\hat{\theta}$ is selected, we treat $u_{\hat{\theta}}$ as the agent’s utility function, and optimize or sample behavior accordingly. This approach is straightforward and computationally efficient. It is the foundation of most supervised learning methods (like logistic regression or deep learning), and it provides a natural interpretation: we’re directly finding the utility function that agrees with the human feedback. However, it discards uncertainty: it assumes the data is sufficient to pin down a single utility function, which may not be true in practice.
+Each of the $K$ dimension represents different property of the items. For example, when $K=2$, a fruit might be sweet and have a strong aroma, and some users might look for sweetness, while others who might avoid sugar and look for strong aroma.
 
-In contrast, posterior estimation takes a fully Bayesian view. Instead of committing to one estimate, we maintain a distribution over utility functions. That is, we place a prior $p(\theta)$ over parameters (or over functions $u$ more generally), and update this to a posterior after observing data $\mathcal{D}$:
-
+In many case, the user might be asked to express their preference in term of comparison between two item $j$ and $j'$, in which the response $Y_{i,jj'}$ is one if the item $i$ is preferred and zero otherwise. 
 $$
-p(\theta \mid \mathcal{D}) \;=\; \frac{p(\mathcal{D} \mid \theta)\, p(\theta)}{p(\mathcal{D})}
+p(Y_{i,jj'} = 1 | i, j, j') = \sigma(H_{i,j} - H_{i,j'}) = \frac{\exp(H_{ij})}{\exp(H_{ij}) + \exp(H_{ij'})},
 $$
+where the last equality uses the logistic identity. This is also known in the literature as the Bradley-Terry model. For a single user, if the generating process for item-wise preference is Rasch, we can further simplify $H_{i,j} - H_{i,j'} = U_i + V_j - U_i - V_{j'} = V_j - V_{j'}$. Hence, for a single user, the logit does not depend on the user-specific appetide, but only on the item parameters. This is generally not true for other classes of model.
 
-This posterior expresses our uncertainty over which utility functions are compatible with the human feedback. From this distribution, we can make predictions (e.g., using the posterior mean utility), quantify confidence, or even actively select new queries to reduce uncertainty (active learning). For instance, if we model utilities with a Gaussian Process (GP), then the posterior over $u(x)$ is also a GP after observing comparisons or evaluations. If we use a neural network for $u_\theta(x)$, we can approximate the posterior with ensembles, variational inference, or MCMC. Posterior estimation is especially valuable when human feedback is sparse, noisy, or ambiguous — as is often the case in real-world preference learning. It allows the agent to reason about what it doesn’t know and to take cautious or exploratory actions accordingly.
+In the item-wise preference, the responses for $N$ user and $M$ items is a 2D matrix with shape $N \times M$, while in the pairwise preference, the responses for the same number of users and items is a 3D tensor with shape $N \times M \times M$. 
 
-The next two sections instantiate these two perspectives. In Section 4.1, we explore point estimation via supervised learning — treating preference data as labeled examples and fitting a utility model. In Section 4.2, we shift to posterior estimation with Bayesian methods like Gaussian processes and Bayesian neural networks, which model both our current estimate and the uncertainty around it.
+Given a data generating process, we can synthesize some data. The code below is for generate a response matrix for Rasch response: 
 
-## Point Estimation via Maximum Likelihood
-Given a dataset of comparisons $D=\{(A_i, B_i, y_i)\}$ (with $y_i=1$ if $A_i$ was preferred and $0$ if $B_i$ was preferred), we can fit $\theta$ by maximizing the likelihood of the human’s choices. Equivalently, we minimize a binary cross-entropy loss:
+::: {.callout-note title="Code"}
 
-$$
-\mathcal{L}(\theta) = -\sum_{i} \Big[\,y_i \log \sigma(u_\theta(A_i)\!-\!u_\theta(B_i)) + (1-y_i)\log(1-\sigma(u_\theta(A_i)\!-\!u_\theta(B_i)))\Big]\,,
-$$
-
-often with a regularization term to prevent overfitting. This is a straightforward supervised learning problem – essentially logistic regression – on pairwise difference features.
-
-Example: Suppose a human’s utility for an outcome can be described by a quadratic function (unknown to the learning algorithm). We collect some pairwise preferences and then train a utility model $u_\theta(x)$ to predict those preferences. The code below simulates this scenario:
-
-```{python}
+```{pyodide-python}
 import numpy as np
-
-# True utility function (unknown to learner), e.g. u*(x) = -(x-5)^2 + constant 
-def true_utility(x):
-    return -(x-5)**2  # (peak at x=5)
-
-# Generate synthetic pairwise preference data
-np.random.seed(42)
-n_pairs = 20
-X1 = np.random.uniform(0, 10, size=n_pairs)  # 20 random x-values
-X2 = np.random.uniform(0, 10, size=n_pairs)  # 20 more random x-values
-# Determine preferences according to true utility
-prefs = (true_utility(X1) > true_utility(X2)).astype(int)  # 1 if X1 preferred, else 0
-
-# Parametric model for utility: u_theta(x) = w0 + w1*x + w2*x^2  (quadratic form)
-# Initialize weights
-w = np.zeros(3)
-lr = 0.01       # learning rate
-reg = 1e-3      # L2 regularization strength
-for epoch in range(1000):
-    # Compute predictions via logistic model
-    util_diff = (w[0] + w[1]*X1 + w[2]*X1**2) - (w[0] + w[1]*X2 + w[2]*X2**2)
-    pred = 1 / (1 + np.exp(-util_diff))      # σ(w·(phi(X1)-phi(X2)))
-    # Gradient of cross-entropy loss
-    grad = np.array([0.0, 0.0, 0.0])
-    error = pred - prefs  # (sigma - y)
-    # Features for X1 and X2
-    phi1 = np.vstack([np.ones(n_pairs), X1, X1**2]).T
-    phi2 = np.vstack([np.ones(n_pairs), X2, X2**2]).T
-    phi_diff = phi1 - phi2
-    # Gradient: derivative of loss w.rt w = (sigma - y)*φ_diff (averaged) + reg
-    grad = phi_diff.T.dot(error) / n_pairs + reg * w
-    # Update weights
-    w -= lr * grad
-
-print("Learned weights:", w)
-```
-
-After training, we can compare the learned utility function $u_\theta(x)$ to the true utility $u^*(x)$. Below we plot the two functions:
-
-```{python}
 import matplotlib.pyplot as plt
 
-# Plot true vs learned utility curves
-xs = np.linspace(0, 10, 200)
-true_vals = true_utility(xs)
-learned_vals = w[0] + w[1]*xs + w[2]*xs**2
+plt.rcParams.update({
+    "font.size": 14,
+    "axes.labelsize": 16,
+    "xtick.labelsize": 14,
+    "ytick.labelsize": 14,
+    "legend.fontsize": 14,
+    "axes.titlesize": 16,
+    "figure.figsize": (6, 6),
+    "figure.autolayout": True,
+})
+rng = np.random.default_rng(2601)
 
-plt.figure(figsize=(6,4))
-plt.plot(xs, true_vals, label="True Utility", linewidth=3)
-plt.plot(xs, learned_vals, label="Learned Utility", linestyle="--", linewidth=3)
-plt.xlabel("State x")
-plt.ylabel("Utility")
-plt.title("True vs. Learned Utility Function")
-plt.legend()
+N = 50 # users
+M = 30 # items
+U = rng.normal(loc=0.0, scale=1, size=N) # users' appetites
+V = rng.normal(loc=0.0, scale=1, size=M) # items' appeals
+P = 1.0 / (1.0 + np.exp(-(U[:, None] + V[None, :])))
+Y = (rng.random(size=(N, M)) < P)
+Y = Y[np.argsort(Y.mean(axis=1))][:, np.argsort(Y.mean(axis=0))]
+
+plt.imshow(Y, cmap='coolwarm')
+plt.title("Rasch Responses")
+plt.xlabel("Items")
+plt.ylabel("Users")
 plt.show()
 ```
 
-The learned curve closely matches the true utility up to an arbitrary scaling factor (utility is only defined up to affine transform when inferred from comparisons). The algorithm successfully recovered a utility function that orders states almost the same as the true utility $u^*(x)$. In general, learning from comparisons can infer the *relative* utility of options (which item is preferred), although the absolute scale of $u_\theta$ is unidentifiable without further assumptions. Supervised learning on preferences has been widely used for ranking problems and preference-based reward learning.
-
-In standard preference learning, we often learn a utility function and then use it to define a policy. However, in some settings—especially those involving large models like language models—it is more effective to directly learn a policy that aligns with human preferences, bypassing the intermediate reward model. One such method is Direct Preference Optimization (DPO), which offers a simple, stable way to align a policy to preference data through supervised learning.
-
-To understand DPO, consider the following setting:
-
-- We are given a reference policy $\pi_{\text{ref}}$, such as a pre-trained language model.
-- We want to learn a new policy $\pi_\theta$ that improves upon $\pi_{\text{ref}}$ by better reflecting human preferences.
-- Our data consists of pairwise comparisons: for each prompt $x$, a human expresses a preference between two outputs $y_+ \succ y_-$, where $y_+$ is the preferred response.
-
-Rather than learning an explicit reward function $R(x, y)$ and using it to optimize the policy via reinforcement learning, DPO treats this as a classification problem: we want to encourage the policy to assign higher likelihood to the preferred response.
-
-To formalize this, we define a preference score:
-$$
-s_\theta(x, y_+, y_-) = \log \pi_\theta(y_+ \mid x) - \log \pi_\theta(y_- \mid x)
-$$
-This is the difference in log-likelihood between the preferred and dispreferred outputs. We can then define the DPO loss as a logistic regression objective:
-$$
-\mathcal{L}_{\text{DPO}}(\theta) = -\log \sigma\left(s_\theta(x, y_+, y_-)\right)
-$$
-where $\sigma(z) = \frac{1}{1 + e^{-z}}$ is the sigmoid function.
-
-This loss encourages $\pi_\theta$ to assign greater probability mass to $y_+$ than $y_-$, pushing the policy toward outputs that align with human preferences. Because this is a differentiable, supervised loss, it can be optimized with standard gradient-based techniques, without needing to sample from the environment or estimate advantages, as in traditional RL.
-
-Although DPO does not explicitly define or optimize a reward function, we can interpret it as doing so implicitly. Suppose we define a reward function:
-$$
-R_\theta(y \mid x) = \log \pi_\theta(y \mid x) - \log \pi_{\text{ref}}(y \mid x)
-$$
-This reward encourages $\pi_\theta$ to move away from $\pi_{\text{ref}}$ in directions that increase the probability of preferred outputs. Under this formulation, the DPO objective can be interpreted as optimizing this reward difference directly from preferences.
-
-To understand why this implicit reward leads to a stable and interpretable policy, we can connect DPO to the principle of maximum entropy. This principle says that, among all distributions that satisfy certain constraints (e.g., achieving a particular expected reward), we should prefer the one with maximum entropy—that is, the most uncertain or uncommitted distribution consistent with our knowledge.
-
-Formally, consider the space $\mathcal{P}$ of distributions over responses $y$, and a reward function $R(y)$. The maximum entropy distribution that satisfies a reward constraint is the solution to:
-
-$$
-p^*(y) = \arg\max_{p \in \mathcal{P}} H(p) \quad \text{subject to} \quad \mathbb{E}_p[R(y)] \geq \rho
-$$
-
-The solution to this constrained optimization problem is a Boltzmann distribution:
-$$
-p^*(y) \propto \exp\left(\frac{R(y)}{\tau}\right)
-$$
-for some temperature $\tau > 0$, where $\tau$ controls how deterministic the distribution is. As $\tau \to 0$, the distribution concentrates on the highest-reward outputs; as $\tau \to \infty$, it becomes uniform.
-
-Now suppose our reference policy $\pi_{\text{ref}}(y \mid x)$ already represents a reasonable starting point. Then the optimal policy $\pi_\theta$ can be viewed as a reward-weighted version of this reference policy:
-
-$$
-\pi_\theta(y \mid x) \propto \pi_{\text{ref}}(y \mid x) \cdot \exp\left(R_\theta(y \mid x)\right)
-$$
-
-This form ensures that $\pi_\theta$ remains close to $\pi_{\text{ref}}$ (via the KL term), while still assigning more mass to high-reward (preferred) outputs. Importantly, this form arises naturally from maximum entropy inference when the reference distribution is used as a baseline.
-
-DPO thus combines reward maximization with entropy regularization, encouraging the learned policy to prefer outcomes favored by human feedback while preserving diversity and stability. It sidesteps the challenges of explicitly learning a reward model or tuning complex RL pipelines, offering a direct and scalable method for preference-based alignment.
-
-In practice, DPO has been shown to achieve similar or better alignment performance compared to reinforcement learning from human feedback (RLHF) while being more stable and easier to implement. It avoids the need to sample from the model during training or tune delicate hyperparameters of RL. Conceptually, DPO demonstrates that if we structure our utility model cleverly (here, as the log-ratio of policy and reference), we can extract an optimal policy in closed-form and learn utilities via supervised learning.
-
-```{python}
-import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib.animation as animation
-from scipy.special import logsumexp
-
-# --- Setup: 1D input x, discrete actions y ---
-np.random.seed(0)
-x = 5.0  # fixed input
-Y = np.linspace(-4, 4, 100)  # discrete action space
-n_actions = len(Y)
-
-# --- True reward function (unknown to learner) ---
-def true_reward(x, y):
-    return -((y - np.sin(x))**2)  # reward peak near y = sin(x)
-
-R_true = true_reward(x, Y)
-
-# --- Reference policy: fixed Gaussian-like distribution ---
-def ref_policy(y):
-    logits = -0.5 * (y / 2.0)**2  # log probs of N(0, 2^2)
-    return np.exp(logits - logsumexp(logits))
-
-pi_ref = ref_policy(Y)
-
-# --- Preference data from reward samples ---
-def sample_preference(x, Y, R_fn, temperature=1.0):
-    logits = R_fn(x, Y) / temperature
-    probs = np.exp(logits - logsumexp(logits))
-    sampled = np.random.choice(len(Y), size=2, replace=False, p=probs)
-    y_plus, y_minus = sampled if R_fn(x, Y[sampled[0]]) > R_fn(x, Y[sampled[1]]) else sampled[::-1]
-    return y_plus, y_minus
-
-n_pairs = 100
-pair_indices = [sample_preference(x, Y, true_reward) for _ in range(n_pairs)]
-
-# --- DPO loss and gradient ---
-def dpo_loss_and_grad(theta, y_pos_idx, y_neg_idx, pi_ref):
-    logits = theta + np.log(pi_ref + 1e-8)
-    logp_pos = logits[y_pos_idx] - logsumexp(logits)
-    logp_neg = logits[y_neg_idx] - logsumexp(logits)
-    s = logp_pos - logp_neg
-    sigma = 1 / (1 + np.exp(-s))
-    loss = -np.log(sigma + 1e-8)
-    softmax = np.exp(logits - logsumexp(logits))
-    grad = - (1 - sigma) * (np.eye(n_actions)[y_pos_idx] - np.eye(n_actions)[y_neg_idx]) + sigma * softmax
-    return loss, grad
-
-# --- Training loop with history tracking ---
-theta = np.zeros(n_actions)
-lr = 0.05
-n_steps = 100
-history = []
-
-for step in range(n_steps):
-    total_grad = np.zeros_like(theta)
-    for y_pos_idx, y_neg_idx in pair_indices:
-        _, grad = dpo_loss_and_grad(theta, y_pos_idx, y_neg_idx, pi_ref)
-        total_grad += grad
-    theta -= lr * total_grad / n_pairs
-    logits_snapshot = theta + np.log(pi_ref + 1e-8)
-    pi_snapshot = np.exp(logits_snapshot - logsumexp(logits_snapshot))
-    history.append(pi_snapshot)
-
-# --- Animation setup ---
-fig, ax = plt.subplots(figsize=(7, 4))
-line_true, = ax.plot(Y, R_true, 'k--', label='True Reward')
-line_ref, = ax.plot(Y, pi_ref, 'g-', label='Reference Policy')
-line_learned, = ax.plot([], [], 'b-', label='Learned Policy')
-
-# Add preference pair indicators
-pref_lines = [ax.axvline(Y[idx], color='blue', linestyle=':', alpha=0.3) for idx, _ in pair_indices]
-pref_lines += [ax.axvline(Y[idx], color='red', linestyle=':', alpha=0.3) for _, idx in pair_indices]
-
-ax.set_ylim(-0.025, 0.025)
-ax.set_title("DPO Policy Evolution")
-ax.set_ylabel("Probability")
-ax.set_xlabel("y")
-ax.legend()
-
-def update(frame):
-    pi_snapshot = history[frame]
-    line_learned.set_data(Y, pi_snapshot)
-    ax.set_title(f"DPO Policy Evolution (Step {frame + 1})")
-    return [line_learned]
-
-from IPython.display import HTML
-from matplotlib import rc
-rc('animation', html='jshtml')
-
-ani = animation.FuncAnimation(fig, update, frames=n_steps, interval=100, blit=True)
-HTML(ani.to_jshtml())
-```
-
-The pairwise logistic approach can be extended to other feedback types. If humans provide numeric *ratings* or *scores* for options, one can treat utility learning as a regression problem: fit $u_\theta(x)$ to predict those scores (perhaps with a suitable bounded output or ordinal regression if scores are ordinal). If humans rank multiple options at once, algorithms like *RankNet* or *RankSVM* generalize the pairwise approach to listwise ranking losses. All these methods boil down to defining a loss that penalizes disagreements between the predicted utility order and the human-provided preferences, then optimizing $\theta$ to minimize that loss.
-
-Supervised learning of utility is powerful due to its simplicity, but it typically provides point estimates of $u_\theta$. Next, we consider Bayesian approaches that maintain uncertainty over the utility function.
-
-## Posterior Estimation
-
-When feedback data is sparse, as is common in preference learning, it can be advantageous to model uncertainty over the utility function. Bayesian approaches place a prior on the utility function and update a posterior as human feedback is observed. This yields not only a best-guess utility function but also a measure of confidence or uncertainty, which is valuable for active learning (deciding which queries to ask next) and for safety (knowing when the learned reward might be wrong).
-
-A popular Bayesian approach assumes that the human’s utility function can be modeled as a Gaussian Process (GP) – a distribution over functions. A GP prior is defined by a mean function (often taken to be 0 for convenience) and a kernel (covariance function) $k(x,x')$ which encodes assumptions about the smoothness or structure of the utility function. For example, one might assume $u(x)$ is a smooth function of state, and choose a radial basis function (RBF) kernel $k(x,x') = \sigma_f^2 \exp(-\|x-x'\|^2/(2\ell^2))$ with some length-scale $\ell$.
-
-After observing some preference data, Bayes’ rule gives a posterior over the function $u(x)$. In the case of pairwise comparisons, the likelihood of a comparison $(A \succ B)$ given an underlying utility function $u$ can be modeled via the same logistic function: $P(A \succ B \mid u) = \sigma(u(A)-u(B))$. Combining this likelihood with the GP prior is analytically intractable (due to the non-Gaussian logistic likelihood), but one can use approximation techniques (Laplace approximation or MCMC) to obtain a posterior GP. The result is a *Gaussian process preference model* that can predict the utility of any new option with an uncertainty interval.
-
-If we have direct evaluations of utility (e.g., the human provides a numeric reward for some states), the GP inference is simpler – it reduces to standard GP regression. However, in many real-world scenarios, humans are better at making relative judgments than assigning absolute utility values. This change in feedback type transforms the inference problem fundamentally. Instead of having a Gaussian likelihood (as in standard GP regression), we now have a non-Gaussian likelihood, typically modeled using a probit or logistic function. The observed data no longer provide direct samples of the latent utility function, but instead impose constraints on the *relative* ordering of latent values.
-
-Due to this non-Gaussian likelihood, exact Bayesian inference is no longer tractable: the posterior over the latent utility function given the pairwise data does not have a closed-form expression. The GP prior is still Gaussian, but the posterior becomes non-Gaussian and multi-modal, particularly as the number of comparisons grows.
-
-To address this, we must turn to approximate inference methods. One common and computationally efficient choice is the Laplace approximation, which approximates the true posterior with a Gaussian centered at the maximum a posteriori (MAP) estimate. This involves:
-1. Finding the mode of the posterior (i.e., the most probable utility values given the data),
-2. Approximating the curvature of the log-posterior around this mode using the Hessian (second derivative),
-3. Using this local curvature to construct a Gaussian approximation.
-
-While not exact, this method works well in practice, especially when the posterior is unimodal and the number of comparison pairs is moderate. Other alternatives such as variational inference or sampling-based methods (e.g., Hamiltonian Monte Carlo) can yield more accurate results but often require more complex implementation and computational resources.
-
-```{python}
-import numpy as np
-import matplotlib.pyplot as plt
-from scipy.stats import norm
-from scipy.optimize import minimize
-
-# --- True latent utility function ---
-def true_u(x):
-    return np.sin(x) + 0.1 * x
-
-# --- RBF Kernel function ---
-def rbf_kernel(x1, x2, length_scale=0.8, sigma_f=1.0):
-    x1, x2 = np.atleast_2d(x1).T, np.atleast_2d(x2).T
-    sqdist = (x1 - x2.T) ** 2
-    return sigma_f**2 * np.exp(-0.5 * sqdist / length_scale**2)
-
-# --- Generate synthetic preference data ---
-np.random.seed(42)
-num_pairs = 10
-X_candidates = np.linspace(0, 10, 100)
-true_utilities = true_u(X_candidates)
-
-# Sample preference pairs
-idx_pairs = np.random.choice(len(X_candidates), size=(num_pairs, 2), replace=True)
-X_pref_pairs = []
-for i, j in idx_pairs:
-    xi, xj = X_candidates[i], X_candidates[j]
-    if true_utilities[i] > true_utilities[j]:
-        X_pref_pairs.append((xi, xj))
-    else:
-        X_pref_pairs.append((xj, xi))
-X_pref_pairs = np.array(X_pref_pairs)
-
-# --- Unique x values and indexing ---
-X_all = np.unique(X_pref_pairs.flatten())
-n = len(X_all)
-x_to_idx = {x: i for i, x in enumerate(X_all)}
-
-# --- GP prior kernel matrix ---
-length_scale = 0.8
-sigma_f = 1.0
-sigma_noise = 1e-6
-K = rbf_kernel(X_all, X_all, length_scale, sigma_f) + sigma_noise * np.eye(n)
-
-# --- Negative log-posterior function ---
-def neg_log_posterior(f):
-    prior_term = 0.5 * f.T @ np.linalg.solve(K, f)
-    lik_term = 0.0
-    for xi, xj in X_pref_pairs:
-        fi, fj = f[x_to_idx[xi]], f[x_to_idx[xj]]
-        delta = (fi - fj) / np.sqrt(2)
-        lik_term -= np.log(norm.cdf(delta) + 1e-6)
-    return prior_term + lik_term
-
-# --- MAP estimation of latent utilities ---
-f_init = np.zeros(n)
-res = minimize(neg_log_posterior, f_init, method="L-BFGS-B")
-f_map = res.x
-
-# --- Laplace approximation: compute W (Hessian of neg log likelihood) ---
-W = np.zeros((n, n))
-for xi, xj in X_pref_pairs:
-    i, j = x_to_idx[xi], x_to_idx[xj]
-    fi, fj = f_map[i], f_map[j]
-    delta = (fi - fj) / np.sqrt(2)
-    phi = norm.pdf(delta)
-    Phi = norm.cdf(delta) + 1e-6
-    w = (phi / Phi)**2 + delta * phi / Phi
-    w /= 2  # adjust for sqrt(2)
-    W[i, i] += w
-    W[j, j] += w
-    W[i, j] -= w
-    W[j, i] -= w
-
-# --- Posterior covariance approximation ---
-L = np.linalg.cholesky(K)
-K_inv = np.linalg.solve(L.T, np.linalg.solve(L, np.eye(n)))
-H = K_inv + W
-H_inv = np.linalg.inv(H)
-
-# --- Prediction at test points ---
-X_test = np.linspace(0, 10, 200)
-K_s = rbf_kernel(X_all, X_test, length_scale, sigma_f)
-K_ss_diag = np.diag(rbf_kernel(X_test, X_test, length_scale, sigma_f))
-
-# Posterior mean and variance
-posterior_mean = K_s.T @ K_inv @ f_map
-temp = np.linalg.solve(H, K_s)
-posterior_var = K_ss_diag - np.sum(K_s * temp, axis=0)
-posterior_std = np.sqrt(np.maximum(posterior_var, 0))
-
-# --- Visualization ---
-plt.figure(figsize=(8, 4))
-plt.plot(X_test, true_u(X_test), 'k--', label="True utility")
-plt.plot(X_test, posterior_mean, 'b-', label="Posterior mean")
-plt.fill_between(X_test,
-                 posterior_mean - 1.96 * posterior_std,
-                 posterior_mean + 1.96 * posterior_std,
-                 color='blue', alpha=0.2, label="95% CI")
-plt.scatter(X_all, [true_u(x) for x in X_all], c='red', marker='x', label="Observed x")
-plt.title("GP Preference Learning (Laplace Approximation, 100 Pairs)")
-plt.xlabel("x")
-plt.ylabel("Utility")
-plt.legend()
-plt.tight_layout()
-plt.show()
-```
-
-Gaussian Process posterior for a utility function (blue mean with 95% confidence band) after observing 5 points of noisy utility data (red ×). The true utility function (black dashed) is non-trivial. The GP correctly captures the function’s value around observed regions and expresses high uncertainty in the unobserved middle region. In practice, this uncertainty could guide an algorithm to query more feedback in the region $x\approx [4,7]$ to reduce ambiguity.
-
-Gaussian processes are a flexible way to learn utility functions. They naturally handle irregular data and provide principled uncertainty estimates. GP-based preference learning has been applied to tasks like interactive Bayesian optimization, where an algorithm seeks to find the maximum of $u(x)$ by iteratively querying a human which of two options is better [@christiano2023deep].
-
-Instead of GPs, one can use Bayesian neural networks or ensemble methods to model uncertainty in $u_\theta(x)$. For instance, a neural network can be trained on preference data, and techniques like Monte Carlo dropout or deep ensembles can provide uncertainty estimates for its predictions. These approaches scale to high-dimensional inputs (where GPs may be less practical) while still capturing epistemic uncertainty about the utility.
-
-One principled way to capture uncertainty in Bayesian neural networks is via Markov Chain Monte Carlo (MCMC) methods, which seek to approximate the posterior distribution over model parameters given the data. In this setting, we place a prior over the neural network weights, $p(\theta)$, and define a likelihood function based on observed preferences—typically using a probabilistic choice model such as the Bradley-Terry or probit model. Given a dataset $\mathcal{D} = \{(x_i, x_j) : x_i \succ x_j\}$, the posterior is defined as
-
-$$
-p(\theta \mid \mathcal{D}) \propto p(\mathcal{D} \mid \theta) \cdot p(\theta),
-$$
-
-where $p(\mathcal{D} \mid \theta)$ is the likelihood of observing the pairwise comparisons under the utility function $u_\theta(x)$, and $p(\theta)$ is the prior over the parameters.
-
-Unlike Gaussian processes, for which posterior inference is tractable in closed form under Gaussian likelihoods, inference in BNNs with non-Gaussian likelihoods is generally intractable. This is due to the non-conjugate nature of the neural network likelihood and the high-dimensional, nonlinear structure of the weight space. As a result, approximate inference methods are required.
-
-MCMC provides a general-purpose approach to approximate sampling from the posterior. The key idea is to construct a Markov chain whose stationary distribution is the target posterior. One of the most widely used algorithms is the Metropolis-Hastings (MH) algorithm. Given a current state $\theta_t$, a new proposal $\theta'$ is generated from a proposal distribution $q(\theta' \mid \theta_t)$, and accepted with probability
-
-$$
-A = \min\left(1, \frac{p(\mathcal{D} \mid \theta') \, p(\theta') \, q(\theta_t \mid \theta')}{p(\mathcal{D} \mid \theta_t) \, p(\theta_t) \, q(\theta' \mid \theta_t)}\right).
-$$
-
-When the proposal distribution is symmetric, i.e., $q(\theta' \mid \theta_t) = q(\theta_t \mid \theta')$, the acceptance probability simplifies to a ratio of posterior densities. Over time, the chain yields samples $\theta^{(1)}, \dots, \theta^{(T)} \sim p(\theta \mid \mathcal{D})$, which can be used to compute posterior predictive estimates for the utility function:
-
-$$
-\mathbb{E}[u(x)] \approx \frac{1}{T} \sum_{t=1}^T u_{\theta^{(t)}}(x),
-$$
-
-with corresponding uncertainty estimates captured via the variance of the predictions across samples.
-
-MCMC methods are particularly appealing for preference learning because they directly quantify epistemic uncertainty in the utility function, which is crucial for downstream tasks such as decision-making, active learning, and safe exploration. Furthermore, MCMC makes no restrictive assumptions on the form of the posterior and can be used with non-convex and multi-modal distributions that arise from complex neural network architectures.
-
-However, MCMC also faces significant computational challenges in practice. First, the convergence of the Markov chain can be slow, especially in high-dimensional parameter spaces. Second, naive random-walk proposals (as in the basic Metropolis-Hastings algorithm) may suffer from low acceptance rates and poor mixing. More advanced MCMC methods such as Hamiltonian Monte Carlo (HMC) and No-U-Turn Sampling (NUTS) can help address these issues by using gradient information to propose more efficient moves through the parameter space.
-
-Despite these limitations, MCMC remains a valuable tool for principled Bayesian inference in preference modeling, particularly in settings where uncertainty quantification is critical and computational cost is acceptable. In lower-dimensional settings or as a pedagogical tool, even simple MH-based approaches can offer intuitive and effective approximations to the posterior over preference functions.
-
-```{python}
-import numpy as np
-import matplotlib.pyplot as plt
-from scipy.stats import norm
-from IPython.display import HTML
-from matplotlib import rc
-import matplotlib.animation as animation
-import matplotlib.pyplot as plt
-from scipy.stats import norm, gaussian_kde
-from sklearn.decomposition import PCA
-
-# --- True latent utility function ---
-def true_u(x):
-    return np.sin(x) + 0.1 * x
-
-# --- Generate synthetic preference data ---
-np.random.seed(0)
-X = np.linspace(0, 10, 40)
-y_true = true_u(X)
-
-# Create pairwise comparisons
-pairs = []
-for _ in range(50):
-    i, j = np.random.choice(len(X), 2, replace=False)
-    if y_true[i] > y_true[j]:
-        pairs.append((X[i], X[j], 1))  # x_i preferred over x_j
-    else:
-        pairs.append((X[j], X[i], 1))
-
-# --- Define a deep neural network: 3 hidden layers ---
-def init_deep_params(hidden_dims=[4, 4, 4]):
-    params = {}
-    layer_dims = [1] + hidden_dims + [1]
-    for i in range(len(layer_dims) - 1):
-        W_key = f"W{i+1}"
-        b_key = f"b{i+1}"
-        params[W_key] = np.random.randn(layer_dims[i+1], layer_dims[i]) * 0.1
-        params[b_key] = np.zeros((layer_dims[i+1], 1))
-    return params
-
-def deep_forward(x, params):
-    x = x.reshape(1, 1)
-    num_layers = len(params) // 2
-    h = x
-    for i in range(1, num_layers):
-        h = np.tanh(params[f"W{i}"] @ h + params[f"b{i}"])
-    out = params[f"W{num_layers}"] @ h + params[f"b{num_layers}"]
-    return out.squeeze()
-
-def deep_utility(x, params):
-    return np.array([deep_forward(np.array([xi]), params) for xi in x])
-
-# --- Log likelihood (Bradley-Terry) ---
-def deep_log_likelihood(params, pairs):
-    ll = 0.0
-    for xi, xj, _ in pairs:
-        ui = deep_forward(np.array([xi]), params)
-        uj = deep_forward(np.array([xj]), params)
-        ll += np.log(norm.cdf((ui - uj) / np.sqrt(2)) + 1e-6)
-    return ll
-
-# --- Gaussian prior on weights ---
-def deep_log_prior(params):
-    lp = 0.0
-    for v in params.values():
-        lp -= 0.5 * np.sum(v**2)
-    return lp
-
-# --- Proposal distribution ---
-def deep_propose(params, sigma=0.1):
-    new_params = {}
-    for k, v in params.items():
-        new_params[k] = v + np.random.randn(*v.shape) * sigma
-    return new_params
-
-# --- Metropolis-Hastings sampling ---
-def deep_mh(init_params, pairs, num_iters=2000, burn_in=500):
-    samples = []
-    current = init_params
-    current_lp = deep_log_likelihood(current, pairs) + deep_log_prior(current)
-
-    for i in range(num_iters):
-        proposal = deep_propose(current)
-        proposal_lp = deep_log_likelihood(proposal, pairs) + deep_log_prior(proposal)
-        accept_prob = np.exp(proposal_lp - current_lp)
-        if np.random.rand() < accept_prob:
-            current = proposal
-            current_lp = proposal_lp
-        if i >= burn_in:
-            samples.append(current)
-
-    return samples
-
-# --- Run MCMC ---
-deep_samples = deep_mh(init_deep_params(), pairs, num_iters=40000, burn_in=1000)
-
-# --- Posterior predictions ---
-X_test = np.linspace(0, 10, 200)
-deep_preds = np.array([deep_utility(X_test, s) for s in deep_samples])
-deep_mean = deep_preds.mean(axis=0)
-deep_std = deep_preds.std(axis=0)
-
-# --- Plot results ---
-plt.figure(figsize=(8, 4))
-plt.plot(X_test, true_u(X_test), 'k--', label='True utility')
-plt.plot(X_test, deep_mean, 'b-', label='Posterior mean')
-plt.fill_between(X_test, deep_mean - 1.96 * deep_std, deep_mean + 1.96 * deep_std,
-                 color='blue', alpha=0.2, label='95% CI')
-plt.title("3-layer Bayesian Neural Network via MCMC on Preference Data")
-plt.xlabel("x")
-plt.ylabel("Utility")
-plt.legend()
-plt.tight_layout()
-plt.show()
-
-# Flatten and PCA
-def flatten_params(params):
-    return np.concatenate([v.flatten() for v in params.values()])
-
-flat_samples = np.array([flatten_params(p) for p in deep_samples])
-pca = PCA(n_components=2)
-proj_samples = pca.fit_transform(flat_samples)
-
-# Density heatmap from KDE
-kde = gaussian_kde(proj_samples.T)
-xmin, xmax = proj_samples[:, 0].min(), proj_samples[:, 0].max()
-ymin, ymax = proj_samples[:, 1].min(), proj_samples[:, 1].max()
-xx, yy = np.meshgrid(np.linspace(xmin, xmax, 100), np.linspace(ymin, ymax, 100))
-zz = kde(np.vstack([xx.ravel(), yy.ravel()])).reshape(xx.shape)
-
-# Downsample to 80 frames
-n_frames = 80
-idx = np.linspace(0, len(proj_samples) - 1, n_frames).astype(int)
-proj_subset = proj_samples[idx]
-
-# Animation with heatmap
-fig, ax = plt.subplots(figsize=(6, 5))
-ax.contourf(xx, yy, zz, levels=30, cmap="Blues", alpha=0.5)
-
-line, = ax.plot([], [], 'r-o', markersize=3, alpha=0.8, label="Chain trajectory")
-start_point = ax.plot([], [], 'go', label='Start')[0]
-end_point = ax.plot([], [], 'ko', label='Current')[0]
-
-ax.set_xlim(xmin - 0.2, xmax + 0.2)
-ax.set_ylim(ymin - 0.2, ymax + 0.2)
-ax.set_title("Posterior exploration via Markov chain simulation")
-ax.set_xlabel("PCA1")
-ax.set_ylabel("PCA2")
-ax.legend(loc="upper left")
-
-def update(frame):
-    line.set_data(proj_subset[:frame+1, 0], proj_subset[:frame+1, 1])
-    start_point.set_data([proj_subset[0, 0]], [proj_subset[0, 1]])
-    end_point.set_data([proj_subset[frame, 0]], [proj_subset[frame, 1]])
-    return line, start_point, end_point
-
-ani = animation.FuncAnimation(fig, update, frames=n_frames, interval=80, blit=True)
-HTML(ani.to_jshtml())
-```
-
-Another Bayesian approach is Bayesian Inverse Reinforcement Learning (IRL), where a prior is placed on the parameters of a reward function and Bayes’ rule is used to update this distribution given demonstrations or preferences [@iliad2019learning]. Early work like Ramachandran & Amir (2007) treated IRL as Bayesian inference, using MCMC to sample likely reward functions consistent with demonstrations. Such methods yield a posterior over reward functions, reflecting ambiguity when multiple rewards explain the human’s behavior.
-
-In summary, Bayesian utility learning methods acknowledge that with limited human feedback, many possible utility functions might be compatible with the data. They keep track of this ambiguity, which is crucial for making cautious decisions and for actively gathering more feedback.
-
-## Case Study: Learning from Human Feedback in Robotics {.unnumbered}
-
-Thus far, we discussed preference learning in general terms. We now focus on robotics, where an agent must learn a *reward/utility function* that captures the human’s objectives for a *sequential decision-making* task. Robotics brings additional challenges: the utility often depends on a trajectory of states and actions, and feedback can come in multiple forms. We outline several key forms of human feedback for robot learning and how to learn from them:
-
-- Learning from demonstrations – inferring utility from expert demonstrations of the task.
-- Learning from physical corrections – updating utility when a human physically intervenes in the robot’s behavior.
-- Learning from trajectory evaluations – using human-provided scores or critiques of full trajectories.
-- Learning from pairwise trajectory comparisons – inferring reward from which of two trajectories a human prefers.
-
-These are not mutually exclusive; in practice, combinations can be very powerful [@iliad2019learning]. We describe each mode and how utility functions can be derived.
-
-### Learning from Demonstrations (Inverse Reinforcement Learning) {.unnumbered}
-
-In Learning from Demonstrations, also known as Inverse Reinforcement Learning, the human provides examples of desired behavior (e.g. teleoperating a robot to show how to perform a task). The assumption is that the demonstrator is approximately optimizing some latent reward function $R^*(s,a)$ (or utility for trajectories). IRL algorithms then search for a reward function $R_\theta$ under which the given demonstrations $\tau_{demo}$ have high expected return [@iliad2019learning]. 
-
-One classic approach is *Maximum Margin IRL*, which finds a reward function that makes the return of the demonstration trajectories higher than that of any other trajectories by a large margin. Another is *Maximum Entropy IRL*, which models the demonstrator as noisily optimal (Boltzmann-rational) [@iliad2019learning]. In MaxEnt IRL, the probability of a trajectory $\tau$ under reward parameters $\theta$ is modeled as:
-
-$$
-P(\tau \mid \theta) = \frac{\exp\{R_\theta(\tau)\}}{\displaystyle \sum_{\tau'} \exp\{R_\theta(\tau')\}} \,,
-$$
-
-where $R_\theta(\tau) = \sum_{t} r_\theta(s_t, a_t)$ is the cumulative reward of $\tau$. The IRL algorithm then adjusts $\theta$ to maximize the likelihood of the human demonstrations (while often using techniques to approximate the denominator, since summing over all trajectories is intractable). The end result is a reward function $R_\theta(s,a)$ that rationalizes the demonstrations.
-
-*Key challenge:* unless demonstrations are *optimal* and cover the space well, IRL might recover an ambiguous or incorrect reward. In robotics, humans often have difficulty providing flawless demonstrations (due to hard-to-use interfaces or limited expertise) [@iliad2019learning]. For example, users teleoperating a robot arm might move jerkily or only accomplish part of the task [@iliad2019learning]. This makes sole reliance on demonstrations problematic. Nonetheless, demonstration data can provide a strong prior: it shows at least one way to succeed (or partial preferences for certain behaviors).
-
-### Learning from Preferences and Rankings of Trajectories {.unnumbered}
-
-When high-quality demonstrations are hard to obtain, preference queries on trajectories are a viable alternative [@iliad2019learning]. In preference-based learning for robotics, the robot (or algorithm) presents two (or more) trajectories of the task outcome, and the human chooses which one is better. Each such comparison provides a bit of information about the true underlying reward. By asking many queries, the algorithm can home in on the reward function that explains the human’s choices [@iliad2019learning].
-
-A concrete example is an agent learning to do a backflip in simulation [@christiano2023deep]. The agent initially performs random flails. The system then repeatedly shows the human *two video clips* of the agent’s behavior and asks which is closer to a proper backflip. From these comparisons, a reward model is learned that assigns higher value to behaviors more like backflips [@christiano2023deep]. The agent then uses reinforcement learning to optimize this learned reward, gradually performing better backflips. This process continues, with the human being asked comparisons on trajectories where the algorithm is most uncertain (to maximally inform the reward model) [@christiano2023deep].
-
- ([Learning from human preferences | OpenAI](https://openai.com/index/learning-from-human-preferences/)) *Framework for learning from human preferences in robotics: a reward predictor (utility function) is learned from human feedback on trajectory comparisons, and an RL algorithm uses this learned reward to improve the policy [@christiano2023deep]. The loop is iterative: as the policy improves, new queries focus on areas of uncertainty to refine the reward model.* 
-
-Such preference-based reward learning has enabled complex skills without explicitly programmed rewards [@christiano2023deep]. Notably, Christiano *et al.* (2017) showed that an agent can learn Atari game policies and robotic manipulations from a few hundred comparison queries, achieving goals that are hard to specify but easy to judge [@christiano2023deep]. Preferences are often easier for humans than demonstrations: choosing between options is simpler than generating one from scratch [@iliad2019learning]. However, preference learning can be slow if each query only yields one bit of information. Active learning and combining preferences with other feedback can greatly improve efficiency [@iliad2019learning].
-
-### Learning from Trajectory Evaluations (Critiques and Ratings) {.unnumbered}
-
-Sometimes humans provide feedback in the form of *evaluative scores* or critiques on full trajectories (or partial trajectories). For example, after a robot finishes an attempt at a task, the human might give a reward signal (e.g. +1/-1, or a rating 1–5 stars, or say “too slow” vs “good job”). This is the premise of the TAMER framework (Training an Agent via Evaluative Reinforcement) and related approaches, where a human’s scalar reward signals are directly treated as the reward function for the agent in reinforcement learning.
-
-From a utility learning perspective, such feedback can be used to directly fit a utility model $u_\theta$ that predicts the human’s rating for a given trajectory. For instance, if a human provides a score $H(\tau)$ for trajectory $\tau$, one can treat it as a training target for $u_\theta(\tau)$ (possibly under a regression loss). However, because humans are inconsistent and may not precisely quantify their preferences, it’s often useful to model $H(\tau)$ as a noisy realization of the underlying utility, rather than a perfect label. A Bayesian approach could treat $H(\tau)$ as a noisy observation of $u(\tau)$ and update a posterior for $u$. Alternatively, classification approaches can be used (e.g. treat trajectories into “liked” vs “disliked” based on thresholded ratings).
-
-A challenge with trajectory-level feedback is *credit assignment*: the human’s single score must be attributed to the entire sequence of actions. Algorithms like COACH (Continuous cOaching of Automated Control Handlers) address this by allowing humans to give feedback at intermediate steps, thereby guiding the agent which specific part of the behavior was good or bad. In either case, learning from trajectory evaluations turns the human into a *reward function provider*, and the learning algorithm’s job is to infer the latent reward function that the human’s evaluations are trying to convey.
-
-### Learning from Physical Corrections {.unnumbered}
-
-Robots that physically collaborate with humans can receive physical corrections: the human may push the robot or otherwise intervene to adjust its behavior. Such corrections provide insight into the human’s desired utility. For example, if a household robot is carrying a fragile object too recklessly and the human physically slows it down or re-routes it, that indicates the human’s reward favors safety over speed at that moment.
-
-Learning from physical corrections can be formalized in different ways. One approach is to treat a correction as a demonstration on a small segment: the human’s intervention suggests a better action or trajectory than what the robot was doing. This can be converted into a comparison: “the trajectory after correction is preferred over the original trajectory” for that time segment. The robot can then update its reward function $\theta$ to satisfy $R_\theta(\text{human-corrected behavior}) > R_\theta(\text{robot’s initial behavior})$. Repeated corrections yield a dataset of such pairwise preferences, focused on the states where the robot was wrong [@losey2021corrections].
-
-Another approach is to infer the human’s intent through the sequence of corrections. Research by Losey *et al.* (2021) formalized learning from *sequences* of physical corrections, noting that each correction is not independent: a series of pushes might only make sense in aggregate [@losey2021corrections]. By analyzing the cumulative effect of multiple interventions, the algorithm can deduce the underlying objective more accurately (e.g. the human consistently steers the robot away from the table edges, implying a high negative reward for collisions). Their algorithm introduced an auxiliary reward term to capture the human’s trade-off: they will correct the robot if the immediate mistake is worth fixing relative to long-term performance [@losey2021corrections]. The conclusion was that reasoning over the sequence of corrections improved learning of the human’s objective [@losey2021corrections].
-
-Physical corrections are intuitive for humans – we often instinctively guide others or objects when they err. For the robot, interpreting this guidance requires converting it into constraints or examples for the utility function. It is a powerful signal because it is *active*: the human is not just telling preferences but directly imparting the desired direction of change.
-
-### Combining Multiple Feedback Types {.unnumbered}
-
-Each feedback modality has strengths and weaknesses. Demonstrations provide a lot of information but can be hard to perform; preferences are easy for humans but yield information slowly; corrections are very informative locally but require physical interaction; trajectory evaluations are straightforward but coarse. Combining these modes can lead to faster and more robust reward learning [@iliad2019learning]. For example, the DemPref algorithm [@iliad2019learning] first uses demonstrations to get an initial rough reward model, then uses preference queries to refine it quickly [@iliad2019learning]. In user studies, such combined approaches learned better rewards with fewer queries than using either alone [@iliad2019learning].
-
-In practical robot learning systems, one might start by asking for a demonstration. If the demo is suboptimal, the system can then ask preference questions on alternative attempts to clarify the true goal. During actual execution, if the human intervenes, the robot updates its reward function on the fly to avoid repeating the mistake. This *interactive reward learning* loop continues until the robot’s behavior aligns with human intent.
-
-## Summary
-
-Learning utility functions from human preferences enables value alignment: aligning an AI system’s objectives with what humans actually want, rather than what we *think* we want in abstract. We covered how supervised learning can extract utilities from comparisons or scores, and how Bayesian methods like Gaussian processes and Bayesian neural nets can capture uncertainty in our inferences. In robotics, we saw that feedback can come in many forms – demonstrations, comparisons, corrections, evaluations – each providing a unique window into the human’s utility function. By intelligently combining these signals, robots can efficiently learn complex reward functions that would be extremely difficult to hand-code.
-
-Key takeaways and best practices include:
-
-- *Use the right feedback for the problem:* If optimal examples are available, demonstrations jump-start learning. If not, pairwise preferences or scalar critiques might be easier to obtain.
-- *Model uncertainty:* Knowing what the system doesn’t know (via a Bayesian model) allows for smart query selection and avoids overconfidently optimizing the wrong objective.
-- *Iterate with the human:* Preference learning is fundamentally an interactive process. An agent can query a human in ambiguous cases and continuously refine the utility estimate [@christiano2023deep].
-- *Validate the learned utility:* Once a reward is learned, testing the robot’s policy and having humans verify or correct it is crucial. Even a few manual corrections can reveal if the learned reward misses a key aspect, allowing further refinement.
-- *Be aware of scaling and bias:* Human feedback can be noisy or biased. Techniques like DPO suggest ways to simplify learning and avoid instability, but one should monitor for issues like reward hacking or unintended solutions, intervening with additional feedback as needed.
-
-Learning from human preferences is a rich area of ongoing research. It lies at the intersection of machine learning, human-computer interaction, and ethics. As AI systems become more advanced, the importance of teaching them *our* utility functions (and not mis-specified proxies) grows. The methods discussed in this chapter are building blocks toward AI that truly understands and pursues what humans value, acquired through learning *with* humans in the loop rather than in isolation. By mastering these techniques, we move closer to AI and robots that can be trusted to make decisions aligned with human preferences and well-being. 
-
-<!--
-### Reward Learning in Robotics
-
-To help set up our basic reward learning problem, consider a user and a
-robot. The user's preferences or goals can be represented by an internal
-reward function, R($\xi$), which the robot needs to learn. Since the
-reward function isn't explicit, there are a variety of ways that the
-robot can learn this reward function, which we will discuss in the next
-section. An example method of learning a reward function from human data
-is using pairwise comparison. Consider the robot example from section
-one, but now, the robot shows the human two possible trajectories
-$\xi_A$ and $\xi_B$ as depicted in the diagram below.
-
-![Two different trajectories taken by a robot to prompt
-user ranking.](Figures/robots.png){#fig-reward-robot-1 width="70%"}
-
-The user is show both the trajectories above and asked to rank which one
-is better. Based on iterations of multiple trajectories and ranking, the
-robot is able to learn the user's internal reward function. There quite
-a lot of ways that models can learn a reward function from human data.
-Here's a list [@myers2021learning] of some of them:
-
-1.  Pairwise comparison: This is the method that we saw illustrated in
-    the previous example. The robot is able to learn based on a
-    comparison ranking provided by the user.
-
-2.  Expert demonstrations: Experts perform the task and the robot learns
-    the optimal reward function from these demonstrations.
-
-3.  Sub-optimal demonstrations: The robot is provided with
-    demonstrations that are not quite as good as the expert
-    demonstrations but it is still able to learn a noisy reward function
-    from the demonstrations.
-
-4.  Physical Corrections: While the robot is performing the task, at
-    each point in its trajectory (or at an arbitrary point in its
-    trajectory) its arm is corrected to a more suitable position. Based
-    on these corrections, the robot is able to learn the reward
-    function.
-
-5.  Ranking: This method is similar to pairwise comparison but involves
-    more trajectories than 2. All the trajectories may have subtle
-    differences from each other, but these differences help provide
-    insight to the model.
-
-6.  Trajectory Assessment: Given a single trajectory, the user rates how
-    close it is to optimal, typically using a ranking scale.
-
-    Each of these methods allows the robot to refine its understanding
-    of the user's reward function, but their effectiveness can vary
-    depending on the application. For instance, expert demonstrations
-    tend to produce more reliable results but may not always be feasible
-    in everyday tasks. Pairwise comparison and ranking methods offer
-    more flexibility but might require a higher number of iterations.
-
-### Direct Preference Optimization
-
-A modern method for estimating the parameters of a human preference
-model is direct preference optimization [@rafailov2023direct], which is
-used in the context of aligning language models to human preferences. A
-recent approach [@christiano2023deep] first trains a reward model that
-captures human preferences and then uses proximal policy optimization to
-train a language model-based policy to reflect those learned
-preferences. Direct Preference Optimization (DPO), on the other hand,
-removes the need for a reward model by directly using the model
-likelihood of two outcomes (a preferred or highly-ranked sequence and an
-unpreferred or low-ranked sequence) to capture the preference
-represented in the data. DPO provides a simpler framework than its
-reinforcement learning approach and results in comparable performance
-with improved stability. Furthermore, it obviates the need to train a
-reward model, instead using a language model policy and human preference
-dataset to align the policy directly to human preferences.
-
-<!--
-Through our exploration of human preference models, we will ground ourselves in
-building a health coaching system that can provide meal recommendations aligned with a user's dietary needs and preferences. Examples of scenarios which can benefit from a model of how humans make choices include:
-
-1.  **Health coaching:** Humans express their preferences every time
-    they pick lunch for consumption. Humans may have several goals
-    related to nutrition, such as weight loss and improving
-    concentration. We can learn how a given individual or set of
-    individuals prefer to eat to provide personalized recommendations to
-    help them attain their goals. This chapter will use this use case to
-    ground human preference modeling in a real-life application.
-
-2.  **Social media:** Platforms have a far greater amount of content
-    than one can consume in a lifetime, yet such products must aim to
-    maximize user engagement. To accomplish this, we can learn what
-    specific things people like to see in their feeds to optimize the
-    value they gain out of their time on social media. For example, the
-    video feed social media platform [TikTok](https://www.tiktok.com/)
-    has had viral adoption due to its notorious ability to personalize a
-    feed for its users based on their preferences.
-
-3.  **Shopping:** Retail corporations largely aim to maximize revenue by
-    making it easy for people to make purchases. Recommendation systems
-    on online shopping platforms provide a mechanism for curating
-    specific items based on an individual's previous purchases (or even
-    browsing history) to make shoppers aware of items they may like and,
-    therefore, purchase.
-
-Two key models used in pairwise sampling are the Thurstonian and Bradley-Terry models [@cattelan2012]. The Thurstonian model assumes each item $i$ has a true score $u_i$ following a normal distribution. The difference $d_{ij} = u_i - u_j$ is also normally distributed. The probability that item $i$ is preferred over item $j$ is given by $P(i \succ j) = \Phi \left( \frac{u_i - u_j}{\sqrt{2\sigma^2}} \right)$, where $\Phi$ is the cumulative normal distribution function. The denominator $\sqrt{2\sigma^2}$ is the standard deviation of the difference $d_{ij} = u_i - u_j$ when $u_i$ and $u_j$ are normally distributed with variance $\sigma^2$[@cattelan2012]. The Bradley-Terry model defines the probability of preference based on latent scores $\beta_i$ and $\beta_j$. The probability that item $i$ is preferred over item $j$ is $P(i \succ j) = \frac{e^{\beta_i}}{e^{\beta_i} + e^{\beta_j}}$. This model is used to estimate relative strengths or preferences based on latent scores. [@cattelan2012].
-
-::: {#tbl-philosophy}
-  -----------------------------------------------------------------------
-  Application                         Human Preference
-  ----------------------------------- -----------------------------------
-  Computer vision: train a neural     This is how humans process images
-  network to predict bounding boxes   by identifying the position and
-  delineating all instances of dogs   geometry of the things we see in
-  in an image                         them
-
-  Natural language processing: train  Coherent text is itself a
-  a model to generate coherent text   human-created and defined concept,
-                                      and we prefer that any
-                                      synthetically generated text
-                                      matches that of humans
-
-  Computer vision: train a diffusion  Humans prefer that images
-  model to generate realistic images  accurately capture the world as
-  of nature                           observed by humans, and this
-                                      generative model should reflect the
-                                      details that comprise that
-                                      preference
-  -----------------------------------------------------------------------
-
-  : Examples of machine learning tasks and their interpretation as
-  modeling human preferences.
 :::
--->
 
-<!--
-Game theory provides a mathematical framework for analyzing strategic
-interactions among rational agents. These models help in understanding
-and predicting human behavior by considering multiple criteria and the
-associated trade-offs. They enhance the understanding of preferences
-across multiple criteria and allow for richer and more accurate feedback
-through structured comparisons. Game-theory framings capture the
-complexity of preferences and interactions in decision-making processes
-[@bhatia2020preference].
+```{python}
+import numpy as np
+import matplotlib.pyplot as plt
 
-The most popular form of preference elicitation involves pairwise
-comparisons. Users are asked to choose between two options, such as
-product A or product B. This method is used in various applications like
-search engines, recommender systems, and interactive robotics. Key
-concepts include the Von Neumann Winner and the Blackwell Winner. The
-Von Neumann Winner refers to a distribution over objects that beats or
-ties every other object in the collection under the expected utility
-assumption. The Blackwell Winner generalizes the Von Neumann Winner for
-multi-criteria problems using a target set for acceptable payoff vectors
-[@bhatia2020preference].
+plt.rcParams.update({
+    "font.size": 14,
+    "axes.labelsize": 16,
+    "xtick.labelsize": 14,
+    "ytick.labelsize": 14,
+    "legend.fontsize": 14,
+    "axes.titlesize": 16,
+    "figure.figsize": (6, 6),
+    "figure.autolayout": True,
+})
+rng = np.random.default_rng(2601)
 
-Game-theory framings provide a framework for preference learning along
-multiple criteria. These models use tools from vector-valued payoffs in
-game theory, with Blackwell's approach being a key concept. This
-approach allows for a more comprehensive understanding of preferences by
-considering multiple criteria simultaneously [@bhatia2020preference].
+N = 50 # users
+M = 30 # items
+U = rng.normal(loc=0.0, scale=1, size=N) # users' appetites
+V = rng.normal(loc=0.0, scale=1, size=M) # items' appeals
+P = 1.0 / (1.0 + np.exp(-(U[:, None] + V[None, :])))
+Y = (rng.random(size=(N, M)) < P)
+Y = Y[np.argsort(Y.mean(axis=1))][:, np.argsort(Y.mean(axis=0))]
 
-In game-theory framings, pairwise preferences are modeled as random
-variables. Comparisons between objects along different criteria are
-captured in a preference tensor $P$. This tensor models the probability
-that one object is preferred over another along a specific criterion,
-allowing for a detailed understanding of preferences across multiple
-dimensions [@bhatia2020preference].
+plt.imshow(Y, cmap='coolwarm')
+plt.title("Rasch Responses")
+plt.xlabel("Items")
+plt.ylabel("Users")
+plt.show()
+```
 
-The preference tensor $P$ captures object comparisons along different
-criteria. It is defined as:
-$$P(i_1, i_2; j) = P(i_1 \succ i_2 \text{ along criterion } j)$$ where
-$P(i_2, i_1; j) = 1 - P(i_1, i_2; j)$. These values are aggregated to
-form an overall preference matrix $P_{ov}$ [@bhatia2020preference].
+Taken a user and the item-wise generating process is Rasch, we generate their Bradley-Terry response below.
 
-The Blackwell Winner is defined using a target set $S$ of acceptable
-score vectors. The goal is to find a distribution $\pi^*$ such that
-$P(\pi^*, \pi) \in S$ for all $\pi$. This method minimizes the maximum
-distance to the target set, providing a robust solution to
-multi-criteria preference problems [@bhatia2020preference].
+```{python}
+P = 1.0 / (1.0 + np.exp(-(V[:, None] - V[None, :])))
+Y_BT = np.full((M, M), np.nan)
+triu_idx = np.triu_indices(M, k=1)
+randu = rng.random(size=triu_idx[0].shape[0])
+wins_j_over_k = (randu < P[triu_idx])  # 1 if j beats k
+Y_BT[triu_idx] = wins_j_over_k
+Y_BT[(triu_idx[1], triu_idx[0])] = 1.0 - wins_j_over_k
+order = np.argsort(np.nanmean(Y_BT, axis=1))
+Y_BT = Y_BT[order][:, order]
 
-The optimization problem for finding the Blackwell Winner is defined as:
-$$\pi(P, S, \|\cdot\|) = \arg \min_{\pi \in \Delta_d} \left[ \max_{\pi' \in \Delta_d} \rho(P(\pi, \pi'), S) \right]$$
-where $\rho(u, v) = \|u - v\|$. This measures the distance to the target
-set, ensuring that the selected distribution is as close as possible to
-the ideal preference vector [@bhatia2020preference].
--->
+im0 = plt.imshow(Y_BT, cmap='coolwarm')
+plt.title("Bradley-Terry Response")
+plt.xlabel("Items")
+plt.ylabel("Items")
+plt.show()
+```
+
+Remember, the Bradley-Terry response above is just for a single user. To work with $N$ user, we need to obtain the $N \times M \times M$ tensor. To see heterogeneity, we need to simulate data under the K-dimensional factor model. The Rasch model does not have this effect since the response of each user does not depend on the user appetide.
+
+```{python}
+from matplotlib.colors import ListedColormap
+from mpl_toolkits.mplot3d import Axes3D  # noqa: F401
+
+K = 3 # latent dimensions
+rng = np.random.default_rng(13)
+U = rng.normal(0, 1.0, size=(N, K))             # user embeddings
+V = rng.normal(0, 1.0, size=(M, K))             # item embeddings
+Z = rng.normal(0, 1, size=(M,))               # item offsets
+H = U @ V.T + Z[None, :]
+H_expanded_j = H[:, :, None]       # (N, M, 1)
+H_expanded_k = H[:, None, :]       # (N, 1, M)
+diff = H_expanded_j - H_expanded_k # (N, M, M)
+P_pair = 1.0 / (1.0 + np.exp(-diff))
+
+# Mask diagonals (j == k)
+for i in range(N):
+    np.fill_diagonal(P_pair[i], np.nan)
+randu = rng.random(size=P_pair.shape)
+Y_pair = (randu < np.nan_to_num(P_pair, nan=0.0)).astype(int)
+# Force antisymmetry: Y[i,j,k] = 1 - Y[i,k,j], ignore diagonal
+for i in range(N):
+    for j in range(M):
+        Y_pair[i, j, j] = 0
+        for k in range(j+1, M):
+            Y_pair[i, k, j] = 1 - Y_pair[i, j, k]
+# Mask lower triangle (keep j>k) to avoid duplicates
+tri_mask = np.triu(np.ones((M, M), dtype=bool), k=1)
+volume = np.zeros_like(Y_pair, dtype=bool)
+volume[:, :, :] = tri_mask[None, :, :]
+
+# We'll assign colors based on Y_pair, but only keep voxels where tri_mask is True
+values = np.where(volume, Y_pair, -1)  # -1 means no voxel
+red = np.array([1.0, 0.0, 0.0, 0.95])
+blue = np.array([0.0, 0.0, 1.0, 0.95])
+transparent = np.array([0, 0, 0, 0.0])
+
+facecolors = np.empty(values.shape + (4,))
+facecolors[:] = transparent
+facecolors[values == 1] = red
+facecolors[values == 0] = blue
+
+fig = plt.figure(figsize=(6, 6))
+ax = fig.add_subplot(111, projection='3d')
+ax.voxels(values != -1, facecolors=facecolors, edgecolor='k', linewidth=0.2)
+
+ax.set_xlabel("Users")
+ax.set_ylabel("Item")
+ax.set_zlabel("Item")
+ax.set_xticks(np.arange(0, N, max(1, N // 5)))
+ax.set_yticks(np.arange(0, M, max(1, M // 5)))
+ax.set_zticks(np.arange(0, M, max(1, M // 5)))
+```
+
+## Parameter Learning via Full Information Maximum Likelihood Estimation
+Given a response from a particular generating process, there are various standard statistical inference procedure, such as maximum likelihood, maximum marginal likelihood, or Bayesian inference. These procedure is designed to infer parameters that are generalizable to new datasets. Hence, we discuss the training and testing dataset next. 
+
+The simplest train/test splitting is random, where we select random element of the response matrix to be in the training set, and the rest in the test set. We can demonstrate, for example, with the Bradley-Terry response with a 80% training and 20% testing data:
+
+```{python}
+V = rng.normal(loc=0.0, scale=1, size=M)
+diff = V[:, None] - V[None, :]
+P = 1.0 / (1.0 + np.exp(-diff))
+
+Y_BT = np.full((M, M), np.nan)
+triu_idx = np.triu_indices(M, k=1)
+randu = rng.random(size=triu_idx[0].shape[0])
+wins_j_over_k = (randu < P[triu_idx])  # 1 if j beats k
+Y_BT[triu_idx] = wins_j_over_k
+Y_BT[(triu_idx[1], triu_idx[0])] = 1.0 - wins_j_over_k
+
+# Indices for upper triangle (excluding diagonal)
+triu_r, triu_c = np.triu_indices(M, k=1)
+
+# Keep only pairs that are observed (not NaN) in the source matrix
+valid_mask = ~np.isnan(Y_BT[triu_r, triu_c])
+triu_r = triu_r[valid_mask]
+triu_c = triu_c[valid_mask]
+
+n_pairs = triu_r.shape[0]
+n_train = int(0.8 * n_pairs)
+idx = rng.choice(n_pairs, size=n_train, replace=False)
+
+train_pairs = np.zeros(n_pairs, dtype=bool)
+train_pairs[idx] = True
+
+Y_train = np.full_like(Y_BT, np.nan, dtype=float)
+Y_test  = np.full_like(Y_BT, np.nan, dtype=float)
+
+r_tr, c_tr = triu_r[train_pairs], triu_c[train_pairs]
+Y_train[r_tr, c_tr] = Y_BT[r_tr, c_tr]
+Y_train[c_tr, r_tr] = 1.0 - Y_BT[r_tr, c_tr]
+
+# Fill test set (remaining pairs), both symmetric entries
+r_te, c_te = triu_r[~train_pairs], triu_c[~train_pairs]
+Y_test[r_te, c_te] = Y_BT[r_te, c_te]
+Y_test[c_te, r_te] = 1.0 - Y_BT[r_te, c_te]
+
+# Diagonals stay NaN
+np.fill_diagonal(Y_train, np.nan)
+np.fill_diagonal(Y_test, np.nan)
+
+cmap = plt.cm.get_cmap('coolwarm').copy()
+cmap.set_bad(color='white')
+plt.subplot(1, 2, 1)
+im1 = plt.imshow(np.ma.masked_invalid(Y_train), vmin=0, vmax=1, cmap=cmap)
+plt.title("Train")
+plt.xlabel("Items")
+plt.ylabel("Items")
+plt.subplot(1, 2, 2)
+im2 = plt.imshow(np.ma.masked_invalid(Y_test), vmin=0, vmax=1, cmap=cmap)
+plt.title("Test")
+plt.xlabel("Items")
+plt.colorbar(im2, fraction=0.046, pad=0.04)
+plt.show()
+```
+
+Having the train and test datasets from the Bradley-Terry response, which is denoted as $\mathcal{D}_{\text{train}}$ and $\mathcal{D}_{\text{test}}$, we first demonstrate the parameter learning with full information maximum likelihood estimation:
+
+$$
+\hat{V} = \arg\max_{V} \sum_{j,j' \in \mathcal{D}_{\text{train}}} \log p(Y_{0,jj'} | P_{0,jj'}), \quad P_{0, jj'} = V 1_M^\top - 1_M V^\top,
+$$
+where $1_M$ is a column vector of 1 with length $M$. The optimization can be carried out with standard optimizers, such as gradient descent.
+
+Let $\mathcal{N}^+_{m={(m,k) \in \mathcal D*{\text{train}}}}$ be pairs recorded in the order $(m,k)$. Let $\mathcal{N}^-_{m={(k,m)\in\mathcal D*{\text{train}}}}$ be pairs recorded in the order $(k,m)$. Define residuals $r_{mk} = y_{mk} - \sigma(V_m - V_k)$ and $r_{km} = y_{km} - \sigma(V_k-V_m)$. Then
+
+$$
+\frac{\partial \ell}{\partial V_m} 
+= \sum_{(m,k)\in \mathcal{N}^+_m} r_{mk} 
+- \sum_{(k,m)\in \mathcal{N}^-_m} r_{km}.
+$$
+
+This shows the contribution of data about $m$ only. Each comparison with opponent $k$ adds a term equal to the observed-minus-predicted win indicator, with a plus sign if $m$ is listed first and a minus sign if $m$ is listed second. Intuition. If $m$ beats $k$ more often than the model predicts, the residual is positive and the gradient pushes $V_m$ up. If $m$ loses to $k$ more than predicted, the residual is negative and the gradient pushes $V_m$ down.
+
+```{python}
+def auc_from_scores(scores, labels):
+    pos = scores[labels == 1]
+    neg = scores[labels == 0]
+    if pos.size == 0 or neg.size == 0:
+        return np.nan
+    # Brute-force definition to avoid dependencies and handle ties
+    cmp = (pos[:, None] > neg[None, :]).mean()
+    ties = (pos[:, None] == neg[None, :]).mean()
+    return cmp + 0.5 * ties
+
+# Collect observed training pairs and labels from the upper triangle only
+r_obs, c_obs = np.where(~np.isnan(Y_train))
+upper_mask = r_obs < c_obs
+r_tr_fit = r_obs[upper_mask]
+c_tr_fit = c_obs[upper_mask]
+y_tr_fit = Y_train[r_tr_fit, c_tr_fit].astype(float)
+
+epochs = 100
+lr = 0.01
+train_auc_hist = []
+n_pairs = r_tr_fit.size
+V_hat = np.zeros(M, dtype=float)
+
+for t in range(epochs):
+    # Scores and probabilities for observed training pairs
+    H = V_hat[r_tr_fit] - V_hat[c_tr_fit]
+    p = 1.0 / (1.0 + np.exp(-H))
+    err = (y_tr_fit - p)
+    grad = np.zeros_like(V_hat)
+    np.add.at(grad, r_tr_fit, err)
+    np.add.at(grad, c_tr_fit, -err)
+    V_hat += lr * grad
+    train_auc_hist.append(auc_from_scores(H, y_tr_fit))
+
+# Collect observed test pairs and labels from the upper triangle
+r_te_obs, c_te_obs = np.where(~np.isnan(Y_test))
+upper_mask_te = r_te_obs < c_te_obs
+r_te_fit = r_te_obs[upper_mask_te]
+c_te_fit = c_te_obs[upper_mask_te]
+y_te_fit = Y_test[r_te_fit, c_te_fit].astype(float)
+
+# Scores for test pairs
+s_te = V_hat[r_te_fit] - V_hat[c_te_fit]
+test_auc = auc_from_scores(s_te, y_te_fit)
+
+# Plot
+plt.plot(np.arange(1, epochs + 1), train_auc_hist, label="Train")
+plt.hlines(test_auc, xmin=0, xmax=epochs, linestyle="--", label="Test")
+plt.xlabel("Epoch")
+plt.ylabel("Train AUC")
+plt.ylim(0.75, 0.85)
+plt.show()
+```
+
+In this synthetic setting, one way to interpret the result is to compare with the Bayes optimal AUC. Here we quantify an upper bound on achievable test AUC under the assumed data-generating process. For each test pair $(j,k)$ we know the ground-truth win probability $P_{jk}=\sigma(V_j-V_k)$ from the simulator. The Bayes-optimal score for that pair is exactly this probability, $s^*_{jk}=P_{jk}$. Any classifier that ranks pairs by $s^*$ maximizes AUC in expectation because it orders pairs by their true success probabilities. To estimate the corresponding Bayes AUC on our finite test set, we keep the same index set of pairs and repeatedly resample binary labels $Y_{jk} \sim \mathrm{Bern}(P_{jk})$, then compute $\mathrm{AUC}(s^*, Y)$ on each resample using a tie-aware definition. The mean of these Monte Carlo AUCs is the Bayes-optimal test AUC, and the empirical quantiles give a sampling range induced purely by label noise. For comparison, we compute the model’s AUC by replacing $s^*_{jk}$ with the learned scores $s^{*\text{model}}_{jk}=\sigma(\hat V_j-\hat V_k)$. The gap between the two summarizes how far the fitted model is from the oracle ranking implied by the true $P^*_{jk}$ on the exact same test pairs.
+
+```{python}
+def collect_pairs(Y):
+    r, c = np.where(~np.isnan(Y))
+    upper = r < c
+    return r[upper], c[upper], Y[r[upper], c[upper]].astype(float)
+
+# Unordered test set
+r_te_u, c_te_u, y_te_u = collect_pairs(Y_test)
+
+# Bayes scores and model scores for those exact pairs
+s_bayes = P[r_te_u, c_te_u]                 # ground-truth probs
+s_model = 1.0/(1.0+np.exp(-(V_hat[r_te_u]-V_hat[c_te_u])))
+
+auc_bayes = auc_from_scores(s_bayes, y_te_u)
+auc_model = auc_from_scores(s_model, y_te_u)
+print(f"Test AUC. Bayes: {auc_bayes:.4f}. Model: {auc_model:.4f}.")
+
+def resample_labels_from_P(r_idx, c_idx, P_mat, rng):
+    p = P_mat[r_idx, c_idx]
+    return (rng.random(size=p.size) < p).astype(float)
+
+R = 2000  # repeats
+bayes_list = []
+model_list = []
+for _ in range(R):
+    y_resamp = resample_labels_from_P(r_te_u, c_te_u, P, rng)
+    bayes_list.append(auc_from_scores(s_bayes, y_resamp))
+    model_list.append(auc_from_scores(s_model, y_resamp))
+
+print(f"Mean AUC over resamples. Bayes: {np.mean(bayes_list):.4f}. Model: {np.mean(model_list):.4f}.")
+print(f"5–95% range Bayes: {np.percentile(bayes_list,[5,95])}. Model: {np.percentile(model_list,[5,95])}.")
+```
+
+The result shows that the inference has found a good solution compare to the Bayes optimal estimator! A additional, natural test is to see if the estimated parameters match the true ones. Since the likelihood function only pays attention of the difference of item appeal for any pair, the appeal is only identifiable up to a shift and scale transform. The standard practice is to center and whiten the solution.
+
+```{python}
+# Center and whiten V_hat (zero mean, unit variance)
+V_hat_norm = (V_hat - V_hat.mean()) / (V_hat.std() + 1e-12)
+
+# Fit best affine map a*V_hat_norm + b to V (least squares)
+A = np.vstack([V_hat_norm, np.ones_like(V_hat_norm)]).T
+a, b = np.linalg.lstsq(A, V, rcond=None)[0]
+V_hat_aligned = a * V_hat_norm + b
+
+# After alignment, points should cluster near the diagonal
+plt.scatter(V, V_hat, s=12, c="red")
+plt.scatter(V, V_hat_aligned, s=12, c="blue")
+lims = [-3, 3]
+plt.plot(lims, lims, linestyle="--")
+plt.xlabel("V")
+plt.ylabel("Estimated V")
+
+# Report alignment quality
+corr = np.corrcoef(V, V_hat)[0, 1]
+mse = np.mean((V - V_hat) ** 2)
+print(f"Before center and whiten: Corr {corr:.4f}, MSE: {mse:.6f}")
+
+corr = np.corrcoef(V, V_hat_aligned)[0, 1]
+mse = np.mean((V - V_hat_aligned) ** 2)
+print(f"After center and whiten: Corr {corr:.4f}, MSE: {mse:.6f}")
+```
+
+## Parameter Learning via Bayesian Inference
+A Bayesian approach provides a natural alternative to maximum likelihood for parameter estimation in the Bradley–Terry model. Instead of finding a single point estimate for the item parameters (V), we place a prior distribution on them (e.g., independent standard normals) and update this prior using the Bernoulli likelihood from the observed comparisons. This yields a posterior distribution over (V), which captures both central estimates and the uncertainty around them. In practice, this posterior cannot be computed in closed form, so we turn to approximate inference. One common method is Markov chain Monte Carlo (MCMC), which constructs a sequence of samples that, in the limit, follow the posterior distribution.
+
+In particular, the Metropolis–Hastings (MH) algorithm is straightforward to apply: at each step, we propose a new value for one or more coordinates of (V) (e.g., from a Gaussian centered at the current state), compute the acceptance ratio as the ratio of posterior densities between the proposed and current states, and accept the proposal with that probability. Repeating this process produces a chain of samples that can be used to approximate posterior means, variances, or other functionals of interest. This approach not only yields point predictions but also quantifies uncertainty about the relative strengths of items under the Bradley–Terry model.
+
+Let the prior be i.i.d. standard normal for each item parameter: $p(V) = \prod_{j=1}^M \mathcal N(V_j \mid 0, 1)$. Then the posterior distribution is $p(V \mid \mathcal D) = p(\mathcal D \mid V)p(V)/p(\mathcal D),$ where the likelihood is
+$$
+p(\mathcal D \mid V) = \prod_{(j,j')\in\mathcal I} \sigma(V_j - V_{j'})^{Y_{jj'}} 
+\bigl(1-\sigma(V_j - V_{j'})\bigr)^{1-Y_{jj'}}.
+$$
+
+The denominator is the marginal likelihood (evidence), which is intractable in closed form, so we resort to MCMC (e.g., MH) to sample from the posterior. Suppose we are at current (parameter) state $V^{(t)}$. We propose a new state $V'$ from a proposal distribution, such as Gaussian: $q(V' \mid V^{(t)}) = \mathcal N (V'; V^{(t)}, \tau^2 I),$ where $\tau^2$ is a step-size variance. This proposal is symmetric, meaning $q(V' \mid V^{(t)}) = q(V^{(t)} \mid V').$ For any proposal distribution $q(V' \mid V^{(t)})$, the Metropolis–Hastings acceptance probability is
+
+$$
+\alpha = \min \{ {1; \frac{p(V' \mid \mathcal D), q(V^{(t)} \mid V')}{p(V^{(t)} \mid \mathcal D), q(V' \mid V^{(t)})}} \}.
+$$
+
+This says: accept the proposal with probability proportional to how much more plausible it is under the posterior, adjusted by how easy it is to propose back. If we choose a Gaussian proposal, the proposal terms cancel out in the ratio due to symmetry. So the acceptance rule simplifies to
+$$
+\alpha = \min \{1, \frac{p(V' \mid \mathcal D)}{p(V^{(t)} \mid \mathcal D)} \} = \min \{1, \frac{p(\mathcal D \mid V'), p(V')}{p(\mathcal D \mid V^{(t)}), p(V^{(t)})} \}.
+$$
+
+```{python}
+def logpost(v, r_idx, c_idx, y_obs, prior_var=1.0):
+    s = v[r_idx] - v[c_idx]
+    # Stable log-sigmoid pieces
+    # log p = -softplus(-s), log(1-p) = -softplus(s)
+    ll = (y_obs * -np.log1p(np.exp(-s)) + (1 - y_obs) * -np.log1p(np.exp(s))).sum()
+    lp = -0.5 * np.dot(v, v) / prior_var
+    return ll + lp
+
+steps = 10000
+prop_scale = 0.05
+
+# Test labels (upper)
+y_te = Y_test[r_te, c_te].astype(float)
+
+rng = np.random.default_rng(3)
+v_cur = rng.normal(scale=0.1, size=M)
+v_cur -= v_cur.mean()
+lp_cur = logpost(v_cur, r_tr_fit, c_tr_fit, y_tr_fit)
+
+trace_every = 1
+trace = []
+acc = 0
+
+for t in range(steps):
+    v_prop = v_cur.copy()
+    # Single-coordinate random walk
+    j = rng.integers(M)
+    v_prop[j] += rng.normal(scale=prop_scale)
+    # Fix shift invariance
+    v_prop -= v_prop.mean()
+    lp_prop = logpost(v_prop, r_tr_fit, c_tr_fit, y_tr_fit)
+    if np.log(rng.random()) < (lp_prop - lp_cur):
+        v_cur, lp_cur = v_prop, lp_prop
+        acc += 1
+    if (t + 1) % trace_every == 0:
+        trace.append(v_cur.copy())
+
+trace = np.array(trace)  # shape (steps/trace_every, M)
+acc_rate = acc / steps
+print(f"[MH] Acceptance rate: {acc_rate:.3f} with prop_scale={prop_scale}")
+
+# Show trace for a few items
+fig, axes = plt.subplots(1, 2, figsize=(12, 4))
+axes[0].plot(trace[:, 0], lw=0.8)
+axes[0].set_title("Trace of v[0]")
+axes[0].set_xlabel("Iteration / 5")
+axes[0].set_ylabel("Value")
+
+axes[1].hist(trace[:, 0], bins=100, density=True)
+axes[1].set_title("Posterior of v[0]")
+plt.show()
+```
+
+## Online Parameter Learning with Elo Rule
+In many applications, comparisons between items arrive sequentially over time rather than being observed all at once. For example, players in online games are continuously matched, or recommendation systems log one user preference at a time. In such settings, it is often computationally infeasible to refit the full Bradley–Terry model by maximum likelihood or MCMC after each new observation. Instead, we want an online update rule that adjusts item strengths incrementally as new outcomes arrive.
+
+This is precisely the motivation behind the **Elo rating system**, originally introduced for ranking chess players and later widely adopted in competitive games, online platforms, and even information retrieval. The key idea is to maintain a current estimate of each item's (or player's) latent strength, and update only the two items involved in a match when a new result comes in.
+
+The Elo rule can be derived as a stochastic gradient ascent method on the Bradley–Terry log-likelihood. Suppose item (j) plays against item (j'). Given the current parameters, the log-likelihood gradient with respect to $V_j$ and $V_{j'}$ is
+$$
+\frac{\partial \ell}{\partial V_j} = (y - p), \qquad
+\frac{\partial \ell}{\partial V_{j'}} = -(y - p).
+$$
+
+A stochastic gradient ascent step with learning rate $\eta$ gives the update:
+$$
+  V_j \leftarrow V_j + \eta (y - p), \qquad V_{j'} \leftarrow V_{j'} - \eta (y - p).
+$$
+
+This is exactly the Elo update rule. The learning rate $\eta$ is often called the **K-factor** in Elo literature. If $y=1$ (item j wins) but the model predicted a low (p), then (y - p) is positive and (V_j) increases, (V_{j'}) decreases — the system learns that (j) is stronger than previously believed If $y=0$ (item j' wins), the opposite adjustment happens. The magnitude of the update is larger when the outcome is surprising (large prediction error), and smaller when the outcome is expected (small prediction error). Thus, Elo is an online learning algorithm for the Bradley–Terry model, interpretable as stochastic gradient ascent with a fixed step size.
+
+```{python}
+# Build a stream of observed pairs for the single user from Y_BT upper triangle
+pairs_stream = list(zip(triu_r, triu_c))
+labels_stream = Y_BT[triu_r, triu_c].astype(float)
+
+# Initialize ratings r (Elo analog of v)
+r = np.zeros(M)
+Kfactor = 1.0  # step size
+
+def logistic_prob(a, b):
+    return 1.0 / (1.0 + np.exp(-(a - b)))
+
+for (j, k), y in zip(pairs_stream, labels_stream):
+    p = logistic_prob(r[j], r[k])
+    # Update: winner gets +K*(1-p), loser gets -K*(1-p)
+    # If y=1 means j wins. If y=0 means k wins.
+    if y == 1.0:
+        r[j] += Kfactor * (1 - p)
+        r[k] -= Kfactor * (1 - p)
+    else:
+        r[k] += Kfactor * p
+        r[j] -= Kfactor * p
+    # optional centering
+    r -= r.mean()
+
+# Evaluate Elo ratings on held-out test pairs (same y_te from above)
+p_te_elo = 1.0 / (1.0 + np.exp(-(r[r_te] - r[c_te])))
+auc_elo = auc_from_scores(p_te_elo, y_te)
+```
