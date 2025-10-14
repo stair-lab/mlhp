@@ -40,7 +40,7 @@ In many cases, the user might be asked to express their preference in terms of c
 $$
 p(Y_{i,jj'} = 1 | i, j, j') = \sigma(H_{i,j} - H_{i,j'}) = \frac{\exp(H_{ij})}{\exp(H_{ij}) + \exp(H_{ij'})},
 $$
-where the last equality uses the logistic identity. This is also known in the literature as the Bradley-Terry model. For a single user, if the generating process for item-wise preference is Rasch, we can further simplify $H_{i,j} - H_{i,j'} = U_i + V_j - U_i - V_{j'} = V_j - V_{j'}$. Hence, for a single user, the pairwise logit does not depend on the user-specific appetite, but only on the item parameters. This cancellation happens only for single-user pairwise comparisons and is generally not true for other classes of model.
+where the last equality uses the logistic identity. This is also known in the literature as the Bradley-Terry model. For a single user, if the generating process for item-wise preference is Rasch, we can further simplify $H_{i,j} - H_{i,j'} = U_i + V_j - U_i - V_{j'} = V_j - V_{j'}$. Hence, for a single user, the pairwise logit does not depend on the user-specific appetite, but only on the item parameters. This is generally not true for other classes of model.
 
 In the item-wise preference, the responses for $N$ users and $M$ items are a 2D matrix with shape $N \times M$, while in the pairwise preference, the responses for the same number of users and items are a 3D tensor with shape $N \times M \times M$. 
 
