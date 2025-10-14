@@ -14,7 +14,7 @@ Designing a good reward signal by hand for a complex AI system is difficult and 
 ## Data Generating Process: A Latent Variable Perspective
 Before introducing models for preference data, it is useful to begin with some stylized empirical observations. For example, surveys indicate that only a small fraction of the US population reports liking durian, while a much larger fraction endorses liking banana or strawberry. Some people appear to have a general fondness for fruit, while others are relatively indifferent or even averse. Interestingly, even within fruit-likers, there is heterogeneity: some prefer durian over banana, while others show the opposite ordering. These facts suggest several latent forces at work (appetites, baseline appeal, trait heterogeneity) that any plausible data-generating process (DGP) for preference must accommodate. Below we propose one such DGP as a conceptual scaffold for understanding the observed patterns.
 
-We denote the response of user $i$ to item $j$ by $Y_{i,j}$, which is drawn from a collection of $M$ items. The response is $1$ if the user likes the item and $0$ otherwise. The Rasch model posits that the response is a Bernoulli random variable governed by user's appetite $U_i \in \mathbb{R}$ and item's appeal $V_j \in \mathbb{R}$: 
+We denote $Y_{i,j}$ to be the response of user $i$ to item $j$, which is drawn from a collection of $M$ items. The response is $1$ if the user likes the item and $0$ otherwise. The Rasch model posits that the response is a Bernoulli random variable governed by user's appetite $U_i \in \mathbb{R}$ and item's appeal $V_j \in \mathbb{R}$: 
 
 $$
 p(Y_{i,j} = 1 | U_i, V_j) = \sigma(H_{i,j}), \quad H_{ij} = U_i + V_j
