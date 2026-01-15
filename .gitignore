@@ -1,23 +1,45 @@
+# R
 .Rproj.user
 .Rhistory
 .RData
 .Ruserdata
 
+# OS
 .DS_Store
+
+# Quarto build outputs
+_book/
+_freeze/
+_site/
+/.quarto/
 *_cache/
 
-*.sublime-project
+# Jupyter cache
+.jupyter_cache/
+src/.jupyter_cache/
 
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# Editor
+*.sublime-project
+*.swp
+*~
 ~$*
+
+# Project-specific
 images/management/analysis_pipeline.pptx
 images/management/analysis_pipeline.pdf
 *.xls
 
+# LaTeX intermediates
 *.blg
 *.log
 *.toc
 *.aux
 # *.tex
 # *.pdf
-
-/.quarto/

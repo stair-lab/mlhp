@@ -143,8 +143,10 @@
   \oldchapter
 }
 
-\usepackage{bbm}
-\usepackage{unicode-math}
+% bbm package doesn't work with XeTeX/unicode-math, define \mathbbm using doublestroke
+% \usepackage{bbm}  % Commented out - incompatible with XeTeX
+% Use \mathbb from unicode-math as fallback for \mathbbm
+\providecommand{\mathbbm}[1]{\mathbb{#1}}
 
 \usepackage{fvextra}
 \DefineVerbatimEnvironment{Highlighting}{Verbatim}{breaklines,commandchars=\\\{\}}

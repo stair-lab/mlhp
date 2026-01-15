@@ -190,7 +190,7 @@ plt.rcParams.update({
     "legend.fontsize": 14,
     "axes.titlesize": 16,
 })
-plt.rcParams['text.usetex'] = True
+# plt.rcParams['text.usetex'] = True  # Disabled due to LaTeX PATH conflicts
 
 def draw_surface():
     inps = np.linspace(-2, 2, 100)
