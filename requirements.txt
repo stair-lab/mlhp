@@ -1,8 +1,19 @@
-numpy
-matplotlib
-tueplots
-jupyter
-jupyter-cache
-pyyaml
-scipy
-scikit-learn
+# Core scientific computing
+numpy>=1.24.0,<2.0.0
+scipy>=1.10.0,<2.0.0
+scikit-learn>=1.3.0,<2.0.0
+
+# Deep learning (used in chapters and problem sets)
+torch>=2.0.0,<2.6.0
+botorch>=0.9.0,<0.13.0
+
+# Visualization
+matplotlib>=3.7.0,<4.0.0
+tueplots>=0.0.14,<0.1.0
+
+# Jupyter support
+jupyter>=1.0.0,<2.0.0
+jupyter-cache>=0.6.0,<1.0.0
+
+# Utilities
+pyyaml>=6.0.0,<7.0.0
