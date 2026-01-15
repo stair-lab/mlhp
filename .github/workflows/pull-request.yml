@@ -1,0 +1,45 @@
+on:
+  pull_request:
+
+name: Render and Upload Artifacts
+
+jobs:
+  render:
+    runs-on: macOS-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v3
+
+      - name: Set up Quarto
+        uses: quarto-dev/quarto-actions/setup@v2
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tinytex: true
+          version: 1.5.56
+
+      - name: Setup R
+        uses: r-lib/actions/setup-r@v2
+
+      - name: Set up renv
+        uses: r-lib/actions/setup-renv@v2
+
+      - name: Render to PDF
+        run: quarto render --to pdf --profile pdf
+
+      - name: Render to HTML
+        run: quarto render --to html --profile html --no-clean
+
+      - name: Upload PDF
+        uses: actions/upload-artifact@v4
+        with:
+          name: rendered-pdf
+          path: |
+            _output/pdf/**/*.pdf
+
+      - name: Upload HTML
+        uses: actions/upload-artifact@v4
+        with:
+          name: rendered-html
+          path: |
+            _output/html/**/*.html
