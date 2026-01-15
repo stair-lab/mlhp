@@ -12,39 +12,39 @@ execute:
 Designing a good reward signal by hand for a complex AI system is difficult and error-prone. Instead of manually specifying desirable behavior, we can learn a utility signal from preference data. In this chapter, we explore how to infer an underlying utility from various forms of feedback. Throughout, we include mathematical formulations and code examples to illustrate the learning process.
 
 ## Data Generating Process: A Latent Variable Perspective
-Before introducing models for preference data, it is useful to begin with some stylized empirical observations. For example, surveys indicate that only a small fraction of the US population report liking durian, while a much larger fraction endorse liking banana or strawberry. Some people appear to have a general fondness for fruit, while others are relatively indifferent or even averse. Interestingly, even within fruit-likers, there is heterogeneity: some prefer durian over banana, while others show the opposite ordering. These facts suggest several latent forces at work (appetites, baseline appeal, trait heterogeneity) that any plausible data-generating process (DGP) for preference must accommodate. Below we propose one such DGP as a conceptual scaffold for understanding the observed patterns.
+Before introducing models for preference data, it is useful to begin with some stylized empirical observations. For example, surveys indicate that only a small fraction of the US population reports liking durian, while a much larger fraction endorses liking banana or strawberry. Some people appear to have a general fondness for fruit, while others are relatively indifferent or even averse. Interestingly, even within fruit-likers, there is heterogeneity: some prefer durian over banana, while others show the opposite ordering. These facts suggest several latent forces at work (appetites, baseline appeal, trait heterogeneity) that any plausible data-generating process (DGP) for preference must accommodate. Below we propose one such DGP as a conceptual scaffold for understanding the observed patterns.
 
-We denote $Y_{i,j}$ to be the response of user $i$ to item $j$, which is drawn from a collection of $M$ items. The response is $1$ if the user likes the item and zero otherwise. The Rasch model posits that response is a Bernoulli random variable governed by user's appetite $U_i \in \mathbb{R}$ and item's appeal $V_j \in \mathbb{R}$: 
+We denote $Y_{i,j}$ to be the response of user $i$ to item $j$, which is drawn from a collection of $M$ items. The response is $1$ if the user likes the item and $0$ otherwise. The Rasch model posits that the response is a Bernoulli random variable governed by user's appetite $U_i \in \mathbb{R}$ and item's appeal $V_j \in \mathbb{R}$: 
 
 $$
 p(Y_{i,j} = 1 | U_i, V_j) = \sigma(H_{i,j}), \quad H_{ij} = U_i + V_j
 $$
-where $\sigma$ is the logistic function. The user appetite is a latent variable represents the appetite construct, which is the tendency of the user to like items in the collection in general, and the item appeal is how easy it is for the item to be like by the population of users.
+where $\sigma$ is the logistic function. The user appetite is a latent variable that represents the appetite construct, which is the tendency of the user to like items in the collection in general, and the item appeal is how easy it is for the item to be liked by the population of users.
 
-The user can express their affinity via several mechanisms. For example: thumbs-up/down on an e-commerce site, swiping on a dating site, or skipping a track on a music app. User- and item-specific parameters do not need to be unidimensional. When appetide and appeal are $K$ dimensional, the data generating process is
+The user can express their affinity via several mechanisms. For example: thumbs-up/down on an e-commerce site, swiping on a dating site, or skipping a track on a music app. User- and item-specific parameters do not need to be unidimensional. When appetite and appeal are $K$-dimensional, the data generating process is
 $$
-p(Y_{i,j} = 1 | U_i, V_j, Z_j) = \sigma(H_{i,j}), \quad H_{ij} = d(U_i, V_j + Z_j),
+p(Y_{i,j} = 1 | U_i, V_j, Z_j) = \sigma(H_{i,j}), \quad H_{ij} = d(U_i, V_j) + Z_j,
 $$
-where $d$ is some distance function in the $K$ dimensional space, $U_i$ is the user-specific appetide for each dimension, $V_j$ is the item loading, and $Z_j$ is the offset. When $d$ is the negative Euclidean distance, the model is know as the Ideal Point Model, which is popular in political sciences and psychometrics:
+where $d$ is some distance function (not strictly a distance metric) in the $K$-dimensional space, $U_i$ is the user-specific appetite for each dimension, $V_j$ is the item loading, and $Z_j$ is the offset. When $d$ is the negative Euclidean distance, the model is known as the Ideal Point Model, which is popular in political sciences and psychometrics:
 $$
 H_{ij} = -||U_i -  V_j ||_2 + Z_j
 $$
-In this case, $U_i$ is the user embedding and $V_j$ is the item embedding with some scalar offset $Z_j$. When the distance function is the dot product, the above generating process is known as the logistic factor model, a popular class of model in psychometrics:
+In this case, $U_i$ is the user embedding and $V_j$ is the item embedding with some scalar offset $Z_j$. When the score/similarity is the dot product, the above generating process is known as the logistic factor model, a popular class of model in psychometrics:
 $$
 H_{ij} = U_i^\top V_j + Z_j
 $$
 
-Each of the $K$ dimension represents different property of the items. For example, when $K=2$, a fruit might be sweet and have a strong aroma, and some users might look for sweetness, while others who might avoid sugar and look for strong aroma.
+Each of the $K$ dimensions represents different properties of the items. For example, when $K=2$, a fruit might be sweet and have a strong aroma, and some users might look for sweetness, while others who might avoid sugar and look for strong aroma.
 
-In many case, the user might be asked to express their preference in term of comparison between two item $j$ and $j'$, in which the response $Y_{i,jj'}$ is one if the item $i$ is preferred and zero otherwise. 
+In many cases, the user might be asked to express their preference in terms of comparison between two items $j$ and $j'$, in which the response $Y_{i,jj'}$ is $1$ if the item $j$ is preferred over $j'$ and $0$ otherwise. 
 $$
 p(Y_{i,jj'} = 1 | i, j, j') = \sigma(H_{i,j} - H_{i,j'}) = \frac{\exp(H_{ij})}{\exp(H_{ij}) + \exp(H_{ij'})},
 $$
-where the last equality uses the logistic identity. This is also known in the literature as the Bradley-Terry model. For a single user, if the generating process for item-wise preference is Rasch, we can further simplify $H_{i,j} - H_{i,j'} = U_i + V_j - U_i - V_{j'} = V_j - V_{j'}$. Hence, for a single user, the logit does not depend on the user-specific appetide, but only on the item parameters. This is generally not true for other classes of model.
+where the last equality uses the logistic identity. This is also known in the literature as the Bradley-Terry model. For a single user, if the generating process for item-wise preference is Rasch, we can further simplify $H_{i,j} - H_{i,j'} = U_i + V_j - U_i - V_{j'} = V_j - V_{j'}$. Hence, for a single user, the pairwise logit does not depend on the user-specific appetite, but only on the item parameters. This is generally not true for other classes of model.
 
-In the item-wise preference, the responses for $N$ user and $M$ items is a 2D matrix with shape $N \times M$, while in the pairwise preference, the responses for the same number of users and items is a 3D tensor with shape $N \times M \times M$. 
+In the item-wise preference, the responses for $N$ users and $M$ items are a 2D matrix with shape $N \times M$, while in the pairwise preference, the responses for the same number of users and items are a 3D tensor with shape $N \times M \times M$. 
 
-Given a data generating process, we can synthesize some data. The code below is for generate a response matrix for Rasch response: 
+Given a data generating process, we can synthesize some data. The code below generates a Rasch response matrix: 
 
 ::: {.callout-note title="Code"}
 
@@ -112,7 +112,7 @@ plt.ylabel("Users")
 plt.show()
 ```
 
-Taken a user and the item-wise generating process is Rasch, we generate their Bradley-Terry response below.
+Assuming a single user, and that the item-wise generating process is Rasch, we generate their Bradley–Terry response below.
 
 ```{python}
 P = 1.0 / (1.0 + np.exp(-(V[:, None] - V[None, :])))
@@ -132,7 +132,7 @@ plt.ylabel("Items")
 plt.show()
 ```
 
-Remember, the Bradley-Terry response above is just for a single user. To work with $N$ user, we need to obtain the $N \times M \times M$ tensor. To see heterogeneity, we need to simulate data under the K-dimensional factor model. The Rasch model does not have this effect since the response of each user does not depend on the user appetide.
+Remember, the Bradley-Terry response above is just for a single user. To work with $N$ users, we need to obtain the $N \times M \times M$ tensor. To see heterogeneity, we need to simulate data under the K-dimensional factor model. The Rasch model does not have this effect since the response of each user does not depend on the user appetite.
 
 ```{python}
 from matplotlib.colors import ListedColormap
@@ -189,9 +189,9 @@ ax.set_zticks(np.arange(0, M, max(1, M // 5)))
 ```
 
 ## Parameter Learning via Full Information Maximum Likelihood Estimation
-Given a response from a particular generating process, there are various standard statistical inference procedure, such as maximum likelihood, maximum marginal likelihood, or Bayesian inference. These procedure is designed to infer parameters that are generalizable to new datasets. Hence, we discuss the training and testing dataset next. 
+Given a response from a particular generating process, there are various standard statistical inference procedures, such as maximum likelihood, maximum marginal likelihood, or Bayesian inference. These procedures are designed to infer parameters that are generalizable to new datasets. Hence, we discuss the training and testing dataset next. 
 
-The simplest train/test splitting is random, where we select random element of the response matrix to be in the training set, and the rest in the test set. We can demonstrate, for example, with the Bradley-Terry response with a 80% training and 20% testing data:
+The simplest train/test splitting is random, where we select a random subset (e.g., 80%) of the response matrix to be in the training set, and the rest in the test set. We can demonstrate, for example, with the Bradley-Terry response with 80% training and 20% testing data:
 
 ```{python}
 V = rng.normal(loc=0.0, scale=1, size=M)
@@ -251,14 +251,14 @@ plt.colorbar(im2, fraction=0.046, pad=0.04)
 plt.show()
 ```
 
-Having the train and test datasets from the Bradley-Terry response, which is denoted as $\mathcal{D}_{\text{train}}$ and $\mathcal{D}_{\text{test}}$, we first demonstrate the parameter learning with full information maximum likelihood estimation:
+Having the train and test datasets from the Bradley–Terry response, which are denoted as $\mathcal{D}_{\text{train}}$ and $\mathcal{D}_{\text{test}}$, we first demonstrate the parameter learning with full information maximum likelihood estimation on a single user:
 
 $$
-\hat{V} = \arg\max_{V} \sum_{j,j' \in \mathcal{D}_{\text{train}}} \log p(Y_{0,jj'} | P_{0,jj'}), \quad P_{0, jj'} = V 1_M^\top - 1_M V^\top,
+\hat{V} = \arg\max_{V} \sum_{j,j' \in \mathcal{D}_{\text{train}}} \log p(Y_{0,jj'} | \sigma(H_{0,jj'})), \quad H_{0} = V 1_M^\top - 1_M V^\top,
 $$
-where $1_M$ is a column vector of 1 with length $M$. The optimization can be carried out with standard optimizers, such as gradient descent.
+where $1_M$ is a column vector of 1 with length $M$ and $H_{0,jj'} = v_j-v_{j'}$ for a fixed user $0$. The optimization can be carried out with standard optimizers, such as gradient descent.
 
-Let $\mathcal{N}^+_{m={(m,k) \in \mathcal D*{\text{train}}}}$ be pairs recorded in the order $(m,k)$. Let $\mathcal{N}^-_{m={(k,m)\in\mathcal D*{\text{train}}}}$ be pairs recorded in the order $(k,m)$. Define residuals $r_{mk} = y_{mk} - \sigma(V_m - V_k)$ and $r_{km} = y_{km} - \sigma(V_k-V_m)$. Then
+Let $\mathcal{N}_m^+ = \{(m,k) \in \mathcal{D}_{\text{train}}\}$ be pairs recorded in the order $(m,k)$. Let $\mathcal{N}_m^- = \{(k,m) \in \mathcal{D}_{\text{train}}\}$ be pairs recorded in the order $(k,m)$. Define residuals $r_{mk} = y_{mk} - \sigma(V_m - V_k)$ and $r_{km} = y_{km} - \sigma(V_k-V_m)$. Then
 
 $$
 \frac{\partial \ell}{\partial V_m} 
@@ -266,7 +266,7 @@ $$
 - \sum_{(k,m)\in \mathcal{N}^-_m} r_{km}.
 $$
 
-This shows the contribution of data about $m$ only. Each comparison with opponent $k$ adds a term equal to the observed-minus-predicted win indicator, with a plus sign if $m$ is listed first and a minus sign if $m$ is listed second. Intuition. If $m$ beats $k$ more often than the model predicts, the residual is positive and the gradient pushes $V_m$ up. If $m$ loses to $k$ more than predicted, the residual is negative and the gradient pushes $V_m$ down.
+This shows the contribution of data about $m$ only. Each comparison with opponent $k$ adds a term equal to the observed-minus-predicted win indicator, with a plus sign if $m$ is listed first and a minus sign if $m$ is listed second. Intuitively, if $m$ beats $k$ more often than the model predicts, the residual is positive and the gradient pushes $V_m$ up. If $m$ loses to $k$ more than predicted, the residual is negative and the gradient pushes $V_m$ down.
 
 ```{python}
 def auc_from_scores(scores, labels):
@@ -358,7 +358,7 @@ print(f"Mean AUC over resamples. Bayes: {np.mean(bayes_list):.4f}. Model: {np.me
 print(f"5–95% range Bayes: {np.percentile(bayes_list,[5,95])}. Model: {np.percentile(model_list,[5,95])}.")
 ```
 
-The result shows that the inference has found a good solution compare to the Bayes optimal estimator! A additional, natural test is to see if the estimated parameters match the true ones. Since the likelihood function only pays attention of the difference of item appeal for any pair, the appeal is only identifiable up to a shift and scale transform. The standard practice is to center and whiten the solution.
+The result shows that the inference has found a good solution compared to the Bayes optimal estimator! An additional, natural test is to see if the estimated parameters match the true ones. Since the likelihood function only pays attention to the difference of item appeal for any pair, the appeal is only identifiable up to a shift and scale transform. The standard practice is to center and whiten the solution.
 
 ```{python}
 # Center and whiten V_hat (zero mean, unit variance)
@@ -401,12 +401,12 @@ $$
 The denominator is the marginal likelihood (evidence), which is intractable in closed form, so we resort to MCMC (e.g., MH) to sample from the posterior. Suppose we are at current (parameter) state $V^{(t)}$. We propose a new state $V'$ from a proposal distribution, such as Gaussian: $q(V' \mid V^{(t)}) = \mathcal N (V'; V^{(t)}, \tau^2 I),$ where $\tau^2$ is a step-size variance. This proposal is symmetric, meaning $q(V' \mid V^{(t)}) = q(V^{(t)} \mid V').$ For any proposal distribution $q(V' \mid V^{(t)})$, the Metropolis–Hastings acceptance probability is
 
 $$
-\alpha = \min \{ {1; \frac{p(V' \mid \mathcal D), q(V^{(t)} \mid V')}{p(V^{(t)} \mid \mathcal D), q(V' \mid V^{(t)})}} \}.
+\alpha = \min \left\{1, \frac{p(V' \mid \mathcal D) \cdot q(V^{(t)} \mid V')}{p(V^{(t)} \mid \mathcal D) \cdot q(V' \mid V^{(t)})}\right\}.
 $$
 
 This says: accept the proposal with probability proportional to how much more plausible it is under the posterior, adjusted by how easy it is to propose back. If we choose a Gaussian proposal, the proposal terms cancel out in the ratio due to symmetry. So the acceptance rule simplifies to
 $$
-\alpha = \min \{1, \frac{p(V' \mid \mathcal D)}{p(V^{(t)} \mid \mathcal D)} \} = \min \{1, \frac{p(\mathcal D \mid V'), p(V')}{p(\mathcal D \mid V^{(t)}), p(V^{(t)})} \}.
+\alpha = \min \left\{1, \frac{p(V' \mid \mathcal D)}{p(V^{(t)} \mid \mathcal D)}\right\} = \min \left\{1, \frac{p(\mathcal D \mid V') \cdot p(V')}{p(\mathcal D \mid V^{(t)}) \cdot p(V^{(t)})}\right\}.
 $$
 
 ```{python}
@@ -468,7 +468,7 @@ In many applications, comparisons between items arrive sequentially over time ra
 
 This is precisely the motivation behind the **Elo rating system**, originally introduced for ranking chess players and later widely adopted in competitive games, online platforms, and even information retrieval. The key idea is to maintain a current estimate of each item's (or player's) latent strength, and update only the two items involved in a match when a new result comes in.
 
-The Elo rule can be derived as a stochastic gradient ascent method on the Bradley–Terry log-likelihood. Suppose item (j) plays against item (j'). Given the current parameters, the log-likelihood gradient with respect to $V_j$ and $V_{j'}$ is
+The Elo rule can be derived as a stochastic gradient ascent method on the Bradley–Terry log-likelihood. Suppose item $j$ plays against item $j'$. Given the current parameters, the log-likelihood gradient with respect to $V_j$ and $V_{j'}$ is
 $$
 \frac{\partial \ell}{\partial V_j} = (y - p), \qquad
 \frac{\partial \ell}{\partial V_{j'}} = -(y - p).
@@ -479,7 +479,7 @@ $$
   V_j \leftarrow V_j + \eta (y - p), \qquad V_{j'} \leftarrow V_{j'} - \eta (y - p).
 $$
 
-This is exactly the Elo update rule. The learning rate $\eta$ is often called the **K-factor** in Elo literature. If $y=1$ (item j wins) but the model predicted a low (p), then (y - p) is positive and (V_j) increases, (V_{j'}) decreases — the system learns that (j) is stronger than previously believed If $y=0$ (item j' wins), the opposite adjustment happens. The magnitude of the update is larger when the outcome is surprising (large prediction error), and smaller when the outcome is expected (small prediction error). Thus, Elo is an online learning algorithm for the Bradley–Terry model, interpretable as stochastic gradient ascent with a fixed step size.
+This is exactly the Elo update rule. The learning rate $\eta$ is often called the **K-factor** in Elo literature. If $y=1$ (item $j$ wins) but the model predicted a low $p$, then $(y - p)$ is positive and $V_j$ increases, $V_{j'}$ decreases — the system learns that $j$ is stronger than previously believed. If $y=0$ (item $j'$ wins), the opposite adjustment happens. The magnitude of the update is larger when the outcome is surprising (large prediction error), and smaller when the outcome is expected (small prediction error). Thus, Elo is an online learning algorithm for the Bradley–Terry model, interpretable as stochastic gradient ascent with a fixed step size.
 
 ```{python}
 # Build a stream of observed pairs for the single user from Y_BT upper triangle
