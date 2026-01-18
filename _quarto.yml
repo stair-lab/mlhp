@@ -1,10 +1,12 @@
 project:
   type: book
+  output-dir: _book
   preview:
     port: 4200
 
 resources:
   - CNAME
+  - "*.pdf"
   
 reference-location: document # footnotes in margin
 citation-location: document # citations in margin

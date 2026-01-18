@@ -31,6 +31,13 @@ jobs:
       - name: Render to html
         run: quarto render --to html --profile html --no-clean
 
+      - name: Ensure PDF is in output
+        run: |
+          # Copy PDF to _book if it exists at root level
+          if [ -f "Machine-Learning-from-Human-Preferences.pdf" ]; then
+            cp "Machine-Learning-from-Human-Preferences.pdf" "_book/"
+          fi
+
       - name: Publish to GitHub Pages
         uses: quarto-dev/quarto-actions/publish@v2
         with:
