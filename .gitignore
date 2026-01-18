@@ -62,3 +62,5 @@ images/management/analysis_pipeline.pdf
 /src/.jupyter_cache
 
 /.quarto/
+
+**/*.quarto_ipynb
