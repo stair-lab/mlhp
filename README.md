@@ -99,6 +99,48 @@ git push origin main
 
 The GitHub Actions workflow will automatically build and publish to GitHub Pages.
 
+## Server Deployment (Stanford)
+
+To build and deploy on the Stanford server without compiling locally:
+
+### One-time setup
+
+1. Create a conda environment with Quarto:
+
+```bash
+conda create -n mlhp python=3.11 quarto=1.5.56 -c conda-forge
+conda activate mlhp
+pip install -r requirements.txt
+```
+
+2. Clone the repository to the server:
+
+```bash
+cd /lfs/skampere2/0/sttruong
+git clone https://github.com/sangttruong/mlhp
+```
+
+### Deploying updates
+
+Run the deploy script:
+
+```bash
+./deploy.sh
+```
+
+This will pull the latest changes, build the HTML, and sync to `/afs/cs/group/koyejolab/mlhp/www/`.
+
+Alternatively, run the steps manually:
+
+```bash
+source /lfs/local/0/sttruong/miniconda3/etc/profile.d/conda.sh
+conda activate mlhp
+cd /lfs/skampere2/0/sttruong/mlhp
+git pull
+quarto render --to html --profile html
+rsync -av --delete _book/ /afs/cs/group/koyejolab/mlhp/www/
+```
+
 ## Troubleshooting
 
 - **Quarto version issues:** Ensure you have Quarto >= 1.5.56. Check with `quarto --version`.
