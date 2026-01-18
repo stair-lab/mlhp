@@ -54,7 +54,7 @@ images/management/analysis_pipeline.pdf
 *.tex
 *.pdf
 *.idx
-*.ild
+*.ilg
 *.ind
 *.lock
 *.ipynb

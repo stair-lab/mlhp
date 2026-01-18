@@ -1,7 +1,7 @@
 # Machine Learning from Human Preferences
 ### Sang Truong, Andreas Haupt, and Sanmi Koyejo
 
-This book is available online at: [ai.stanford.edu/~sttruong/mlhp](https://ai.stanford.edu/~sttruong/mlhp)
+This book is available online at: [mlhp.stanford.edu](https://mlhp.stanford.edu/)
 
 ## Prerequisites
 
