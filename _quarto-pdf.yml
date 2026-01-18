@@ -1,4 +1,2 @@
 book:
-  appendices:
-    # only for latex output
-    # - example.qmd
+  appendices: []

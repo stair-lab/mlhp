@@ -137,8 +137,10 @@ source /lfs/local/0/sttruong/miniconda3/etc/profile.d/conda.sh
 conda activate mlhp
 cd /lfs/skampere2/0/sttruong/mlhp
 git pull
-quarto render --to html --profile html
-rsync -av --delete _book/ /afs/cs/group/koyejolab/mlhp/www/
+quarto render --to pdf --profile pdf
+quarto render --to html --profile html --no-clean
+rsync -av --delete --no-perms _book/ /afs/cs/group/koyejolab/mlhp/www/
+
 ```
 
 ## Troubleshooting
