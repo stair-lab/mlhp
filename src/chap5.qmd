@@ -12,21 +12,445 @@ execute:
 ::: {.content-visible when-format="html"}
 
 <iframe
-  src="../slides/4.1.dueling_bandit/"
+  src="https://web.stanford.edu/class/cs329h/slides/4.1.dueling_bandit/#/"
   style="width:45%; height:225px;"
 ></iframe>
 <iframe
-  src="../slides/4.2.preferential_baysian_optimization/"
+  src="https://web.stanford.edu/class/cs329h/slides/4.2.preferential_baysian_optimization/#/"
   style="width:45%; height:225px;"
 ></iframe>
-[Fullscreen Part 1](../slides/4.1.dueling_bandit/){.btn .btn-outline-primary .btn role="button"}
-[Fullscreen Part 2](../slides/4.2.preferential_baysian_optimization/){.btn .btn-outline-primary .btn role="button"}
+[Fullscreen Part 1](https://web.stanford.edu/class/cs329h/slides/4.1.dueling_bandit/#/){.btn .btn-outline-primary .btn role="button"}
+[Fullscreen Part 2](https://web.stanford.edu/class/cs329h/slides/4.2.preferential_baysian_optimization/#/){.btn .btn-outline-primary .btn role="button"}
 
 :::
 
+
+::: {.callout-note}
+## Intended Learning Outcomes
+
+By the end of this chapter you will be able to:
+
+- **Distinguish** the measurement perspective (reducing uncertainty) from the reward maximization perspective (managing uncertainty) in preference learning.
+- **Derive** Thompson Sampling for linear objectives using Laplace approximation to handle intractable posteriors.
+- **Extend** Thompson Sampling to nonlinear objectives using Gaussian Processes and GP classification.
+- **Define** regret (strong, weak, and Bayesian) in dueling bandit settings and explain when each notion is appropriate.
+- **Compare** winner concepts—Condorcet, Borda, and Von Neumann winners—and identify when they may diverge.
+- **Apply** acquisition functions (Uniform, Epsilon-Greedy, UCB, Pure Exploration, qEUBO) for sequential decision-making with preference feedback.
+- **Analyze** regret bounds for Preferential Bayesian Optimization algorithms and understand their convergence guarantees.
+- **Implement** Thompson Sampling and dueling bandit algorithms in practical settings.
+
+:::
+
+::: {.callout-note title="Notation"}
+This chapter uses notation established in previous chapters:
+
+- User embedding: $U_i \in \mathbb{R}^K$
+- Item features/loadings: $V_j \in \mathbb{R}^K$
+- Latent utility: $H_{ij} = h_i(V_j)$ where $h_i: \mathbb{R}^K \to \mathbb{R}$
+- Binary preference outcome: $Y_{ij} \in \{0, 1\}$
+- Sigmoid function: $\sigma(x) = 1/(1 + e^{-x})$
+
+New notation for this chapter:
+
+- Dataset at time $t$: $\mathcal{D}_t = \{(V_j, Y_{ij})\}_{j=1}^t$
+- Posterior sample: $\tilde{U}_i^{(t)} \sim p(U_i \mid \mathcal{D}_t)$
+- Acquisition function: $\alpha(\cdot)$
+- Cumulative regret after $T$ steps: $R(T) = \sum_{t=1}^T (\mu^* - \mu_{a_t})$
+- GP posterior mean/variance: $\mu_t(\cdot), \sigma_t^2(\cdot)$
+- Kernel function: $k(\cdot, \cdot)$
+- Preference function: $\pi_f([\mathbf{x}, \mathbf{x}'])$ — probability that $\mathbf{x}$ is preferred to $\mathbf{x}'$
+:::
+
+## The Reward Maximization under Uncertainty Problem
+Up to this point, we have considered the measurement problem: the goal was to learn about the user’s latent construct $h_i$ (or its low-dimensional embedding $U_i$) by choosing items that are most informative about it. In this view, uncertainty is something to be reduced. In contrast, the reward maximization perspective treats uncertainty as something to be managed. Here, the system must choose actions (items) that yield the highest expected reward, even though the latent function $h_i$ governing user preferences is unknown. This is the domain of Bayesian optimization formulations.
+
+Each user $i$ interacts with a set of available items indexed by $j$, each characterized by a known parameter vector $V_j \in \mathbb{R}^K$. The user’s utility function is $H_{ij} = h_i(V_j),$ where $h_i: \mathbb{R}^K \rightarrow \mathbb{R}$ maps item features to latent utility. We only observe noisy or partial feedback, such as item-wise or pairwise responses. The agent’s objective is to select items sequentially to maximize reward. 
+
+In the linear case, we assume $h_i(V_j) = U_i^\top V_j$, with $U_i \in \mathbb{R}^K$ representing the user’s latent vector. This recovers the logistic or Rasch model when observations are binary: $p(Y_{ij}=1) = \sigma(U_i^\top V_j).$ In this setting, the uncertainty about $U_i$ defines a posterior distribution (p(U_i \mid \text{data})), and the system’s exploration–exploitation tradeoff can be quantified by the expected utility and posterior variance. Algorithms such as Thompson Sampling operate directly on this posterior, balancing exploration (reducing uncertainty about $U_i$) and exploitation (recommending high-utility $V_j$).
+
+In the nonlinear case, a common choice is to place a Gaussian process prior over $h_i$: $h_i \sim \mathcal{GP}(m(\cdot), k(\cdot,\cdot)),$ where the kernel $k(V, V')$ encodes similarity between items. This yields the Bayesian optimization formulation. The system uses acquisition functions (e.g., Thompson Sampling or expected improvement) to trade off exploitation and exploration.
+
+## Thompson Sampling under Linear Objective
+
+Thompson Sampling (TS) is among the most conceptually transparent and empirically successful methods for decision-making under uncertainty. It converts Bayesian inference into a simple randomized decision rule: sample a plausible world, then act optimally within it. Formally, suppose we maintain a posterior distribution over the latent user embedding $p(U_i \mid \mathcal{D}_t) \propto p(\mathcal{D}_t \mid U_i) p(U_i),$ where $\mathcal{D}_t = {(V_j, Y_{ij})}_{j=1}^t$ denotes the user’s observed responses. At each round $t+1$, Thompson Sampling draws a single sample $\tilde{U}_i^{(t)} \sim p(U_i \mid \mathcal{D}_t),$
+and then chooses the next item that maximizes the sampled expected utility: $j^* = \arg\max_j \tilde{U}_i^{(t)\top} V_j.$
+This randomized strategy naturally balances exploration and exploitation: if posterior uncertainty is large, different draws $\tilde{U}_i^{(t)}$ lead to diverse item choices; as the posterior concentrates, the policy converges to greedy exploitation.
+
+Under binary or preference feedback modeled by a logistic link,
+$$
+p(Y_{ij}=1 \mid U_i, V_j) = \sigma(U_i^\top V_j),
+$$
+the posterior becomes non-Gaussian and analytically intractable. We therefore approximate it with a Laplace approximation, replacing the true posterior with a local Gaussian centered at the mode (the MAP estimate).
+
+Let the log-posterior be:
+$$
+\ell(U_i) = \log p(U_i) + \sum_{j \in \mathcal{D}_t} \log p(Y_{ij} \mid U_i).
+$$
+We expand $\ell(U_i)$ around its maximum a posteriori estimate $\hat{U}_i$:
+$$
+\ell(U_i) \approx \ell(\hat{U}_i) - \tfrac{1}{2}(U_i - \hat{U}_i)^\top G (U_i - \hat{U}_i),
+$$
+where $G = -\nabla^2_{U_i} \ell(\hat{U}_i)$ is the negative Hessian of the log-posterior. This yields the Gaussian approximation:
+$$
+p(U_i \mid \mathcal{D}_t) \approx \mathcal{N}(\hat{U}_i, G^{-1}).
+$$
+
+In the logistic model,
+$$
+G = I + \sum_{j} p_j(1-p_j) V_j V_j^\top,
+$$
+where $p_j = \sigma(\hat{U}_i^\top V_j)$ and $I$ arises from the Gaussian prior $p(U_i) = \mathcal{N}(0, I)$.
+
+At each time step $t$:
+
+1. **Update posterior approximation**
+   Compute $\hat{U}_i$ by maximizing the log-posterior:
+$$
+\hat{U}_i = \arg\max_{U_i} \Big[\sum_{j\in\mathcal{D}_t} Y_{ij}\log\sigma(U_i^\top V_j) + (1-Y_{ij})\log(1-\sigma(U_i^\top V_j)) - \tfrac{1}{2}|U_i|^2 \Big].
+$$
+
+2. **Compute Hessian at the mode**
+   $$
+   G = I + \sum_{j} p_j(1-p_j) V_j V_j^\top.
+   $$
+
+3. **Sample a posterior draw**
+   $$
+   \tilde{U}_i^{(t)} \sim \mathcal{N}(\hat{U}_i, G^{-1}).
+   $$
+
+4. **Select next item**
+   $$
+   j^* = \arg\max_j \tilde{U}_i^{(t)\top} V_j.
+   $$
+
+This algorithm naturally unifies measurement and decision: the posterior (a measurement construct) drives the sampling rule (a decision construct).
+
+::: {.callout-note title="Code: Thompson Sampling with Laplace Approximation"}
+
+```{pyodide-python}
+import torch
+from torch.distributions import MultivariateNormal, Bernoulli
+from torch.optim import LBFGS
+
+def fit_logistic_map(Y, V, prior_var=1.0, max_iter=50):
+    """Estimate MAP and approximate posterior via Laplace."""
+    K = V.shape[1]
+    U = torch.zeros(K, requires_grad=True)
+    opt = LBFGS([U], lr=1.0, max_iter=max_iter)
+
+    def closure():
+        opt.zero_grad()
+        logits = V @ U
+        nll = - (Y * torch.log(torch.sigmoid(logits)) +
+                 (1 - Y) * torch.log(1 - torch.sigmoid(logits))).sum()
+        nll = nll + 0.5 * (U @ U) / prior_var  # Gaussian prior
+        nll.backward()
+        return nll
+
+    opt.step(closure)
+    with torch.no_grad():
+        p = torch.sigmoid(V @ U)
+        W = torch.diag(p * (1 - p))
+        H = torch.eye(K) / prior_var + V.T @ W @ V
+    cov = torch.inverse(H)
+    return U.detach(), cov
+
+# Example usage
+torch.manual_seed(0)
+V = torch.randn(50, 3)
+U_true = torch.tensor([1.0, -0.5, 0.7])
+Y = Bernoulli(torch.sigmoid(V @ U_true)).sample()
+
+U_map, cov = fit_logistic_map(Y, V)
+U_sample = MultivariateNormal(U_map, cov).sample()
+scores = (V @ U_sample).detach()
+j_star = scores.argmax().item()
+print(f"Next item to recommend: {j_star}")
+```
+
+:::
+
+```{python}
+#| echo: false
+import torch
+from torch.distributions import MultivariateNormal, Bernoulli
+from torch.optim import LBFGS
+
+def fit_logistic_map(Y, V, prior_var=1.0, max_iter=50):
+    """Estimate MAP and approximate posterior via Laplace."""
+    K = V.shape[1]
+    U = torch.zeros(K, requires_grad=True)
+    opt = LBFGS([U], lr=1.0, max_iter=max_iter)
+
+    def closure():
+        opt.zero_grad()
+        logits = V @ U
+        nll = - (Y * torch.log(torch.sigmoid(logits)) +
+                 (1 - Y) * torch.log(1 - torch.sigmoid(logits))).sum()
+        nll = nll + 0.5 * (U @ U) / prior_var  # Gaussian prior
+        nll.backward()
+        return nll
+
+    opt.step(closure)
+    with torch.no_grad():
+        p = torch.sigmoid(V @ U)
+        W = torch.diag(p * (1 - p))
+        H = torch.eye(K) / prior_var + V.T @ W @ V
+    cov = torch.inverse(H)
+    return U.detach(), cov
+
+# Example usage
+torch.manual_seed(0)
+V = torch.randn(50, 3)
+U_true = torch.tensor([1.0, -0.5, 0.7])
+Y = Bernoulli(torch.sigmoid(V @ U_true)).sample()
+
+U_map, cov = fit_logistic_map(Y, V)
+U_sample = MultivariateNormal(U_map, cov).sample()
+scores = (V @ U_sample).detach()
+j_star = scores.argmax().item()
+print(f"Next item to recommend: {j_star}")
+```
+
+## Thompson Sampling under Nonlinear Objective
+
+The linear formulation assumes that a user’s latent utility varies linearly with item features. In practice, preference landscapes are often **highly nonlinear**: users may favor intermediate difficulty, exhibit saturation, or respond differently to combinations of attributes. To capture such complex relations, we move from a **parametric vector representation** $(U_i)$ to a **nonparametric function representation** $(h_i)$.
+
+A **Gaussian Process (GP)** defines a distribution over functions:
+$$
+h_i \sim \mathcal{GP}(m(\cdot), k(\cdot, \cdot)),
+$$
+where $m(V)$ is the mean function (often assumed to be zero) and $k(V, V')$ is the **kernel**, encoding similarity between items. Intuitively, a GP asserts that **similar items yield similar utilities**, with the kernel controlling smoothness and generalization.
+
+For any finite collection of inputs $V_{1:T}$, the corresponding function values
+$$
+H_{i, 1:M} = [h_i(V_1), \dots, h_i(V_M)]
+$$
+follow a multivariate normal distribution:
+$$
+H_{i, 1:M} \sim \mathcal{N}(m_{1:M}, K_{1:M,1:M}),
+$$
+where $(K)_{jj'} = k(V_j, V_{j'})$.
+
+
+The probability density function (PDF) of a multivariate normal random variable
+$$
+H \sim \mathcal{N}(m, K)
+$$
+is given by
+$$
+p(H) = \frac{1}{(2\pi)^{t/2} |K|^{1/2}}
+\exp \Big(-\tfrac{1}{2}(H-m)^\top K^{-1} (H-m) \Big).
+$$
+Taking the logarithm yields
+$$
+\log p(H) = -\tfrac{1}{2}(H-m)^\top K^{-1} (H-m) - \tfrac{1}{2}\log|K| - \tfrac{t}{2}\log(2\pi).
+$$
+
+In most inference contexts, constant terms (those not depending on $H$) can be dropped, since they cancel when normalizing the posterior.
+
+This nonparametric formulation is advantageous because:
+
+* It **automatically adapts model complexity** to the data through the kernel.
+* It **provides closed-form posterior updates** under Gaussian noise.
+* It **generalizes across items** by exploiting smoothness in feature space.
+
+For **binary observations**,
+$$
+p(Y_{ij}=1 \mid h_i(V_j)) = \sigma(h_i(V_j)),
+$$
+the likelihood is non-Gaussian, and the posterior
+$$
+p(h_i \mid \mathcal{D}_t) \propto p(Y_{1:t} \mid h_i) p(h_i)
+$$
+becomes **intractable**. To approximate it, we again use the **Laplace approximation**.
+
+Let $H_i = [h_i(V_1), \dots, h_i(V_t)]$. The log-posterior is
+$$
+\ell(H_i) = \log p(Y_{1:t} \mid H_i) - \tfrac{1}{2}H_i^\top K_t^{-1}H_i - \tfrac{1}{2}\log|K_t|.
+$$
+
+
+
+<!-- We approximate this by a second-order Taylor expansion around the mode $\hat{H_i}$:
+$$
+\ell(H_i) \approx \ell(\hat{H_i}) - \tfrac{1}{2}(H_i-\hat{H_i})^\top W (H_i-\hat{H_i}),
+$$
+where $W = K_t^{-1} + \nabla^2_{H_i}[-\log p(Y_{1:t} \mid H_i)]_{H_i=\hat{H_i}}$.
+This yields the Gaussian approximation
+$$
+p(H_i \mid \mathcal{D}_t) \approx \mathcal{N}(\hat{H_i}, (K_t^{-1} + W)^{-1}).
+$$ -->
+
+Let
+$$
+\hat H_i = \arg\max_{h} \ell(h)
+$$
+be the **mode** (MAP).
+
+The multivariate second-order Taylor expansion of a smooth scalar function $\ell(\cdot)$ around $\hat H_i$ is
+$$
+\ell(H_i) \approx \ell(\hat H_i) + \nabla\ell(\hat H_i)^\top(H_i-\hat H_i) + \tfrac12(H_i-\hat H_i)^\top \nabla^2\ell(\hat H_i)(H_i-\hat H_i).
+$$
+
+* Because $\hat H_i$ is a maximizer, the gradient vanishes:
+  $$
+  \nabla\ell(\hat H_i)=0.
+  $$
+* The Hessian at a maximum is **negative semidefinite**:
+  $$
+  \nabla^2\ell(\hat H_i) \preceq 0.
+  $$
+
+So the expansion simplifies to
+$$
+\ell(H_i) \approx \ell(\hat H_i) + \tfrac12 (H_i-\hat H_i)^\top \nabla^2\ell(\hat H_i)(H_i-\hat H_i).
+$$
+
+Define the **negative Hessian** (a positive semidefinite matrix)
+$$
+W := -\nabla^2\ell(\hat H_i) \succeq 0.
+$$
+
+Then
+$$
+\ell(H_i) \approx \ell(\hat H_i) - \tfrac12 (H_i-\hat H_i)^\top W (H_i-\hat H_i).
+$$
+
+Laplace’s idea is: if the **log** posterior is approximately quadratic, then the **posterior** is approximately Gaussian. Exponentiate the quadratic approximation:
+
+$$
+p(H_i\mid\mathcal D_t) \propto \exp\big(\ell(H_i)\big) \approx \exp \Big(\ell(\hat H_i)-\tfrac12(H_i-\hat H_i)^\top W (H_i-\hat H_i)\Big).
+$$
+
+Since $\exp(\ell(\hat H_i))$ is just a constant in $H_i$, this is proportional to the kernel of a multivariate normal with mean $\hat H_i$ and precision $W$ (i.e., covariance $W^{-1}$):
+
+$$
+p(H_i\mid\mathcal D_t) \approx \mathcal N\big(\hat H_i, W^{-1}\big).
+$$
+
+
+The resulting approximate posterior can be **projected to any new input** $V_*$ via standard GP conditioning:
+$$
+p(h(V_*) \mid \mathcal{D}_t) \approx \mathcal{N}(\mu_t(V_*), \sigma_t^2(V_*)),
+$$
+where
+$$
+\mu_t(V_*) = k_*^\top K_t^{-1}\hat{H_i}, \quad
+\sigma_t^2(V_*) = k(V_*,V_*) - k_*^\top (K_t + W^{-1})^{-1} k_*.
+$$
+where the $k_*$ is the covariance between the new point and previous points.
+
+Once the posterior is approximated, **Thompson Sampling** proceeds as before:
+sample one plausible function from the posterior, then act optimally with respect to it.
+
+Algorithmically:
+
+1. **Approximate the posterior** $p(h_i \mid \mathcal{D}_t) \approx \mathcal{N}(\hat{H_i}, \Sigma_f)$ via Laplace.
+2. **Sample a function realization**
+   $$
+   \tilde{h}_i \sim \mathcal{GP}(m_t(\cdot), k_t(\cdot, \cdot)),
+   $$
+   where $m_t$ and $k_t$ are derived from the approximate posterior.
+3. **Select the next item**
+   $$
+   j^* = \arg\max_j \tilde{h}_i(V_j).
+   $$
+
+This random sampling induces exploration: uncertain regions of the function space produce high variance in $\tilde{h}_i(V_j)$, encouraging the agent to test them. As more observations are collected, the posterior variance shrinks and the strategy converges toward greedy exploitation.
+
+Below is a minimal illustration using **GP classification with Laplace approximation** and Thompson sampling. (For practical scalability, packages like `gpytorch` or `scikit-learn` can be used.)
+
+::: {.callout-note title="Code: GP Thompson Sampling"}
+
+```{pyodide-python}
+import torch
+import math
+from torch.distributions import MultivariateNormal, Bernoulli
+
+def rbf_kernel(X1, X2, lengthscale=1.0, variance=1.0):
+    diff = X1[:, None, :] - X2[None, :, :]
+    dist2 = (diff ** 2).sum(-1)
+    return variance * torch.exp(-0.5 * dist2 / lengthscale**2)
+
+def gp_laplace_binary(V, Y, lengthscale=1.0, variance=1.0, max_iter=10):
+    N = len(Y)
+    K = rbf_kernel(V, V, lengthscale, variance)
+    f = torch.zeros(N)
+    for _ in range(max_iter):
+        p = torch.sigmoid(f)
+        W = torch.diag(p * (1 - p))
+        z = f + (Y - p) / (p * (1 - p) + 1e-6)
+        B = torch.eye(N) + torch.sqrt(W) @ K @ torch.sqrt(W)
+        L = torch.linalg.cholesky(B)
+        a = torch.cholesky_solve(torch.sqrt(W) @ z, L)
+        f = K @ (torch.sqrt(W) @ a)
+    W = torch.diag(p * (1 - p))
+    Sigma = K - K @ torch.sqrt(W) @ torch.cholesky_solve(torch.sqrt(W) @ K, L)
+    return f.detach(), Sigma.detach()
+
+# Example usage
+torch.manual_seed(0)
+V = torch.linspace(-3, 3, 40).unsqueeze(1)
+true_f = torch.sin(V * 1.5)
+Y = Bernoulli(torch.sigmoid(true_f)).sample()
+
+f_hat, Sigma = gp_laplace_binary(V, Y)
+f_sample = MultivariateNormal(f_hat.squeeze(), Sigma).sample()
+j_star = f_sample.argmax().item()
+print(f"Next item index: {j_star}")
+```
+
+:::
+
+```{python}
+#| echo: false
+import torch
+import math
+from torch.distributions import MultivariateNormal, Bernoulli
+
+def rbf_kernel(X1, X2, lengthscale=1.0, variance=1.0):
+    diff = X1[:, None, :] - X2[None, :, :]
+    dist2 = (diff ** 2).sum(-1)
+    return variance * torch.exp(-0.5 * dist2 / lengthscale**2)
+
+def gp_laplace_binary(V, Y, lengthscale=1.0, variance=1.0, max_iter=10):
+    N = len(Y)
+    K = rbf_kernel(V, V, lengthscale, variance)
+    f = torch.zeros(N)
+    for _ in range(max_iter):
+        p = torch.sigmoid(f)
+        W = torch.diag(p * (1 - p))
+        z = f + (Y - p) / (p * (1 - p) + 1e-6)
+        B = torch.eye(N) + torch.sqrt(W) @ K @ torch.sqrt(W)
+        L = torch.linalg.cholesky(B)
+        a = torch.cholesky_solve(torch.sqrt(W) @ z, L)
+        f = K @ (torch.sqrt(W) @ a)
+    W = torch.diag(p * (1 - p))
+    Sigma = K - K @ torch.sqrt(W) @ torch.cholesky_solve(torch.sqrt(W) @ K, L)
+    return f.detach(), Sigma.detach()
+
+# Example usage
+torch.manual_seed(0)
+V = torch.linspace(-3, 3, 40).unsqueeze(1)
+true_f = torch.sin(V * 1.5)
+Y = Bernoulli(torch.sigmoid(true_f)).sample()
+
+f_hat, Sigma = gp_laplace_binary(V, Y)
+f_sample = MultivariateNormal(f_hat.squeeze(), Sigma).sample()
+j_star = f_sample.argmax().item()
+print(f"Next item index: {j_star}")
+```
+
+
+<!-- TODO: Briefly introduce expected improvement as another acquisition function -->
+
 ## Dueling Bandit
 
-The multi-armed bandit (MAB) problem involves a gambler deciding which lever to pull on an MAB 
+### From Multi-Armed Bandits to Dueling Bandits
+
+The multi-armed bandit (MAB) problem involves a gambler deciding which lever to pull on an MAB
 machine to maximize the winning rate, despite not knowing which machine is the most rewarding. 
 This scenario highlights the need to balance exploration (trying new machines to discover potential 
 higher rewards) and exploitation (using current knowledge to maximize gains). MAB algorithms 
@@ -185,6 +609,8 @@ discrete bandits), we can define two notions of regret:
     the optimal bandit $b^*$ over the *better* of the options $b_1, b_2$
     we provide at a given
     step:$\tilde{R}_T = \sum_{t = 1}^T \text{min} \left\{ \epsilon(b^*, b_1^{(t)}), \epsilon(b^*, b_2^{(t)}) \right\}$
+
+### Winner Concepts
 
 The best bandit described in our regret definition is called a
 **Condorcet Winner**. This is the strongest form of winner. It's the
@@ -531,8 +957,7 @@ the bandits.
 #### Feel-good Thompson sampling
 
 This algorithm is a solution for the contextual dueling bandit setting,
-and tries to minimize cumulative average regret (= find WHAT WINNER?!Von
-Neumann???):
+and aims to find a Von Neumann winner by minimizing cumulative average regret:
 $$\text{Regret}(T) := \sum_{t=1}^{T} \left[ r_{*}(x_t, a_{t}^{*}) - \frac{r_{*}(x_t, a_{t}^{1}) + r_{*}(x_t, a_{t}^{2})}{2} \right],$$
 where $r_{*}(x_t, a_{t})$ is the true, hidden reward function of a
 context $x_t$ and action $a_t$. Thompson sampling is an iterative
@@ -643,7 +1068,7 @@ an algorithm that balances immediate and future profits by combining
 multi-armed bandits with partial identification of consumer demand from
 economic theory.
 
-are essential components of numerous online platforms, guiding users
+**Recommendation systems** are essential components of numerous online platforms, guiding users
 through vast content landscapes to deliver tailored suggestions. These
 systems are instrumental in platforms like e-commerce sites, streaming
 platforms, and social media networks. However, the challenge of
@@ -850,8 +1275,8 @@ $\left[\mathbf{x}, \mathbf{x}^{\prime}\right]$ to the probability of
 having a preference on the left input $\mathbf{x}$ over the right input
 $\mathbf{x}^{\prime}$.
 
-When we marginalize over the right input $\mathbf{x}^{\prime}$ of $f$
-(is this correct?), the global minimum of $f$ in $\mathcal{X}$ coincides
+When we marginalize over the right input $\mathbf{x}^{\prime}$ of $f$,
+the global minimum of $f$ in $\mathcal{X}$ coincides
 with $\mathbf{x}_{\min }$. We also introduce the definition of the
 *Copeland score function* for a point $\mathbf{x}$ as
 $$S(\mathbf{x})=\operatorname{Vol}(\mathcal{X})^{-1} \int_{\mathcal{X}} \mathbb{I}_{\left\{\pi_f\left(\left[\mathbf{x}, \mathbf{x}^{\prime}\right]\right) \geq 0.5\right\}} d \mathbf{x}^{\prime}$$
@@ -1061,12 +1486,11 @@ This contradiction concludes the proof. ◻
 Therefore a sufficient condition for following one-step Bayes optimality
 is by maximizing $\text{qEUBO}_n$.
 
-In experiments that were ran comparing qEUBO to other state-of-the-art
+In experiments comparing qEUBO to other state-of-the-art
 acquisition functions, qEUBO consistently outperformed on most problems
 and was closely followed by qEI and qTS. These results also extended to
 experiments with multiple options when $q>2$. In fact, there is faster
-convergence in regret when using more options in human queries. \[Prove
-Theorem 3: Regret analysis\]
+convergence in regret when using more options in human queries. The regret analysis is presented in detail below.
 
 #### qEI: Batch Expected Improvement {#qei-batch-expected-improvement .unnumbered}
 
@@ -1336,6 +1760,93 @@ Setting $\epsilon=1 / T$ and running our POP-BO algorithm in Alg. 1,
     $$\left.R_T=\mathcal{O}\left(T^{3 / 4}(\log T)^{3 / 4} T^{\frac{d}{\nu}\left(\frac{1}{4}+\frac{d+1}{4+2(d+1)^d / \nu}\right.}\right)\right).$$
 :::
 
+## Discussion Questions
+
+1. **Measurement vs. Optimization**: How does the reward maximization perspective differ from the measurement perspective on preference learning? When might one approach be more appropriate than the other?
+
+2. **Thompson Sampling Intuition**: Explain in your own words how Thompson Sampling achieves the exploration-exploitation tradeoff. Why does sampling from the posterior distribution lead to exploration in uncertain regions?
+
+3. **Laplace Approximation**: Why is the Laplace approximation necessary for Thompson Sampling with binary feedback? What are the potential limitations of this approximation?
+
+4. **Regret Definitions**: Compare and contrast strong regret, weak regret, and Bayesian regret in the dueling bandit setting. Give an example scenario where each would be the most appropriate metric.
+
+5. **Winner Concepts**: When might the Condorcet winner, Borda winner, and Von Neumann winner diverge? Construct a simple example with 3-4 alternatives where these concepts give different answers.
+
+6. **Acquisition Functions**: What are the key tradeoffs between the UCB and Thompson Sampling acquisition functions? How does Pure Exploration differ in its objectives?
+
+7. **qEUBO vs. qEI**: Why does qEUBO provably converge while qEI can fail to converge under the same assumptions? What does this suggest about designing acquisition functions for preferential feedback?
+
+8. **Copeland Score**: How does the soft-Copeland score relate to finding the Condorcet winner? Why might we prefer the soft version over the hard indicator-based version?
+
+9. **Contextual Bandits**: How do contextual bandits extend the basic multi-armed bandit framework? Give three real-world examples where context is crucial for making good decisions.
+
+10. **Exploration in Practice**: In recommendation systems, how might information asymmetry be used ethically to encourage exploration? What are the potential risks of this approach?
+
+11. **Bayesian Optimization Connection**: Explain the connection between Preferential Bayesian Optimization and traditional Bayesian optimization. How does the preference feedback model change the inference problem?
+
+12. **Scalability Challenges**: What are the main computational challenges in scaling dueling bandit and PBO algorithms to large action spaces? How might these be addressed?
+
+## Exercises
+
+### ⭐ Basic
+
+1. **Posterior Sampling**: Given a logistic regression model with prior $U \sim \mathcal{N}(0, I)$ and two observations $(V_1, Y_1=1)$ and $(V_2, Y_2=0)$ with $V_1 = [1, 0]^\top$ and $V_2 = [0, 1]^\top$, write down the log-posterior and identify the form of the Laplace approximation.
+
+2. **Regret Calculation**: Consider a dueling bandit with 3 arms where the preference matrix is:
+   $$P = \begin{pmatrix} 0.5 & 0.6 & 0.7 \\ 0.4 & 0.5 & 0.6 \\ 0.3 & 0.4 & 0.5 \end{pmatrix}$$
+   Identify the Condorcet winner and compute the expected regret of always choosing arms $(2, 3)$.
+
+3. **Copeland Score**: For the preference matrix in Exercise 2, compute the Copeland score for each arm.
+
+### ⭐⭐ Intermediate
+
+4. **GP Classification**: Implement GP classification with Laplace approximation for a 1D toy problem. Generate binary labels from a latent sinusoidal function passed through a sigmoid, then fit a GP and visualize the posterior mean and uncertainty.
+
+5. **Thompson Sampling Simulation**: Implement Thompson Sampling for a linear bandit with Gaussian prior. Run simulations comparing Thompson Sampling to UCB and $\varepsilon$-greedy on a synthetic problem. Plot cumulative regret curves.
+
+6. **Dueling Bandit Simulation**: Implement the Interleaved Filter algorithm and test it on a dueling bandit problem with 5 arms. Compare its sample complexity to uniform exploration for finding the Condorcet winner.
+
+### ⭐⭐⭐ Advanced
+
+7. **Laplace Approximation Derivation**: Starting from the GP binary classification model, derive the full Laplace approximation including the Hessian computation for the posterior covariance. Show that the resulting approximation is Gaussian with the correct mean and covariance.
+
+8. **qEI Failure Case**: Reproduce the proof that qEI can fail to converge by implementing the counterexample from the chapter. Verify empirically that qEI gets stuck while qEUBO converges.
+
+9. **POP-BO Regret Bound**: Following the proof sketch in the chapter, derive the regret bound for POP-BO with a linear kernel. Explain how the covering number $\mathcal{N}(\mathcal{B}_f, \epsilon, \|\cdot\|_\infty)$ appears in the bound.
+
+10. **Custom Acquisition Function**: Design and implement a novel acquisition function for preferential Bayesian optimization that balances exploration and exploitation in a different way than qEUBO. Provide theoretical justification or empirical evidence for its effectiveness.
+
+
+## Summary of Notation {#sec-notation-summary-chap5}
+
+| Symbol | Description |
+|--------|-------------|
+| $U_i \in \mathbb{R}^K$ | User latent embedding |
+| $V_j \in \mathbb{R}^K$ | Item feature vector |
+| $H_{ij} = h_i(V_j)$ | Latent utility of item $j$ for user $i$ |
+| $\mathcal{D}_t$ | Dataset of observations up to time $t$ |
+| $\tilde{U}_i^{(t)}$ | Thompson Sampling posterior sample at time $t$ |
+| $\sigma(\cdot)$ | Logistic sigmoid function |
+| $\mu_a = \mathbb{E}[r_t \mid a]$ | Expected reward of arm $a$ |
+| $R(T) = \sum_{t=1}^T (\mu^* - \mu_{a_t})$ | Cumulative regret after $T$ rounds |
+| $\mathcal{GP}(m, k)$ | Gaussian Process with mean $m$ and kernel $k$ |
+| $\mu_t(\cdot), \sigma_t^2(\cdot)$ | GP posterior mean and variance |
+| $\alpha(\cdot)$ | Acquisition function |
+| $P_{ij} = \Pr(i \succ j)$ | Preference probability of arm $i$ over $j$ |
+| $\pi_f([\mathbf{x}, \mathbf{x}'])$ | Preference function for duel |
+| $S(\mathbf{x})$ | Copeland score |
+| $C(\mathbf{x})$ | Soft-Copeland score |
+| $\mathbf{x}_c$ | Condorcet winner |
+| $g(\cdot)$ | Latent objective function in PBO |
+| $\mathcal{B}_g$ | Confidence set for $g$ |
+| $\text{qEUBO}_n(X)$ | Expected utility of best option acquisition function |
+| $K_t$ | GP kernel matrix at time $t$ |
+| $W$ | Diagonal matrix of $p(1-p)$ terms in Laplace approximation |
+
+
+<!--
+RELOCATED: The following Case Study on Foundation Models for Robotics has been moved to a later applications-focused chapter.
+
 ## Case Study 1: Foundation Models for Robotics
 
 Modern foundation models have been ubiquitous in discussions of powerful, general purpose AI systems that can accomplish myriad tasks across many disciplines such as programming, medicine, law, open question-answering and much more, with rapidly increasing capabilities [@bommasani2022opportunities]. However, despite successes from large labs in controlled environments [@brohan2023rt2] foundation models have not seen ubiquitous use in robotics due to shifting robot morphology, lack of data, and the sim to real gap in robotics [@walke2023bridgedata]. For this subsection we explore two promising approaches known as R3M and Voltron which are the first to leverage pre-training on vast amounts of data towards performance improvement on downstream robotic tasks despite the aforementioned issues [@nair2022r3m; @karamcheti2023languagedriven].
@@ -1365,4 +1876,4 @@ Data Drift Challenges: Real-world settings introduce data drift, where distribut
 Evaluation in Real-Life Scenarios: While AL methods are often evaluated assuming access to ground-truth labels, the real motivation for AL lies in label scarcity. Assessing the effectiveness of AL strategies becomes challenging in real-life scenarios where ground-truth labels may be limited. In other words, one may verify the goodness of an AL algorithm within the lab, but once the algorithm is deployed for improving all sorts of models on all sorts of data distributions, verifying whether AL is actually improving a model is tricky, especially when collecting and labeling data from the target distribution is expensive and defeats the purpose of using AL in the first place.
 
 By systematically addressing these challenges, the field of AL in AI can progress towards more effective and practical applications. In summary, AL is a promising modern tool to model training that presents potential benefits. As was mentioned at the start, there are numerous approaches that can be employed by AL, starting from reducing error of model's prediction, reducing variance, to more conformal predictions. The flavor of AL heavily depends on the applications, which include robotics, LLM, autonomous vehicles, and more. We discussed in more detail how to perform AL for variance reduction in the case of predicting kinematics of the robotic arms, which showed decrease in MSE as well as more stable reduction in it. Next we talked about using AL for reducing the number of comparisons required to create a ranking of objects, and the examples discussed were able to achieve that but with some loss in the prediction accuracy. Finally, we discussed how AL can be used for modeling of reward functions within a dynamical system, which demonstrated improvements in performance and time required to achieve it. For a more hands-on experience with AL and demonstrated example, we encourage the readers to explore a blogpost by Max Halford [@max_halford].
-
+-->

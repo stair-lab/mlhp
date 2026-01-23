@@ -13,315 +13,992 @@ execute:
 ::: {.content-visible when-format="html"}
 
 <iframe
-  src="../slides/3.1.active_learning/"
+  src="https://web.stanford.edu/class/cs329h/slides/3.1.active_learning/#/"
   style="width:45%; height:225px;"
 ></iframe>
 <iframe
-  src="../slides/3.2.metric_elicitation/"
+  src="https://web.stanford.edu/class/cs329h/slides/3.2.metric_elicitation/#/"
   style="width:45%; height:225px;"
 ></iframe>
-[Fullscreen - AL](../slides/3.1.active_learning/){.btn .btn-outline-primary .btn role="button"}
-[Fullscreen - ME](../slides/3.2.metric_elicitation/){.btn .btn-outline-primary .btn role="button"}
+[Fullscreen - AL](https://web.stanford.edu/class/cs329h/slides/3.1.active_learning/#/){.btn .btn-outline-primary .btn role="button"}
+[Fullscreen - ME](https://web.stanford.edu/class/cs329h/slides/3.2.metric_elicitation/#/){.btn .btn-outline-primary .btn role="button"}
 
 :::
 
-## The Active Learning Problem
+::: {.callout-note}
+## Intended Learning Outcomes
 
-Acquiring labeled data is expensive. Active learning (AL) is a learning paradigm that aims to reduce the amount of labeled data required to train a model to achieve high accuracy. AL algorithms iteratively select an input datapoint for an oracle (e.g., a human annotator) to label such that when the label is observed, the model improves the most. Two primary setups in AL is pool-based and stream-based. In pool-based AL, the model selects samples from a large unlabeled pool of data. For example, a model for text classification selects the most uncertain texts from a large pool to ask a human annotator to label. In stream-based AL, the model receives samples sequentially (one sample at a time) and decides whether to label them. The data is gone if the decision maker decides not to label it. In AL, a model is trained on the current dataset, and a set of candidate points is evaluated for potential inclusion. AL selects one of these points to add to the dataset based on an "acquisition function" defined with respect to the current model to estimate the value of each candidate point for improving model performance. The dataset is updated with the newly queried point, and the cycle repeats until the budget is exhausted or a predefined reliability criterion is met.
+By the end of this chapter you will be able to:
 
-AL has successfully enhance various real-world systems. For example, AL can improve the computer vision models used in autonomous vehicles [@AL_app_autonomous]. Probing a model to understand what type of data it would benefit from is more practical. In robotics, autonomous agents may query humans when unsure how to act when facing new situations [@AL_app_robotics]. Here, collecting data often incurs significant financial and time costs because physical robot arm worns out over time. In meteorology, AL can help decide where to place additional sensors for weather predictions [@AL_app_sensors]. Sensor placement involves deploying teams to remote locations and expensive construction for an extra data point. Choosing these locations and allocating resources wisely is of interest to governments and businesses. AL could also be employed to select data for fine-tuning large language models (LLMs) for specific downstream tasks [@AL_app_LLMs]. Here, it might be difficult to fully describe a targeted NLP task. Often, instead of defining a task via a dataset of examples, it may be easier for a human to interact with the LLM for a specific use case, identify gaps in the model, and address those using AL.
-
-Typically, in robotic, robots learn by observing human demonstrations. However, expert demonstrations are often limited, and training a supervised learning model would require vast amounts of demonstration data, which is difficult to obtain at scale. Demonstrations tend to be variable, reflecting the actions of individual humans, making the data collection process inconsistent. To address these limitations, alternative approaches have been proposed, such as using pairwise comparisons, where humans evaluate two action trajectories to determine the superior one, or employing physical corrections, in which reward functions are learned through human-robot interactions, with humans guiding the robot’s actions during the task. AL algorithms can be employed in preference learning tasks, where the objective is to develop a model that aligns with human preferences while minimizing the need for extensive labeled data or reducing the high cost of annotations. 
-
-Motivating by the pairwise preference setting, we consider a binary classification problem. The model is trained on a small labeled dataset $\mathcal{D} = \{(x_i, y_i)\}_{i=1}^N$, where $x_i$ represents the input data and $y_i$ is the corresponding label. The model is uncertain about the class labels of some data points and can query an oracle to obtain the true labels of these data points. The goal is to minimize the number of queries to the oracle while maximizing the model's performance. Here, the value of a datapoint is in how much it helps identify the underlying model, and this notion of informativeness is often quantify with uncertainty. Two primary types of uncertainty are often considered: epistemic and aleatoric uncertainty. Epistemic uncertainty, or model uncertainty, arises from a lack of knowledge and can be reduced by acquiring more data. This type of uncertainty is especially significant when the model lacks confidence due to insufficient or incomplete information in its training set. On the other hand, aleatoric uncertainty, or data uncertainty, stems from the inherent randomness within the data itself. Unlike epistemic uncertainty, aleatoric uncertainty cannot be reduced, even with additional data, as it reflects noise or unpredictability in the real data-generating process. AL often focuses on selecting data that reduce the epistemic uncertainty. 
-
-There are several method for quantify model uncertainty. Bayesian methods, such as Bayesian neural networks and Gaussian processes, offer a principled way of estimating uncertainty of parameter posterior distribution by iteratively updating a prior distribution over model. Exact posterior computation can become computationally prohibitive, especially for complex likelihood function, and approximated Bayesian computation is proposed to address this. For example, ensemble methods involve training multiple models and combining their predictions to provide an estimate of uncertainty. Ensemble methods are relatively easy to implement, but they are noisy and still somewhat expensive. Conformal prediction methods also provide a framework for estimating uncertainty by offering a measure of confidence in predictions based on the conformity of a given instance with the training data.
-
-## Estimating the Value of Additional Data with Acquisition Function
-Uncertainty quantification plays a vital role in acquisition functions, which are central to AL strategies. These functions determine which samples are most valuable to label by evaluating their utility based on the model's current uncertainty estimates. Common acquisition functions include uncertainty sampling [@AL_uncertainty], which selects samples the model is least confident about, query-by-committee [@AL_committee], which utilizes a set of models to choose the most uncertain samples, and Bayesian AL by Disagreement (BALD) [@AL_BALD], which selects samples that maximize information gain by reducing model uncertainty. Through careful uncertainty quantification, acquisition functions guide the AL process, improving the model's efficiency in learning from limited data. Other acquisition functions that can be employed include:
-
--   Expected model change [@AL_expmodelchange]: This approach focuses on labeling points that would have the most impact on changing the current model parameters.
-
--   Expected error reduction [@AL_experrorredn]: Points that would most effectively reduce the model's generalization error are labeled using this strategy.
-
--   Variance reduction [@AL_variance]: This approach labels points that would minimize output variance, which is one component of error. By selecting points that reduce variability in the model's predictions, it aims to improve overall performance.
-
-Uncertainty sampling [@AL_uncertainty] selects data points for which the model exhibits the greatest uncertainty, focusing labeling efforts on ambiguous samples where additional information is likely to yield the greatest benefit. Several acquisition strategies fall under uncertainty sampling, including entropy sampling, margin sampling, and least confidence sampling. Entropy sampling measures value of addition data by the entropy of the predicted probability distribution: $\alpha(x) = - \sum_{y} p(y|x) \log p(y|x)$. Margin sampling focuses on the difference between the two highest predicted probabilities for a sample: $\alpha(x) = p(y_1|x) - p(y_2|x)$, where $y_1$ and $y_2$ are two most likely classes. Least confidence sampling measures value of additional data by the lowest predicted probability for its most likely class: $\alpha(x) = 1 - p(y_{\text{max}}|x)$, where $y_{\text{max}}$ is the class with the highest probability. Consider a binary classification problem with three candidate $x_1, x_2, x_3$. The code below demonstrate that uncertainty sampling methods yield the same conclusion of selecting $x_1$.
-
-::: {.callout-note title="code"}
-```{pyodide-python}
-#| autorun: true
-import numpy as np
-
-# Predictive distributions
-probs = np.array([
-    [0.6, 0.4],  # p(y1|x1), p(y2|x1)
-    [0.3, 0.7],  # p(y1|x2), p(y2|x2)
-    [0.8, 0.2],  # p(y1|x3), p(y2|x3)
-])
-
-# Entropy Sampling
-entropy = -np.sum(probs * np.log(probs), axis=1)
-for i, e in enumerate(entropy, start=1):
-    print(f"Entropy(x_{i}) = {e:.2f}")
-# Find the index with the highest entropy
-selected_index = np.argmax(entropy)
-print(f"\nSelect x_{selected_index + 1} for labeling (highest entropy = {entropy[selected_index]:.2f})")
-
-# Sort each row in descending order to get the top two class probabilities
-sorted_probs = np.sort(probs, axis=1)[:, ::-1]
-margin = sorted_probs[:, 0] - sorted_probs[:, 1]
-for i, m in enumerate(margin, start=1):
-    print(f"Margin(x_{i}) = {m:.1f}")
-
-# Select the index with the smallest margin (most uncertain)
-selected_index = np.argmin(margin)
-print(f"\nSelect x_{selected_index + 1} for labeling (smallest margin = {margin[selected_index]:.1f})")
-
-# Least confidence sampling
-# Get the highest predicted probability for each sample
-max_probs = np.max(probs, axis=1)
-least_confidence = 1 - max_probs
-for i, lc in enumerate(least_confidence, start=1):
-    print(f"alpha(x_{i}) = {lc:.1f}")
-
-# Select the index with the highest least confidence score (i.e., most uncertain)
-selected_index = np.argmax(least_confidence)
-print(f"\nSelect x_{selected_index + 1} for labeling (highest least confidence = {least_confidence[selected_index]:.1f})")
-```
+- **Define** the measurement problem for user preference elicitation and distinguish it from the learning problem in Chapter 3.
+- **Derive** the Fisher information for Rasch/Bradley-Terry models and explain why items with $p \approx 0.5$ are most informative.
+- **Compare** A-optimal, D-optimal, and E-optimal design criteria for selecting informative queries.
+- **Apply** Laplace approximation to update posterior beliefs about user preferences in real-time.
+- **Implement** active selection policies that outperform random sampling in sample efficiency.
+- **Extend** Fisher information analysis to non-linear scoring functions via local linearization.
+- **Apply** information-theoretic acquisition functions to actively select queries for Gaussian Process preference models, building on the GP foundations from Chapters 2-3.
+- **Explain** how D-optimal design applies to Direct Preference Optimization (DPO) for LLM alignment and derive the ADPO algorithm.
+- **Analyze** active preference learning in robotics, including trajectory comparison and reward function inference.
 :::
 
-Query-by-Committee [@AL_committee] is selects samples for labeling based on the level of disagreement among members of a committee. Several acquisition functions can be employed under this framework to quantify the disagreement. The vote entropy measures the uncertainty based on how often the committee members vote for each class. The acquisition function is defined as $\alpha(x) = \mathbb{H}\left[V(y)/C\right]$, where $V(y)$ is the number of votes for class $y$ and $C$ is the number of committee members. Consensus Entropy measures the entropy of the average probability distribution across committee members. It is given by $\alpha(x) = \mathbb{H}[p_C(y|x)]$, where $p_C(y|x)$ is the average probability distribution for sample $x$ across all committee members. The KL divergence quantifies the disagreement by comparing the probability distribution of each committee member to the average distribution. The acquisition function is given by $\alpha(x) = \frac{1}{C} \sum_{c=1}^{C} D_{KL}[p_C(y|x) || p_C(y|x)]$, where $p_C(y|x)$ is the probability distribution of committee member $c$ and $p_C(y|x)$ is the average distribution across the committee. As an example, consider a binary classification problem with three candidate $x_1$, $x_2$, and $x_3$ and three committee members. Numerical result below show that all acquisition functions selects $x_1$.
+::: {.callout-note title="Notation"}
+Throughout this chapter, we use the following conventions (extending Chapter 2):
 
-::: {.callout-note title="code"}
-```{pyodide-python}
-#| autorun: true
-import numpy as np
-
-# Predictive distributions from 3 committee members for 3 samples
-# Shape: (num_samples, num_committee_members, num_classes)
-probs = np.array([
-    [[0.6, 0.4], [0.7, 0.3], [0.3, 0.7]],  # x1
-    [[0.3, 0.7], [0.4, 0.6], [0.4, 0.6]],  # x2
-    [[0.8, 0.2], [0.9, 0.1], [0.7, 0.3]],  # x3
-])
-
-# Vote entropy
-predicted_labels = np.argmax(probs, axis=2)  # Shape: (num_samples, num_committee_members)
-num_classes = probs.shape[2]
-vote_counts = np.array([
-    [np.sum(predicted_labels[i] == c) for c in range(num_classes)]
-    for i in range(predicted_labels.shape[0])
-])
-vote_distributions = vote_counts / vote_counts.sum(axis=1, keepdims=True)
-vote_entropy = -np.sum(vote_distributions * np.log(vote_distributions + 1e-12), axis=1)  # add epsilon to avoid log(0)
-for i, ve in enumerate(vote_entropy, start=1):
-    print(f"alpha(x_{i}) = {ve:.2f}")
-selected_index = np.argmax(vote_entropy)
-print(f"\nSelect x_{selected_index + 1} for labeling (highest vote entropy = {vote_entropy[selected_index]:.2f})")
-
-# Consensus Entropy
-consensus_probs = np.mean(probs, axis=1)  # Shape: (num_samples, num_classes)
-consensus_entropy = -np.sum(consensus_probs * np.log(consensus_probs + 1e-12), axis=1)  # add epsilon to avoid log(0)
-for i, ce in enumerate(consensus_entropy, start=1):
-    print(f"alpha(x_{i}) = {ce:.2f}")
-selected_index = np.argmax(consensus_entropy)
-print(f"\nSelect x_{selected_index + 1} for labeling (highest consensus entropy = {consensus_entropy[selected_index]:.2f})")
-```
+| Symbol | Meaning |
+|--------|---------|
+| $U \in \mathbb{R}^K$ | User embedding/preference vector |
+| $V_j \in \mathbb{R}^K$ | Item embedding/appeal vector |
+| $Z_j \in \mathbb{R}$ | Item offset (difficulty in Rasch model: $-V_j$) |
+| $H_{ij} = U_i^\top V_j + Z_j$ | Latent utility for user $i$ on item $j$ |
+| $\mathcal{I}(U)$ | Fisher information (scalar or matrix) |
+| $p = \sigma(H)$ | Response probability under logistic model |
+| $\Lambda = \Sigma^{-1}$ | Posterior precision matrix |
+| $\text{Rel}$ | Reliability: $1 - \text{tr}(\hat{\Sigma}_{\text{err}}) / \text{tr}(\Sigma_U)$ |
 :::
 
-Bayesian AL by Disagreement (BALD) [@AL_BALD] selects the samples for which the model expects to gain the most Shannon information when corresponding labels are observed:
+In Chapter 2, we developed models for how preferences arise from latent utilities. In Chapter 3, we learned how to estimate these utilities from observed comparisons. This chapter addresses a complementary question: **given that human feedback is expensive, how should we choose which comparisons to request?**
 
+The measurement problem assumes items' appeals are known (or estimated), and aims to efficiently estimate a new user's preferences. The experimenter's goal is to quantify current uncertainty and reduce it as efficiently as possible. This is the domain of *optimal experimental design*, and its key tool is Fisher information.
+
+In the measurement problem, the experimenter is equipped with instruments - items whose parameters are known - and aims to accurately estimate the latent user preference. Depending on the application, this can be done through item-wise judgments, pairwise comparisons, or other interaction modes. The representation of user preference may take the form of a vector or a function, which can range from simple linear models to more complex families. Throughout this chapter, the recurring theme from the experimenter’s perspective is to quantify how much is currently known about the user’s latent preference and to increase this knowledge as efficiently as possible. Statistical tools such as Fisher information and optimal experimental design provide the foundations for achieving this goal.
+
+## Measurement of User Preference Vector
+When items’ appeals $V_j$ are known or pre-calibrated, we can learn a new user’s appetite $U$ quickly by choosing informative items online. Asking only easy or only hard items gives near-deterministic responses that teach little. The Rasch model makes this precise. For a candidate item $j$, the Bernoulli success probability is $p_j(U) = \sigma(U + V_j).$ The Fisher information about $U$ from a single response is
+$$\mathcal I_j(U) = \mathbb{E} \left[-\frac{\partial^2}{\partial U^2}\log p(Y \mid U, V_j)\right] = p_j(U) (1 - p_j(U)).$$
+This is maximized at $p_j(U)=0.5$. So the best next item is one whose difficulty ($-V_j$) is close to the current estimate of $U$. Active elicitation policies therefore "hover" around the user’s current location, rapidly shrinking uncertainty. Place a Gaussian prior $U \sim \mathcal N(0,\sigma_0^2)$. After observing independent items $\mathcal J$, a Laplace (or IRLS) update for $U$ uses the score and observed information
+$$S(U) = \sum_{j\in\mathcal J} (y_j - p_j(U)), \qquad \mathcal I(U) = \sum_{j\in\mathcal J}p_j(U) (1 - p_j(U)) + \tau_0, \quad \tau_0 = \sigma_0^{-2}. $$
+A Newton step is $\hat U \leftarrow \hat U + S(\hat U)\mathcal I(\hat U)^{-1}.$ The approximate posterior variance is $\widehat{\mathrm{Var}}(U) \approx \mathcal I(\hat U)^{-1}.$ An item-selection rule that maximizes expected \textbf{incremental} information picks $j_t = \arg\max_j \; p_j(\hat U_{t-1}) (1 - p_j(\hat U_{t-1})).$ For evaluation, we can use reliability. With population variance $\mathrm{Var}(U^\star)=\sigma_U^2$, reliability is the fraction of total variance explained by the test rather than estimation noise:
 $$
-\begin{aligned}
-&\mathbb{I}(\theta; y|x, \mathcal{D}) = \mathbb{H}[p(y|x, \mathcal{D})] - \mathbb{E}_{p(\theta | \mathcal{D})} [\mathbb{H}[p(y|x, \theta, \mathcal{D})]] \\
-&\mathbb{H}[p(y|x, \mathcal{D})] = \mathbb{H}\left[\int_{\theta} p(y|x, \theta, \mathcal{D}) p(\theta | \mathcal{D}) d\theta\right] \approx \mathbb{H}\left[\frac{1}{N}\sum_{i=1}^{N} p(y|x, \theta_i, \mathcal{D})\right] = \mathbb{H}\left[\overline{p}(y|x, \mathcal{D})\right] \\
-&\mathbb{E}_{p(\theta|\mathcal{D})} [\mathbb{H}[p(y|x, \theta, \mathcal{D})]] = \mathbb{E}_{p(\theta|\mathcal{D})} \left[ - \sum_{y} p(y|x, \theta, \mathcal{D}) \log p(y|x, \theta, \mathcal{D}) \right] \approx - \frac{1}{N} \sum_{i=1}^{N} \left( \sum_{y} p(y|x, \theta_i, \mathcal{D}) \log p(y|x, \theta_i, \mathcal{D}) \right)
-\end{aligned}
+\text{Rel} \approx 1 - \frac{1}{N}\sum_{i=1}^N \frac{\widehat{\mathrm{Var}}(U_i)}{\sigma_U^2}.
 $$
+Below, the code simulates many users, a bank of calibrated items, and compares an Fisher policy to a random policy. We track reliability after each query count $t$.
 
-When there is significant disagreement among models, the predictive entropy (the first term) will be large, while the expected entropy (the second term) will be smaller. This difference represents the degree to which the models disagree. BALD selects points where this disagreement is maximized. As an example, consider a binary classification problem with two classes, $y_1$ and $y_2$. We have two samples, $x_1$ and $x_2$. BALD selects $x_1$ for labeling.
+First, we set up the simulation with $N$ users, $M$ calibrated items, and define helper functions for Bayesian updating:
 
-::: {.callout-note title="code"}
 ```{pyodide-python}
 #| autorun: true
 import numpy as np
+import matplotlib.pyplot as plt
 
-# First and second time inferences for each sample
-# Shape: (num_samples, num_draws, num_classes)
-# theta_1 and theta_2 samples
-probs = np.array([
-    [[0.6, 0.4], [0.8, 0.2]],  # x1
-    [[0.4, 0.6], [0.5, 0.5]],  # x2
-])
+sigmoid = lambda x: 1.0 / (1.0 + np.exp(-x))
+rng = np.random.default_rng(42)
 
-# Step 1: Compute the average predictive distribution (consensus probs)
-mean_probs = np.mean(probs, axis=1)  # shape: (num_samples, num_classes)
+# Simulation parameters
+N = 200           # number of users
+M = 200           # number of calibrated items
+T = 40            # queries per user
+sigma_U = 1.0     # population SD of user abilities
+sigma0 = 1.0      # prior SD for each user
 
-# Step 1 continued: Compute entropy of the consensus distribution
-consensus_entropy = -np.sum(mean_probs * np.log(mean_probs + 1e-12), axis=1)
+# Generate true user abilities and item difficulties
+U_true = rng.normal(0, sigma_U, size=N)
+V = np.sort(rng.normal(0, 1.0, size=M))
 
-# Step 2: Compute entropy for each model draw
-individual_entropies = -np.sum(probs * np.log(probs + 1e-12), axis=2)
+print(f"Simulating {N} users, {M} items, {T} queries each")
+print(f"User abilities range: [{U_true.min():.2f}, {U_true.max():.2f}]")
+print(f"Item difficulties range: [{V.min():.2f}, {V.max():.2f}]")
+```
 
-# Step 2 continued: Average the entropies across model draws
-expected_entropy = np.mean(individual_entropies, axis=1)
+Next, we define the Bayesian update rule and the two item selection policies—Fisher-active (maximizing information) and random:
 
-# Step 3: Compute BALD = entropy of mean - mean of entropies
-bald_scores = consensus_entropy - expected_entropy
+```{pyodide-python}
+#| autorun: true
+def new_user_state():
+    """Initialize user state with prior."""
+    return {"U_hat": 0.0, "tau": 1.0/(sigma0**2), "var": sigma0**2}
 
-# Print results
-for i, (h, eh, b) in enumerate(zip(consensus_entropy, expected_entropy, bald_scores), start=1):
-    print(f"x_{i}:")
-    print(f"  Predictive Entropy = {h:.3f}")
-    print(f"  Expected Entropy   = {eh:.3f}")
-    print(f"  BALD Score         = {b:.3f}")
+def update_user(state, vj, y):
+    """Single Newton-IRLS update after observing response y to item j."""
+    U, tau = state["U_hat"], state["tau"]
+    p = sigmoid(U + vj)
+    S, I = (y - p), p * (1 - p)  # score and Fisher info
+    state["U_hat"] = U + S / (I + tau + 1e-12)
+    state["tau"] = tau + I
+    state["var"] = 1.0 / (state["tau"] + 1e-12)
 
-# Select sample with highest BALD score
-selected_index = np.argmax(bald_scores)
-print(f"\nSelect x_{selected_index + 1} for labeling (highest BALD = {bald_scores[selected_index]:.3f})")
+def choose_item_fisher(state, V, asked_mask):
+    """Select item maximizing Fisher information at current estimate."""
+    cand = np.where(~asked_mask)[0]
+    if cand.size == 0: return None
+    vals = sigmoid(state["U_hat"] + V[cand])
+    info = vals * (1.0 - vals)
+    return cand[np.argmax(info + 1e-6 * rng.random(size=cand.size))]
+
+def choose_item_random(state, V, asked_mask):
+    """Select item uniformly at random."""
+    cand = np.where(~asked_mask)[0]
+    return rng.choice(cand) if cand.size > 0 else None
+
+print("Update and selection functions defined.")
+```
+
+Now we run the simulation, comparing both policies across all users:
+
+```{pyodide-python}
+#| autorun: true
+def run_policy(policy_fn, V, T):
+    """Run policy for all users and track MSE/reliability curves."""
+    states = [new_user_state() for _ in range(N)]
+    asked = np.zeros((N, M), dtype=bool)
+    mse_curve, rel_curve = [], []
+
+    for t in range(1, T + 1):
+        for i in range(N):
+            j = policy_fn(states[i], V, asked[i])
+            if j is None: continue
+            y = 1 if rng.random() < sigmoid(U_true[i] + V[j]) else 0
+            update_user(states[i], V[j], y)
+            asked[i, j] = True
+
+        U_hat = np.array([s["U_hat"] for s in states])
+        Var_hat = np.array([s["var"] for s in states])
+        mse_curve.append(np.mean((U_hat - U_true)**2))
+        rel_curve.append(1.0 - np.mean(Var_hat) / sigma_U**2)
+
+    return np.array(mse_curve), np.array(rel_curve)
+
+# Run both policies
+mse_act, rel_act = run_policy(choose_item_fisher, V, T)
+mse_rnd, rel_rnd = run_policy(choose_item_random, V, T)
+print("Simulation complete!")
+```
+
+Finally, we visualize the results comparing Fisher-active vs random item selection:
+
+```{pyodide-python}
+#| autorun: true
+fig, axes = plt.subplots(1, 2, figsize=(12, 4))
+
+axes[0].plot(np.arange(1, T+1), mse_rnd, 'o-', label="Random", alpha=0.7)
+axes[0].plot(np.arange(1, T+1), mse_act, 's-', label="Fisher-active", alpha=0.7)
+axes[0].set_xlabel("Queries per user"); axes[0].set_ylabel("MSE of U")
+axes[0].set_title("Estimation Error vs Queries"); axes[0].legend(); axes[0].grid(True, alpha=0.3)
+
+axes[1].plot(np.arange(1, T+1), rel_rnd, 'o-', label="Random", alpha=0.7)
+axes[1].plot(np.arange(1, T+1), rel_act, 's-', label="Fisher-active", alpha=0.7)
+axes[1].set_xlabel("Queries per user"); axes[1].set_ylabel("Reliability")
+axes[1].set_title("Reliability vs Queries"); axes[1].legend(); axes[1].grid(True, alpha=0.3)
+
+plt.tight_layout()
+plt.show()
+
+print(f"Final MSE  | Random: {mse_rnd[-1]:.4f} | Fisher: {mse_act[-1]:.4f}")
+print(f"Final Rel. | Random: {rel_rnd[-1]:.3f}  | Fisher: {rel_act[-1]:.3f}")
+```
+
+In practice, a single “ability” parameter may not capture the diversity of user preferences. Factor models generalize Rasch by giving each user a $K$-dimensional embedding $U_i \in \mathbb R^K$ and each item a $K$-dimensional embedding $V_j \in \mathbb R^K$, plus optional bias $Z_j$. The linear predictor is $H_{ij} = U_i^\top V_j + Z_j$ where $p(Y_{ij}=1 \mid U_i, V_j, Z_j) = \sigma(H_{ij}).$ For a given user $U$ and an item $j$ with known parameters, the Bernoulli log-likelihood is
+$$\ell(U; y, j) = y \log \sigma(H) + (1-y)\log (1-\sigma(H))$$
+The gradient with respect to $U$ is $\nabla_U \ell = (y - \sigma(H)) V_j.$ The expected Fisher Information per item is the negative expected Hessian:
+$$
+\mathcal I_j(U) = \mathbb E[\nabla_U \ell \nabla_U \ell^\top ] = \sigma(H)(1-\sigma(H)) V_j V_j^\top.
+$$
+So each queried item contributes a rank-1 matrix in the direction of $V_j$, scaled by the variance term $\sigma(H)(1-\sigma(H))$. For a sequence of items ${j_t}$, the cumulative information is
+$$\mathcal I(U) = \sum_t \sigma(H_{j_t})(1-\sigma(H_{j_t})) V_{j_t} V_{j_t}^\top.$$
+
+In multiple dimensions, information is a matrix. Classical optimal design ofers various heuristics. For example, A-optimality suggests minimization of trace of posterior covariance $\propto \mathrm{tr}(\mathcal I^{-1})$. D-optimality maximizes $\det(\mathcal I)$, i.e. maximizes volume shrinkage of the posterior ellipsoid. E-optimality maximizes the minimum eigenvalue of $\mathcal I$. Thus adaptive measurement picks the next item $j$ to maximize an acquisition function such as $\det(\mathcal I+\mathcal I_j)$. We also use reliability as the evaluation metric here. If $\Sigma_U$ is the population covariance and $\widehat{\Sigma}_{\text{err}}$ the average posterior covariance, then $\text{Reliability} = 1 - \mathrm{tr}(\widehat{\Sigma}_{\text{err}}) \mathrm{tr}(\Sigma_U)^{-1}.$ This generalizes the Rasch reliability to multi-dimensional latent traits. Below is a toy simulation with 2-dimensional users and items, comparing random item selection vs D-optimal Fisher active selection:
+
+First, set up the factor model simulation with K-dimensional user and item embeddings:
+
+```{pyodide-python}
+#| autorun: true
+import numpy as np
+import matplotlib.pyplot as plt
+
+sigmoid = lambda x: 1.0 / (1.0 + np.exp(-x))
+rng = np.random.default_rng(0)
+
+N, M, K, T = 100, 300, 2, 30  # users, items, factors, queries
+U_true = rng.normal(0, 1, size=(N, K))
+V = rng.normal(0, 1, size=(M, K))
+Z = rng.normal(0, 0.3, size=(M,))
+
+def new_user_state():
+    return {"U_hat": np.zeros(K), "Sigma": np.eye(K) * 2.0}
+
+print(f"Factor model: {N} users, {M} items, K={K} dimensions")
+```
+
+Define the Bayesian update and D-optimal selection:
+
+```{pyodide-python}
+#| autorun: true
+def update_user(state, vj, zj, y):
+    """Update posterior with one item response via Laplace approximation."""
+    U, S = state["U_hat"], state["Sigma"]
+    p = sigmoid(U @ vj + zj)
+    I_j = p * (1 - p) * np.outer(vj, vj)
+    Sigma_new = np.linalg.inv(np.linalg.inv(S) + I_j)
+    state["U_hat"] = U + Sigma_new @ ((y - p) * vj)
+    state["Sigma"] = Sigma_new
+
+def choose_item_Dopt(state, asked_mask, V, Z):
+    """Select item maximizing D-optimal log-det gain."""
+    Prec = np.linalg.inv(state["Sigma"])
+    cand = np.where(~asked_mask)[0]
+    scores = []
+    for j in cand:
+        W = sigmoid(state["U_hat"] @ V[j] + Z[j])
+        W = W * (1 - W)
+        scores.append(np.log(np.linalg.det(Prec + W * np.outer(V[j], V[j]))))
+    return cand[np.argmax(scores)]
+
+def choose_random(state, asked_mask, V, Z):
+    return rng.choice(np.where(~asked_mask)[0])
+
+print("Update and selection functions defined.")
+```
+
+Run simulation comparing D-optimal vs random selection:
+
+```{pyodide-python}
+#| autorun: true
+def run_policy(policy_fn):
+    states = [new_user_state() for _ in range(N)]
+    asked = np.zeros((N, M), dtype=bool)
+    mse_curve, rel_curve = [], []
+    for t in range(T):
+        for i in range(N):
+            j = policy_fn(states[i], asked[i], V, Z)
+            y = int(rng.random() < sigmoid(U_true[i] @ V[j] + Z[j]))
+            update_user(states[i], V[j], Z[j], y)
+            asked[i, j] = True
+        U_hat = np.array([s["U_hat"] for s in states])
+        err_tr = np.mean([np.trace(s["Sigma"]) for s in states])
+        mse_curve.append(np.mean(np.sum((U_hat - U_true)**2, axis=1)))
+        rel_curve.append(1 - err_tr / np.trace(np.cov(U_true.T)))
+    return np.array(mse_curve), np.array(rel_curve)
+
+mse_rand, rel_rand = run_policy(choose_random)
+mse_act, rel_act = run_policy(choose_item_Dopt)
+print("Simulation complete!")
+```
+
+Visualize results:
+
+```{pyodide-python}
+#| autorun: true
+fig, axes = plt.subplots(1, 2, figsize=(12, 4))
+xs = np.arange(1, T + 1)
+
+axes[0].plot(xs, mse_rand, 'o-', label="Random", alpha=0.7)
+axes[0].plot(xs, mse_act, 's-', label="D-opt", alpha=0.7)
+axes[0].set_xlabel("Queries"); axes[0].set_ylabel("MSE")
+axes[0].set_title("Estimation Error"); axes[0].legend(); axes[0].grid(True, alpha=0.3)
+
+axes[1].plot(xs, rel_rand, 'o-', label="Random", alpha=0.7)
+axes[1].plot(xs, rel_act, 's-', label="D-opt", alpha=0.7)
+axes[1].set_xlabel("Queries"); axes[1].set_ylabel("Reliability")
+axes[1].set_title("Reliability"); axes[1].legend(); axes[1].grid(True, alpha=0.3)
+
+plt.tight_layout(); plt.show()
+```
+
+We next discuss the measurement problem of user preference with pairwise data. Recall from Chapter 2 that the Bradley-Terry model specifies the probability that user $i$ prefers item $j$ over item $k$ as $p_{i}(j \succ k)=\sigma (U^\top(V_j-V_k) + Z_j-Z_k)$ with feature $x_{jk}= V_j - V_k \in \mathbb R^2$ and offset $b_{jk}=Z_j-Z_k$. For a single observation $y \in \{0,1\}$ of $j \succ k$ the per-pair log-likelihood is
+$$\ell(U; y, i, j, k)= y \log p + (1-y) \log (1-p_i).$$ Score and expected Fisher information for (U):
+$$\nabla_U \ell=(y-p),x_{jk}, \qquad \mathcal I_{jk}(U)=\mathbb E[-\nabla^2_U \ell] = w x_{jk} x_{jk}^\top,$$
+where $w = p(1-p)$. For a sequence of queried pairs ${(j_t,k_t)}$ the cumulative information is $\mathcal I(U)=\sum_t w_t,x_t x_t^\top.$ With a Gaussian prior $U \sim \mathcal N(0, \Sigma_0)$ and a Laplace approximation, the posterior precision updates additively:
+$$
+\Lambda_{t}=\Sigma_t^{-1}=\Sigma_{0}^{-1}+\sum_{s\le t} w_s,x_s x_s^\top.
+$$
+A single Newton step for the posterior mean after observing ((x,y)) is
+$$
+\hat U \leftarrow \hat U + \Sigma_{t}^{\ }(y-p),x,\qquad p=\sigma(\hat U^\top x+b),\quad
+\Sigma_t = \left(\Lambda_{t-1}+w,xx^\top\right)^{-1}.
+$$
+This is the logistic-regression one-step IRLS update specialized to one new example. We evaluate candidates at the current $(\hat U,\Sigma)$. Write $x$ for $x_{jk}$ and $w=\sigma(\hat U^\top x+b)\big(1-\sigma(\hat U^\top x+b)\big)$. Let $\Lambda=\Sigma^{-1}$. Using Sherman–Morrison to get closed forms for standard criteria:
+
+* D-optimal (log-det gain): $\Delta_D(j,k) = \log \det ( \Lambda + w xx^\top) - \log \det \Lambda = \log (1 + w x^\top \Sigma x).$
+Pick the pair that maximizes $\log(1 + w x^\top\Sigma x)$.
+
+* A-optimal (trace drop of covariance): $\Delta_A(j,k);=;\mathrm{tr}(\Sigma)-\mathrm{tr}\big((\Lambda+w,xx^\top)^{-1}\big)
+  = \frac{w,x^\top\Sigma^2 x}{1+w,x^\top\Sigma x}.$
+
+* E-optimal (raise the worst-direction information): Exact update of $\lambda_{\min}(\mathcal I)$ needs an eigen update. A practical proxy is to maximize $\Delta_E^{\text{proxy}}(j,k)= w,x^\top\Sigma x,$ which targets directions where current uncertainty $x^\top\Sigma x$ is large.
+
+End-to-end toy pipeline (rank 2, known items, active D-opt vs random). First, define helper functions for D-optimal gain and Bayesian updates:
+
+```{pyodide-python}
+#| autorun: true
+import numpy as np
+import matplotlib.pyplot as plt
+
+sigmoid = lambda x: 1.0 / (1.0 + np.exp(-x))
+
+def d_opt_gain(Sigma, x, w):
+    """D-optimal log-det gain: log(1 + w x^T Sigma x)"""
+    return np.log1p(w * x @ Sigma @ x)
+
+def one_step_update(U_hat, Sigma, x, b, y):
+    """Sherman-Morrison update for posterior mean and covariance."""
+    p = sigmoid(U_hat @ x + b)
+    w = p * (1 - p)
+    Sx = Sigma @ x
+    Sigma_new = Sigma - (w / (1.0 + w * (x @ Sx))) * np.outer(Sx, Sx)
+    U_new = U_hat + Sigma_new @ ((y - p) * x)
+    return U_new, Sigma_new
+
+print("Helper functions defined.")
+```
+
+Set up simulation parameters and precompute candidate pairs:
+
+```{pyodide-python}
+#| autorun: true
+rng = np.random.default_rng(0)
+N, M, K, T = 200, 60, 2, 30  # users, items, rank, queries
+
+V = rng.normal(0, 1.0, size=(M, K))  # item embeddings
+Z = rng.normal(0, 0.3, size=M)       # item biases
+U_true = rng.normal(0, 1.0, size=(N, K))  # true user embeddings
+
+# Precompute all pairs and their features
+pairs = np.array([(j, k) for j in range(M) for k in range(M) if j < k])
+X = V[pairs[:,0]] - V[pairs[:,1]]  # pairwise feature differences
+B = Z[pairs[:,0]] - Z[pairs[:,1]]  # pairwise bias differences
+
+print(f"Setup: {N} users, {M} items, {len(pairs)} candidate pairs, {T} queries each")
+```
+
+Define selection policies and run the simulation:
+
+```{pyodide-python}
+#| autorun: true
+def choose_pair_dopt(U_hat, Sigma, X, B):
+    """Select pair maximizing D-optimal gain."""
+    h = X @ U_hat + B
+    p = sigmoid(h)
+    w = p * (1 - p)
+    gains = np.array([d_opt_gain(Sigma, X[i], w[i]) for i in range(len(X))])
+    gains[np.isnan(gains)] = -np.inf
+    return int(np.argmax(gains))
+
+def run_policy(active=True):
+    Uh = np.zeros((N, K))
+    Sigmas = np.tile(np.eye(K) * 2.0, (N, 1, 1))
+    mse_curve, rel_curve = [], []
+
+    for t in range(T):
+        for i in range(N):
+            idx = choose_pair_dopt(Uh[i], Sigmas[i], X, B) if active else rng.integers(len(pairs))
+            x, b = X[idx], B[idx]
+            y = 1 if rng.random() < sigmoid(U_true[i] @ x + b) else 0
+            Uh[i], Sigmas[i] = one_step_update(Uh[i], Sigmas[i], x, b, y)
+        mse_curve.append(np.mean(np.sum((Uh - U_true)**2, axis=1)))
+        rel_curve.append(1.0 - np.mean(np.trace(Sigmas, axis1=1, axis2=2)) / K)
+    return np.array(mse_curve), np.array(rel_curve)
+
+mse_d, rel_d = run_policy(active=True)
+mse_r, rel_r = run_policy(active=False)
+print("Simulation complete!")
+```
+
+Visualize the results:
+
+```{pyodide-python}
+#| autorun: true
+fig, axes = plt.subplots(1, 2, figsize=(12, 4))
+xs = np.arange(1, T + 1)
+
+axes[0].plot(xs, mse_r, 'o-', label="Random", alpha=0.7)
+axes[0].plot(xs, mse_d, 's-', label="D-opt", alpha=0.7)
+axes[0].set_xlabel("Queries per user"); axes[0].set_ylabel("MSE")
+axes[0].set_title("Estimation Error"); axes[0].legend(); axes[0].grid(True, alpha=0.3)
+
+axes[1].plot(xs, rel_r, 'o-', label="Random", alpha=0.7)
+axes[1].plot(xs, rel_d, 's-', label="D-opt", alpha=0.7)
+axes[1].set_xlabel("Queries per user"); axes[1].set_ylabel("Reliability")
+axes[1].set_title("Reliability"); axes[1].legend(); axes[1].grid(True, alpha=0.3)
+
+plt.tight_layout(); plt.show()
+print(f"Final MSE  | Random: {mse_r[-1]:.3f} | D-opt: {mse_d[-1]:.3f}")
+print(f"Final Rel. | Random: {rel_r[-1]:.3f} | D-opt: {rel_d[-1]:.3f}")
+```
+
+## Measurement of User Preference Function
+Suppose items $j$ have feature vectors $X_j \in \mathbb R^d$. Instead of learning a free scalar parameter $V_j$ for each item, we assume $V_j = W^\top X_j,$ where (W \in \mathbb R^d) is shared across items. The probability that item $j$ beats item $k$ is $p(j \succ k) = \sigma(V_j - V_k) = \sigma (W^\top(X_j - X_k)).$ This is simply logistic regression on pairwise feature differences. Given one comparison outcome $y \in \{0,1\}$ for pair $(j,k)$ with difference $x_{jk} = X_j - X_k$,
+$$\ell(W) = y\log \sigma(W^\top x_{jk}) + (1-y)\log(1-\sigma(W^\top x_{jk})).
+$$
+Gradient: $\nabla_W \ell = (y - p) x_{jk}, \quad p = \sigma( W^\top x_{jk} ).$ Fisher Information (expected negative Hessian): $\mathcal I(W) = \mathbb E\big[(y-p)^2 x_{jk}x_{jk}^\top\big] = p(1-p),x_{jk}x_{jk}^\top.$
+
+With Gaussian prior $W \sim \mathcal N(0,\sigma_0^2 I)$, a Laplace approximation yields posterior covariance $\Sigma \approx (\sigma_0^{-2}I + \sum_t p_t(1-p_t) x_t x_t^\top)^{-1}.$ So, as in the Rasch case, Fisher information accumulates to form posterior precision. At each step, pick a candidate pair $(j,k)$ and compute
+$$
+\Delta_D(j,k) = \log \det(\Lambda + w x_{jk} x_{jk}^\top) - \log\det(\Lambda), \quad w = p(1-p),
+$$
+where $\Lambda = \Sigma^{-1}$. This is the D-optimal criterion, maximizing the expected log-determinant gain in information. A-optimal or E-optimal criteria are similarly defined. We’ll simulate item features, a ground-truth $W$, and comparisons. Then we compare active D-optimal elicitation vs random pair selection for estimating $W$. Performance metrics are MSE of $\hat W$ vs true $W$, and reliability.
+
+First, set up the simulation with item features and ground-truth weights:
+
+::: {.callout-note title="Code"}
+```{pyodide-python}
+#| autorun: true
+import numpy as np
+import matplotlib.pyplot as plt
+
+sigmoid = lambda x: 1.0 / (1.0 + np.exp(-x))
+rng = np.random.default_rng(0)
+
+d = 5          # feature dimension
+M = 50         # items
+T = 100        # queries (pairs)
+sigma0 = 2.0   # prior SD
+
+X = rng.normal(0, 1, (M, d))
+W_true = rng.normal(0, 1, d)
+print(f"Setup: {M} items, {d}-dim features, {T} queries")
 ```
 :::
 
-AL by Variance Reduction [@AL_variance] is an algorithm designed to select the next data point for labeling based on the anticipated reduction in the model's variance. The objective is to identify the point $x \sim p(x)$ that, when labeled $y_x$, will most effectively decrease the model's variance. The expected error at a given input $x$ is $\mathbb{E}_{\hat{y} \sim p(\hat{y} | \mathcal{D}; x), y \sim p(y|x)} (\hat{y} - y)^2$. $\hat{y}$ represents the model's prediction, and $y$ denotes the true label at $x$. Using bias-variance decomposition [@bias_variance_orig_paper], the expected error is decomposed as
-$$\begin{aligned}
-\mathbb{E} (\hat{y} - y)^2 = \mathbb{E}[(\hat{y} - \mathbb{E}[y|x]) + (\mathbb{E}[y|x] - y)]^2 = \mathbb{E} [(y - \mathbb{E}[y|x])^2] + 2\mathbb{E} [(\hat{y} - \mathbb{E}[y|x])(\mathbb{E}[y|x] - y)] + \mathbb{E}(\hat{y} - \mathbb{E}[y|x])^2
-\end{aligned}$$
-where the expectation is taken over $\hat{y} \sim p(\hat{y} | \mathcal{D}; x), y \sim p(y|x)$. The first term represents the variance of the true label $y$, the second term evaluates to zero since $\mathbb{E}_{\hat{y}, y}[\mathbb{E}[y|x] - y] = 0$, and the third term accounts for the variance of the model's prediction $\hat{y}$:
-$$\mathbb{E}(\hat{y} - \mathbb{E}[y|x])^2 = \mathbb{E}[(\hat{y} - \mathbb{E}[\hat{y}] + \mathbb{E}[\hat{y}] - \mathbb{E}[y|x])^2] = \mathbb{E}[(\hat{y} - \mathbb{E}[\hat{y}])^2] + (\mathbb{E}[\hat{y}] - \mathbb{E}[y|x])^2$$
+Define the Fisher gain and Bayesian update functions:
 
-Hence,
-$$\mathbb{E} (\hat{y} - y)^2 = \mathbb{E}_{y} [(y - \mathbb{E}[y|x])^2] + (\mathbb{E}_{\hat{y}} [\hat{y} - \mathbb{E}[y|x]] )^2 + \mathbb{E}_{\hat{y}} [(\hat{y} - \mathbb{E}_{\hat{y}}[\hat{y}])^2]$$
+::: {.callout-note title="Code"}
+```{pyodide-python}
+#| autorun: true
+def fisher_gain(Sigma, x, w):
+    """D-optimal log-det gain."""
+    Sx = Sigma @ x
+    denom = 1 + w * (x @ Sx)
+    Sigma_new = Sigma - (w / denom) * np.outer(Sx, Sx)
+    return np.log(np.linalg.det(Sigma) / np.linalg.det(Sigma_new))
 
-Here, the first term signifies the variance of the true label, which remains constant for a given $x$. The second term captures how much the average model prediction deviates from the expected true label. The third term quantifies the model's uncertainty at $x$. @AL_variance denotes the uncertainty term as $\sigma^2_{\hat{y}} (x | \mathcal{D}) = \mathbb{E}_{\hat{y}} [(\hat{y} - \mathbb{E}_{\hat{y}}[\hat{y}])^2]$. The acquisition function is $\mathbb{E}_{p(x)} [\sigma^2_{\hat{y}} (x | \tilde{\mathcal{D}})]$. One could rely on empirical measure like a loss on test labelled data to gauge model improvement, which can help decide the termination of data acquisition. The size of the data set and its relationship to the loss is tied to the model complexity. To evaluate the performance of variance reduction strategy, @AL_variance studies the Arm2D problem. Arm2D is a kinematics problem where learner has to predict the tip position of a robotic arm given a set of joint angles $\mathbf{\theta_1}, \mathbf{\theta_2}$. In this analysis, the two models are the Gaussian mixture model and locally-weighted regression (LOESS). The results shown that the variance of the learner decreases because the authors selected points to minimize expected variance. Additionally, we observe a related decrease in the mean square error (MSE) of both models as the dataset size increases. This is a notable outcome because the expected learner variance for these models can be computed accurately and efficiently relative to a new point. When integrated into the general AL loop, this significantly enhances model performance. In the case of the locally-weighted regression model ([@fig-empirical:regress]), it is surprising that if points were chosen randomly, the MSE would be highly unstable, with sharp fluctuations. However, when AL by variance reduction is applied, using expected learner variance as a proxy, the MSE decreases almost smoothly, aside from some initial instabilities.
+def update(W_hat, Sigma, x, y):
+    """Newton update with Laplace covariance."""
+    p = sigmoid(W_hat @ x)
+    w = p * (1 - p)
+    Sx = Sigma @ x
+    denom = 1 + w * (x @ Sx)
+    Sigma_new = Sigma - (w / denom) * np.outer(Sx, Sx)
+    W_new = W_hat + Sigma_new @ ((y - p) * x)
+    return W_new, Sigma_new
 
-## Active Preference Learning with Ideal Point Model
-For any $n$ elements to be ranked, there are $n!$ possible orderings that can result in the correct complete ranking. Given that a lower bound on sorting is $n\log n$, obtaining a guaranteed true rating over $n$ items requires $n\log n$ pairwise comparisons if those comparisons are chosen at random. This number can be quite high and costly in many applications, especially since most ranking information comes from humans. The more comparisons they have to make, the more money and time is spent. This process can also be inefficient, as some comparisons provide more value to the learning process than others, making some comparisons a waste. This inefficiency can be detrimental in fields like psychology and market research, where comparisons are heavily utilized, and a faster process could offer significant benefits. The reason the lower bound on the number of comparisons is $n\log n$ is that it assumes no prior information about the underlying space and field, so comparisons are chosen at random. However, leveraging the structures within the comparison space can provide more information about which comparisons are most valuable. For example, [@geo_paper] discusses how eye doctors have a wide range of options when assigning prescriptions for glasses, yet patients do not see them making many comparisons before deciding on the best option. This is because eye doctors incorporate domain knowledge into the process and only ask clients for comparisons when necessary. Applying similar knowledge in the ranking field leads to an AL approach that selects data based on the relevance of a comparison query toward finding the final $\sigma(\Theta)$.
-
-@geo_paper explores AL within data that can be embedded in a $d$-dimensional embedding space, where comparisons between two different items divide the space into halves, with one object being superior in each half. By leveraging such geometry, the paper develops a geometric AL approach. Let $\theta$ be the item representation in the embedding space. For each ranking $\sigma$, there is a reference point $r_{\sigma} \in \mathbb{R}^d$, such that if $\theta_{i} \succ \theta_{j}$, $||\theta_i - r_{\sigma}|| < ||\theta_j - r_{\sigma}||$. In other words, object $i$ is closer to the reference point $r_{\sigma}$ than object $j$. $\Sigma_{n,d}$ is the set of all possible rankings of the $n$ items that satisfy the above embedding distances condition. Not all rankings will satisfy the embedding conditions, but multiple rankings might satisfy all those conditions. For every ranking $\sigma$, there is $M_n(\sigma)$, the number of pairwise comparisons needed to identify the ranking. When comparisons are done at random, $\mathbb{E}[M_n(\sigma)] = n\log n$, and it can be reduced by incorporating geometry. $q_{i,j}$ is the query of comparison between items $i$ and $j$.
-
-As an example, @geo_paper studies a 2D space with three items: $\theta_1$, $\theta_2$, and $\theta_3$. There are pairwise queries $q_{1,3}$, $q_{2,3}$, and $q_{1,2}$ between them, denoted by solid lines equidistant from the two items they compare. These lines split the $R^2$ space into halves, with each half closer to one of the two items. The paper colors the side of the worse object for each query in dark grey and takes the intersection of these halves, resulting in the dark grey region in the image. This region indicates $\Sigma_{n,2}$ since all points follow the embedding conditions. Specifically, for every point $r$ in the dark grey area, $||\theta_3 - r|| < ||\theta_2 - r|| < ||\theta_1 - r||$, meaning $\theta_3 < \theta_2 < \theta_1$. Thus, every point $r$ is one of the $r_\sigma$ representing their respective rankings $\sigma \in \Sigma_{n,2}$. In other words, the paper aims to have the reference points and dark grey region closest to the worst object and furthest from the best object.
-
-The authors also denote the label for each query $q_{i,j}$, such as label $y_{i,j} = 1\{q_{i,j}\}$ (for example, $y_{1,2} = 0, y_{3,2} = 1$). This allows for deciding how to label new queries represented by dashed and dotted lines, depending on which items each query compares. Focusing on the dotted line, called $q_{i,4}$, where $i={1,2,3}$, and considering potential locations of $\theta_4$, the line must be equidistant from one of the three items in the picture and $\theta_4$, meaning $\theta_4$ can be placed in three different locations. If the query performed is $q_{2,4}$, then $\theta_4$ will be closer to the dark grey area than $\theta_2$, thus $y_{2,4} = 0$. However, if $q_{1,4}$ or $q_{3,4}$ are performed, $\theta_4$ will be further from the dark grey area than $\theta_1$ or $\theta_3$, meaning $y_{1,4} = y_{3,4} = 1$. In this case, the labels are contradictory and depend on which object they are compared with, making such a query $q_{i,4}$ ambiguous.
-
-In contrast, the authors analyze the dashed line, called $q_{i,5}$, where $i={1,2,3}$, and consider potential locations of $\theta_5$. Since the line must be equidistant from one of the three items in the picture and $\theta_5$, it can be placed in three different locations. If one of the three potential queries is performed, $\theta_5$ will be closer to the dark grey area than $\theta_1$, $\theta_2$, and $\theta_3$, meaning $y_{1,5} = y_{2,5} = y_{3,5} = 0$. In this case, all labels are the same regardless of which object is used, meaning such a query will not be contradictory, as all agree on the label. The goal is to perform as many ambiguous queries as possible and skip non-ambiguous queries to decrease the total $M_n(\sigma)$. Intuitively, if there is contradictory information about a query, it needs to be erformed so that a human can clarify its direction. Conversely, if all sources of information from the domain space agree on the query's label, that information can be used without asking a human, incorporating the knowledge of the embedding distances. Lastly, to consider the general case of the $R^d$ space, rather than discussing halves of the image, it is essential to discuss half-spaces. Similarly, consider the half-space that assigns a label of $1$ to the query and the half-space assigning a label of $0$. If both half-spaces exist, they have conflicting information on the query, making the query ambiguous. However, if one of the half-spaces does not exist, it means the other is the full space, representing consistency in the label assignment and a non-ambiguous query.
-
-It is important to demonstrate that the number of comparisons decreases. Specifically, [@geo_paper] shows that this algorithm has $E[M_n(\sigma)] = O(d\log n)$, where $d$ is the dimension of the space and $d < n$, which improves on the $O(n\log n)$ baseline. The proof can be studied in detail in the paper itself, but at a high level, it starts by reasoning about the probability of a query being ambiguous and a comparison being requested from a human, thus representing $M_n = \Sigma_{k=1}^{n-1}\Sigma_{i=1}^k 1\{Requestq_{i,k+1}\}$. For that, the authors define $Q(i,j)$, which represents the number of different rankings that exist for $i$ elements in $j$-dimensional space (e.g., $Q(1,d) = 1, Q(n,0) = 1, Q(n,1) = n!$). In that case, $|\Sigma_{n,d}| = Q(n,d)$. Further, using recurrence relations for $Q(i,j)$, the authors derive that $|\Sigma_{n,d}| = Q(n,d) = O(n^{2d})$, which is omitted here. Analogously, the authors define $P(i,j)$, which represents the number of rankings in $\Sigma_{n,d}$ that will still be possible with the addition of a new element $i+1$ to the ranking items. $P(i,j)$ estimates how much of the dark grey area will still exist after making a query for $i+1$. As indicated there, the dotted line ambiguous query did not change the dark grey a rea at all ($P(n,d) = Q(n,d)$), whereas the dashed non-ambiguous query would cut a piece from it ($P(n,d) < Q(n,d)$). Thus, $Request q_{i,k+1} = P(k,d) / Q(k,d)$, so a higher value indicates more possible rankings and an ambiguous query that needs to be requested to obtain more useful information. With this in mind, the authors derive that $E[M_n(\sigma)] = O(d\log n)$, showing that fewer queries are needed for effective ranking.
-
-The issue with this algorithm is that only one human provides the answers to the requested queries, which means it does not account for their biases. An alternative approach is a Robust Query Selection Algorithm (RQSA) [@geo_paper], which uses majority voting for every query to indicate the ground truth of the query's label. However, the authors consider that a group of people can still give incorrect or divided responses. If the votes for each answer are almost equal in number, the authors push that query to the end of the algorithm to see if it can become a non-ambiguous query with more information learned. If it does not, an odd number of voters is used to determine the final ranking.
-
-::: {#tbl-geo_acc}
-  Dimension                           2      3
-  --------------- ----------------- ------ ------
-  \% of queries         mean         14.5   18.5
-                        std          5.3     6
-  Average error    $d(\bar{y}, y)$   0.23   0.21
-                   $d(\bar{y}, y)$   0.31   0.29
-
-  : Statistics for the Robust Query Selection Algorithm (RQSA) [@geo_paper] and the baseline of conducting all comparisons. $y$ serves as a noisy ground truth, $\tilde{y}$ is the result of all comparisons, and $\hat{y}$ is the output of the RQSA.
+pairs = np.array([(j, k) for j in range(M) for k in range(M) if j < k])
+Xdiff = X[pairs[:, 0]] - X[pairs[:, 1]]
+print(f"Functions defined. {len(pairs)} candidate pairs.")
+```
 :::
 
-With regard to the accuracy and performance of the method, the authors did a ranking experiment on 100 different audio signals, results of which can be seen in @tbl-geo_acc. The ground truth labels came from humans, indicated by $y$ in the table. That resulted in the existence of noise and potential errors in the ground truth, which could influence the performance of both the baseline algorithm that does all comparisons ($\tilde{y}$) and the Robust Query Selection Algorithm (RQSA) ($\hat{y}$). As can be seen in both 2 and 3-dimensional spaces RQSA performed worse by $8\%$ compared to the baseline, which indicates that AL that uses the domain information can still be erroneous due to the inference of certain comparisons that sometimes may not be entirely correct. However, as can be seen by the upper part of @tbl-geo_acc, significantly less queries were requested compared to the baseline, which means that the approach can have a significant benefit at a cost of slight loss in accuracy.
+Run the simulation comparing D-optimal vs random selection:
 
-#### User Information as Domain Knowledge for Active Learning {#sec-geo_app .unnumbered}
+::: {.callout-note title="Code"}
+```{pyodide-python}
+#| autorun: true
+def run_policy(active=True):
+    W_hat = np.zeros(d)
+    Sigma = np.eye(d) * sigma0**2
+    mse_hist, rel_hist = [], []
 
-An alternative source of domain knowledge could be users themselves, who can indicate their uncertainty when it comes to comparing two items. Prior studies have shown [@unnoisy_humans] that when presented with only two options when selecting which object is better, but not being able to properly decide, users would get frustrated and tend to respond more faultyly, creating noise and incorrect responses in the data. Through feedback and other studies [@noisy_humans] it was determined that presenting users with an option of indifference between the two items can remove those problems. Moreover, in connection to AL, the authors show that such an option helps to select more informative queries since it provides more domain knowledge that can be used, resulting in a decrease in the number of queries required. For this problem, the following terms are defined:
+    for t in range(T):
+        if active:
+            gains = [fisher_gain(Sigma, x, sigmoid(W_hat @ x) * (1 - sigmoid(W_hat @ x)))
+                     for x in Xdiff]
+            idx = np.argmax(gains)
+        else:
+            idx = rng.integers(len(Xdiff))
 
-1.  $c$ - a cost function that represents user preferences, and the result the model has to determine at the end of training. The preferred items will have lower costs, and less preferred ones will have higher costs. The goal is to determine this function with the fewest possible number of queries using AL.
+        x = Xdiff[idx]
+        y = rng.random() < sigmoid(W_true @ x)
+        W_hat, Sigma = update(W_hat, Sigma, x, y)
+        mse_hist.append(np.sum((W_hat - W_true)**2))
+        rel_hist.append(1 - np.trace(Sigma) / (d * np.var(W_true)))
+    return np.array(mse_hist), np.array(rel_hist)
 
-2.  $H$ - a set of hypotheses over the possible cost functions, where for each $h \in H$ there is a cost function $c_h$ associated with it.
-
-3.  $h^*$ - a true hypothesis that the model needs to determine, which has cost $c_{h^*}$ associated with it
-
-4.  $t(x,y)$ - a test performed to compare items $x$ and $y$ (the user is being asked to provide a response to which item is better). Those tests result in changes and adjustments to $H$ as more information is learned.
-
-5.  $o(x,y)$ - observation or result of $t(x,y)$, where $o(x,y) \in \{x<y, x>y\}$
-
-6.  $S = \{(t_1, o_1), (t_2, o_2),...,(t_m, o_m)\}$ - a sequence of $m$ pairs of tests and observations
-
-7.  $w(H|S)$ - probability mass of all hypotheses that are still consistent with the observations (similar to the dark grey area and $Q(i,j)$). This means that if $h \in H$ is inconsistent with user responses received, it is removed from $H$.
-
-With the key terms defined, let's consider the noiseless base setting where users only have two options for response. Those components will also later be translated to the setting with the third option so the true cost function can be determined there. $w(H|S)$ is the sum of the weights of all hypotheses that are still consistent with the evidence: $w(H|S) = \sum_{h \in H} w(h | S)$. Each $w(h|S)$ is a probability of the evidence's existence given such hypothesis: $w(h|S) = p(S|h)$. Such probability comes from the test-observation pairs since they compose the set $S$. Moreover, each test is independent of other tests, which gives $p(S|h) = \prod_{(t,o) \in S} p((t,o) | h)$. In the noiseless setting, users will select an option that minimizes their cost function (selecting more preferred items), mathematically defined as:
-$$\begin{aligned}
-    p((t, o = x) | h) = 
-    \begin{cases}
-        1 & c_h(x) < c_h(y)\\
-        0 & else
-    \end{cases}
-\end{aligned}$$
-
-Users are not perfect evaluators. Prior work [@unnoisy_humans] has shown that treating users as perfect can lead to poor performance. That gave rise to accounting for noise in users' responses, but a majority of such work applies the same noise to all queries and all responses. While those led to great performance results [@noisy_humans], they don't accurately reflect the real world, which gave rise to the idea of creating query-based noise. Effectively, for some of the queries it is important to incorporate the fact that the user is unsure and noisy, but for others, if the user is confident, noise in the response is not needed at all. For comparison-based learning, this means that the noise is related to the costs of the two items compared. Specifically for items $x$ and $y$, if $c_{h^*}(x) \simeq c_{h^*}(y)$ then the items are hard to distinguish for the user, so here it is preferred to incorporate user uncertainty and noise. But if $c_{h^*}(x) >> c_{h^*}(y)$, the user will certainly select $y$ and the other way around, which is where the noise is not needed. Query-dependent noise is also supported in the psychology literature, which means that such an approach is more related to the real world. In particular, psychologists talk about the Luce-Sheppard Choice rule [@lus-shep] when talking about comparisons. This rule previously gave rise to a logistic model based on the noise [@lus-log] where the probability of observation for a given test is $p((t, o = x) | h) \propto exp(-\gamma * c_h(x))$
-
-![User response model in the noiseless setting](Figures/Noiseless probs.png){#fig-noiseless_1 width="100%"}
-
-![User response with Luce Sheppard noise model](Figures/Noise probs.png){#fig-noiseless_2 width="100%"}
-
-[@fig-noiseless_1; @fig-noiseless_2] demonstrate the difference between the noiseless setting and incorporating the Luce-Sheppard Choice rule. GBS is the baseline model with only 2 response options, and CLAUS is the model with the uncertainty option added. The figures show how incorporating such noise influences and smoothes the probability distribution of the user's response.
-
-We will now discuss the functionality of CLAUS, which is an algorithm designed by [@claus] that allows users to select an uncertain response about the two options that they need to rank. The authors model such uncertainty as $\epsilon$ and it is associated with each $c_h$, so now every hypothesis $h$ is defined over a pair of $(c_h, \epsilon_h)$. It is important to note that the goal is to still learn and maintain our objective on $c$, $\epsilon$ is only necessary to model the users' responses. The uncertainty relates to the cost function as $|c_h(x) - c_h(y)| < \epsilon_h$. This means that the user is uncertain between items $x$ and $y$ and their cost difference is negligible such that the user is not able to select which item is better. This in turn gives more information about the real value of the two items, as a binary response would indicate the user's preference towards one item, which will not be real and will skew the cost functions. This causes modifications of the problem set-up:
-
-1.  For test $t(x,y)$ the observation will be $o(x,y) \in \{x<y, x>y, \tilde{xy}\}$, where $\tilde{xy}$ is the uncertain response.
-
-2.  The probability distribution over the user's response ([@eq-prob_base]) will now be defined as:
-
-$$\begin{aligned}
-    p((t, o = x) | h) = 
-    \begin{cases}
-        1 & c_h(x) < c_h(y) - \epsilon_h\\
-        0 & else
-    \end{cases}, \quad
-    p((t, o = \tilde{xy}) | h) = 
-    \begin{cases}
-        1 & |c_h(x) - c_h(y)|^2 < \epsilon_h^2\\
-        0 & else
-    \end{cases}
-\end{aligned}$$
-
-This means the user confidently selects $x$ when it is better than $y$ by more than $\epsilon$, but if the squared difference of the cost functions of two items is negligible by $\epsilon$ user will choose the indifferent option.
-
-3.  Finally this also updates the noise model:
-$$\begin{aligned}
-    &p((t, o = x) | h) \propto \exp(-\gamma * [c_h(x) - c_h(y)]) \\
-    &p((t, o = \tilde{xy}) | h) \propto exp(-1/\epsilon_h^2 * [c_h(x) - c_h(y)]^2)
-\end{aligned}$$
-
-Rather than predicting a specific pair $(c_h, \epsilon_h)$, the algorithm focuses on predicting a group of pairs that are similar to one another, otherwise called equivalence class (@fig-equiv_c), which indicates not essentially different hypothesis for the cost function and uncertainty. That information is learned through each new test, as the algorithm updates the information about $c$ and $\epsilon$ that distinguishes between the distinct $h$, finding the equivalence groups among them. Moreover, the authors tweaked the parameter responsible for the size of the equivalence class (how many hypotheses can be grouped together at a time).
-
-::: {#tbl-claus_tab}
-  Category                        Accuracy                       Query Count
-  --------------------- ------------------------------------ ------------------------------------
-  GBS - About Equal               $94.15 \pm 0.52$                     $36.02 \pm 0.03$
-  GBS - Not Sure         $\textbf{94.66} \pm \textbf{0.55}$            $35.95 \pm 0.04$
-  CLAUS - About Equal             $91.56 \pm 0.84$            $\textbf{25.93} \pm \textbf{0.41}$
-  CLAUS - Not Sure                $90.86 \pm 0.74$                     $26.98 \pm 0.47$
-
-  : Performance of GBS and CLAUS with different labels for the uncertainty
+mse_act, rel_act = run_policy(True)
+mse_rnd, rel_rnd = run_policy(False)
+print("Simulation complete!")
+```
 :::
 
-The first performance evaluation is done on the number of queries and confirms that it decreases. The GBS model serves as the baseline, as it will do all of the comparison queries using the binary response options. The CLAUS model is measured over different values of $\epsilon$ on the x-axis and over different sizes of the equivalence sets indicated by different shades of blue. Figure shows that all variants of CLAUS use approximately 10 fewer queries on average compared to GBS. Moreover, using bigger-sized equivalence classes can further decrease the number of needed queries. The most optimal $\epsilon \simeq 0.07$, after which higher $\epsilon$ does not provide any benefit.
+Visualize the results:
 
-Lastly, the authors considered the performance difference, which is indicated in @tbl-claus_tab. For that authors used two different labels for the uncertainty button in CLAUS, it was either labeled as "About Equal" or "Not Sure" as those can provoke different responses and feelings in users. Moreover, GBS and CLAUS-type responses were mixed in the same set of questions to the user, which splits the metrics for both in two as can be seen in @tbl-claus_tab. The performance of CLAUS is lower by $3\%$ on average, showing that a smaller number of queries can still lead to a performance loss. However, the second column of @tbl-claus_tab supports the information, as it also shows that 10 fewer queries were conducted on average.
+::: {.callout-note title="Code"}
+```{pyodide-python}
+#| autorun: true
+fig, axes = plt.subplots(1, 2, figsize=(12, 4))
 
-AL can be essential in learning within dynamic systems and environments. Say we have an agent in an environment, and we want it to conform to a certain behavior as set by a human. How exactly do we go about doing this? In a traditional RL setting, this is solved by a class of algorithms under Inverse Reinforcement Learning. Techniques such as VICE and GAIL attempt to learn a reward function that can distinguish between states visited by the agent and states desired to be visited as defined by a human. In effect, a human will demonstrate what it would like the agent to do in the environment, and from there, learning is done. However, what if humans do not precisely know how an agent should optimally behave in an environment but still have some opinion on what trajectories would be better than others? This is where a paper like Active Preference-Based Learning of Reward Functions comes into the picture. The paper aims to use human preferences to aid an agent's learning within a dynamic system.
+axes[0].plot(mse_rnd, label="Random", alpha=0.7)
+axes[0].plot(mse_act, label="D-optimal", alpha=0.7)
+axes[0].set_xlabel("Queries"); axes[0].set_ylabel("MSE")
+axes[0].set_title("Estimation Error"); axes[0].legend(); axes[0].grid(True, alpha=0.3)
 
-A dynamic system contains human input, robotic input, and an environment state. The transitions between states is defined by $f_{HR}$, so that we have $x^{t+1} = f_{HR}(x^t, u_R, u_H)$. At a given time step $t$, we have $x_t$, $u_R^t$, and $u_H^t$. This can be encapsulated into a single $d$ dimensional feature vector that the authors denote as $\phi$. The paper then assumes that the underlying reward model we are trying to learn can be represented linearly. If we have our human reward preference function defined as $r_H$, this means we can write $r_H$ as $r_H(x^t, u_R^t, u_H^t) = w^{\intercal}\phi(x^t, u_R^t, u_H^t)$. Because the reward function is linear, we can take the weight vector out of the summation if we want to calculate the reward over an entire trajectory:
+axes[1].plot(rel_rnd, label="Random", alpha=0.7)
+axes[1].plot(rel_act, label="D-optimal", alpha=0.7)
+axes[1].set_xlabel("Queries"); axes[1].set_ylabel("Reliability")
+axes[1].set_title("Reliability"); axes[1].legend(); axes[1].grid(True, alpha=0.3)
 
-$$R_{H}(x^0, u_R, u_H) = \sum_{t=0}^{N} r_{H}(x^t, u^t, u_H^t) \quad \Phi = \sum \phi(x^t, u_R^t, u_H^t) \quad R_H(traj) = w\cdot\Phi(traj)$$ 
+plt.tight_layout(); plt.show()
+```
+:::
 
-First, the scale of $w$ does not matter because we only care about the relative rewards produced with $w$ (given two different trajectories, we want to answer the question of which trajectory a human would prefer, i.e. which one has a higher preference reward). This means we can constrain $||w|| <= 1$, so the initial prior is uniform over a unit ball. From here, we can determine a probabilistic expression to assess whether we should prefer trajectory A or B (because it can be noisy with human input). Let $I_t = +1$ if the human prefers trajectory $A$. According to Bradley-Terry model, $p(A \succ B|w) = \sigma(R_H(traj_A) - R_H(traj_B))$. Let $\psi = \Phi(traj_a) - \Phi(traj_b). Then f_{\psi} (w) = p(I_t|w) = \sigma(I_t w^{\intercal}\psi)$. We can update $p(w)$ everytime we get a result from a human preference query using Bayes' rule: $p(w|I_t) <- p(w) \cdot p(I_t|w)$ via Markov chain Monte Carlo method. This paper synthetically generates queries through an optimization process and then presents them to a human to pick between. The idea is that we want to generate a query that maximizes the conditional entropy $H(I|w)$. We want to pick a query that we are most uncertain about given our current weights (thus having the highest conditional entropy given the weights):
-$$\max_{x^0, u_R, u_H^A, u_H^B} \min\{\mathbb{E}[1-f_{\psi}(w)], \mathbb{E}[1 - f_{-\psi}(w)]\}$$
+So far we set $V_j=W^\top X_j$. Suppose instead that items are scored by a non-linear function
+$$V_j = f_\theta(X_j),\qquad \theta\in\mathbb{R}^p, \qquad p(j \succ k) = \sigma (f_\theta(X_j) - f_\theta(X_k))$$
+We want an online procedure that chooses the next comparison $(j,k)$ to learn $\theta$ quickly. Exact Bayesian design is intractable for general $f_\theta$. There is a simple and effective approximation that keeps all the math and code lightweight: local Gaussian posterior over $\theta$ via Laplace + first-order model. Work at the current estimate $\hat\theta$. Linearize the non-linear scorer around $\hat\theta$:
+$$
+f_\theta(X_j) \approx f_{\hat\theta}(X_j) + J_j\Delta\theta, \qquad
+J_j \equiv \left.\frac{\partial f_\theta(X_j)}{\partial \theta}\right| _{\theta = \hat\theta} \in \mathbb{R}^{1\times p}.
+$$
+The pairwise logit for $(j,k)$ becomes
+$$\underbrace{f_\theta(X_j)-f_\theta(X_k)}_{\text{logit}} \approx \underbrace{f_{\hat\theta}(X_j)-f_{\hat\theta}(X_k)}_{\text{offset}} + \underbrace{(J_j-J_k)}_{\phi_{jk}}\Delta\theta.$$
 
-To do so, we sample $w_1, ... w_m$ from $p(w)$, approximating the distribution $p(w)$ as $p(w) = \frac{1}{M} \sum \delta (w_i).$ We can now approximate the expectation expression as $E[1 - f_{\psi}(w)] = \frac{1}{M} (\sum 1 - f_{\psi}(w_i))$, and now we can optimize the expression to generate a synthetic query. The algorithm itself works well, however there ends up being a bottle neck that each query needs to be synthesized before being sent to the human -- one at a time. There is no room for parallelization and so the authors proposed a second algorithm in a separate paper that allows for the batching of queries:
+Define the local "design vector" $\phi_{jk}\in\mathbb{R}^{1\times p}$. With a Gaussian prior $\theta\sim\mathcal N(0,\sigma_0^2 I)$ and Bernoulli likelihood, the Laplace posterior around $\hat\theta$ is
+$$
+\theta \mid \mathcal D \approx \mathcal N(\hat\theta,;\Sigma),\qquad
+\Sigma^{-1} = \sigma_0^{-2} I + \sum_{t} w_t \phi_t^\top \phi_t 
+$$
+where $w_t = p_t(1-p_t)$ with $p_t = \sigma\big(f_{\hat\theta}(X_{j_t})-f_{\hat\theta}(X_{k_t})\big)$.
+This is exactly the same structure as the linear case, with (x_{jk}) replaced by $\phi_{jk}=J_j-J_k$. You only need Jacobian rows $J_j$. At the current $(\hat\theta \Sigma)$ and for a candidate $(j,k)$, compute $p=\sigma\big(f_{\hat\theta}(X_j)-f_{\hat\theta}(X_k)\big)$ and $w = p(1-p)$.Compute $\phi = J_j-J_k$ at $\hat \theta$. Then use any standard optimal design score with Sherman–Morrison:
 
-$$\max_{\xi_{ib+1_A}, \xi_{ib+1_B}, ... , \xi_{ib+b_A}, \xi_{ib+b_B}} \mathbb{H}(I_{ib+1}, I_{ib+2}, .., I_{ib+b} | w)$$
+* D-optimal (log-det gain): $\Delta_D(j,k) = \log ( 1 + w\phi \Sigma \phi^\top )$.
+* A-optimal (trace drop): $\Delta_A(j,k) = \dfrac{w \phi \Sigma^2 \phi^\top }{ 1+w \phi \Sigma \phi^\top}$.
+* E-optimal proxy: $\Delta_E^{\text{proxy}}(j,k) = w \phi \Sigma \phi^\top$.
 
-We could consider optimizing this in the greedy fashion. This would mean just synthetically generating $b$ independent queries. The drawback of this method would be that the queries would likely be very similar to each other. The authors propose a few other heuristics that would help guide the algorithm away from generating very similar queries, such as Medioid Selection where we have to cluster $B$ greedy vectors into $b < B$ groups and pick one vector from each group (the medioid). The authors also propose two other methods rooted in providing different queries: boundary medioids selection and successive elimination. The authors test both the non-batched and variety of batched learning algorithms on multiple environments. When graphed over $N$ the non-batched AL approach does in the same ball-park of performance as the batched approaches. However, over time, we see that learning is a much slower process when not-batched.
+Pick the pair with the largest gain. This is tractable because it only needs a vector–matrix–vector product with $\Sigma$ and a Jacobian row. Mutual-information acquisition like BALD reduces to the same formulas under the Laplace Gaussian approximation. Maximizing (\Delta_D) is a good default.
 
-## Case Study 2: Performance Metric Elicitation {#sec-metric-elicitation}
+<!-- Note to work more on this expansion -->
+
+We use a tiny two-layer network $f_\theta(x)=a^\top \tanh(Bx)$ with $\theta=(a,B)$. We derive $J_j$ analytically. First, define the network and its Jacobian:
+
+```{pyodide-python}
+#| autorun: true
+import numpy as np
+import matplotlib.pyplot as plt
+
+sigmoid = lambda x: 1.0 / (1.0 + np.exp(-x))
+rng = np.random.default_rng(3)
+
+# Network dimensions
+d, h, M, T = 6, 8, 80, 120  # feature dim, hidden units, items, queries
+
+# Item features and ground-truth parameters
+X = rng.normal(0, 1, size=(M, d))
+a_star = rng.normal(0, 0.8, size=(h,))
+B_star = rng.normal(0, 0.6, size=(h, d))
+
+def f_theta(a, B, x):
+    """Two-layer network: a^T tanh(Bx)"""
+    return a @ np.tanh(B @ x)
+
+def f_batch(a, B, X):
+    """Batch evaluation over all items."""
+    return a @ np.tanh(B @ X.T)
+
+def J_row(a, B, x):
+    """Jacobian ∂f/∂θ at x, with θ = [a, vec(B)]."""
+    t = np.tanh(B @ x)
+    sech2 = 1.0 - t**2
+    dfa = t  # ∂f/∂a
+    dfB = (a[:, None] * sech2[:, None]) * x[None, :]  # ∂f/∂B
+    return np.concatenate([dfa, dfB.ravel()])
+
+V_star = f_batch(a_star, B_star, X)  # true scores
+print(f"Network: {d}→{h}→1, {h + h*d} parameters, {M} items")
+```
+
+Set up Laplace approximation state and update functions:
+
+```{pyodide-python}
+#| autorun: true
+p_dim = h + h*d  # total parameters
+theta_hat = np.zeros(p_dim)
+Sigma = np.eye(p_dim) * 4.0
+
+def split_theta(theta):
+    return theta[:h], theta[h:].reshape(h, d)
+
+def update(theta, Sigma, j, k, y):
+    """Laplace update after observing comparison (j,k) with outcome y."""
+    a, B = split_theta(theta)
+    pjk = sigmoid(f_theta(a, B, X[j]) - f_theta(a, B, X[k]))
+    w = pjk * (1 - pjk)
+    phi = J_row(a, B, X[j]) - J_row(a, B, X[k])
+    Sphi = Sigma @ phi
+    Sigma_new = Sigma - (w / (1 + w * (phi @ Sphi))) * np.outer(Sphi, Sphi)
+    theta_new = theta + Sigma_new @ ((y - pjk) * phi)
+    return theta_new, Sigma_new
+
+def d_opt_gain(Sigma, phi, w):
+    return np.log1p(w * (phi @ (Sigma @ phi)))
+
+pairs = np.array([(j, k) for j in range(M) for k in range(M) if j < k])
+print(f"Setup complete: {len(pairs)} candidate pairs")
+```
+
+Run the active learning loop comparing D-optimal vs random selection:
+
+```{pyodide-python}
+#| autorun: true
+def run(active=True):
+    theta, S = theta_hat.copy(), Sigma.copy()
+    mse_hist, rel_hist = [], []
+
+    for t in range(T):
+        a, B = split_theta(theta)
+        if active:
+            # Heuristic: evaluate on subset of pairs with small |logit|
+            logits = f_batch(a, B, X)
+            cand_idx = rng.choice(len(pairs), size=min(2000, len(pairs)), replace=False)
+            deltas = logits[pairs[cand_idx, 0]] - logits[pairs[cand_idx, 1]]
+            sel = cand_idx[np.argsort(np.abs(deltas))[:400]]
+            gains = [d_opt_gain(S, J_row(a, B, X[j]) - J_row(a, B, X[k]),
+                     sigmoid(logits[j]-logits[k])*(1-sigmoid(logits[j]-logits[k])))
+                     for j, k in pairs[sel]]
+            j, k = pairs[sel[np.argmax(gains)]]
+        else:
+            j, k = pairs[rng.integers(len(pairs))]
+
+        y = 1 if rng.random() < sigmoid(V_star[j] - V_star[k]) else 0
+        theta, S = update(theta, S, j, k, y)
+        err = theta - np.concatenate([a_star, B_star.ravel()])
+        mse_hist.append(float(err @ err))
+        rel_hist.append(1 - np.trace(S) / (np.trace(S) + p_dim))
+    return np.array(mse_hist), np.array(rel_hist)
+
+mse_act, rel_act = run(active=True)
+mse_rnd, rel_rnd = run(active=False)
+print("Simulation complete!")
+```
+
+Visualize results:
+
+```{pyodide-python}
+#| autorun: true
+fig, axes = plt.subplots(1, 2, figsize=(12, 4))
+x = np.arange(1, T+1)
+
+axes[0].plot(x, mse_rnd, 'o-', label="Random", alpha=0.7, markevery=10)
+axes[0].plot(x, mse_act, 's-', label="D-opt", alpha=0.7, markevery=10)
+axes[0].set_xlabel("Queries"); axes[0].set_ylabel("MSE in θ")
+axes[0].set_title("Parameter Estimation Error"); axes[0].legend(); axes[0].grid(True, alpha=0.3)
+
+axes[1].plot(x, rel_rnd, 'o-', label="Random", alpha=0.7, markevery=10)
+axes[1].plot(x, rel_act, 's-', label="D-opt", alpha=0.7, markevery=10)
+axes[1].set_xlabel("Queries"); axes[1].set_ylabel("Reliability")
+axes[1].set_title("Reliability Proxy"); axes[1].legend(); axes[1].grid(True, alpha=0.3)
+
+plt.tight_layout(); plt.show()
+```
+
+## Active Query Selection for Gaussian Process Models {#sec-gp-active}
+
+The previous sections developed Fisher information for optimal query selection in *parametric* preference models—the Rasch model (Section 1) and linear scoring functions (Section 2). However, Chapter 2 introduced Gaussian Processes (GPs) as a flexible nonparametric alternative for reward modeling, and Chapter 3 covered GP inference via Laplace approximation. Here we address the natural question: **how do we actively select queries when using GPs?**
+
+The key insight is that GP uncertainty—quantified by the posterior variance—naturally guides query selection. Unlike parametric models where Fisher information depends only on the current parameter estimate, GP uncertainty varies across the input space, being higher far from observed data and lower near it.
+
+### Information-Theoretic Acquisition Function
+
+For GP preference learning, we seek queries that maximize information gain about the reward function. Given a dataset $\mathcal{D}$ and a candidate query $Q = (x_A, x_B)$, the acquisition function measures the expected reduction in uncertainty about $r$:
+$$
+a(Q) = I(r; y \mid \mathcal{D}, Q) = H(y \mid \mathcal{D}, Q) - \mathbb{E}_{r \sim p(r \mid \mathcal{D})}[H(y \mid r, Q)]
+$$
+
+**Interpretation of the two terms:**
+
+1. **$H(y \mid \mathcal{D}, Q)$**: Predictive entropy—how uncertain is the query outcome under our current model? High when $p(A \succ B) \approx 0.5$.
+
+2. **$\mathbb{E}_r[H(y \mid r, Q)]$**: Expected conditional entropy—how uncertain would the query be if we knew the true reward function? Low for "easy" comparisons, high for inherently noisy comparisons.
+
+The acquisition function trades off these two terms: we want queries where the *model* is uncertain (high predictive entropy) but a *human* could provide a clear answer (low expected conditional entropy).
+
+### Practical Computation
+
+Using the Laplace approximation from Chapter 3 (@sec-gp-inference), the acquisition function can be computed as:
+$$
+a(x_A, x_B) = h\left(\Phi\left(\frac{\mu_A - \mu_B}{\sqrt{2\sigma_{\text{noise}}^2 + g(x_A, x_B)}}\right)\right) - m(x_A, x_B)
+$$
+
+where:
+- $\mu_A, \mu_B$ are the GP posterior means at $x_A, x_B$
+- $g(x_A, x_B) = \sigma_A^2 + \sigma_B^2 - 2\text{Cov}(r(x_A), r(x_B))$ captures uncertainty from both points
+- $h(p) = -p\log_2 p - (1-p)\log_2(1-p)$ is binary entropy
+- $\Phi$ is the standard normal CDF
+- $m(x_A, x_B)$ is a correction term for human noise
+
+**Key property:** The trivial query $Q = (x, x)$ (comparing an item to itself) is a *global minimizer*, not maximizer, of this acquisition function. This contrasts with some other methods that can get stuck on uninformative queries.
+
+First, we define the RBF kernel and helper functions for the simulation:
+
+```{pyodide-python}
+#| autorun: true
+import numpy as np
+import matplotlib.pyplot as plt
+np.random.seed(42)
+
+def rbf_kernel(X1, X2, sigma_f=1.0, length_scale=0.7):
+    """Compute RBF kernel matrix between two sets of points."""
+    sq_dist = np.sum(X1**2, 1, keepdims=True) + np.sum(X2**2, 1) - 2*X1@X2.T
+    return sigma_f**2 * np.exp(-sq_dist / (2 * length_scale**2))
+
+sigmoid = lambda x: 1.0 / (1.0 + np.exp(-np.clip(x, -500, 500)))
+binary_entropy = lambda p: -p*np.log2(p+1e-10) - (1-p)*np.log2(1-p+1e-10)
+
+# True reward function (unknown to the learner)
+def true_reward(x):
+    return np.sin(2 * x) + 0.3 * x
+
+# Visualize the true reward
+X_grid = np.linspace(-3, 3, 100).reshape(-1, 1)
+plt.figure(figsize=(8, 3))
+plt.plot(X_grid, true_reward(X_grid), 'k-', lw=2)
+plt.xlabel('x'); plt.ylabel('r(x)')
+plt.title('True Reward Function (Unknown to Learner)')
+plt.grid(True, alpha=0.3)
+plt.show()
+```
+
+Next, we implement a GP model for active preference learning. The `fit` method uses Laplace approximation (Newton's method) to find the posterior mode, and `acquisition` computes the information gain for a candidate query:
+
+```{pyodide-python}
+#| autorun: true
+class GPActivePreference:
+    def __init__(self, X_pool, sigma_noise=0.1):
+        self.X_pool = X_pool
+        self.sigma_noise = sigma_noise
+        self.comparisons = []  # list of (i, j, y) where y=1 means i>j
+        self.r = np.zeros(len(X_pool))
+        self.Sigma = rbf_kernel(X_pool, X_pool) + 1e-4*np.eye(len(X_pool))
+
+    def fit(self):
+        """Fit GP using Laplace approximation (Newton's method)."""
+        if len(self.comparisons) == 0:
+            return
+        m = len(self.X_pool)
+        self.K = rbf_kernel(self.X_pool, self.X_pool) + 1e-4*np.eye(m)
+        self.K_inv = np.linalg.inv(self.K)
+
+        # Newton's method for mode finding
+        self.r = np.zeros(m)
+        for _ in range(10):
+            grad, W = np.zeros(m), np.zeros(m)
+            for i, j, y in self.comparisons:
+                p = sigmoid(self.r[i] - self.r[j])
+                grad[i] += (y - p); grad[j] -= (y - p)
+                W[i] += p * (1 - p); W[j] += p * (1 - p)
+            H = -np.diag(W + 1e-6) - self.K_inv
+            self.r -= np.linalg.solve(H, grad - self.K_inv @ self.r)
+        self.W = W
+        self.Sigma = np.linalg.inv(self.K_inv + np.diag(W + 1e-6))
+
+    def acquisition(self, i, j):
+        """Information gain acquisition: entropy of predicted comparison."""
+        if len(self.comparisons) == 0:
+            return 0.5
+        var_diff = self.Sigma[i,i] + self.Sigma[j,j] - 2*self.Sigma[i,j]
+        pred_std = np.sqrt(2*self.sigma_noise**2 + var_diff)
+        p_pred = sigmoid((self.r[i] - self.r[j]) / pred_std)
+        return binary_entropy(p_pred)
+
+    def select_query(self):
+        """Select the query with maximum information gain."""
+        m = len(self.X_pool)
+        best_score, best_pair = -np.inf, (0, 1)
+        for i in range(m):
+            for j in range(i+1, m):
+                score = self.acquisition(i, j)
+                if score > best_score:
+                    best_score, best_pair = score, (i, j)
+        return best_pair
+
+    def add_comparison(self, i, j):
+        """Simulate oracle response and update model."""
+        r_true = true_reward(self.X_pool.flatten())
+        p = sigmoid(r_true[i] - r_true[j])
+        y = 1 if np.random.rand() < p else 0
+        self.comparisons.append((i, j, y))
+        self.fit()
+
+print("GPActivePreference class defined successfully.")
+```
+
+Now we run the simulation, comparing active (information-theoretic) query selection against random selection:
+
+```{pyodide-python}
+#| autorun: true
+# Setup
+X_pool = np.linspace(-3, 3, 30).reshape(-1, 1)
+n_queries = 25
+r_true = true_reward(X_pool.flatten())
+
+# Active selection
+gp_active = GPActivePreference(X_pool)
+mse_active = []
+
+# Random selection
+gp_random = GPActivePreference(X_pool)
+mse_random = []
+
+# Run comparison
+for t in range(n_queries):
+    # Active: select most informative query
+    i, j = gp_active.select_query()
+    gp_active.add_comparison(i, j)
+    mse_active.append(np.mean((gp_active.r - r_true)**2))
+
+    # Random: select query uniformly at random
+    i, j = np.random.choice(len(X_pool), 2, replace=False)
+    gp_random.add_comparison(i, j)
+    mse_random.append(np.mean((gp_random.r - r_true)**2))
+
+print(f"Simulation complete: {n_queries} queries collected for each method.")
+```
+
+Finally, we visualize the results. The left panel shows how estimation error decreases with more comparisons; the right panel shows the learned reward functions:
+
+```{pyodide-python}
+#| autorun: true
+fig, axes = plt.subplots(1, 2, figsize=(12, 4))
+
+# Learning curves
+axes[0].plot(range(1, n_queries+1), mse_random, 'o-', label='Random', alpha=0.7)
+axes[0].plot(range(1, n_queries+1), mse_active, 's-', label='Active (Info Gain)', alpha=0.7)
+axes[0].set_xlabel('Number of comparisons')
+axes[0].set_ylabel('MSE of reward estimate')
+axes[0].set_title('GP Active vs Random Query Selection')
+axes[0].legend(); axes[0].grid(True, alpha=0.3)
+
+# Learned rewards
+axes[1].plot(X_pool, r_true, 'k--', lw=2, label='True reward')
+axes[1].plot(X_pool, gp_active.r, 'b-', lw=2, label='Active GP')
+axes[1].plot(X_pool, gp_random.r, 'r-', lw=2, alpha=0.7, label='Random GP')
+axes[1].fill_between(X_pool.flatten(),
+                     gp_active.r - 2*np.sqrt(np.diag(gp_active.Sigma)),
+                     gp_active.r + 2*np.sqrt(np.diag(gp_active.Sigma)),
+                     alpha=0.2, color='blue', label='±2σ (Active)')
+axes[1].set_xlabel('x'); axes[1].set_ylabel('r(x)')
+axes[1].set_title(f'Learned Rewards after {n_queries} Comparisons')
+axes[1].legend(); axes[1].grid(True, alpha=0.3)
+
+plt.tight_layout()
+plt.show()
+
+print(f"Final MSE - Active: {mse_active[-1]:.4f}, Random: {mse_random[-1]:.4f}")
+print(f"Active achieves {mse_random[-1]/mse_active[-1]:.1f}x lower error")
+```
+
+### When to Use GP Active Learning
+
+| Scenario | Recommendation |
+|----------|----------------|
+| Nonlinear reward structure | GP strongly preferred |
+| Low-to-moderate dimensions ($d \lesssim 10$) | GP works well |
+| Expensive human feedback | Active learning essential |
+| Need uncertainty quantification | GP provides this naturally |
+| Large datasets ($n > 1000$) | Consider sparse GP approximations |
+| Very high dimensions | Linear models may be more practical |
+
+## Active Learning for Direct Preference Optimization {#sec-adpo}
+
+We now turn to a specific, important application: **active learning for DPO (Direct Preference Optimization)** in large language model alignment. Chapter 2 introduced DPO and its connection to Bradley-Terry; here we show how to apply active learning principles to reduce the number of human comparisons needed.
+
+### The DPO Setting
+
+Recall from @sec-llm-example that DPO directly optimizes a policy $\pi_\theta$ on preference data without learning an explicit reward model. The key insight is that DPO implicitly assumes Bradley-Terry preferences:
+$$
+p(y_w \succ y_l \mid x) = \sigma\left(\beta \log \frac{\pi_\theta(y_w \mid x)}{\pi_{\text{ref}}(y_w \mid x)} - \beta \log \frac{\pi_\theta(y_l \mid x)}{\pi_{\text{ref}}(y_l \mid x)}\right)
+$$
+
+**Challenge:** Large language models have billions of parameters, making exact Fisher information computation intractable. How can we apply the D-optimal design principles from Sections 1-2?
+
+### The Log-Linear Policy Assumption
+
+The key insight is to approximate the policy as **log-linear** in the last-layer features:
+$$
+\pi(y \mid x; \theta) \propto \exp(\phi(x, y)^\top \theta)
+$$
+
+where $\phi(x, y)$ is the feature representation from the model's last layer. This assumption is justified by the **neural tangent kernel** perspective: for sufficiently large networks, the dynamics during training are approximately linear in the parameters.
+
+Under this assumption, the DPO loss Hessian takes the form:
+$$
+H(\theta) = \sum_{i=1}^n p_i(1-p_i) \cdot \Delta\phi_i \Delta\phi_i^\top
+$$
+
+where $\Delta\phi_i = \phi(x_i, y_{w,i}) - \phi(x_i, y_{l,i})$ is the feature difference between winning and losing responses, and $p_i$ is the predicted preference probability.
+
+**Key observation:** This Hessian is exactly the **Fisher information matrix** for the DPO model! The D-optimal criterion becomes:
+$$
+\max_S \log\det\left(\sum_{i \in S} p_i(1-p_i) \cdot \Delta\phi_i \Delta\phi_i^\top\right)
+$$
+
+### The ADPO Algorithm
+
+The **Active DPO (ADPO)** algorithm applies D-optimal design to select preference comparisons:
+
+::: {.callout-note title="Algorithm: Active DPO (ADPO)"}
+**Input:** Reference policy $\pi_{\text{ref}}$, prompt set $\{x_i\}$, response pairs $\{(y_{i,1}, y_{i,2})\}$, budget $T$
+
+**Initialize:** $\theta_0 = \theta_{\text{ref}}$, $S_0 = \emptyset$
+
+**For** $t = 1, \ldots, T$:
+
+1. **Compute features:** For each candidate pair $(x_i, y_{i,1}, y_{i,2})$:
+   - $\Delta\phi_i = \phi(x_i, y_{i,1}) - \phi(x_i, y_{i,2})$
+   - $p_i = \sigma(\beta(\log\pi_{\theta_{t-1}}(y_{i,1}|x_i) - \log\pi_{\theta_{t-1}}(y_{i,2}|x_i)))$
+
+2. **D-optimal selection:** Select query maximizing:
+   $$i^* = \arg\max_i \log\det\left(I + p_i(1-p_i) H_t^{-1} \Delta\phi_i \Delta\phi_i^\top\right)$$
+   where $H_t$ is the current Fisher information matrix
+
+3. **Query oracle:** Obtain human preference $y_t$ for pair $(x_{i^*}, y_{i^*,1}, y_{i^*,2})$
+
+4. **Update:** $S_t = S_{t-1} \cup \{(i^*, y_t)\}$, retrain $\theta_t$ on $S_t$ using DPO loss
+
+**Return:** Final policy $\pi_{\theta_T}$
+:::
+
+### Theoretical Guarantees
+
+Under standard regularity conditions, ADPO achieves the following convergence rate:
+
+::: {.callout-important title="ADPO Convergence"}
+Let $\theta^*$ be the optimal policy parameters. With $n$ actively selected comparisons, ADPO achieves:
+$$
+\|\hat\theta_n - \theta^*\| = O\left(\frac{d}{\sqrt{n}}\right)
+$$
+where $d$ is the effective dimension (rank of the Fisher information). This matches the minimax optimal rate for $d$-dimensional estimation.
+:::
+
+The key insight is that D-optimal design ensures the Fisher information grows proportionally to $n$, leading to $O(1/\sqrt{n})$ estimation error.
+
+### ADPO+ for Offline Settings
+
+In many practical settings, we have access to a fixed pool of unlabeled preference pairs (e.g., model outputs) but cannot generate new queries. **ADPO+** adapts the algorithm for this offline setting:
+
+1. **Pool-based selection:** Instead of synthesizing queries, select from the existing pool
+2. **Batch selection:** Select $b$ queries at once to enable parallel annotation
+3. **Diversity regularization:** Add penalty for selecting similar queries
+
+The D-optimal criterion naturally encourages diversity: selecting redundant queries provides diminishing information gain.
+
+### Empirical Guidance: When Does Active Learning Help?
+
+| Factor | Active Learning Beneficial? |
+|--------|---------------------------|
+| **Annotation cost** | High cost → Active learning essential |
+| **Data heterogeneity** | Diverse prompts → More room for strategic selection |
+| **Budget constraints** | Limited budget → Active learning shows larger gains |
+| **Model capacity** | Larger models → Active learning helps reduce overfitting |
+| **Query pool size** | Large pool → More room for intelligent selection |
+
+**Practical recommendation:** Active learning for DPO provides the largest gains when:
+- Annotation budget is limited (< 10K comparisons)
+- Prompts cover diverse topics or difficulty levels
+- The goal is sample efficiency over raw performance
+
+::: {.callout-tip title="Comparison: GP Active Learning vs. ADPO"}
+| Aspect | GP Active Learning | ADPO |
+|--------|-------------------|------|
+| Model | Nonparametric (GP) | Parametric (neural network) |
+| Scalability | $O(n^3)$ | $O(d^2 n)$ with approximations |
+| Use case | Small datasets, need uncertainty | LLM alignment, large models |
+| Acquisition | Information gain | D-optimal design |
+| Theoretical basis | Mutual information | Fisher information |
+
+Both approaches share the core insight: **use model uncertainty to guide query selection**.
+:::
+
+## Case Study 1: Performance Metric Elicitation {#sec-metric-elicitation}
 
 In binary classification problems, selecting an appropriate performance metric that aligns with the real-world task is crucial. The problem of *metric elicitation* aims to characterize and discover the performance metric of a practitioner, reflecting the rewards or costs associated with correct or incorrect classification. For instance, in medical contexts such as diagnosing a disease or determining the appropriateness of a treatment, trade-offs are made for incorrect decisions. Not administering a treatment could lead to the worsening of a disease (a false negative), whereas delivering the wrong treatment could cause adverse side effects worse than not treating the condition (a false positive). Rather than choosing from a limited set of default choices like the F1-score or weighted accuracy, metric elicitation considers the process of devising a metric that best matches the preferences of practitioners or users. This is achieved by querying an "oracle" who provides feedback on proposed potential metrics through pairwise comparisons. Since queries to humans are often expensive, the goal is to minimize the number of comparisons needed.
 
-The motivation for the pairwise comparison aspect of metric elicitation [@pmlr-v89-hiranandani19a] stems from a rich history of literature in psychology, economics, and computer science [@pref1; @pref2; @pref3; @pref4; @ab], demonstrating that humans are often ineffective at providing absolute feedback on aspects such as potential prices, user interfaces, or even ML model outputs (hence the comparison-based structure of RLHF, for instance). Additionally, confusion matrices accurately capture binary metrics such as accuracy, $F_\beta$, and Jaccard similarity by recording the number of false positives, true positives, false negatives, and true negatives obtained by a classifier. The main goal of this chapter is to introduce two binary-search procedures that can approximate the oracle's performance metric for two types of metrics (linear and linear-fractional performance metrics) by presenting the oracle with confusion matrices generated by various classifiers. Essentially, we are learning an optimal threshold for classification given a decision boundary for a binary classification problem.
+The motivation for the pairwise comparison aspect of metric elicitation [@pmlr-v89-hiranandani19a] stems from a rich history of literature in psychology, economics, and computer science [@pref1; @pref2; @pref3; @pref4; @ab], demonstrating that humans are often ineffective at providing absolute feedback on aspects such as potential prices, user interfaces, or even ML model outputs (hence the comparison-based structure of RLHF, for instance). Additionally, confusion matrices accurately capture binary metrics such as accuracy, $F_\beta$, and Jaccard similarity by recording the number of false positives, true positives, false negatives, and true negatives obtained by a classifier. The main goal of this section is to introduce two binary-search procedures that can approximate the oracle's performance metric for two types of metrics (linear and linear-fractional performance metrics) by presenting the oracle with confusion matrices generated by various classifiers. Essentially, we are learning an optimal threshold for classification given a decision boundary for a binary classification problem.
 
 First, we introduce some relevant notation that will later be used to formalize notions of oracle queries, classifiers, and metrics. In this context, $X \in \mathcal{X}$ represents an input random variable, while $Y \in \{0, 1\}$ denotes the output random variable. We learn from a dataset of size $n$, denoted by $\{(x, y)_i\}^n_{i=1}$, which is generated independently and identically distributed (i.i.d.) from some distribution $\mathbb{P}(X, Y)$. The conditional probability of the positive class, given some sample $x$, is denoted by $\eta(\vec{x}) = \mathbb{P}(Y=1 | X=x)$. The marginal probability of the positive class is represented by $\zeta = \mathbb{P}(Y=1)$. The set of all potential classifiers is $\mathcal{H} = \{h : \mathcal{X} \rightarrow \{0,1\}\}$. The confusion matrix for a classifier $h$ is $C(h, \mathbb{P}) \in \mathbb{R}^{2 \times 2}$, where $C_{ij}(h, \mathbb{P}) = \mathbb{P}(Y=i, h=j)$ for $i, j \in \{0,1\}$. These entries represent the false positives, true positives, false negatives, and true negatives, ensuring that $\sum_{i,j}C_{ij}=1$. The set of all confusion matrices is denoted by $\mathcal{C}$. Since $FN(h, \mathbb{P}) = \zeta - TP(h, \mathbb{P})$ and $FP(h, \mathbb{P}) = 1 - \zeta - TN(h, \mathbb{P})$, $\mathcal{C}$ is actually a 2-dimensional space, not a 4-dimensional space.
 
@@ -747,6 +1424,8 @@ calculate the ratio between $a_1$ and all other weights to reconstruct
 an estimate for the true metric. A python implementation of this
 algorithm is provided below.
 
+First, we define a helper function to construct DLPM weights for points on the upper boundary of restricted diagonal confusions:
+
 ::: {.callout-note title="code"}
 ```{pyodide-python}
 #| autorun: true
@@ -754,13 +1433,13 @@ import numpy as np
 
 def rbo_dlpm(m, k1, k2, k):
     """
-    This constructs DLPM weights for the upper boundary of the
+    Constructs DLPM weights for the upper boundary of the
     restricted diagonal confusions, given a parameter m.
-    This is equivalent to \nu(m; k1, k2)
-    
+    This is equivalent to ν(m; k1, k2).
+
     Inputs:
     - m: parameter (between 0 and 1) for the upper boundary
-    - k1: first axis for this  face
+    - k1: first axis for this face
     - k2: second axis for this face
     - k: number of classes
     Outputs:
@@ -771,13 +1450,22 @@ def rbo_dlpm(m, k1, k2, k):
     new_a[k2] = 1 - m
     return new_a
 
+print("RBO DLPM helper function defined.")
+```
+:::
+
+Now we implement the main DLPM elicitation algorithm. The algorithm iterates over each class pair, using binary search to find the optimal ratio between weights:
+
+::: {.callout-note title="code"}
+```{pyodide-python}
+#| autorun: true
 def dlpm_elicitation(epsilon, oracle, get_d, k):
     """
     Inputs:
-    - epsilon: some epsilon > 0 representing threshold of error
-    - oracle: some function that accepts 2 confusion matrices and
-        returns true if the first is preferred and false otherwise
-    - get_d: some function that accepts dlpm weights and returns 
+    - epsilon: error threshold for binary search
+    - oracle: function that accepts 2 confusion matrices and
+        returns true if the first is preferred
+    - get_d: function that accepts dlpm weights and returns
         diagonal confusions
     - k: number of classes
     Outputs:
@@ -785,34 +1473,33 @@ def dlpm_elicitation(epsilon, oracle, get_d, k):
     """
     a_hat = np.zeros(k)
     a_hat[0] = 1
+
     for i in range(1, k):
-        # iterate over each axis to find appropriate ratio
-        a = 0  # lower bound of binary search
-        b = 1  # upper bound of binary search
+        # Binary search for optimal ratio between a_0 and a_i
+        a, b = 0, 1  # search bounds
 
         while (b - a > epsilon):
             c = (3 * a + b) / 4
             d = (a + b) / 2
             e = (a + 3 * b) / 4
 
-            # get diagonal confusions for each point
-            d_a, d_c, d_d, d_e, d_b = (get_d(rbo_dlpm(x, 0, i, k)) 
+            # Get diagonal confusions for each point
+            d_a, d_c, d_d, d_e, d_b = (get_d(rbo_dlpm(x, 0, i, k))
                 for x in [a, c, d, e, b])
 
-            # query oracle for each pair
+            # Query oracle for each pair
             response_ac = oracle(d_a, d_c)
             response_cd = oracle(d_c, d_d)
             response_de = oracle(d_d, d_e)
             response_eb = oracle(d_e, d_b)
 
-            # update ranges to keep the peak
+            # Update ranges to keep the peak
             if response_ac:
                 b = d
             elif response_cd:
                 b = d
             elif response_de:
-                a = c
-                b = e
+                a, b = c, e
             elif response_eb:
                 a = d
             else:
@@ -820,7 +1507,10 @@ def dlpm_elicitation(epsilon, oracle, get_d, k):
 
         midpt = (a + b) / 2
         a_hat[i] = (1 - midpt) / midpt
+
     return a_hat / np.sum(a_hat)
+
+print("DLPM elicitation algorithm defined.")
 ```
 :::
 
@@ -847,7 +1537,7 @@ $||\vec{a}^* - \hat{a}||_2 \leq O(\sqrt{k}(\epsilon + \sqrt{\epsilon_\Omega}))$.
 
 In other words, the maximum difference between the estimate and true value along any component (indicated by the L-infinity norm) is linearly bounded by the sum of the epsilon specified by the algorithm and the square root of the oracle's correctness guarantee ($\epsilon_\Omega$).
 
-## Case Study 3: Active Preference Learning in Robotics
+## Case Study 2: Active Preference Learning in Robotics {#sec-robotics-case-study}
 
 How exactly do robots learn human preferences from just the pairwise comparisons, if they need to learn how to act in the environment itself? The comparisons in turn help robots learn the reward function of the human, which allows them to further take actions in real settings. Let's say there are two trajectories $\xi_A$ and $\xi_B$ that might be taken as the next course of action in any context, like choosing the next turn, or choosing the next chatGPT response. The robot is offering both to a human for comparison. To answer which of them is better, the human would ask themselves if $R(\xi_A)$ or $R(\xi_B)$ is bigger, with $R(\xi) = w * \phi(\xi)$ being the reward function. In this equation $w$ and $\phi(\xi)$ are vectors of weights and features of the trajectory, so alternatively, we can express this as:
 
@@ -1013,6 +1703,46 @@ Looking forward, active elicitation provides a foundation for allowing
 robots to query humans about the type of data needed, enabling more
 efficient data collection through transparency.
 
+### Foundation Models for Robotic Preference Learning
+
+Recent advances in foundation models have transformed how robots can learn from human preferences. Rather than learning task-specific representations from scratch, these models leverage large-scale pretraining on diverse data sources—including human videos and natural language—to acquire general-purpose representations that transfer effectively to robotic manipulation tasks. This approach dramatically reduces the amount of robot-specific data and human feedback needed for learning.
+
+#### R3M: Learning Visual Representations from Human Video
+
+R3M (Reusable Representations for Robotic Manipulation) [@nair2022r3m] addresses a fundamental challenge in robotic learning: the scarcity of robot data compared to the abundance of human video data. The key insight is that human hands manipulating objects share structural similarities with robotic end-effectors performing similar tasks. By pretraining on the Ego4D dataset—comprising thousands of hours of egocentric human activity videos—R3M learns visual representations that capture manipulation-relevant features.
+
+R3M's training objective combines three complementary losses:
+
+1. **Time-contrastive learning**: Frames that are temporally close should have similar representations, while temporally distant frames should differ. This encourages the model to capture the dynamics of manipulation.
+
+2. **Video-language alignment**: Video clips are aligned with their corresponding natural language descriptions, grounding visual features in semantic concepts like "grasping," "placing," or "opening."
+
+3. **L1 penalty on representations**: Encouraging sparse, compact representations that focus on task-relevant features.
+
+The resulting representations transfer remarkably well to downstream robotic tasks. In experiments on five manipulation tasks (including nut assembly, bin picking, and door opening), R3M representations achieved 2-3x higher success rates compared to training from scratch, while requiring 5-10x fewer demonstrations. Crucially, this means that preference feedback from humans becomes more valuable—each comparison provides more information when the underlying representations already capture manipulation-relevant structure.
+
+#### Voltron: Language-Driven Visual Representations
+
+Voltron [@karamcheti2023voltron] builds on R3M's foundation by more deeply integrating language understanding into the representation learning process. While R3M uses language as an auxiliary training signal, Voltron treats language as a first-class component of the learned representation space.
+
+Voltron's architecture combines:
+
+1. **Masked autoencoding on robot data**: The model learns to reconstruct masked portions of robot observation sequences, developing an understanding of robotic manipulation dynamics.
+
+2. **Language-conditioned representations**: Rather than learning a single representation for each observation, Voltron conditions its representations on natural language task descriptions. This enables the same visual scene to be represented differently depending on the task at hand (e.g., "pick up the red block" vs. "clear the table").
+
+3. **Multimodal alignment**: Joint training ensures that visual and linguistic representations are compatible, enabling effective language-to-vision grounding.
+
+In preference learning contexts, Voltron's language conditioning is particularly valuable. When a human evaluator compares two trajectories, their preferences are often task-specific—the "better" trajectory depends on what the robot is trying to accomplish. Voltron's language-conditioned representations allow reward models to capture these task-dependent preferences more effectively.
+
+Empirical evaluations demonstrate that Voltron achieves state-of-the-art performance on manipulation benchmarks while exhibiting strong sample efficiency. For preference learning applications, this translates to:
+
+- **Fewer comparison queries needed**: Better representations mean each pairwise comparison provides more information about the reward function.
+- **Better generalization**: Learned reward functions transfer more effectively to new objects and scenarios.
+- **Interpretable feedback**: Language conditioning enables more precise specification of what aspects of behavior humans should evaluate.
+
+These foundation models represent a paradigm shift in robotic preference learning. Rather than treating human feedback as the primary learning signal, they leverage massive pretraining to reduce the burden on human evaluators, making preference-based robotics more practical for real-world deployment.
+
 In summary, this chapter has explored the complexities and innovations
 in interAL as applied to large models within robotics. It
 begins by investigating pairwise comparisons and their role in
@@ -1040,3 +1770,83 @@ representation learning for remarkably adaptable and nuanced robotic
 task performance. These models represent significant leaps in robotics
 while opening new frontiers for future research and applications.
 
+## Notation Summary
+
+::: {#tbl-notation-chap4}
+| Symbol | Meaning |
+|--------|---------|
+| $U \in \mathbb{R}^K$ | User embedding/preference vector |
+| $V_j \in \mathbb{R}^K$ | Item embedding/appeal vector |
+| $Z_j \in \mathbb{R}$ | Item offset (difficulty parameter) |
+| $H_{ij} = U_i^\top V_j + Z_j$ | Latent utility for user $i$ on item $j$ |
+| $\sigma(x) = 1/(1+e^{-x})$ | Logistic sigmoid function |
+| $p = \sigma(H)$ | Response/comparison probability |
+| $\mathcal{I}(U)$ | Fisher information (scalar or matrix) |
+| $\mathcal{I}_j(U) = p_j(1-p_j)$ | Scalar Fisher information for Rasch model |
+| $\mathcal{I}_j(U) = p(1-p) V_j V_j^\top$ | Matrix Fisher information for factor model |
+| $\Sigma$ | Posterior covariance matrix |
+| $\Lambda = \Sigma^{-1}$ | Posterior precision matrix |
+| $\Delta_D(j,k)$ | D-optimal acquisition criterion (log-det gain) |
+| $\Delta_A(j,k)$ | A-optimal acquisition criterion (trace reduction) |
+| $\Delta_E(j,k)$ | E-optimal acquisition criterion (min eigenvalue) |
+| $\text{Rel}$ | Reliability: $1 - \text{tr}(\hat{\Sigma}_{\text{err}}) / \text{tr}(\Sigma_U)$ |
+| $W \in \mathbb{R}^d$ | Preference function weights |
+| $X_j \in \mathbb{R}^d$ | Item feature vector |
+| $f_\theta(X_j)$ | Non-linear scoring function |
+| $J_j = \partial f_\theta / \partial \theta$ | Jacobian of scoring function |
+| $\alpha(x)$ | Acquisition function value |
+| $\mathcal{D}$ | Dataset of observations |
+| $\phi(C)$ | Performance metric on confusion matrix |
+| $C \in \mathbb{R}^{2 \times 2}$ | Confusion matrix |
+| $\mathcal{C}$ | Space of achievable confusion matrices |
+| $R(\xi)$ | Reward function for trajectory $\xi$ |
+| $\Phi(\xi)$ | Feature vector for trajectory $\xi$ |
+
+: Notation used in this chapter
+:::
+
+## Discussion Questions
+
+1. How does the reliability metric defined in this chapter relate to classical test theory in psychometrics? What assumptions underlie this correspondence?
+
+2. Why does D-optimal design maximize the log-determinant of the information matrix rather than the trace? In what situations might A-optimal (trace-based) selection be preferable?
+
+3. The local linearization approach for non-linear scoring functions trades off accuracy for tractability. What are the conditions under which this approximation is most accurate? When might it fail?
+
+4. Active preference learning assumes that items' appeals are known or pre-calibrated. How might estimation errors in item parameters affect the efficiency of active selection strategies?
+
+5. The metric elicitation framework assumes an oracle with a consistent underlying preference. How would you modify the approach to handle an oracle whose preferences evolve over time or exhibit inconsistencies?
+
+6. In the robotics case studies, pairwise comparisons are used to learn reward functions. What are the advantages and disadvantages of pairwise comparisons versus direct reward labeling for robotic learning?
+
+7. Foundation models like R3M and Voltron leverage pretraining on human video data. What types of robotic tasks might benefit most from this approach? What tasks might still require substantial robot-specific data?
+
+8. The active elicitation framework for imitation learning identifies "compatible" demonstrations. How might this concept of compatibility be extended to multi-agent settings where different agents have legitimately different optimal behaviors?
+
+## Exercises
+
+We place ⭐, ⭐⭐, and ⭐⭐⭐ for exercises we deem relatively easy, medium, and hard.
+
+### Fisher Information Maximum ⭐
+Show that for the Rasch model with $p = \sigma(U + V_j)$, the Fisher information $\mathcal{I}_j(U) = p(1-p)$ is maximized when $p = 0.5$. What does this imply about the optimal difficulty of items for measuring a user's ability?
+
+### Sherman-Morrison Update ⭐⭐
+Derive the Sherman-Morrison formula for efficiently updating the posterior covariance when adding a single rank-1 observation. Specifically, show that if $\Sigma^{-1} \gets \Sigma^{-1} + w \cdot vv^\top$, then $\Sigma \gets \Sigma - \frac{w \cdot \Sigma vv^\top \Sigma}{1 + w \cdot v^\top \Sigma v}$.
+
+### D-Optimal vs A-Optimal ⭐⭐
+Construct a 2D example where D-optimal and A-optimal criteria select different items for the next query. Interpret the difference geometrically in terms of the posterior ellipsoid.
+
+### Pairwise Fisher Information ⭐⭐
+For the Bradley-Terry model $p(j \succ k | U) = \sigma(U^\top(V_j - V_k))$, derive the Fisher information matrix for $U$ given a single pairwise comparison. How does this relate to the single-item case?
+
+### Active Selection Implementation ⭐⭐⭐
+Extend the D-optimal pairwise selection simulation to include all three optimality criteria (A, D, E). Compare their sample efficiency on a synthetic dataset of 50 items with 3-dimensional user preferences. Which criterion performs best under different prior uncertainty structures?
+
+### Noisy Oracle Elicitation ⭐⭐⭐
+Extend the LPM elicitation algorithm to handle noisy oracle responses where the oracle flips its answer with probability $\epsilon < 0.5$. How does the query complexity scale with $\epsilon$?
+
+### Local Linearization Analysis ⭐⭐⭐
+Consider a scoring function $f_\theta(x) = a^\top \tanh(Bx)$ with $\theta = (a, B)$. Analytically derive the Jacobian $J_j = \partial f_\theta(X_j) / \partial \theta$. Under what conditions on the hidden activations $\tanh(BX_j)$ is the local Gaussian approximation most accurate?
+
+### Compatibility Metric Design ⭐⭐
+In the active elicitation framework for imitation learning, the compatibility metric depends on thresholds $\lambda$ and $\eta$. Design an algorithm that automatically selects these thresholds from a held-out validation set of demonstrations. What objective should the algorithm optimize?

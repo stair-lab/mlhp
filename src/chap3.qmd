@@ -17,6 +17,7 @@ By the end of this chapter you will be able to:
 - **Identify** appropriate train/test splitting strategies for preference data and understand their implications for model evaluation.
 - **Implement** maximum likelihood estimation via gradient descent for the Bradley-Terry model, deriving and computing gradients efficiently.
 - **Apply** Bayesian inference using Markov Chain Monte Carlo (MCMC) to quantify parameter uncertainty and obtain posterior distributions.
+- **Apply** Laplace approximation to perform inference for Gaussian Process preference models, understanding why non-Gaussian likelihoods require approximation.
 - **Derive** online learning algorithms (Elo ratings) as stochastic gradient ascent and explain when online methods are preferred over batch learning.
 - **Compare** batch maximum likelihood, Bayesian inference, and online learning approaches in terms of computational cost, statistical efficiency, and practical applicability.
 - **Evaluate** learned preference models using multiple metrics including AUC, log-likelihood, and calibration error.
@@ -55,10 +56,11 @@ Designing a good reward signal by hand for a complex AI system is difficult and 
 
 @sec-latent-variable in Chapter 2 established the foundational models for preference data: the Rasch model for item-wise responses, the Bradley-Terry model for pairwise comparisons, and K-dimensional factor models for richer representations. We saw how these models formalize the relationship between latent parameters and observed choices.
 
-This chapter addresses the central question of **learning**: given observed preference data, how do we estimate the parameters of these models? We explore three complementary perspectives on parameter learning, each with distinct advantages:
+This chapter addresses the central question of **learning**: given observed preference data, how do we estimate the parameters of these models? We explore four complementary perspectives on parameter learning, each with distinct advantages:
 
 - **Maximum Likelihood Estimation** (@sec-mle): Find parameters that maximize the probability of observed data. Fast and scalable, but provides only point estimates.
 - **Bayesian Inference** (@sec-bayesian): Treat parameters as random variables with prior distributions. Quantifies uncertainty but requires more computation.
+- **Gaussian Process Inference** (@sec-gp-inference): Learn nonparametric reward functions using Laplace approximation. Provides both flexibility and principled uncertainty quantification.
 - **Online Learning** (@sec-online): Update estimates incrementally as new data arrives. Essential for dynamic systems with continuously arriving feedback.
 
 Beyond these core methods, we cover essential machine learning techniques for practical applications:
@@ -387,6 +389,174 @@ axes[1].hist(trace[:, 0], bins=100, density=True)
 axes[1].set_title("Posterior of v[0]")
 plt.show()
 ```
+
+## Inference for Gaussian Process Preference Models {#sec-gp-inference}
+
+Chapter 2 introduced Gaussian Processes (GPs) as a flexible nonparametric alternative to linear reward models. With GPs, we place a prior distribution over reward functions $r \sim \mathcal{GP}(m, k)$ and combine it with the Bradley-Terry likelihood for preferences. The challenge is that this likelihood is *non-Gaussian*, breaking the standard GP posterior formulas.
+
+**The inference problem.** Given pairwise comparisons $\mathcal{D} = \{(x_A^{(i)}, x_B^{(i)}, y_i)\}_{i=1}^n$ where $y_i = 1$ if item $A$ was preferred, we want to compute the posterior:
+$$
+p(r \mid \mathcal{D}) \propto p(\mathcal{D} \mid r) \cdot p(r)
+$$
+
+The likelihood follows the Bradley-Terry model:
+$$
+p(y_i = 1 \mid r) = \sigma\left(r(x_A^{(i)}) - r(x_B^{(i)})\right)
+$$
+
+Because this sigmoid likelihood is not Gaussian, the posterior $p(r \mid \mathcal{D})$ is no longer a Gaussian Process.
+
+### Laplace Approximation
+
+The **Laplace approximation** provides a tractable Gaussian approximation to the true posterior:
+
+1. **Find the posterior mode** $\mathbf{r}^* = \arg\max_{\mathbf{r}} \log p(\mathcal{D} \mid \mathbf{r}) + \log p(\mathbf{r})$
+2. **Approximate with a Gaussian** centered at the mode, using the Hessian of the log-posterior as precision
+
+For preference data with GP prior (zero mean), the mode satisfies:
+$$
+\mathbf{r}^* = \arg\max_{\mathbf{r}} \sum_{i=1}^n \log \sigma\left(y_i (r(x_A^{(i)}) - r(x_B^{(i)}))\right) - \frac{1}{2}\mathbf{r}^\top K^{-1} \mathbf{r}
+$$
+
+where $K$ is the kernel matrix and $\mathbf{r} = [r(x_1), \ldots, r(x_m)]^\top$ collects function values at all unique points appearing in comparisons.
+
+**Newton's method for finding the mode.** The gradient and Hessian of the log-posterior are:
+$$
+\nabla_{\mathbf{r}} \log p(\mathbf{r} \mid \mathcal{D}) = \mathbf{g} - K^{-1}\mathbf{r}
+$$
+$$
+\nabla^2_{\mathbf{r}} \log p(\mathbf{r} \mid \mathcal{D}) = -W - K^{-1}
+$$
+
+where $\mathbf{g}$ is the gradient of the log-likelihood and $W$ is a diagonal matrix with entries $W_{ii} = p_i(1 - p_i)$ for predictions $p_i = \sigma(r(x_A^{(i)}) - r(x_B^{(i)}))$.
+
+**The approximate posterior.** After finding $\mathbf{r}^*$, the Laplace approximation gives:
+$$
+p(\mathbf{r} \mid \mathcal{D}) \approx \mathcal{N}\left(\mathbf{r}^*, (K^{-1} + W)^{-1}\right)
+$$
+
+This is structurally similar to standard GP regression, but with the data-dependent precision matrix $W$ arising from the Bradley-Terry likelihood rather than observation noise.
+
+```{pyodide-python}
+#| autorun: true
+import numpy as np
+import matplotlib.pyplot as plt
+np.random.seed(42)
+
+def rbf_kernel(X1, X2, sigma_f=1.0, length_scale=0.5):
+    """RBF kernel matrix."""
+    sq_dist = np.sum(X1**2, axis=1, keepdims=True) + np.sum(X2**2, axis=1) - 2 * X1 @ X2.T
+    return sigma_f**2 * np.exp(-sq_dist / (2 * length_scale**2))
+
+sigmoid = lambda x: 1.0 / (1.0 + np.exp(-np.clip(x, -500, 500)))
+
+# True reward function (nonlinear!)
+def true_reward(x):
+    return np.sin(2 * x) + 0.5 * x
+
+# Generate synthetic preference data
+n_comparisons = 30
+X_A = np.random.uniform(-3, 3, n_comparisons).reshape(-1, 1)
+X_B = np.random.uniform(-3, 3, n_comparisons).reshape(-1, 1)
+r_A = true_reward(X_A.flatten())
+r_B = true_reward(X_B.flatten())
+y = (np.random.rand(n_comparisons) < sigmoid(r_A - r_B)).astype(float)
+
+# Collect unique points
+X_all = np.vstack([X_A, X_B])
+X_unique, inv_idx = np.unique(X_all.flatten(), return_inverse=True)
+X_unique = X_unique.reshape(-1, 1)
+m = len(X_unique)
+idx_A = inv_idx[:n_comparisons]
+idx_B = inv_idx[n_comparisons:]
+
+# Build kernel matrix
+K = rbf_kernel(X_unique, X_unique) + 1e-4 * np.eye(m)
+K_inv = np.linalg.inv(K)
+
+# Laplace approximation via Newton's method
+r = np.zeros(m)
+for iteration in range(20):
+    # Compute predictions and likelihood gradient
+    diff = r[idx_A] - r[idx_B]
+    p = sigmoid(diff)
+
+    # Gradient of log-likelihood w.r.t. r at each unique point
+    grad = np.zeros(m)
+    for i in range(n_comparisons):
+        residual = y[i] - p[i]
+        grad[idx_A[i]] += residual
+        grad[idx_B[i]] -= residual
+
+    # Full gradient including GP prior
+    grad_total = grad - K_inv @ r
+
+    # Hessian: diagonal from likelihood + K_inv from prior
+    W = np.zeros(m)
+    for i in range(n_comparisons):
+        W[idx_A[i]] += p[i] * (1 - p[i])
+        W[idx_B[i]] += p[i] * (1 - p[i])
+
+    H = -np.diag(W) - K_inv
+
+    # Newton step
+    r = r - np.linalg.solve(H, grad_total)
+
+# Posterior covariance at mode
+Sigma_post = np.linalg.inv(K_inv + np.diag(W))
+
+# Predictions on a grid
+X_grid = np.linspace(-3, 3, 100).reshape(-1, 1)
+K_star = rbf_kernel(X_grid, X_unique)
+mu_pred = K_star @ K_inv @ r
+K_star_star = rbf_kernel(X_grid, X_grid)
+var_pred = np.diag(K_star_star - K_star @ (K_inv - K_inv @ Sigma_post @ K_inv) @ K_star.T)
+std_pred = np.sqrt(np.maximum(var_pred, 0))
+
+# Plot
+fig, ax = plt.subplots(figsize=(10, 5))
+ax.fill_between(X_grid.flatten(), mu_pred - 2*std_pred, mu_pred + 2*std_pred,
+                alpha=0.3, color='blue', label='95% CI')
+ax.plot(X_grid, mu_pred, 'b-', lw=2, label='GP posterior mean')
+ax.plot(X_grid, true_reward(X_grid), 'k--', lw=2, label='True reward')
+ax.scatter(X_A[y==1], np.zeros(int(y.sum())) - 2.5, c='green', marker='^', s=50, label='Preferred A')
+ax.scatter(X_B[y==0], np.zeros(int((1-y).sum())) - 2.5, c='red', marker='v', s=50, label='Preferred B')
+ax.set_xlabel('x')
+ax.set_ylabel('r(x)')
+ax.set_title(f'GP Preference Learning via Laplace Approximation ({n_comparisons} comparisons)')
+ax.legend(loc='upper left')
+ax.grid(True, alpha=0.3)
+plt.tight_layout()
+plt.show()
+
+print(f"Learned from {n_comparisons} pairwise comparisons")
+print(f"Posterior uncertainty varies: min std = {std_pred.min():.3f}, max std = {std_pred.max():.3f}")
+```
+
+### Connection to Fisher Information
+
+The Laplace approximation has a natural connection to the Fisher information framework we developed for linear models. The Hessian of the negative log-likelihood at the mode gives the *observed Fisher information*:
+$$
+I_{\text{obs}} = W = \text{diag}(p_1(1-p_1), \ldots, p_n(1-p_n))
+$$
+
+Just as with linear preference models, comparisons with $p \approx 0.5$ contribute the most information (highest $p(1-p)$), while "easy" comparisons where one option clearly dominates contribute little.
+
+### Computational Considerations
+
+**Complexity.** Each Newton iteration requires $O(m^3)$ computation for the matrix solve, where $m$ is the number of unique points. For $n$ comparisons involving $m \leq 2n$ unique points, the total cost is $O(n^3)$ per iteration.
+
+**Scalability.** For large datasets, several approximations are available:
+- **Inducing points**: Approximate the GP using $k \ll m$ pseudo-inputs, reducing complexity to $O(k^2 n)$
+- **Variational inference**: Optimize a lower bound on the marginal likelihood
+- **Conjugate gradient methods**: Avoid explicit matrix inversion
+
+**Hyperparameter learning.** The kernel hyperparameters (length-scale $\ell$, signal variance $\sigma_f^2$) can be learned by maximizing the Laplace-approximated marginal likelihood:
+$$
+\log p(\mathcal{D} \mid \theta) \approx \log p(\mathcal{D} \mid \mathbf{r}^*) + \log p(\mathbf{r}^* \mid \theta) + \frac{1}{2}\log |K^{-1} + W|^{-1}
+$$
+
+In Chapter 4, we will see how the GP posterior uncertainty enables *active* query selection—choosing which comparisons to ask to learn most efficiently.
 
 ## Online Learning with Elo Ratings {#sec-online}
 

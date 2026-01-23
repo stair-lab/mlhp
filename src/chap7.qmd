@@ -284,7 +284,7 @@ representation.
 An effort to address data bias is the "Lab in the Wild" platform,
 which seeks to broaden the scope of Human-Computer Interaction (HCI)
 studies beyond the traditional "WEIRD" (Western, Educated,
-Industrialized, Rich, and Democratic) population [@oliveira17]. Paulo S.
+Industrialized, Rich, and Democratic) population [@oliveira17:labinthewild]. Paulo S.
 Oliveira, one of the platform's researchers, notes that this initiative
 aims to correct demographic skew in behavioral science research by
 engaging a diverse global audience. By allowing individuals from various
@@ -1159,10 +1159,10 @@ optimally according to their reward function. This is known as a
 *rationality assumption* and provides the link between actions and
 rewards that we need.
 
-For illustration, consider a simple grid world environment. @fig-toy shows the
+For illustration, consider a simple grid world environment. The figure below shows the
 optimal policy and the corresponding ARP. The optimal policy reveals
 that the gray state is less preferred compared to the white states,
-which is reflected in the ARP (hatched region of @fig-toy).
+which is reflected in the ARP (hatched region).
 
 <figure id="fig-toy">
 <p><img src="Figures/toy_policy.png" style="width:30.0%" alt="image" />
@@ -1233,13 +1233,11 @@ preference queries, the human reward model prefers black to
 orange.</figcaption>
 </figure>
 
-@fig-island (a)
+The figure above (a)
 shows all optimal actions at each state according to the human's reward
 function. This optimal policy serves as the benchmark for alignment
-verification. @fig-island (b) and @fig-island (c) show two pairwise preference trajectory queries
-(black is preferable to orange according to
-([\[eq: human_r\]](#eq: human_r){reference-type="ref"
-reference="eq: human_r"})). Preference query 1 verifies that the robot
+verification. Parts (b) and (c) show two pairwise preference trajectory queries
+(black is preferable to orange). Preference query 1 verifies that the robot
 values reaching the terminal goal state (green) rather than visiting
 more white states. Preference query 2 verifies that the robot values
 white states more than blue states. These two preference queries are all
@@ -1247,7 +1245,7 @@ we need to determine whether the robot's values are aligned with the
 human's values.
 
 Next, we apply the heuristics discussed in the previous section to this
-grid world example. @fig-island (d), @fig-island (e), and @fig-island (f) show the action queries requested by the
+grid world example. Parts (d), (e), and (f) show the action queries requested by the
 heuristics ARP-bb, SCOT, and CS. Each heuristic queries the robot's
 actions at specific states to assess alignment:
 
@@ -1737,7 +1735,7 @@ In driving route advisor task [@rogers1999adaptive], a linear model is
 used for predicting the cost of a route based on the time, distance,
 number of intersections, and the number of turns. The system uses each
 training pair as a constraint on the weights found during the learning
-process. The experimental results are shown in the @fig-exp-2.
+process. The experimental results are shown in the figure below.
 
 <figure id="fig-exp-2">
 <p><img src="Figures/example-2.png" style="width:45.0%" alt="image" />
@@ -1826,7 +1824,7 @@ stores solutions in the case base to initialize future schedules; and
 invokes the user model to recommend future schedule repairs. As before,
 providing users with choices lets the system collect data on schedule
 preferences unobtrusively. An example of the interface, and the
-experimental results are shown in @fig-exp-3.
+experimental results are shown in the figure below.
 
 <figure id="fig-exp-3">
 <p><img src="Figures/example-7.png" style="width:45.0%" alt="image" />

@@ -67,6 +67,7 @@ By the end of this chapter you will be able to:
 - **Connect** the *Bradley–Terry model* to modern methods like *Direct Preference Optimization (DPO)* and *Elo ratings*.
 - **Simulate** preference data from both item-wise (Rasch) and pairwise (Bradley-Terry) models, and **visualize** response matrices.
 - **Diagnose** two key limitations of IIA—population heterogeneity (mixture models) and the *red-bus/blue-bus* cloning problem—and **motivate** richer models with correlated utility shocks.
+- **Explain** why *Gaussian Processes (GPs)* provide a flexible nonparametric alternative to linear reward models, and identify when GPs are preferred over parametric approaches.
 
 :::
 
@@ -1062,6 +1063,79 @@ V_j = \beta^\top x_j, \quad \beta \sim F
 $$
 for some distribution $F$ (often Gaussian). This model can approximate any random utility model arbitrarily well [@mcfadden2000mixed], making it extremely flexible. Modern implementations use simulation-based estimation; see @train2009discrete for details.
 
+**Gaussian Process models for nonlinear rewards.** {#sec-gp-models}
+
+The random coefficients logit still assumes utility is *linear* in features $x_j$. This assumption is limiting: linear reward functions can only achieve their optima at extreme points (corners of the feasible region). Consider a robot learning preferences over mini-golf shots parameterized by speed and angle—a linear reward $r = w_1 \cdot \text{speed} + w_2 \cdot \text{angle}$ cannot express "I prefer a moderate shot to the middle target."
+
+**Gaussian Processes (GPs)** provide a nonparametric alternative that can model arbitrary smooth functions:
+$$
+r(x) \sim \mathcal{GP}(m, k)
+$$
+where $m: \mathcal{X} \to \mathbb{R}$ is the mean function and $k: \mathcal{X} \times \mathcal{X} \to \mathbb{R}$ is the covariance function (kernel). A GP is defined by the property that any finite collection of function values follows a multivariate Gaussian:
+$$
+[r(x_1), \ldots, r(x_n)]^\top \sim \mathcal{N}(\boldsymbol{\mu}, K), \quad \text{where } \mu_i = m(x_i), \; K_{ij} = k(x_i, x_j)
+$$
+
+The most common kernel is the Radial Basis Function (RBF):
+$$
+k(x, x') = \sigma_f^2 \exp\left(-\frac{\|x - x'\|^2}{2\ell^2}\right)
+$$
+which encodes the assumption that nearby points have correlated function values, with length-scale $\ell$ controlling smoothness.
+
+```{pyodide-python}
+#| autorun: true
+import numpy as np
+import matplotlib.pyplot as plt
+np.random.seed(42)
+
+def rbf_kernel(X1, X2, sigma_f=1.0, length_scale=1.0):
+    """Compute RBF kernel matrix between two sets of points."""
+    sq_dist = np.sum(X1**2, axis=1, keepdims=True) + np.sum(X2**2, axis=1) - 2 * X1 @ X2.T
+    return sigma_f**2 * np.exp(-sq_dist / (2 * length_scale**2))
+
+# Sample from GP prior
+X_grid = np.linspace(-3, 3, 100).reshape(-1, 1)
+K = rbf_kernel(X_grid, X_grid, sigma_f=1.0, length_scale=1.0)
+K += 1e-6 * np.eye(len(K))  # numerical stability
+
+# Draw samples from GP prior
+samples = np.random.multivariate_normal(np.zeros(len(X_grid)), K, size=5)
+
+fig, axes = plt.subplots(1, 2, figsize=(12, 4))
+
+# Left: Sample functions from GP prior
+for i, sample in enumerate(samples):
+    axes[0].plot(X_grid, sample, alpha=0.7, label=f'Sample {i+1}')
+axes[0].axhline(y=0, color='k', linestyle='--', alpha=0.3)
+axes[0].set_xlabel('Input x')
+axes[0].set_ylabel('r(x)')
+axes[0].set_title('Samples from GP Prior (RBF kernel, ℓ=1.0)')
+axes[0].legend()
+axes[0].grid(True, alpha=0.3)
+
+# Right: Compare different length scales
+for ls, color in [(0.3, '#1f77b4'), (1.0, '#ff7f0e'), (3.0, '#2ca02c')]:
+    K_ls = rbf_kernel(X_grid, X_grid, sigma_f=1.0, length_scale=ls)
+    K_ls += 1e-6 * np.eye(len(K_ls))
+    sample = np.random.multivariate_normal(np.zeros(len(X_grid)), K_ls)
+    axes[1].plot(X_grid, sample, color=color, alpha=0.8, label=f'ℓ = {ls}')
+
+axes[1].set_xlabel('Input x')
+axes[1].set_ylabel('r(x)')
+axes[1].set_title('Effect of Length-scale on GP Samples')
+axes[1].legend()
+axes[1].grid(True, alpha=0.3)
+
+plt.tight_layout()
+plt.show()
+```
+
+When combined with the Bradley-Terry likelihood, we model preferences as $p(A \succ B \mid r) = \sigma(r(x_A) - r(x_B))$ where $r \sim \mathcal{GP}(m, k)$. Unlike standard GP regression where we observe function values directly, preference data provides only ordinal information—which item is preferred—making inference more challenging.
+
+**Why GPs for preferences?** (1) *Expressiveness*: Can represent complex nonlinear functions without specifying a parametric form. (2) *Uncertainty quantification*: GP provides predictive means and confidence intervals. (3) *Active learning*: Uncertainty guides which comparisons to query (Chapter 4). (4) *Bayesian framework*: Principled posterior updates as new comparisons arrive.
+
+**Trade-offs:** GPs are well-suited when the reward function has unknown nonlinear structure and the feature dimension is low-to-moderate ($d \lesssim 10$). For high-dimensional problems or large datasets, linear models or neural networks may be more practical due to the $O(n^3)$ computational cost of GP inference. Chapter 3 covers inference techniques (including Laplace approximation for non-Gaussian likelihoods), and Chapter 4 shows how GP uncertainty enables sample-efficient active query selection.
+
 **Implications for preference learning.** For practitioners using DPO or RLHF, these extensions suggest directions for improvement:
 
 1. **Heterogeneous populations**: If annotators have diverse preferences, a single Bradley-Terry model may be misspecified. Random coefficients models (or mixture models) can capture this heterogeneity.
@@ -1104,6 +1178,10 @@ The next chapter is the first to study learning of average utility functions fro
 | $\alpha_i$ | Population weight of subgroup $i$ | $(0,1)$ with $\sum_i\alpha_i=1$ |
 | $\beta$ | Random-coefficients vector in linear RUM / KL penalty in DPO | $\mathbb{R}^{d}$ or $\mathbb{R}^+$ |
 | $\Sigma$ | Covariance matrix of $\beta$ | $\mathbb{R}^{d\times d}$ |
+| $\mathcal{GP}(m, k)$ | Gaussian Process with mean $m$ and kernel $k$ | Distribution over functions |
+| $k(x, x')$ | Kernel (covariance) function | $\mathbb{R}$ |
+| $\ell$ | Length-scale parameter in RBF kernel | $\mathbb{R}^+$ |
+| $\sigma_f^2$ | Signal variance in GP kernel | $\mathbb{R}^+$ |
 
 : **Table 1 — Notation used in Chapter "Foundations of Preference Modeling".** {#tbl-notation}
 
