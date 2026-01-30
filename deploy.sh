@@ -21,13 +21,6 @@ quarto render --to html --profile html
 # Copy HTML to temp location
 cp -r _book /tmp/mlhp_html_$$
 
-# Build PDF (this clears _book/ and adds PDF)
-echo "Building PDF..."
-quarto render --to pdf --profile pdf
-
-# Copy PDF to temp location
-cp _book/Machine-Learning-from-Human-Preferences.pdf /tmp/mlhp_pdf_$$.pdf
-
 # Build slides (this clears _book/ and adds slides)
 echo "Building slides..."
 quarto render src/slides/
@@ -35,13 +28,38 @@ quarto render src/slides/
 # Now restore everything to _book/
 echo "Combining outputs..."
 cp -r /tmp/mlhp_html_$$/* _book/
-cp /tmp/mlhp_pdf_$$.pdf _book/Machine-Learning-from-Human-Preferences.pdf
 
 # Clean up temp files
 rm -rf /tmp/mlhp_html_$$
-rm /tmp/mlhp_pdf_$$.pdf
 
-# Deploy book + slides to www
+# Build PDF (this clears _book/ again)
+echo "Building PDF..."
+quarto render --to pdf
+
+# Copy PDF to temp location
+cp _book/Machine-Learning-from-Human-Preferences.pdf /tmp/mlhp_pdf_$$
+
+# Rebuild HTML to restore _book/
+echo "Rebuilding HTML for final deployment..."
+quarto render --to html --profile html
+
+# Copy HTML to temp
+cp -r _book /tmp/mlhp_final_$$
+
+# Rebuild slides
+echo "Rebuilding slides..."
+quarto render src/slides/
+
+# Restore everything to _book/
+echo "Combining all outputs..."
+cp -r /tmp/mlhp_final_$$/* _book/
+cp /tmp/mlhp_pdf_$$ _book/Machine-Learning-from-Human-Preferences.pdf
+
+# Clean up temp files
+rm -rf /tmp/mlhp_final_$$
+rm /tmp/mlhp_pdf_$$
+
+# Deploy book + slides + PDF to www
 echo "Deploying to www..."
 rsync -av --delete _book/ /afs/cs/group/koyejolab/mlhp/www/
 

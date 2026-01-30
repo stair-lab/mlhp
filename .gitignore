@@ -71,3 +71,6 @@ CLAUDE.md
 .claude/
 .claude.json
 .claude.json.backup
+
+# Local notes
+lecture_note/
