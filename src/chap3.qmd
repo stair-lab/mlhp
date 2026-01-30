@@ -64,13 +64,13 @@ In the measurement problem, the experimenter is equipped with instruments - item
 
 ## Measurement of User Preference Vector
 When items’ appeals $V_j$ are known or pre-calibrated, we can learn a new user’s appetite $U$ quickly by choosing informative items online. Asking only easy or only hard items gives near-deterministic responses that teach little. The Rasch model makes this precise. For a candidate item $j$, the Bernoulli success probability is $p_j(U) = \sigma(U + V_j).$ The Fisher information about $U$ from a single response is
-$$\mathcal I_j(U) = \mathbb{E} \left[-\frac{\partial^2}{\partial U^2}\log p(Y \mid U, V_j)\right] = p_j(U) (1 - p_j(U)).$$
+$$\mathcal I_j(U) = \mathbb{E} \left[-\frac{\partial^2}{\partial U^2}\log p(Y \mid U, V_j)\right] = p_j(U) (1 - p_j(U)).$$ {#eq-rasch-fisher-info}
 This is maximized at $p_j(U)=0.5$. So the best next item is one whose difficulty ($-V_j$) is close to the current estimate of $U$. Active elicitation policies therefore "hover" around the user’s current location, rapidly shrinking uncertainty. Place a Gaussian prior $U \sim \mathcal N(0,\sigma_0^2)$. After observing independent items $\mathcal J$, a Laplace (or IRLS) update for $U$ uses the score and observed information
-$$S(U) = \sum_{j\in\mathcal J} (y_j - p_j(U)), \qquad \mathcal I(U) = \sum_{j\in\mathcal J}p_j(U) (1 - p_j(U)) + \tau_0, \quad \tau_0 = \sigma_0^{-2}. $$
+$$S(U) = \sum_{j\in\mathcal J} (y_j - p_j(U)), \qquad \mathcal I(U) = \sum_{j\in\mathcal J}p_j(U) (1 - p_j(U)) + \tau_0, \quad \tau_0 = \sigma_0^{-2}. $$ {#eq-rasch-score-info}
 A Newton step is $\hat U \leftarrow \hat U + S(\hat U)\mathcal I(\hat U)^{-1}.$ The approximate posterior variance is $\widehat{\mathrm{Var}}(U) \approx \mathcal I(\hat U)^{-1}.$ An item-selection rule that maximizes expected \textbf{incremental} information picks $j_t = \arg\max_j \; p_j(\hat U_{t-1}) (1 - p_j(\hat U_{t-1})).$ For evaluation, we can use reliability. With population variance $\mathrm{Var}(U^\star)=\sigma_U^2$, reliability is the fraction of total variance explained by the test rather than estimation noise:
 $$
 \text{Rel} \approx 1 - \frac{1}{N}\sum_{i=1}^N \frac{\widehat{\mathrm{Var}}(U_i)}{\sigma_U^2}.
-$$
+$$ {#eq-reliability}
 Below, the code simulates many users, a bank of calibrated items, and compares an Fisher policy to a random policy. We track reliability after each query count $t$.
 
 First, we set up the simulation with $N$ users, $M$ calibrated items, and define helper functions for Bayesian updating:
@@ -187,13 +187,13 @@ print(f"Final Rel. | Random: {rel_rnd[-1]:.3f}  | Fisher: {rel_act[-1]:.3f}")
 ```
 
 In practice, a single “ability” parameter may not capture the diversity of user preferences. Factor models generalize Rasch by giving each user a $K$-dimensional embedding $U_i \in \mathbb R^K$ and each item a $K$-dimensional embedding $V_j \in \mathbb R^K$, plus optional bias $Z_j$. The linear predictor is $H_{ij} = U_i^\top V_j + Z_j$ where $p(Y_{ij}=1 \mid U_i, V_j, Z_j) = \sigma(H_{ij}).$ For a given user $U$ and an item $j$ with known parameters, the Bernoulli log-likelihood is
-$$\ell(U; y, j) = y \log \sigma(H) + (1-y)\log (1-\sigma(H))$$
+$$\ell(U; y, j) = y \log \sigma(H) + (1-y)\log (1-\sigma(H))$$ {#eq-factor-loglik}
 The gradient with respect to $U$ is $\nabla_U \ell = (y - \sigma(H)) V_j.$ The expected Fisher Information per item is the negative expected Hessian:
 $$
 \mathcal I_j(U) = \mathbb E[\nabla_U \ell \nabla_U \ell^\top ] = \sigma(H)(1-\sigma(H)) V_j V_j^\top.
-$$
+$$ {#eq-factor-fisher-info}
 So each queried item contributes a rank-1 matrix in the direction of $V_j$, scaled by the variance term $\sigma(H)(1-\sigma(H))$. For a sequence of items ${j_t}$, the cumulative information is
-$$\mathcal I(U) = \sum_t \sigma(H_{j_t})(1-\sigma(H_{j_t})) V_{j_t} V_{j_t}^\top.$$
+$$\mathcal I(U) = \sum_t \sigma(H_{j_t})(1-\sigma(H_{j_t})) V_{j_t} V_{j_t}^\top.$$ {#eq-cumulative-fisher-info}
 
 In multiple dimensions, information is a matrix. Classical optimal design ofers various heuristics. For example, A-optimality suggests minimization of trace of posterior covariance $\propto \mathrm{tr}(\mathcal I^{-1})$. D-optimality maximizes $\det(\mathcal I)$, i.e. maximizes volume shrinkage of the posterior ellipsoid. E-optimality maximizes the minimum eigenvalue of $\mathcal I$. Thus adaptive measurement picks the next item $j$ to maximize an acquisition function such as $\det(\mathcal I+\mathcal I_j)$. We also use reliability as the evaluation metric here. If $\Sigma_U$ is the population covariance and $\widehat{\Sigma}_{\text{err}}$ the average posterior covariance, then $\text{Reliability} = 1 - \mathrm{tr}(\widehat{\Sigma}_{\text{err}}) \mathrm{tr}(\Sigma_U)^{-1}.$ This generalizes the Rasch reliability to multi-dimensional latent traits. Below is a toy simulation with 2-dimensional users and items, comparing random item selection vs D-optimal Fisher active selection:
 
@@ -294,17 +294,19 @@ plt.tight_layout(); plt.show()
 ```
 
 We next discuss the measurement problem of user preference with pairwise data. Recall from Chapter 2 that the Bradley-Terry model specifies the probability that user $i$ prefers item $j$ over item $k$ as $p_{i}(j \succ k)=\sigma (U^\top(V_j-V_k) + Z_j-Z_k)$ with feature $x_{jk}= V_j - V_k \in \mathbb R^2$ and offset $b_{jk}=Z_j-Z_k$. For a single observation $y \in \{0,1\}$ of $j \succ k$ the per-pair log-likelihood is
-$$\ell(U; y, i, j, k)= y \log p + (1-y) \log (1-p_i).$$ Score and expected Fisher information for (U):
-$$\nabla_U \ell=(y-p),x_{jk}, \qquad \mathcal I_{jk}(U)=\mathbb E[-\nabla^2_U \ell] = w x_{jk} x_{jk}^\top,$$
+$$\ell(U; y, i, j, k)= y \log p + (1-y) \log (1-p_i).$$ {#eq-pairwise-loglik}
+
+Score and expected Fisher information for (U):
+$$\nabla_U \ell=(y-p),x_{jk}, \qquad \mathcal I_{jk}(U)=\mathbb E[-\nabla^2_U \ell] = w x_{jk} x_{jk}^\top,$$ {#eq-pairwise-score-fisher}
 where $w = p(1-p)$. For a sequence of queried pairs ${(j_t,k_t)}$ the cumulative information is $\mathcal I(U)=\sum_t w_t,x_t x_t^\top.$ With a Gaussian prior $U \sim \mathcal N(0, \Sigma_0)$ and a Laplace approximation, the posterior precision updates additively:
 $$
 \Lambda_{t}=\Sigma_t^{-1}=\Sigma_{0}^{-1}+\sum_{s\le t} w_s,x_s x_s^\top.
-$$
+$$ {#eq-pairwise-precision-update}
 A single Newton step for the posterior mean after observing ((x,y)) is
 $$
 \hat U \leftarrow \hat U + \Sigma_{t}^{\ }(y-p),x,\qquad p=\sigma(\hat U^\top x+b),\quad
 \Sigma_t = \left(\Lambda_{t-1}+w,xx^\top\right)^{-1}.
-$$
+$$ {#eq-pairwise-newton-step}
 This is the logistic-regression one-step IRLS update specialized to one new example. We evaluate candidates at the current $(\hat U,\Sigma)$. Write $x$ for $x_{jk}$ and $w=\sigma(\hat U^\top x+b)\big(1-\sigma(\hat U^\top x+b)\big)$. Let $\Lambda=\Sigma^{-1}$. Using Sherman–Morrison to get closed forms for standard criteria:
 
 * D-optimal (log-det gain): $\Delta_D(j,k) = \log \det ( \Lambda + w xx^\top) - \log \det \Lambda = \log (1 + w x^\top \Sigma x).$
@@ -417,13 +419,13 @@ print(f"Final Rel. | Random: {rel_r[-1]:.3f} | D-opt: {rel_d[-1]:.3f}")
 ## Measurement of User Preference Function
 Suppose items $j$ have feature vectors $X_j \in \mathbb R^d$. Instead of learning a free scalar parameter $V_j$ for each item, we assume $V_j = W^\top X_j,$ where $W \in \mathbb R^d$ is shared across items. The probability that item $j$ beats item $k$ is $p(j \succ k) = \sigma(V_j - V_k) = \sigma (W^\top(X_j - X_k)).$ This is simply logistic regression on pairwise feature differences. Given one comparison outcome $y \in \{0,1\}$ for pair $(j,k)$ with difference $x_{jk} = X_j - X_k$,
 $$\ell(W) = y\log \sigma(W^\top x_{jk}) + (1-y)\log(1-\sigma(W^\top x_{jk})).
-$$
+$$ {#eq-logistic-loglik}
 Gradient: $\nabla_W \ell = (y - p) x_{jk}, \quad p = \sigma( W^\top x_{jk} ).$ Fisher Information (expected negative Hessian): $\mathcal I(W) = \mathbb E\big[(y-p)^2 x_{jk}x_{jk}^\top\big] = p(1-p),x_{jk}x_{jk}^\top.$
 
 With Gaussian prior $W \sim \mathcal N(0,\sigma_0^2 I)$, a Laplace approximation yields posterior covariance $\Sigma \approx (\sigma_0^{-2}I + \sum_t p_t(1-p_t) x_t x_t^\top)^{-1}.$ So, as in the Rasch case, Fisher information accumulates to form posterior precision. At each step, pick a candidate pair $(j,k)$ and compute
 $$
 \Delta_D(j,k) = \log \det(\Lambda + w x_{jk} x_{jk}^\top) - \log\det(\Lambda), \quad w = p(1-p),
-$$
+$$ {#eq-d-optimal-criterion}
 where $\Lambda = \Sigma^{-1}$. This is the D-optimal criterion, maximizing the expected log-determinant gain in information. A-optimal or E-optimal criteria are similarly defined. We’ll simulate item features, a ground-truth $W$, and comparisons. Then we compare active D-optimal elicitation vs random pair selection for estimating $W$. Performance metrics are MSE of $\hat W$ vs true $W$, and reliability.
 
 First, set up the simulation with item features and ground-truth weights:
@@ -529,20 +531,20 @@ plt.tight_layout(); plt.show()
 :::
 
 So far we set $V_j=W^\top X_j$. Suppose instead that items are scored by a non-linear function
-$$V_j = f_\theta(X_j),\qquad \theta\in\mathbb{R}^p, \qquad p(j \succ k) = \sigma (f_\theta(X_j) - f_\theta(X_k))$$
+$$V_j = f_\theta(X_j),\qquad \theta\in\mathbb{R}^p, \qquad p(j \succ k) = \sigma (f_\theta(X_j) - f_\theta(X_k))$$ {#eq-nonlinear-scoring}
 We want an online procedure that chooses the next comparison $(j,k)$ to learn $\theta$ quickly. Exact Bayesian design is intractable for general $f_\theta$. There is a simple and effective approximation that keeps all the math and code lightweight: local Gaussian posterior over $\theta$ via Laplace + first-order model. Work at the current estimate $\hat\theta$. Linearize the non-linear scorer around $\hat\theta$:
 $$
 f_\theta(X_j) \approx f_{\hat\theta}(X_j) + J_j\Delta\theta, \qquad
 J_j \equiv \left.\frac{\partial f_\theta(X_j)}{\partial \theta}\right| _{\theta = \hat\theta} \in \mathbb{R}^{1\times p}.
-$$
+$$ {#eq-linearization}
 The pairwise logit for $(j,k)$ becomes
-$$\underbrace{f_\theta(X_j)-f_\theta(X_k)}_{\text{logit}} \approx \underbrace{f_{\hat\theta}(X_j)-f_{\hat\theta}(X_k)}_{\text{offset}} + \underbrace{(J_j-J_k)}_{\phi_{jk}}\Delta\theta.$$
+$$\underbrace{f_\theta(X_j)-f_\theta(X_k)}_{\text{logit}} \approx \underbrace{f_{\hat\theta}(X_j)-f_{\hat\theta}(X_k)}_{\text{offset}} + \underbrace{(J_j-J_k)}_{\phi_{jk}}\Delta\theta.$$ {#eq-pairwise-logit-approx}
 
 Define the local "design vector" $\phi_{jk}\in\mathbb{R}^{1\times p}$. With a Gaussian prior $\theta\sim\mathcal N(0,\sigma_0^2 I)$ and Bernoulli likelihood, the Laplace posterior around $\hat\theta$ is
 $$
 \theta \mid \mathcal D \approx \mathcal N(\hat\theta,;\Sigma),\qquad
-\Sigma^{-1} = \sigma_0^{-2} I + \sum_{t} w_t \phi_t^\top \phi_t 
-$$
+\Sigma^{-1} = \sigma_0^{-2} I + \sum_{t} w_t \phi_t^\top \phi_t
+$$ {#eq-laplace-posterior}
 where $w_t = p_t(1-p_t)$ with $p_t = \sigma\big(f_{\hat\theta}(X_{j_t})-f_{\hat\theta}(X_{k_t})\big)$.
 This is exactly the same structure as the linear case, with (x_{jk}) replaced by $\phi_{jk}=J_j-J_k$. You only need Jacobian rows $J_j$. At the current $(\hat\theta \Sigma)$ and for a candidate $(j,k)$, compute $p=\sigma\big(f_{\hat\theta}(X_j)-f_{\hat\theta}(X_k)\big)$ and $w = p(1-p)$.Compute $\phi = J_j-J_k$ at $\hat \theta$. Then use any standard optimal design score with Sherman–Morrison:
 
@@ -687,7 +689,7 @@ The key insight is that GP uncertainty—quantified by the posterior variance—
 For GP preference learning, we seek queries that maximize information gain about the reward function. Given a dataset $\mathcal{D}$ and a candidate query $Q = (x_A, x_B)$, the acquisition function measures the expected reduction in uncertainty about $r$:
 $$
 a(Q) = I(r; y \mid \mathcal{D}, Q) = H(y \mid \mathcal{D}, Q) - \mathbb{E}_{r \sim p(r \mid \mathcal{D})}[H(y \mid r, Q)]
-$$
+$$ {#eq-gp-acquisition}
 
 **Interpretation of the two terms:**
 
@@ -702,7 +704,7 @@ The acquisition function trades off these two terms: we want queries where the *
 Using the Laplace approximation from Chapter 3 (@sec-gp-inference), the acquisition function can be computed as:
 $$
 a(x_A, x_B) = h\left(\Phi\left(\frac{\mu_A - \mu_B}{\sqrt{2\sigma_{\text{noise}}^2 + g(x_A, x_B)}}\right)\right) - m(x_A, x_B)
-$$
+$$ {#eq-gp-acquisition-practical}
 
 where:
 - $\mu_A, \mu_B$ are the GP posterior means at $x_A, x_B$
@@ -892,7 +894,7 @@ We now turn to a specific, important application: **active learning for DPO (Dir
 Recall from @sec-llm-example that DPO directly optimizes a policy $\pi_\theta$ on preference data without learning an explicit reward model. The key insight is that DPO implicitly assumes Bradley-Terry preferences:
 $$
 p(y_w \succ y_l \mid x) = \sigma\left(\beta \log \frac{\pi_\theta(y_w \mid x)}{\pi_{\text{ref}}(y_w \mid x)} - \beta \log \frac{\pi_\theta(y_l \mid x)}{\pi_{\text{ref}}(y_l \mid x)}\right)
-$$
+$$ {#eq-dpo-bradley-terry}
 
 **Challenge:** Large language models have billions of parameters, making exact Fisher information computation intractable. How can we apply the D-optimal design principles from Sections 1-2?
 
@@ -901,21 +903,21 @@ $$
 The key insight is to approximate the policy as **log-linear** in the last-layer features:
 $$
 \pi(y \mid x; \theta) \propto \exp(\phi(x, y)^\top \theta)
-$$
+$$ {#eq-log-linear-policy}
 
 where $\phi(x, y)$ is the feature representation from the model's last layer. This assumption is justified by the **neural tangent kernel** perspective: for sufficiently large networks, the dynamics during training are approximately linear in the parameters.
 
 Under this assumption, the DPO loss Hessian takes the form:
 $$
 H(\theta) = \sum_{i=1}^n p_i(1-p_i) \cdot \Delta\phi_i \Delta\phi_i^\top
-$$
+$$ {#eq-dpo-hessian}
 
 where $\Delta\phi_i = \phi(x_i, y_{w,i}) - \phi(x_i, y_{l,i})$ is the feature difference between winning and losing responses, and $p_i$ is the predicted preference probability.
 
 **Key observation:** This Hessian is exactly the **Fisher information matrix** for the DPO model! The D-optimal criterion becomes:
 $$
 \max_S \log\det\left(\sum_{i \in S} p_i(1-p_i) \cdot \Delta\phi_i \Delta\phi_i^\top\right)
-$$
+$$ {#eq-dpo-d-optimal}
 
 ### The ADPO Algorithm
 
@@ -933,7 +935,7 @@ The **Active DPO (ADPO)** algorithm applies D-optimal design to select preferenc
    - $p_i = \sigma(\beta(\log\pi_{\theta_{t-1}}(y_{i,1}|x_i) - \log\pi_{\theta_{t-1}}(y_{i,2}|x_i)))$
 
 2. **D-optimal selection:** Select query maximizing:
-   $$i^* = \arg\max_i \log\det\left(I + p_i(1-p_i) H_t^{-1} \Delta\phi_i \Delta\phi_i^\top\right)$$
+   $$i^* = \arg\max_i \log\det\left(I + p_i(1-p_i) H_t^{-1} \Delta\phi_i \Delta\phi_i^\top\right)$$ {#eq-adpo-selection}
    where $H_t$ is the current Fisher information matrix
 
 3. **Query oracle:** Obtain human preference $y_t$ for pair $(x_{i^*}, y_{i^*,1}, y_{i^*,2})$
@@ -951,7 +953,7 @@ Under standard regularity conditions, ADPO achieves the following convergence ra
 Let $\theta^*$ be the optimal policy parameters. With $n$ actively selected comparisons, ADPO achieves:
 $$
 \|\hat\theta_n - \theta^*\| = O\left(\frac{d}{\sqrt{n}}\right)
-$$
+$$ {#eq-adpo-convergence}
 where $d$ is the effective dimension (rank of the Fisher information). This matches the minimax optimal rate for $d$-dimensional estimation.
 :::
 
@@ -1011,7 +1013,8 @@ performance metric for $h$. Our focus is to recover some metric $\phi$ using com
 An LPM, given constants $\{a_{11}, a_{01}, a_{10}, a_{00}\} \in \mathbb{R}^{4}$, is defined as $\phi(C) = a_{11} TP + a_{01} FP + a_{10} FN + a_{00} TN = m_{11} TP + m_{00} TN + m_{0}$, where $m_{11} = (a_{11} - a_{10})$, $m_{00} = (a_{00} - a_{01})$, and $m_{0} = a_{10} \zeta + a_{01} (1 - \zeta)$. This reparametrization simplifies the metric by reducing dimensionality, making it more tractable for elicitation. 
 One example of an LPM is *weighted accuracy*, defined as $WA = w_1TP + w_2TN$, where adjusting $w_1$ and $w_2$ controls 
 the relative importance of different types of misclassification. An LFPM, defined by constants $\{a_{11}, a_{01}, a_{10}, a_{00}, b_{11}, b_{01}, b_{10}, b_{00}\} \in \mathbb{R}^{8}$, is given by:
-$$\phi(C) = \frac{a_{11} TP + a_{01} FP + a_{10} FN + a_{00} TN}{b_{11} TP + b_{01} FP + b_{10} FN + b_{00} TN} = \frac{p_{11} TP + p_{00} TN + p_{0}}{q_{11} TP + q_{00} TN + q_{0}},$$
+$$\phi(C) = \frac{a_{11} TP + a_{01} FP + a_{10} FN + a_{00} TN}{b_{11} TP + b_{01} FP + b_{10} FN + b_{00} TN} = \frac{p_{11} TP + p_{00} TN + p_{0}}{q_{11} TP + q_{00} TN + q_{0}},$$ {#eq-lfpm-definition}
+
 where $p_{11} = (a_{11} - a_{10})$, $p_{00} = (a_{00} - a_{01})$, $q_{11} = (b_{11} - b_{10})$, $q_{00} = (b_{00} - b_{01})$, 
 $p_{0} = a_{10} \zeta + a_{01} (1 - \zeta)$, and $q_{0} = b_{10} \zeta + b_{01} (1 - \zeta)$. This parametrization also 
 simplifies the elicitation process by reducing the number of variables. Common LFPMs include the $F_\beta$ score and Jaccard 
@@ -1253,7 +1256,8 @@ $$\phi^{*}(C)=\frac{p_{11}^{*} T P+p_{00}^{*} T N}{q_{11}^{*} T P+q_{00}^{*} T N
 Then, let $\bar{\tau}$ and $\underline{\tau}$ represent the maximizer and minimizer of $\phi$ over $\mathcal{C}$, respectively. There exists a hyperplane 
 $$\begin{aligned}
 \bar{\ell}_{f}^{*}:=\left(p_{11}^{*}-\bar{\tau}^{*} q_{11}^{*}\right) t p+\left(p_{00}^{*}-\bar{\tau}^{*} q_{00}^{*}\right) t n=\bar{\tau}^{*} q_{0}^{*},
-\end{aligned}$$
+\end{aligned}$$ {#eq-upper-hyperplane}
+
 which touches $\mathcal{C}$ at $\left(\overline{T P}^{*}, \overline{T N}^{*}\right)$ on $\partial \mathcal{C}_{+}$. Correspondingly, there also exists a hyperplane
 $$\underline{\ell}_{f}^{*}:=\left(p_{11}^{*}-\underline{\tau}^{*} q_{11}^{*}\right) t p+\left(p_{00}^{*}-\underline{\tau}^{*} q_{00}^{*}\right) \operatorname{tn}=\underline{\tau}^{*} q_{0}^{*},$$ {#eq-eq3.49}
 which touches $\mathcal{C}$ at $\left(\underline{TP}^{*}, \underline{T N}^{*}\right)$ on $\partial \mathcal{C}_{-}$. While we are unable to obtain @eq-eq3.48 and @eq-eq3.49 directly, we can use @alg-lpm to get a hyperplane
@@ -1578,11 +1582,11 @@ Gandhi et al. [@gandhi2022eliciting] identifies whether demonstrations are compa
 
 We want to define a compatibility measure $\mathcal{M}$, that estimates the performance of policy $\pi_{base}$ that is retrained on a union of $\mathcal{D}_{base}$, the known base dataset, and $\mathcal{D}_{new}$, the newly collected dataset. To define this compatibility measure in a way that is easy to compute, we can use two interpretable metrics: likelihood and novelty. The likelihood of actions $a_{new}$ in $\mathcal{D}_{new}$ is measured as the negative mean squared error between actions predicted by the base policy and this proposed action:
 
-$$likelihood(s_{new}, a_{new}) = -\mathbb{E}[|| \pi_{base}(s_{new}) - a_{new} ||^2_2].$$  {#eq-eq3.61}
+$$likelihood(s_{new}, a_{new}) = -\mathbb{E}[|| \pi_{base}(s_{new}) - a_{new} ||^2_2].$$ {#eq-likelihood}
 
 The novelty of the state $s_{new}$ in $\mathcal{D}_{new}$ is the standard deviation in the predicted actions under base policy:
 
-$$novelty(s_{new}) = \mathrm{Var}[\pi_{base}(s_{new})].$$  {#eq-eq3.62}
+$$novelty(s_{new}) = \mathrm{Var}[\pi_{base}(s_{new})].$$ {#eq-novelty}
 
 We can plot likelihood and novelty on a 2D plane, as shown in @fig-likelihood_novelty, and identify thresholds on
 likelihood and novelty, denoted as $\lambda$ and $\eta$ respectively.

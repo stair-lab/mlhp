@@ -216,7 +216,7 @@ The core issue is what we call the **inversion problem**: observable behavior do
 Let $B$ denote observed behavior (e.g., writing a detailed review), $M$ denote mental state (true expertise and preferences), and $C$ denote context (time availability, fatigue, language proficiency). The relationship is:
 $$
 P(B \mid M, C) \neq P(B \mid M)
-$$
+$$ {#eq-inversion-problem}
 Different groups have different mappings from mental state to behavior due to context.
 
 **In peer review**, a detailed review could reflect:
@@ -440,7 +440,7 @@ Next, we'll see how the learning stage compounds this bias by imposing structure
 Recall from Chapter 2 that the Bradley-Terry model (@sec-bradley-terry) assumes **Independence of Irrelevant Alternatives (IIA)**: if a reviewer prefers Paper A over Paper B, adding Paper C to the choice set shouldn't change this preference. Mathematically:
 $$
 \frac{P(\text{choose } j \mid \{j, k\})}{P(\text{choose } k \mid \{j, k\})} = \frac{P(\text{choose } j \mid \{j, k, \ell\})}{P(\text{choose } k \mid \{j, k, \ell\})}
-$$
+$$ {#eq-iia-definition}
 This simplifying assumption reduces the model from $M!$ parameters to just $M$ item utilities $V_j$, making learning tractable.
 
 But IIA is violated in peer review—and these violations have fairness consequences.
@@ -496,7 +496,7 @@ An IIA-based model works well for senior reviewers with light loads and flexible
 Instead of assuming context-free utilities $V_j$, we can model **context-dependent preferences**:
 $$
 H_{ij} = U_i^\top V_j + f(C_i)
-$$
+$$ {#eq-contextual-preference}
 where:
 - $U_i$ and $V_j$ are latent factors (as in Chapter 2, @sec-factor-models)
 - $C_i$ is reviewer $i$'s current context (load, fatigue, recent reviews)
@@ -505,7 +505,7 @@ where:
 For example, if Reviewer $i$ has already reviewed $n_i$ papers in the current round:
 $$
 H_{ij} = U_i^\top V_j - \lambda n_i
-$$
+$$ {#eq-contextual-preference-load}
 The $-\lambda n_i$ term captures diminishing willingness as load increases.
 
 This model doesn't satisfy IIA (preferences change with context), but it more accurately captures real reviewer behavior.
@@ -774,7 +774,7 @@ Next, we'll see how the aggregation stage further compounds bias by weighting pr
 From Chapter 3 (@eq-dpo), recall that DPO (Direct Preference Optimization) for language models maximizes:
 $$
 \mathcal{L}_{\text{DPO}} = -\mathbb{E}_{(x, y_w, y_l) \sim \mathcal{D}}\left[\log \sigma\left(\beta \log \frac{\pi_\theta(y_w \mid x)}{\pi_{\text{ref}}(y_w \mid x)} - \beta \log \frac{\pi_\theta(y_l \mid x)}{\pi_{\text{ref}}(y_l \mid x)}\right)\right]
-$$
+$$ {#eq-dpo-aggregation}
 where $\pi_{\text{ref}}$ is a reference policy trained on existing data.
 
 The key question: **Who contributes to $\pi_{\text{ref}}$?**
@@ -1218,24 +1218,24 @@ Let's formalize this feedback loop. Let $q_t^{(g)}$ denote the number of queries
 **Stage 1 (Elicitation)**: Queries proportional to productivity (measured by past assistant usage):
 $$
 q_{t+1}^{(g)} \propto a_t^{(g)}
-$$
+$$ {#eq-feedback-elicitation}
 Groups with better assistance get queried more.
 
 **Stages 2-3 (Learning + Aggregation)**: Assistant quality depends on training data:
 $$
 a_{t+1}^{(g)} = f(q_{t+1}^{(g)})
-$$
+$$ {#eq-feedback-learning}
 where $f$ is increasing (more queries → more data → better learning).
 
 **Feedback**: Combining these:
 $$
 a_{t+1}^{(g)} \propto f(a_t^{(g)})
-$$
+$$ {#eq-feedback-combined}
 
 If $f$ is superlinear (e.g., $f(x) = x^{1.2}$), then small initial advantages grow exponentially. If Group A starts with slightly better assistance ($a_0^{(A)} = 1.1 \cdot a_0^{(B)}$), after $T$ rounds:
 $$
 \frac{a_T^{(A)}}{a_T^{(B)}} = \left(\frac{a_0^{(A)}}{a_0^{(B)}}\right)^{1.2^T} \to \infty \text{ as } T \to \infty
-$$
+$$ {#eq-feedback-exponential}
 
 **Result**: Small initial biases explode into permanent disparities.
 
@@ -1410,7 +1410,7 @@ Understanding these impossibilities helps us make conscious tradeoffs rather tha
 **Formal definition**: For distance metric $d$ on individuals and outcomes, a decision function $f$ is individually fair if:
 $$
 d(x_i, x_j) \leq \epsilon \implies d(f(x_i), f(x_j)) \leq \delta(\epsilon)
-$$
+$$ {#eq-individual-fairness}
 where $\delta$ is non-decreasing. Intuitively: if two individuals are close in relevant features, their outcomes should be close.
 
 **In peer review**: Papers with similar topics and quality should get similar-quality reviewers. If Papers A and B both study transformers on low-resource languages, they should get reviewers with comparable expertise.
@@ -1420,7 +1420,7 @@ where $\delta$ is non-decreasing. Intuitively: if two individuals are close in r
 **Formal definition**: For groups $g_1, g_2 \in \mathcal{G}$, a decision function $f$ satisfies group fairness if:
 $$
 \mathbb{E}[f(x) \mid G = g_1] = \mathbb{E}[f(x) \mid G = g_2]
-$$
+$$ {#eq-group-fairness}
 where $G$ is the group membership variable.
 
 **In peer review**: Papers from mainstream ML subfields vs. small subfields should receive equally qualified reviewers on average.
@@ -1948,7 +1948,9 @@ Mitigation: [e.g., Minimum sampling quotas for underrepresented groups]
 - Don't report "95% accuracy"—report "98% for Group A, 87% for Group B" (stratified).
 - Set constraints: "No group below 90% accuracy" rather than "average 95% accuracy."
 - Optimization formulation:
-$$\max_{\theta} \text{Utility}(\theta) \quad \text{subject to} \quad \min_{g \in \mathcal{G}} \text{Quality}_g(\theta) \geq \tau$$
+$$
+\max_{\theta} \text{Utility}(\theta) \quad \text{subject to} \quad \min_{g \in \mathcal{G}} \text{Quality}_g(\theta) \geq \tau
+$$ {#eq-fairness-constrained-optimization}
 where $\mathcal{G}$ is the set of protected groups and $\tau$ is the fairness threshold.
 
 **Example**: In the review assistant, don't just measure "average assistant quality"—measure quality for seniors, juniors, native speakers, non-native speakers separately. Ensure all exceed a minimum bar.
@@ -2115,11 +2117,15 @@ Assume $P(M = \text{high}) = 0.6$ for both groups (similar expertise distributio
 Model a feedback loop in the review assistant system with discrete time steps $t = 0, 1, 2, \ldots$:
 
 **Stage 1 (Elicitation)**: Queries at time $t+1$ proportional to current assistant quality:
-$$q_{t+1}^{(g)} = q_0^{(g)} \cdot \left(\frac{a_t^{(g)}}{a_0^{(g)}}\right)^\alpha$$
+$$
+q_{t+1}^{(g)} = q_0^{(g)} \cdot \left(\frac{a_t^{(g)}}{a_0^{(g)}}\right)^\alpha
+$$ {#eq-exercise-elicitation}
 where $q_t^{(g)}$ = queries to group $g$ at time $t$, $a_t^{(g)}$ = assistant quality for group $g$, $\alpha > 0$ controls feedback strength.
 
 **Stages 2-3 (Learning + Aggregation)**: Quality improves with queries:
-$$a_{t+1}^{(g)} = a_{\max} \cdot \left(1 - \exp\left(-\lambda q_{t+1}^{(g)}\right)\right)$$
+$$
+a_{t+1}^{(g)} = a_{\max} \cdot \left(1 - \exp\left(-\lambda q_{t+1}^{(g)}\right)\right)
+$$ {#eq-exercise-learning}
 where $\lambda > 0$ and $a_{\max}$ is maximum achievable quality.
 
 **Initial conditions**: $a_0^{(\text{senior})} = 1.0$, $a_0^{(\text{junior})} = 0.9$, $q_0^{(\text{senior})} = q_0^{(\text{junior})} = 100$.
@@ -2135,14 +2141,18 @@ where $\lambda > 0$ and $a_{\max}$ is maximum achievable quality.
 ### Exercise 4: Fairness in DPO (***)
 
 Recall from Chapter 3 that DPO optimizes:
-$$\mathcal{L}_{\text{DPO}} = -\mathbb{E}_{(x, y_w, y_l) \sim \mathcal{D}}\left[\log \sigma\left(\beta \log \frac{\pi_\theta(y_w \mid x)}{\pi_{\text{ref}}(y_w \mid x)} - \beta \log \frac{\pi_\theta(y_l \mid x)}{\pi_{\text{ref}}(y_l \mid x)}\right)\right]$$
+$$
+\mathcal{L}_{\text{DPO}} = -\mathbb{E}_{(x, y_w, y_l) \sim \mathcal{D}}\left[\log \sigma\left(\beta \log \frac{\pi_\theta(y_w \mid x)}{\pi_{\text{ref}}(y_w \mid x)} - \beta \log \frac{\pi_\theta(y_l \mid x)}{\pi_{\text{ref}}(y_l \mid x)}\right)\right]
+$$ {#eq-exercise-dpo}
 
 Suppose dataset $\mathcal{D}$ has $n_A$ samples from Group A and $n_B$ samples from Group B, where $n_A > n_B$ (unequal participation).
 
 **(a)** Show that the gradient $\nabla_\theta \mathcal{L}_{\text{DPO}}$ **implicitly weights** Group A's preferences by $\frac{n_A}{n_A + n_B}$ and Group B's by $\frac{n_B}{n_A + n_B}$. (Hint: Expand the expectation over the empirical distribution.)
 
 **(b)** Derive a **fair-DPO objective** that gives equal weight to both groups regardless of sample size:
-$$\mathcal{L}_{\text{fair-DPO}} = -\frac{1}{2}\left[\mathbb{E}_{A} [\cdots] + \mathbb{E}_{B} [\cdots]\right]$$
+$$
+\mathcal{L}_{\text{fair-DPO}} = -\frac{1}{2}\left[\mathbb{E}_{A} [\cdots] + \mathbb{E}_{B} [\cdots]\right]
+$$ {#eq-exercise-fair-dpo}
 Show how this requires **reweighting samples** by $w_A = \frac{1}{n_A}$, $w_B = \frac{1}{n_B}$.
 
 **(c)** Suppose Group A has better inter-annotator agreement (lower label noise: $\sigma_A^2 < \sigma_B^2$). Analyze the **bias-variance tradeoff**: Does equal-weighting improve fairness at the cost of higher variance in learned policy? Derive the MSE for each group under standard DPO vs. fair-DPO.
@@ -2174,14 +2184,18 @@ The AI assistant can follow two policies:
 ### Exercise 6: Strategy-Proofness and Nosy Preferences (**)
 
 In the paper-reviewer matching from @sec-review-assistant, reviewers report preferences $\succ_i$ over papers $P$. The matching algorithm maximizes total utility:
-$$\max_{\text{assignment}} \sum_{i} u_i(\text{assignment}(i))$$
+$$
+\max_{\text{assignment}} \sum_{i} u_i(\text{assignment}(i))
+$$ {#eq-exercise-matching}
 
 Assume preferences are **non-nosy** (each reviewer cares only about their own assignment, not others').
 
 **(a)** Show this mechanism is **not strategy-proof**: Reviewers can improve their outcome by misreporting preferences. Construct an example where Reviewer 1 gets a better paper by lying about $\succ_1$.
 
 **(b)** Now suppose senior reviewers have **nosy preferences**: they want certain papers assigned to junior reviewers (e.g., training papers). Formalize as:
-$$u_i(\text{assignment}) = u_i^{\text{self}}(\text{assignment}(i)) + \sum_{j \in \text{Juniors}} \beta_{ij} \cdot u_i^{\text{nosy}}(\text{assignment}(j))$$
+$$
+u_i(\text{assignment}) = u_i^{\text{self}}(\text{assignment}(i)) + \sum_{j \in \text{Juniors}} \beta_{ij} \cdot u_i^{\text{nosy}}(\text{assignment}(j))
+$$ {#eq-exercise-nosy-utility}
 where $\beta_{ij}$ is how much senior $i$ cares about junior $j$'s assignment.
 
 Show that coordinated misreporting by seniors can **systematically harm juniors** by steering "training papers" to juniors even if juniors prefer research-relevant papers.
@@ -3063,7 +3077,9 @@ of Earth." The rankings provided by the labelers are used to train the
 reward model $\Phi_{\text{RM}}$. The model is trained by minimizing the
 following loss function across all training samples:
 
-$$\mathbb{L}(\Phi_{RM}) = -\mathbb{E}_{(x,y_e,i\rightarrow D_{RL})}[\log(\sigma(\Phi_{RM}(x, y_i)) - \Phi_{RM}(x, y_{1-i}))]$$
+$$
+\mathbb{L}(\Phi_{RM}) = -\mathbb{E}_{(x,y_e,i\rightarrow D_{RL})}[\log(\sigma(\Phi_{RM}(x, y_i)) - \Phi_{RM}(x, y_{1-i}))]
+$$ {#eq-rm-loss}
 
 for $i \in \{0,1 \}$. This loss function encourages the reward model to
 produce higher scores for better-ranked responses, thereby learning to
@@ -3104,7 +3120,9 @@ does not degrade the performance on tasks the pre-trained model was
 optimized for. When sampling a response $y$ to a prompt $x$ from
 $D_\text{RL}$, the first objective function is:
 
-$$\text{objective}_1(x_{RL}, y; \phi) = RM(x_{RL}, y) - \beta \log \frac{\text{LLM}_{\phi}^{RL}(y|x)}{\text{LLM}_{SFT}(y|x)}$$
+$$
+\text{objective}_1(x_{RL}, y; \phi) = RM(x_{RL}, y) - \beta \log \frac{\text{LLM}_{\phi}^{RL}(y|x)}{\text{LLM}_{SFT}(y|x)}
+$$ {#eq-rlhf-objective-1}
 
 Where the first term is the reward from the RM, and the second term is
 the Kullback-Leibler (KL) divergence, weighted by a factor $\beta$,
@@ -3113,7 +3131,9 @@ far from the SFT model. Further, for each $x$ from $D_\text{pretrain}$,
 the second objective is to ensure that the RL model's performance on
 text completion does not worsen:
 
-$$\text{objective}_2(x_{\text{pretrain}} ; \phi) = \gamma \log \text{LLM}_{\phi}^{RL}(x_{\text{pretrain}})$$
+$$
+\text{objective}_2(x_{\text{pretrain}} ; \phi) = \gamma \log \text{LLM}_{\phi}^{RL}(x_{\text{pretrain}})
+$$ {#eq-rlhf-objective-2}
 
 where $\gamma$ is a weighting factor that balances the influence of this
 objective against the others.
@@ -3122,7 +3142,9 @@ The final objective function is a sum of the expected values of the two
 objectives described above, across both distributions. In the RL
 setting, we maximize *this* objective function:
 
-$$\text{objective}(\phi) = E_{(x,y) \sim D_{\phi}^{RL}}[RM(x, y) - \beta \log \frac{\text{LLM}_{\phi}^{RL}(y|x)}{\text{LLM}_{SFT}(y|x)}] + \gamma E_{x \sim D_{\text{pretrain}}}[\log \text{LLM}_{\phi}^{RL}(x)]$$
+$$
+\text{objective}(\phi) = E_{(x,y) \sim D_{\phi}^{RL}}[RM(x, y) - \beta \log \frac{\text{LLM}_{\phi}^{RL}(y|x)}{\text{LLM}_{SFT}(y|x)}] + \gamma E_{x \sim D_{\text{pretrain}}}[\log \text{LLM}_{\phi}^{RL}(x)]
+$$ {#eq-rlhf-full-objective}
 
 In practice, the second part of the objective is often not used to
 perform $\text{RLHF}$. The KL penalty is typically enough to constrain
@@ -3181,7 +3203,9 @@ $\sigma = (s_1, a_1, s_2, a_2, \ldots, s_k, a_k)$. The CPL approach aims
 to maximize the expected sum of rewards minus an entropy term, which
 promotes exploration and prevents overfitting to specific actions:
 
-$$\max_\pi \mathbb{E}_{\pi} \left[ \sum_{t=0}^{\infty} \gamma^t (r(s_t, a_t) - \alpha \log \pi(a_t | s_t)) \right]$$
+$$
+\max_\pi \mathbb{E}_{\pi} \left[ \sum_{t=0}^{\infty} \gamma^t (r(s_t, a_t) - \alpha \log \pi(a_t | s_t)) \right]
+$$ {#eq-cpl-objective}
 
 where $\gamma$ is the discount factor, $\alpha$ is the temperature
 parameter controlling the stochasticity of the policy, and $r$ is the
@@ -3191,13 +3215,17 @@ learning process, CPL compares the log probabilities of actions in
 preferred segments $\sigma^+$ against those in non-preferred segments
 $\sigma^-$ :
 
-$$\mathbb{L}_{CPL}(\pi_\theta, \mathcal{D}_{\text{pref}}) = \mathbb{E}_{(\sigma^+,\sigma^-) \sim \mathcal{D}_{\text{pref}}} \left[ -\log \frac{\exp(\sum_{\sigma^+} \gamma^t \alpha \log \pi_\theta(a_t^+|s_t^+))}{\exp(\sum_{\sigma^+} \gamma^t \alpha \log \pi_\theta(a_t^+|s_t^+)) + \exp(\sum_{\sigma^-} \gamma^t \alpha \log \pi_\theta(a_t^-|s_t^-))} \right]$$
+$$
+\mathbb{L}_{CPL}(\pi_\theta, \mathcal{D}_{\text{pref}}) = \mathbb{E}_{(\sigma^+,\sigma^-) \sim \mathcal{D}_{\text{pref}}} \left[ -\log \frac{\exp(\sum_{\sigma^+} \gamma^t \alpha \log \pi_\theta(a_t^+|s_t^+))}{\exp(\sum_{\sigma^+} \gamma^t \alpha \log \pi_\theta(a_t^+|s_t^+)) + \exp(\sum_{\sigma^-} \gamma^t \alpha \log \pi_\theta(a_t^-|s_t^-))} \right]
+$$ {#eq-cpl-loss}
 
 This comparison allows the model to learn which actions are more aligned
 with human preferences, forming the core learning mechanism of CPL. The
 preference model for CPL is regret-based, described as
 
-$$P_{A^*}[\sigma^+ \succ \sigma^-] = \frac{\exp(\sum_{\sigma^+} \gamma^t A^*(s_t^+, a_t^+))}{\exp(\sum_{\sigma^+} \gamma^t A^*(s_t^+, a_t^+)) + \exp(\sum_{\sigma^-} \gamma^t A^*(s_t^-, a_t^-))}$$
+$$
+P_{A^*}[\sigma^+ \succ \sigma^-] = \frac{\exp(\sum_{\sigma^+} \gamma^t A^*(s_t^+, a_t^+))}{\exp(\sum_{\sigma^+} \gamma^t A^*(s_t^+, a_t^+)) + \exp(\sum_{\sigma^-} \gamma^t A^*(s_t^-, a_t^-))}
+$$ {#eq-cpl-preference-model}
 where $A^*(s_t, a_t)$ represents the advantage function and is a matrix.
 This step models human preferences based on regret, reflecting how
 humans might evaluate different behaviors.
@@ -3213,7 +3241,9 @@ The key insight that the paper leverages is that from
 advantage function is related to the optimal policy by
 $A^*_r(s, a) = \alpha \log \pi^*(a|s)$. Therefore, the loss function for
 CPL can be written by substituting the above result to obtain:
-$$L_{CPL}(\pi_\theta, \mathcal{D}_{\text{pref}}) = \mathbb{E}_{(\sigma^+,\sigma^-) \sim \mathcal{D}_{\text{pref}}} \left[ -\log P_{\pi_\theta}[\sigma^+ \succ \sigma^-] \right]$$
+$$
+L_{CPL}(\pi_\theta, \mathcal{D}_{\text{pref}}) = \mathbb{E}_{(\sigma^+,\sigma^-) \sim \mathcal{D}_{\text{pref}}} \left[ -\log P_{\pi_\theta}[\sigma^+ \succ \sigma^-] \right]
+$$ {#eq-cpl-simplified}
 
 One merit of using CPL over the typical RLHF pipeline is that it can
 lead to a deduction in mode collapse. Further, it makes reward
@@ -3327,9 +3357,11 @@ framework allows us to model the environment in which humans and robots
 operate. Denote the human's reward function as $R$ and the robot's
 reward function as $R^\prime$. Both the human and robot reward functions
 must be linear in a set of shared features, defined as:
-$$\begin{aligned}
+$$
+\begin{aligned}
     R(s) = \mathbf{w}^\top \phi(s), R^\prime(s) = \mathbf{w}^{\prime \top} \phi(s).
-\end{aligned}$$
+\end{aligned}
+$$ {#eq-linear-reward}
 
 These linear reward functions provide a common ground for comparing
 human and robot preferences.
@@ -3340,18 +3372,23 @@ state $s$ and action $a$, but we follow the notation in
 [@brown2021value] for simplicity. The optimal state-action value
 function is given by:
 
-$$\begin{aligned}
+$$
+\begin{aligned}
     Q_R^\pi (s,a) = \mathbf{w}^\top \Phi_{\pi_R}^{(s,a)}, \Phi_{\pi_R}^{(s,a)} = \mathbb{E}_\pi [\sum_{t=0}^\infty \gamma^t \phi(s_t) \vert s_0 = s, a_0 = a].
-\end{aligned}$$
+\end{aligned}
+$$ {#eq-q-function}
 
 Here, $\Phi_{\pi_R}^{(s,a)}$ is the feature expectation vector under
 policy $\pi$, capturing the long-term feature visitation frequencies. We
 overload the action space notation to define the set of all optimal
 actions given a state as
 
-$$\begin{aligned}
+$$
+\begin{aligned}
     \mathcal{A}_R(s) = \underset{x}{\operatorname{argmax}} \\ Q^{\pi^*}_R(s,a)
-\end{aligned}$$ where $\pi^*$ is an optimal policy. We can now define
+\end{aligned}
+$$ {#eq-optimal-actions}
+where $\pi^*$ is an optimal policy. We can now define
 the aligned reward polytope (ARP). The ARP is the set of all weights
 $\mathcal{w}$ that satisfy the following set of strict linear
 inequalities, $\mathbf{w}^\top \mathbf{A}  > \mathbf{0}$ where each row

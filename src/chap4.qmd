@@ -79,26 +79,26 @@ This randomized strategy naturally balances exploration and exploitation: if pos
 Under binary or preference feedback modeled by a logistic link,
 $$
 p(Y_{ij}=1 \mid U_i, V_j) = \sigma(U_i^\top V_j),
-$$
+$$ {#eq-logistic-link}
 the posterior becomes non-Gaussian and analytically intractable. We therefore approximate it with a Laplace approximation, replacing the true posterior with a local Gaussian centered at the mode (the MAP estimate).
 
 Let the log-posterior be:
 $$
 \ell(U_i) = \log p(U_i) + \sum_{j \in \mathcal{D}_t} \log p(Y_{ij} \mid U_i).
-$$
+$$ {#eq-log-posterior}
 We expand $\ell(U_i)$ around its maximum a posteriori estimate $\hat{U}_i$:
 $$
 \ell(U_i) \approx \ell(\hat{U}_i) - \tfrac{1}{2}(U_i - \hat{U}_i)^\top G (U_i - \hat{U}_i),
-$$
+$$ {#eq-laplace-expansion}
 where $G = -\nabla^2_{U_i} \ell(\hat{U}_i)$ is the negative Hessian of the log-posterior. This yields the Gaussian approximation:
 $$
 p(U_i \mid \mathcal{D}_t) \approx \mathcal{N}(\hat{U}_i, G^{-1}).
-$$
+$$ {#eq-laplace-approximation}
 
 In the logistic model,
 $$
 G = I + \sum_{j} p_j(1-p_j) V_j V_j^\top,
-$$
+$$ {#eq-hessian-logistic}
 where $p_j = \sigma(\hat{U}_i^\top V_j)$ and $I$ arises from the Gaussian prior $p(U_i) = \mathcal{N}(0, I)$.
 
 At each time step $t$:
@@ -107,22 +107,22 @@ At each time step $t$:
    Compute $\hat{U}_i$ by maximizing the log-posterior:
 $$
 \hat{U}_i = \arg\max_{U_i} \Big[\sum_{j\in\mathcal{D}_t} Y_{ij}\log\sigma(U_i^\top V_j) + (1-Y_{ij})\log(1-\sigma(U_i^\top V_j)) - \tfrac{1}{2}|U_i|^2 \Big].
-$$
+$$ {#eq-map-estimate}
 
 2. **Compute Hessian at the mode**
    $$
    G = I + \sum_{j} p_j(1-p_j) V_j V_j^\top.
-   $$
+   $$ {#eq-hessian-step}
 
 3. **Sample a posterior draw**
    $$
    \tilde{U}_i^{(t)} \sim \mathcal{N}(\hat{U}_i, G^{-1}).
-   $$
+   $$ {#eq-posterior-sample}
 
 4. **Select next item**
    $$
    j^* = \arg\max_j \tilde{U}_i^{(t)\top} V_j.
-   $$
+   $$ {#eq-item-selection}
 
 This algorithm naturally unifies measurement and decision: the posterior (a measurement construct) drives the sampling rule (a decision construct).
 
@@ -220,33 +220,33 @@ The linear formulation assumes that a user’s latent utility varies linearly wi
 A **Gaussian Process (GP)** defines a distribution over functions:
 $$
 h_i \sim \mathcal{GP}(m(\cdot), k(\cdot, \cdot)),
-$$
+$$ {#eq-gp-prior}
 where $m(V)$ is the mean function (often assumed to be zero) and $k(V, V')$ is the **kernel**, encoding similarity between items. Intuitively, a GP asserts that **similar items yield similar utilities**, with the kernel controlling smoothness and generalization.
 
 For any finite collection of inputs $V_{1:T}$, the corresponding function values
 $$
 H_{i, 1:M} = [h_i(V_1), \dots, h_i(V_M)]
-$$
+$$ {#eq-gp-function-values}
 follow a multivariate normal distribution:
 $$
 H_{i, 1:M} \sim \mathcal{N}(m_{1:M}, K_{1:M,1:M}),
-$$
+$$ {#eq-gp-multivariate-normal}
 where $(K)_{jj'} = k(V_j, V_{j'})$.
 
 
 The probability density function (PDF) of a multivariate normal random variable
 $$
 H \sim \mathcal{N}(m, K)
-$$
+$$ {#eq-mvn-definition}
 is given by
 $$
 p(H) = \frac{1}{(2\pi)^{t/2} |K|^{1/2}}
 \exp \Big(-\tfrac{1}{2}(H-m)^\top K^{-1} (H-m) \Big).
-$$
+$$ {#eq-mvn-pdf}
 Taking the logarithm yields
 $$
 \log p(H) = -\tfrac{1}{2}(H-m)^\top K^{-1} (H-m) - \tfrac{1}{2}\log|K| - \tfrac{t}{2}\log(2\pi).
-$$
+$$ {#eq-mvn-log-pdf}
 
 In most inference contexts, constant terms (those not depending on $H$) can be dropped, since they cancel when normalizing the posterior.
 
@@ -259,17 +259,17 @@ This nonparametric formulation is advantageous because:
 For **binary observations**,
 $$
 p(Y_{ij}=1 \mid h_i(V_j)) = \sigma(h_i(V_j)),
-$$
+$$ {#eq-gp-binary-likelihood}
 the likelihood is non-Gaussian, and the posterior
 $$
 p(h_i \mid \mathcal{D}_t) \propto p(Y_{1:t} \mid h_i) p(h_i)
-$$
+$$ {#eq-gp-posterior}
 becomes **intractable**. To approximate it, we again use the **Laplace approximation**.
 
 Let $H_i = [h_i(V_1), \dots, h_i(V_t)]$. The log-posterior is
 $$
 \ell(H_i) = \log p(Y_{1:t} \mid H_i) - \tfrac{1}{2}H_i^\top K_t^{-1}H_i - \tfrac{1}{2}\log|K_t|.
-$$
+$$ {#eq-gp-log-posterior}
 
 
 
@@ -286,60 +286,60 @@ $$ -->
 Let
 $$
 \hat H_i = \arg\max_{h} \ell(h)
-$$
+$$ {#eq-gp-map}
 be the **mode** (MAP).
 
 The multivariate second-order Taylor expansion of a smooth scalar function $\ell(\cdot)$ around $\hat H_i$ is
 $$
 \ell(H_i) \approx \ell(\hat H_i) + \nabla\ell(\hat H_i)^\top(H_i-\hat H_i) + \tfrac12(H_i-\hat H_i)^\top \nabla^2\ell(\hat H_i)(H_i-\hat H_i).
-$$
+$$ {#eq-taylor-expansion}
 
 * Because $\hat H_i$ is a maximizer, the gradient vanishes:
   $$
   \nabla\ell(\hat H_i)=0.
-  $$
+  $$ {#eq-gradient-vanishes}
 * The Hessian at a maximum is **negative semidefinite**:
   $$
   \nabla^2\ell(\hat H_i) \preceq 0.
-  $$
+  $$ {#eq-hessian-negative-semidefinite}
 
 So the expansion simplifies to
 $$
 \ell(H_i) \approx \ell(\hat H_i) + \tfrac12 (H_i-\hat H_i)^\top \nabla^2\ell(\hat H_i)(H_i-\hat H_i).
-$$
+$$ {#eq-taylor-simplified}
 
 Define the **negative Hessian** (a positive semidefinite matrix)
 $$
 W := -\nabla^2\ell(\hat H_i) \succeq 0.
-$$
+$$ {#eq-negative-hessian}
 
 Then
 $$
 \ell(H_i) \approx \ell(\hat H_i) - \tfrac12 (H_i-\hat H_i)^\top W (H_i-\hat H_i).
-$$
+$$ {#eq-quadratic-approximation}
 
-Laplace’s idea is: if the **log** posterior is approximately quadratic, then the **posterior** is approximately Gaussian. Exponentiate the quadratic approximation:
+Laplace's idea is: if the **log** posterior is approximately quadratic, then the **posterior** is approximately Gaussian. Exponentiate the quadratic approximation:
 
 $$
 p(H_i\mid\mathcal D_t) \propto \exp\big(\ell(H_i)\big) \approx \exp \Big(\ell(\hat H_i)-\tfrac12(H_i-\hat H_i)^\top W (H_i-\hat H_i)\Big).
-$$
+$$ {#eq-exponentiated-approximation}
 
 Since $\exp(\ell(\hat H_i))$ is just a constant in $H_i$, this is proportional to the kernel of a multivariate normal with mean $\hat H_i$ and precision $W$ (i.e., covariance $W^{-1}$):
 
 $$
 p(H_i\mid\mathcal D_t) \approx \mathcal N\big(\hat H_i, W^{-1}\big).
-$$
+$$ {#eq-gp-laplace-result}
 
 
 The resulting approximate posterior can be **projected to any new input** $V_*$ via standard GP conditioning:
 $$
 p(h(V_*) \mid \mathcal{D}_t) \approx \mathcal{N}(\mu_t(V_*), \sigma_t^2(V_*)),
-$$
+$$ {#eq-gp-predictive}
 where
 $$
 \mu_t(V_*) = k_*^\top K_t^{-1}\hat{H_i}, \quad
 \sigma_t^2(V_*) = k(V_*,V_*) - k_*^\top (K_t + W^{-1})^{-1} k_*.
-$$
+$$ {#eq-gp-predictive-mean-var}
 where the $k_*$ is the covariance between the new point and previous points.
 
 Once the posterior is approximated, **Thompson Sampling** proceeds as before:
@@ -351,12 +351,12 @@ Algorithmically:
 2. **Sample a function realization**
    $$
    \tilde{h}_i \sim \mathcal{GP}(m_t(\cdot), k_t(\cdot, \cdot)),
-   $$
+   $$ {#eq-gp-function-sample}
    where $m_t$ and $k_t$ are derived from the approximate posterior.
 3. **Select the next item**
    $$
    j^* = \arg\max_j \tilde{h}_i(V_j).
-   $$
+   $$ {#eq-gp-item-selection}
 
 This random sampling induces exploration: uncertain regions of the function space produce high variance in $\tilde{h}_i(V_j)$, encouraging the agent to test them. As more observations are collected, the posterior variance shrinks and the strategy converges toward greedy exploitation.
 
@@ -525,9 +525,9 @@ With the framework outlined, we now define our approach more formally. This meth
 To determine the optimal action, we will compare pairwise to ascertain the probability that an action $b_i$ is 
 preferred over another $b_j$, where $i \ne j$. Concretely, we assume access to a function $\epsilon$ that helps 
 determine this probability; in practice, this can be done with an oracle, such as asking a human which of two 
-options they prefer: $$P(b_i > b_j) = \varepsilon(b_i, b_j) + \frac{1}{2}.$$ With this model, three basic properties 
+options they prefer: $$P(b_i > b_j) = \varepsilon(b_i, b_j) + \frac{1}{2}.$$ {#eq-preference-probability} With this model, three basic properties 
 govern the values provided by $\epsilon$:
-$$\epsilon(b_i, b_j) = -\epsilon(b_j, b_i), \epsilon(b_i, b_i) = 0, \epsilon(b_i, b_j) \in \left(-\frac{1}{2}, \frac{1}{2} \right).$$
+$$\epsilon(b_i, b_j) = -\epsilon(b_j, b_i), \epsilon(b_i, b_i) = 0, \epsilon(b_i, b_j) \in \left(-\frac{1}{2}, \frac{1}{2} \right).$$ {#eq-epsilon-properties}
 
 We assume there is a total ordering of bandits, such that $b_i \succ b_j$ implies $\epsilon(b_i, b_j) > 0$. We 
 impose two constraints to properly model comparisons:
@@ -550,10 +550,10 @@ To accurately model the preferences between bandits in our framework of pairwise
 we must track certain parameters in our algorithm. First, we will maintain a running empirical estimate of the probability 
 of bandit preferences based on our observations. It is important to note that we do not have direct access to an $\epsilon$ 
 function. Instead, we must present two bandits to a human, who selects a winner. To do this, we define:
-$$\hat{P}_{i, j} = \frac{\# b_i\ \text{wins}}{\# \text{comparisons between}\ i \text{and}\ j}.$$
+$$\hat{P}_{i, j} = \frac{\# b_i\ \text{wins}}{\# \text{comparisons between}\ i \text{and}\ j}.$$ {#eq-empirical-preference}
 
 We will also compute confidence intervals at each timestep for each of the entries in $\hat{P}$ as
-$$\hat{C}_t = \left( \hat{P}_t - c_t, \hat{P}_t + c_t \right),$$
+$$\hat{C}_t = \left( \hat{P}_t - c_t, \hat{P}_t + c_t \right),$$ {#eq-confidence-interval}
 where $c_t = \sqrt{\frac{4\log(\frac{1}{\delta})}{t}}$. Note that $\delta = \frac{1}{TK^2}$, where $T$ is the 
 time horizon and $K$ is the number of bandits.
 
@@ -672,7 +672,7 @@ Borda winners, just as different parties may vote for different pizzas.
 
 Next, we introduce two performance measures for the planner. The
 **asymptotic ex-post regret** is defined as
-$$\text{Regret}(\mu_1, \ldots \mu_K) = T\cdot \max_i \mu_i - \sum_{i=1}^T E[\mu_{I_t}].$$
+$$\text{Regret}(\mu_1, \ldots \mu_K) = T\cdot \max_i \mu_i - \sum_{i=1}^T E[\mu_{I_t}].$$ {#eq-asymptotic-regret}
 
 Intuitively, this represents the difference between the reward achieved
 by always taking the action with the highest possible reward and the
@@ -681,7 +681,7 @@ it recommends at each timestep).
 
 We also define a weaker performance measure, the **Bayesian regret**,
 which is defined as
-$$\text {Bayesian regret}=E_{\mu_1, \ldots, \mu_K \sim \text {Prior}}\left[\operatorname{Regret}\left(\mu_1, \ldots, \mu_K\right)\right]$$
+$$\text {Bayesian regret}=E_{\mu_1, \ldots, \mu_K \sim \text {Prior}}\left[\operatorname{Regret}\left(\mu_1, \ldots, \mu_K\right)\right]$$ {#eq-bayesian-regret}
 
 With a Bayesian optimal policy, we would like either definition of
 regret to vanish as $T\to \infty$; we are considering "large-market
@@ -717,10 +717,10 @@ actions that have historically yielded higher rewards, but still allows
 for occasional exploration to discover better options potentially. The
 parameter $\epsilon$ is chosen based on the desired exploration level,
 often set between 0.01 and 0.1. $$P(a_t = a) =
-\begin{cases} 
+\begin{cases}
 \frac{\epsilon}{K} + 1 - \epsilon & \text{if } a = \arg\max_{a'} \hat{\mu}_{a'} \\
 \frac{\epsilon}{K} & \text{otherwise}
-\end{cases}$$
+\end{cases}$$ {#eq-epsilon-greedy}
 
 **Upper Confidence Bound** (UCB) acquisition function takes a more
 sophisticated approach to the exploration-exploitation dilemma. It
@@ -734,10 +734,10 @@ naturally balancing exploration with exploitation as the uncertainty is
 reduced over time.
 
 $$P(a_t = a) =
-\begin{cases} 
+\begin{cases}
 1 & \text{if } a = \arg\max_{a'} \left( \hat{\mu}_{a'} + \sqrt{\frac{2 \ln t}{N_t(a')}} \right) \\
 0 & \text{otherwise}
-\end{cases}$$
+\end{cases}$$ {#eq-ucb}
 
 #### Interleaved Filter
 
@@ -839,7 +839,7 @@ outcome. Based on these two provisions, we can compute the expected
 cumulative regret from running the Interleaved Filter algorithm, which
 is:
 $$\mathbb{E}\left[R_T\right] \le \left(1 - \frac{1}{T}\right) \mathbb{E}\left[ R_T^{IF} \right] + \frac{1}{T}\mathcal{O}(T) \\
-= \mathcal{O}\left(\mathbb{E}\left[ R_T^{IF} \right] + 1\right)$$
+= \mathcal{O}\left(\mathbb{E}\left[ R_T^{IF} \right] + 1\right)$$ {#eq-if-regret-bound}
 
 Interestingly, the original work shows that these bounds hold for both
 strong and weak regret. As demonstrated, the Interleaved Filter
@@ -958,7 +958,7 @@ the bandits.
 
 This algorithm is a solution for the contextual dueling bandit setting,
 and aims to find a Von Neumann winner by minimizing cumulative average regret:
-$$\text{Regret}(T) := \sum_{t=1}^{T} \left[ r_{*}(x_t, a_{t}^{*}) - \frac{r_{*}(x_t, a_{t}^{1}) + r_{*}(x_t, a_{t}^{2})}{2} \right],$$
+$$\text{Regret}(T) := \sum_{t=1}^{T} \left[ r_{*}(x_t, a_{t}^{*}) - \frac{r_{*}(x_t, a_{t}^{1}) + r_{*}(x_t, a_{t}^{2})}{2} \right],$$ {#eq-fgts-regret}
 where $r_{*}(x_t, a_{t})$ is the true, hidden reward function of a
 context $x_t$ and action $a_t$. Thompson sampling is an iterative
 process of receiving preference over two actions, each maximizing a
@@ -1279,7 +1279,7 @@ When we marginalize over the right input $\mathbf{x}^{\prime}$ of $f$,
 the global minimum of $f$ in $\mathcal{X}$ coincides
 with $\mathbf{x}_{\min }$. We also introduce the definition of the
 *Copeland score function* for a point $\mathbf{x}$ as
-$$S(\mathbf{x})=\operatorname{Vol}(\mathcal{X})^{-1} \int_{\mathcal{X}} \mathbb{I}_{\left\{\pi_f\left(\left[\mathbf{x}, \mathbf{x}^{\prime}\right]\right) \geq 0.5\right\}} d \mathbf{x}^{\prime}$$
+$$S(\mathbf{x})=\operatorname{Vol}(\mathcal{X})^{-1} \int_{\mathcal{X}} \mathbb{I}_{\left\{\pi_f\left(\left[\mathbf{x}, \mathbf{x}^{\prime}\right]\right) \geq 0.5\right\}} d \mathbf{x}^{\prime}$$ {#eq-copeland-score}
 where
 $\operatorname{Vol}(\mathcal{X})=\int_{\mathcal{X}} d \mathbf{x}^{\prime}$
 is a normalizing constant that bounds $S(\mathbf{x})$ in the interval
@@ -1332,10 +1332,10 @@ distribution coincides with the expectation of $y_{\star}$ but its
 variance is $$\begin{aligned}
 \mathbb{V}\left[\sigma\left(f_{\star}\right)\right] & =\int\left(\sigma\left(f_{\star}\right)-\mathbb{E}\left[\sigma\left(f_{\star}\right)\right]\right)^2 p\left(f_{\star} \mid \mathcal{D},\left[\mathbf{x}, \mathbf{x}^{\prime}\right]\right) d f_{\star} \\
 & =\int \sigma\left(f_{\star}\right)^2 p\left(f_{\star} \mid \mathcal{D},\left[\mathbf{x}, \mathbf{x}^{\prime}\right]\right) d f_{\star}-\mathbb{E}\left[\sigma\left(f_{\star}\right)\right]^2
-\end{aligned}$$ which explicitly takes into account the uncertainty over
+\end{aligned}$$ {#eq-variance-sigma} which explicitly takes into account the uncertainty over
 $f$. Hence, pure exploration of duels space can be carried out by
 maximizing
-$$\alpha_{\mathrm{PE}}\left(\left[\mathbf{x}, \mathbf{x}^{\prime}\right] \mid \mathcal{D}_j\right)=\mathbb{V}\left[\sigma\left(f_{\star}\right)\left|\left[\mathbf{x}_{\star}, \mathbf{x}_{\star}^{\prime}\right]\right| \mathcal{D}_j\right] .$$
+$$\alpha_{\mathrm{PE}}\left(\left[\mathbf{x}, \mathbf{x}^{\prime}\right] \mid \mathcal{D}_j\right)=\mathbb{V}\left[\sigma\left(f_{\star}\right)\left|\left[\mathbf{x}_{\star}, \mathbf{x}_{\star}^{\prime}\right]\right| \mathcal{D}_j\right] .$$ {#eq-pure-exploration}
 
 Note that in this case, duels that have been already visited will have a
 lower chance of being visited again even in cases in which the objective
@@ -1361,14 +1361,14 @@ Equation
 [\[eq:bernoulli_pref\]](#eq:bernoulli_pref){reference-type="ref"
 reference="eq:bernoulli_pref"} and also assume that probabilities follow
 the Bradley-Terry model, i.e.
-$$\pi_f\left(\left[\mathbf{x}, \mathbf{x}^{\prime}\right]\right)=\sigma\left(f\left(\left[\mathbf{x}, \mathbf{x}^{\prime}\right]\right)\right)=\frac{e^{g(\mathbf{x})}}{e^{g(\mathbf{x})}+e^{g\left(\mathbf{x^{\prime}}\right)}}$$
+$$\pi_f\left(\left[\mathbf{x}, \mathbf{x}^{\prime}\right]\right)=\sigma\left(f\left(\left[\mathbf{x}, \mathbf{x}^{\prime}\right]\right)\right)=\frac{e^{g(\mathbf{x})}}{e^{g(\mathbf{x})}+e^{g\left(\mathbf{x^{\prime}}\right)}}$$ {#eq-bradley-terry}
 
 The update rule for MLE $\hat{g}$ is (equation 8,6,5) $$\begin{aligned}
 \hat{g}_t^{\text {MLE }}&:= \arg \underset{\tilde{g} \in \mathcal{B}^t_g}{\max}\ell_t(\tilde{g}) \\
 \ell_t(\tilde{g}) &:= \log \prod_{\tau=1}^t y_\tau \pi_{\tilde{f}}([\mathbf{x_\tau}, \mathbf{x^{\prime}_\tau}])+\left(1-y_\tau\right)\left(1-\pi_{\tilde{f}}([\mathbf{x_\tau}, \mathbf{x^{\prime}_\tau}])\right) \\
 &=\sum_{\tau=1}^t \log \left(\frac{e^{\tilde{g}(\mathbf{x_\tau})} y_\tau+e^{\tilde{g}(\mathbf{x_\tau^\prime})}\left(1-y_\tau\right)}{e^{\tilde{g}(\mathbf{x_\tau})}+e^{\tilde{g}(\mathbf{x_\tau^\prime})}}\right) \\
 &=\sum_{\tau=1}^t\left(\tilde{g}(\mathbf{x_\tau}) y_\tau+\tilde{g}(\mathbf{x_\tau^\prime})\left(1-y_\tau\right)\right)-\sum_{\tau=1}^t \log \left(e^{\tilde{g}(\mathbf{x_\tau})}+e^{\tilde{g}(\mathbf{x_\tau^\prime})}\right)
-\end{aligned}$$
+\end{aligned}$$ {#eq-mle-update}
 
 (Eq 22 shows how to represent this as a convex optimisation problem so
 that it can be solved)
@@ -1379,12 +1379,12 @@ The update rule for the confidence set $\mathcal{B}_f^{t+1}$ is, (eq 9,
 $$\begin{aligned}
 &\forall \epsilon, \delta > 0 \\
 &\mathcal{B}_g^{t+1}:=\left\{\tilde{g} \in \mathcal{B}_g \mid \ell_t(\tilde{g}) \geq \ell_t\left(\hat{g}_t^{\mathrm{MLE}}\right)-\beta_1(\epsilon, \delta, t)\right\}
-\end{aligned}$$ where
-$$\beta_1(\epsilon, \delta, t):=\sqrt{32 t B^2 \log \frac{\pi^2 t^2 \mathcal{N}\left(\mathcal{B}_f, \epsilon,\|\cdot\|_{\infty}\right)}{6 \delta}}+ C_L \epsilon t=\mathcal{O}\left(\sqrt{t \log \frac{t \mathcal{N}\left(\mathcal{B}_f, \epsilon,\|\cdot\|_{\infty}\right)}{\delta}}+\epsilon t\right),$$
+\end{aligned}$$ {#eq-confidence-set-update} where
+$$\beta_1(\epsilon, \delta, t):=\sqrt{32 t B^2 \log \frac{\pi^2 t^2 \mathcal{N}\left(\mathcal{B}_f, \epsilon,\|\cdot\|_{\infty}\right)}{6 \delta}}+ C_L \epsilon t=\mathcal{O}\left(\sqrt{t \log \frac{t \mathcal{N}\left(\mathcal{B}_f, \epsilon,\|\cdot\|_{\infty}\right)}{\delta}}+\epsilon t\right),$$ {#eq-beta-function}
 with $C_L$ a constant independent of $\delta, t$ and $\epsilon$.
 $\epsilon$ is typically chosen to be $1 / T$, where T is the running
 horizon of the algorithm. This satisfies the theorem that,
-$$\mathbb{P}\left(g \in \mathcal{B}_g^{t+1}, \forall t \geq 1\right) \geq 1-\delta .$$
+$$\mathbb{P}\left(g \in \mathcal{B}_g^{t+1}, \forall t \geq 1\right) \geq 1-\delta .$$ {#eq-confidence-guarantee}
 
 Intuitively, the confidence set $\mathcal{B}_g^{t+1}$ includes the
 functions with the log-likelihood value that is only 'a little worse'
@@ -1421,17 +1421,17 @@ denote a query containing two points or more, and let
 $g: \mathcal{X} \rightarrow \Re$ be the latent preference function. Then
 after $n$ user queries, we define the *expected utility of the best
 option* (qEUBO) as
-$$\mathrm{qEUBO}_n(X)=\mathbb{E}_n\left[\max \left\{g\left(x_1\right), \ldots, g\left(x_q\right)\right\}\right].$$
+$$\mathrm{qEUBO}_n(X)=\mathbb{E}_n\left[\max \left\{g\left(x_1\right), \ldots, g\left(x_q\right)\right\}\right].$$ {#eq-qeubo}
 
 We now show that qEUBO is one-step Bayes optimal, meaning that each step
 chooses the query that maximises the expected utility received by the
 human. For a query $X \in \mathcal{X}^q$, let
-$$V_n(X)=\mathbb{E}_n\left[\max _{x \in \mathbb{X}} \mathbb{E}_{n+1}[g(x)] \mid X_{n+1}=X\right] .$$
+$$V_n(X)=\mathbb{E}_n\left[\max _{x \in \mathbb{X}} \mathbb{E}_{n+1}[g(x)] \mid X_{n+1}=X\right] .$$ {#eq-value-function}
 Then $V_n$ defines the expected utility received if an additional query
 $X_{n+1}=X$ is performed, and maximizing $V_n$ is one-step Bayes
 optimal. Since $\max _{x \in \mathbb{X}} \mathbb{E}_n[f(x)]$ does not
 depend on $X_{n+1}$, we can also equivalently maximize
-$$\mathbb{E}_n\left[\max _{x \in \mathbb{X}} \mathbb{E}_{n+1}[g(x)]-\max _{x \in \mathbb{X}} \mathbb{E}_n[g(x)] \mid X_{n+1}=X\right],$$
+$$\mathbb{E}_n\left[\max _{x \in \mathbb{X}} \mathbb{E}_{n+1}[g(x)]-\max _{x \in \mathbb{X}} \mathbb{E}_n[g(x)] \mid X_{n+1}=X\right],$$ {#eq-knowledge-gradient}
 which takes the same form as the knowledge gradient acquisition function
 [@wu2018parallelknowledgegradientmethod] in standard Bayesian
 optimization.
@@ -1441,7 +1441,7 @@ much simpler policy. When human responses are noise-free, we are able to
 use qEUBO as a sufficient policy due to the following theorem:
 
 ::: theorem
-$$\underset{X \in \mathbb{X}^q}{\operatorname{argmax}} \mathrm{qEUBO}_n(X) \subseteq \underset{X \in \mathbb{X}^q}{\operatorname{argmax}} V_n(X) .$$
+$$\underset{X \in \mathbb{X}^q}{\operatorname{argmax}} \mathrm{qEUBO}_n(X) \subseteq \underset{X \in \mathbb{X}^q}{\operatorname{argmax}} V_n(X) .$$ {#eq-qeubo-optimality}
 :::
 
 ::: proof
@@ -1455,11 +1455,11 @@ V_n(X) & =\sum_{i=1}^q \mathbf{P}_n(r(X)=i) \mathbb{E}_n[g\left(x^{+}(X, i)\righ
 & \leq \sum_{i=1}^q \mathbf{P}_n(r(X)=i) \mathbb{E}_n[\max _{i=1, \ldots, q} g(x^{+}(X, i))] \\
 & =\mathbb{E}_n\left[\max _{i=1, \ldots, q} g\left(x^{+}(X, i)\right)\right] \\
 & =\mathrm{qEUBO}_n\left(X^{+}(X)\right),
-\end{aligned}$$ as claimed.
+\end{aligned}$$ {#eq-claim1-proof} as claimed.
 
 **Claim 2** $\mathrm{qEUBO}_n(X) \leq V_n(X) .$ For any given
 $X \in \mathbb{X}^q$ we have
-$$\mathbb{E}_n\left[f\left(x_{r(X)}\right) \mid(X, r(X))\right] \leq \max _{x \in \mathbb{X}} \mathbb{E}_n[f(x) \mid(X, r(X))] .$$
+$$\mathbb{E}_n\left[f\left(x_{r(X)}\right) \mid(X, r(X))\right] \leq \max _{x \in \mathbb{X}} \mathbb{E}_n[f(x) \mid(X, r(X))] .$$ {#eq-claim2-inequality}
 Since $f\left(x_{r(X)}\right)=\max _{i=1, \ldots, q} f\left(x_i\right)$,
 taking expectations over $r(X)$ on both sides obtains the required
 result.
@@ -1474,7 +1474,7 @@ $V_n(\widetilde{X})>V_n\left(X^*\right)$. We have $$\begin{aligned}
 & >V_n\left(X^*\right) \\
 & \geq \operatorname{qEUBO}_n\left(X^*\right) \\
 & \geq \operatorname{qEUBO}_n\left(X^{+}(\tilde{X})\right) .
-\end{aligned}$$
+\end{aligned}$$ {#eq-contradiction-chain}
 
 The first inequality follows from (1). The second inequality is due to
 our supposition for contradiction. The third inequality is due to (2).
@@ -1498,7 +1498,7 @@ $$\begin{aligned}
 \mathrm{qEI}= & \mathbb{E}_{\mathbf{y}}\left[\left(\max _{i \in[1, \ldots, q]}\left(\mu_{\min }-y_i\right)\right)_{+}\right] \\
 = & \sum_{i=1}^q \mathbb{E}_{\mathbf{y}}\left(\mu_{\min }-y_i \mid y_i \leq \mu_{\min }, y_i \leq y_j \forall j \neq i\right) \\
 & p\left(y_i \leq \mu_{\min }, y_i \leq y_j \forall j \neq i\right) .
-\end{aligned}$$
+\end{aligned}$$ {#eq-qei}
 
 #### qTS: Batch Thompson Sampling {#qts-batch-thompson-sampling .unnumbered}
 
@@ -1558,7 +1558,7 @@ This theorem holds under the following assumptions:
     greater utility** $\exists \Delta \geq \delta>0$ s.t.
     $\forall \mathcal{D}^{(n)} \text{and} \forall x, y \in \mathbb{X}$
     (potentially depending on $\mathcal{D}^{(n)}$),
-    $$\delta \mathbf{P}^{(n)}(f(x)>f(y)) \leq \mathbb{E}^{(n)}\left[\{f(x)-f(y)\}^{+}\right] \leq \Delta \mathbf{P}^{(n)}(f(x)>f(y))$$
+    $$\delta \mathbf{P}^{(n)}(f(x)>f(y)) \leq \mathbb{E}^{(n)}\left[\{f(x)-f(y)\}^{+}\right] \leq \Delta \mathbf{P}^{(n)}(f(x)>f(y))$$ {#eq-utility-probability-bounds}
     almost surely under the prior on $f$.
 
 Further lemmas leading to a proof of Theorem
@@ -1605,17 +1605,17 @@ f_4(x) = \begin{cases}
     -1, &\ x=3\\
     -\frac{1}{2}, &\ x=4
     \end{cases}.
-\end{aligned}$$
+\end{aligned}$$ {#eq-qei-counterexample-functions}
 
 Let $p$ be a number with $0 < p < 1/3$ and set $q=1-p$. We consider a
 prior distribution on $f$ with support $\{f_i\}_{i=1}^4$ such that
 $$\begin{aligned}
-p_i = Pr(f=f_i) = 
+p_i = Pr(f=f_i) =
     \begin{cases}
         p/2, i =1,2,\\
         q/2, i=3,4.
     \end{cases}
-\end{aligned}$$ We also assume the user's response likelihood is given
+\end{aligned}$$ {#eq-qei-prior} We also assume the user's response likelihood is given
 by $Pr(r(X)=1\mid f(x_1) > f(x_2)) = a$ for some $a$ such that
 $1/2 < a < 1$,
 
@@ -1654,8 +1654,8 @@ p_i^{(n+1)} \propto \begin{cases}
                         p_i^{(n)}\ell, \ i=1,3,\\
                          p_i^{(n)} (1 - \ell), \ i=2,4,
                         \end{cases}
-\end{aligned}$$ where
-$$\ell = a I\{r^{(n+1)} = 1\} + (1-a)I\{r^{(n+1)} = 2\}.$$ Observe that
+\end{aligned}$$ {#eq-qei-posterior-update} where
+$$\ell = a I\{r^{(n+1)} = 1\} + (1-a)I\{r^{(n+1)} = 2\}.$$ {#eq-ell-definition} Observe that
 $0< \ell < 1$ since $0 < a < 1$. Thus, $\ell > 0$ and $1-\ell > 0$.
 Since $p_i^{(n)} > 0$ by the induction hypothesis, it follows from this
 that $p_i^{(n+1)} > 0$ for $i=1,2,3,4$. Moreover, since
@@ -1670,7 +1670,7 @@ Now observe that $$\begin{aligned}
     &= \left(p_1^{(n+1)} - \frac{1}{2}p_3^{(n+1)}\right) + \left(\frac{1}{2}p_2^{(n+1)} - p_4^{(n+1)}\right)\\
     &\leq \left(p_1^{(n+1)} - \frac{1}{2}p_3^{(n+1)}\right) + \left(p_2^{(n+1)} - \frac{1}{2}p_4^{(n+1)}\right)\\
     &\leq 0,
-\end{aligned}$$ where the last inequality holds since
+\end{aligned}$$ {#eq-expected-f3} where the last inequality holds since
 $p_1^{(n+1)} < \frac{1}{2}p_3^{(n+1)}$ and
 $p_2^{(n+1)} < \frac{1}{2}p_4^{(n+1)}$. Similarly, we see that
 $\mathbb{E}^{(n+1)}[f(4)] \leq 0$. Since $\mathbb{E}^{(n+1)}[f(1)]=-1$ and
@@ -1685,9 +1685,9 @@ $f(1) \leq f(x)$ almost surely under the prior for all $x\in\mathcal{X}$, there
 is always a maximizer of qEI that does not contain $1$. Thus, to find
 the maximizer of qEI, it suffices to analyse its value at the pairs
 $(2, 3)$, $(3,4)$ and $(4,2)$. We have
-$$\text{qEI}^{(n+1)}(2, 3) = p_1^{(n+1)} + 1/2 p_2^{(n+1)},$$
-$$\operatorname{qEI}^{(n+1)}(3, 4) = p_1^{(n+1)} + p_2^{(n+1)}$$ and
-$$\operatorname{qEI}^{(n+1)}(4, 2) = 1/2p_1^{(n+1)} + p_2^{(n+1)}.$$
+$$\text{qEI}^{(n+1)}(2, 3) = p_1^{(n+1)} + 1/2 p_2^{(n+1)},$$ {#eq-qei-23}
+$$\operatorname{qEI}^{(n+1)}(3, 4) = p_1^{(n+1)} + p_2^{(n+1)}$$ {#eq-qei-34} and
+$$\operatorname{qEI}^{(n+1)}(4, 2) = 1/2p_1^{(n+1)} + p_2^{(n+1)}.$$ {#eq-qei-42}
 Since $p_1^{(n+1)} > 0$ and $p_2^{(n+1)} > 0$, it follows that
 $\arg \max_{X \in X^2}\text{qEI}^{(n+1)}(X) = \{(3, 4)\}$, which concludes
 the proof by induction.
@@ -1696,22 +1696,22 @@ Finally, since $\arg \max_{x\in X}\mathbb{E}^{(n)}[f(x)]=\{2\}$ for all $n$, the
 Bayesian simple regret of qEI is given by $$\begin{aligned}
     \mathbb{E}\left[f(x^*) - f(2)\right] &= \sum_{i=1}p_i\left(\max_{x\in X}f_i(x) - f_i(2)\right)\\
     &= p
-\end{aligned}$$ for all $n$. ◻
+\end{aligned}$$ {#eq-qei-final-regret} for all $n$. ◻
 :::
 
 #### POP-BO Regret {#pop-bo-regret .unnumbered}
 
 Commonly used kernel functions within the RKHS are:
 
-1.  Linear: $$k(x, \bar{x})=x^{\top} \bar{x} .$$
+1.  Linear: $$k(x, \bar{x})=x^{\top} \bar{x} .$$ {#eq-kernel-linear}
 
 2.  Squared Exponential (SE):
-    $$k(x, \bar{x})=\sigma_{\mathrm{SE}}^2 \exp \left\{-\frac{\|x-\bar{x}\|^2}{l^2}\right\},$$
+    $$k(x, \bar{x})=\sigma_{\mathrm{SE}}^2 \exp \left\{-\frac{\|x-\bar{x}\|^2}{l^2}\right\},$$ {#eq-kernel-se}
     where $\sigma_{\mathrm{SE}}^2$ is the variance parameter and $l$ is
     the lengthscale parameter.
 
 3.  Matérn:
-    $$k(x, \bar{x})=\frac{2^{1-\nu}}{\Gamma(\nu)}\left(\sqrt{2 \nu} \frac{\|x-\bar{x}\|}{\rho}\right)^\nu K_\nu\left(\sqrt{2 \nu} \frac{\|x-\bar{x}\|}{\rho}\right),$$
+    $$k(x, \bar{x})=\frac{2^{1-\nu}}{\Gamma(\nu)}\left(\sqrt{2 \nu} \frac{\|x-\bar{x}\|}{\rho}\right)^\nu K_\nu\left(\sqrt{2 \nu} \frac{\|x-\bar{x}\|}{\rho}\right),$$ {#eq-kernel-matern}
     where $\rho$ and $\nu$ are the two positive parameters of the kernel
     function, $\Gamma$ is the gamma function, and $K_\nu$ is the
     modified Bessel function of the second kind. $\nu$ captures the
@@ -1723,9 +1723,9 @@ theorem defining the regret bound:
 ::: theorem
 With probability at least $1-\delta$, the cumulative regret of POP-BO
 satisfies,
-$$R_T=\mathcal{O}\left(\sqrt{\beta_T \gamma_T^{f f^{\prime}} T}\right),$$
+$$R_T=\mathcal{O}\left(\sqrt{\beta_T \gamma_T^{f f^{\prime}} T}\right),$$ {#eq-popbo-regret-bound}
 where
-$$\beta_T=\beta(1 / T, \delta, T)=\mathcal{O}\left(\sqrt{T \log \frac{T \mathcal{N}\left(\mathcal{B}_f, 1 / T,\|\cdot\|_{\infty}\right)}{\delta}}\right).$$
+$$\beta_T=\beta(1 / T, \delta, T)=\mathcal{O}\left(\sqrt{T \log \frac{T \mathcal{N}\left(\mathcal{B}_f, 1 / T,\|\cdot\|_{\infty}\right)}{\delta}}\right).$$ {#eq-beta-t}
 :::
 
 The guaranteed convergence rate is characterised as:
@@ -1733,7 +1733,7 @@ The guaranteed convergence rate is characterised as:
 ::: theorem
 []{#th: popbo_converge label="th: popbo_converge"} Let $t^{\star}$ be
 defined as in Eq. (19). With probability at least $1-\delta$,
-$$f\left(x^{\star}\right)-f\left(x_{t^{\star}}\right) \leq \mathcal{O}\left(\frac{\sqrt{\beta_T \gamma_T^{f f^{\prime}}}}{\sqrt{T}}\right)$$
+$$f\left(x^{\star}\right)-f\left(x_{t^{\star}}\right) \leq \mathcal{O}\left(\frac{\sqrt{\beta_T \gamma_T^{f f^{\prime}}}}{\sqrt{T}}\right)$$ {#eq-popbo-convergence}
 :::
 
 Theorem
@@ -1751,13 +1751,13 @@ follows:
 Setting $\epsilon=1 / T$ and running our POP-BO algorithm in Alg. 1,
 
 1.  If $k(x, y)=\langle x, y\rangle$, we have,
-    $$R_T=\mathcal{O}\left(T^{3 / 4}(\log T)^{3 / 4}\right) .$$
+    $$R_T=\mathcal{O}\left(T^{3 / 4}(\log T)^{3 / 4}\right) .$$ {#eq-regret-linear-kernel}
 
 2.  If $k(x, y)$ is a squared exponential kernel, we have,
-    $$R_T=\mathcal{O}\left(T^{3 / 4}(\log T)^{3 / 4(d+1)}\right) .$$
+    $$R_T=\mathcal{O}\left(T^{3 / 4}(\log T)^{3 / 4(d+1)}\right) .$$ {#eq-regret-se-kernel}
 
 3.  If $k(x, y)$ is a Matérn kernel, we have,
-    $$\left.R_T=\mathcal{O}\left(T^{3 / 4}(\log T)^{3 / 4} T^{\frac{d}{\nu}\left(\frac{1}{4}+\frac{d+1}{4+2(d+1)^d / \nu}\right.}\right)\right).$$
+    $$\left.R_T=\mathcal{O}\left(T^{3 / 4}(\log T)^{3 / 4} T^{\frac{d}{\nu}\left(\frac{1}{4}+\frac{d+1}{4+2(d+1)^d / \nu}\right.}\right)\right).$$ {#eq-regret-matern-kernel}
 :::
 
 ## Discussion Questions

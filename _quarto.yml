@@ -55,7 +55,7 @@ format:
             load: ['[tex]/boldsymbol']
           },
           tex: {
-            tags: "all",
+            tags: "none",
             inlineMath: [['$','$'], ['\\(','\\)']],
             displayMath: [['$$','$$'], ['\\[','\\]']],
             processEscapes: true,

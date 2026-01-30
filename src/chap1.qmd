@@ -208,7 +208,7 @@ There are different types of comparison data we may observe. We can relate them 
 Formally, the probability that we observe $(j, \mathcal{S})$ is
 $$
 p(j \mid \mathcal{S}) = \sum_{\prec: j \succ k \; \forall k \in \mathcal{S} \setminus \{j\}} p(\prec).
-$$
+$$ {#eq-subset-choice-prob}
 That is, the probability of observing $(j, \mathcal{S})$ is given by the sum of all preferred samples $\prec$ such that $j$ is preferred to all $k$ in $\mathcal{S}$ other than $j$.
 
 If the choice is binary, $\mathcal{S} = \{j, j'\}$, we write this as $Y_{jj'} = 1$ (item $j$ preferred over $j'$). We highlight that these outcomes are random, and depend on the sample of $\prec$. Binary data is convenient and quick to elicit and has been prominently applied in language model finetuning and evaluation.
@@ -221,7 +221,7 @@ Y = \begin{bmatrix} Y_{11} & Y_{12} & \cdots & Y_{1M} \\
 Y_{21} & Y_{22} & \cdots & Y_{2M} \\
 \vdots & \vdots & \ddots & \vdots \\
 Y_{N1} & Y_{N2} & \cdots & Y_{NM} \end{bmatrix}
-$$
+$$ {#eq-response-matrix}
 Examples of item-wise data include: e-commerce purchases (did user $i$ buy product $j$?), streaming behavior (did user $i$ play or skip track $j$?), dating apps (did user $i$ swipe right on profile $j$?), and content moderation (did annotator $i$ flag content $j$?). Item-wise data is often more abundant than pairwise data---every user-item interaction generates one data point---but requires modeling both user and item parameters to capture heterogeneity across users.
 
 **Context.** Choices are often conditional, and data is given by $(i, L)$ (for list-based data), $(i, j, \mathcal{S})$ (for general choice-based data), $(i, j, j')$ for pairwise data, or $(i, j)$ for item-wise data. Here $i$ indexes the *user* or *context*: the environment of a purchase, the goal of a robot, or a user prompt for a large language model. It can also be a prompt to the decision-maker, e.g., to human raters on whether they should pick preferences based on helpfulness or harmlessness @ganguli2022redteaminglanguagemodels. The inclusion of context in learning allows for the generalization of preferences, as we will see in subsequent chapters.
@@ -245,7 +245,7 @@ The preference models discussed so far treat items as having fixed utilities $V_
 **From Items to Users and Items.** When we observe binary responses $Y_{ij} \in \{0,1\}$ from $N$ users to $M$ items, we model the response probability using a latent utility that depends on both user and item:
 $$
 p(Y_{ij} = 1) = \sigma(H_{ij}), \quad H_{ij} = f(U_i, V_j)
-$$
+$$ {#eq-latent-utility}
 where $U_i$ captures user $i$'s characteristics and $V_j$ captures item $j$'s characteristics. In this **deterministic utility framework**, stochasticity enters through the Bernoulli sampling $Y_{ij} \sim \text{Bernoulli}(\sigma(H_{ij}))$, not through noise in $H_{ij}$ itself. The function $f$ and the dimensionality of $U_i, V_j$ define different model families.
 
 ### The Rasch Model
@@ -305,11 +305,11 @@ A remarkable fact connects item-wise and pairwise models: for a **single user**,
 One natural comparison mechanism is to prefer $j$ over $k$ if the user would accept $j$ in isolation more readily than $k$. Under the **logistic difference model**, the pairwise preference arises from comparing the latent utilities with logistic noise:
 $$
 p(j \succ k \mid i) = p(H_{ij} + \eta_{ij} > H_{ik} + \eta_{ik})
-$$
+$$ {#eq-pairwise-logistic-1}
 where $\eta_{ij}, \eta_{ik}$ are independent logistic noise terms (corresponding to the inverse CDF of the Bernoulli observation process). Since the difference of two logistic random variables is also logistic:
 $$
 p(j \succ k \mid i) = \sigma(H_{ij} - H_{ik}) = \sigma((U_i + V_j) - (U_i + V_k)) = \sigma(V_j - V_k)
-$$
+$$ {#eq-pairwise-logistic-2}
 
 The user-specific parameter $U_i$ **cancels out**! This has important implications:
 
@@ -329,17 +329,17 @@ Pairwise data cannot distinguish between a world where all items are excellent a
 **Setup:** User $i$ has deterministic utilities $H_{ij} = U_i + V_j$ for each item. Binary responses are:
 $$
 Y_{ij} \sim \text{Bernoulli}(p_{ij}), \quad p_{ij} = \sigma(H_{ij}) = \frac{1}{1 + e^{-(U_i + V_j)}}
-$$
+$$ {#eq-rasch-bernoulli}
 
 **Pairwise comparison mechanism:** When comparing items $j$ and $k$, one natural model is the **logistic noise model**: we sample independent logistic noise $\eta_{ij}, \eta_{ik}$ and prefer $j$ if:
 $$
 H_{ij} + \eta_{ij} > H_{ik} + \eta_{ik}
-$$
+$$ {#eq-logistic-noise-comparison}
 
 This corresponds to the observation that each Bernoulli response $Y_{ij}$ can be viewed as thresholding a latent continuous variable with logistic noise:
 $$
 Y_{ij} = \mathbb{1}[H_{ij} + \eta_{ij} > 0]
-$$
+$$ {#eq-bernoulli-threshold}
 
 **Derivation:**
 \begin{align}
@@ -352,7 +352,7 @@ p(j \succ k \mid i) &= p(H_{ij} + \eta_{ij} > H_{ik} + \eta_{ik}) \\
 Since $\eta_{ij}$ and $\eta_{ik}$ are independent logistic random variables, their difference $\eta_{ij} - \eta_{ik}$ is also logistic. Therefore:
 $$
 p(j \succ k \mid i) = \sigma(V_j - V_k)
-$$
+$$ {#eq-rasch-implies-bt}
 
 This is exactly the Bradley-Terry formula, and notice that $U_i$ cancels out—pairwise probabilities depend only on item parameters $V_j, V_k$.
 
@@ -448,11 +448,11 @@ Before introducing random utility models formally, we clarify an important conce
 In latent variable models (such as the Rasch and factor models), utilities are **deterministic**:
 $$
 H_{ij} = f(U_i, V_j) \quad \text{(no randomness)}
-$$
+$$ {#eq-deterministic-utility}
 Stochasticity enters through the **observation process**:
 $$
 Y_{ij} \sim \text{Bernoulli}(\sigma(H_{ij}))
-$$
+$$ {#eq-bernoulli-observation}
 For pairwise comparisons, when $f$ is additive (e.g., $f(U_i, V_j) = U_i + V_j$), this yields $p(j \succ k \mid i) = \sigma(V_j - V_k)$ when $U_i$ cancels.
 
 **Conceptual interpretation:** The user has fixed, deterministic preferences $H_{ij}$, but their binary responses (clicks, likes) are noisy observations of these preferences. The randomness is in the measurement or response mechanism.
@@ -462,11 +462,11 @@ For pairwise comparisons, when $f$ is additive (e.g., $f(U_i, V_j) = U_i + V_j$)
 In random utility models, utilities themselves are **random variables**:
 $$
 \tilde{H}_{ij} = f(U_i, V_j) + \varepsilon_{ij} \quad \text{(where } \varepsilon_{ij} \sim \text{Gumbel)}
-$$
+$$ {#eq-stochastic-utility}
 Choices are determined by **which item achieves the highest realized utility**:
 $$
 j \succ k \iff \tilde{H}_{ij} > \tilde{H}_{ik}
-$$
+$$ {#eq-utility-comparison}
 With Gumbel-distributed noise and additive $f$, this also yields $p(j \succ k \mid i) = \sigma(V_j - V_k)$ when $U_i$ cancels.
 
 **Conceptual interpretation:** The user's utility evaluation for item $j$ fluctuates randomly across decision instances due to context, mood, unmeasured factors, or cognitive noise. The randomness is in the utility evaluation itself, not the response mechanism.
@@ -476,7 +476,7 @@ With Gumbel-distributed noise and additive $f$, this also yields $p(j \succ k \m
 For **pairwise choice probabilities**, both frameworks predict:
 $$
 p(j \succ k \mid i) = \sigma(V_j - V_k)
-$$
+$$ {#eq-pairwise-equivalence}
 
 They are **observationally equivalent**—given only pairwise comparison data, we cannot distinguish between them. The difference is purely conceptual:
 
@@ -498,7 +498,7 @@ An equivalent way to represent random preferences is to identify a sample $\prec
 To get a sense for different random utility models, we consider a particular model that has the complexity of many models in modern machine learning: The Ackley function. In this model, each alternative is represented by a $d$-dimensional vector $(x_1, \ldots, x_d) \in \mathbb{R}^d$, the Ackley function is given by
 $$
 \text{Ackley}(x_1, x_2, \dots, x_d) = -a e^{-b \sqrt{\frac{1}{d} \sum_{j=1}^d x_j^2}} - e^{\frac{1}{d} \sum_{j=1}^d \cos(c x_j)} + a + e.
-$$
+$$ {#eq-ackley}
 for some constants $a, b, c \in \mathbb{R}$. By stacking a number $k$ of human preferences, we can compute for $k$ samples from a random model the function in a vectorized way.
 
 ```{pyodide-python}
@@ -627,13 +627,13 @@ Similarly, we can sample data for $(j, \mathcal{S})$ for $j \in \mathcal{S} \sub
 In the **stochastic utility framework**, we model utilities as stochastic random variables. Let $\tilde{H}_{ij}$ denote a random utility that can be decomposed as:
 $$
 \tilde{H}_{ij} = f(U_i, V_j) + \varepsilon_{ij}
-$$
+$$ {#eq-stochastic-utility-decomp}
 where $f(U_i, V_j)$ is the **mean utility** (deterministic component) and $\varepsilon_{ij}$ is the **noise** (stochastic component), typically assumed independent across items.
 
 For the **single-user or population-aggregated case** (dropping the user index $i$), this simplifies to:
 $$
 \tilde{H}_j = V_j + \varepsilon_j
-$$
+$$ {#eq-single-user-utility}
 
 **Parallel with latent variable models:** Recall that in the deterministic utility framework (Section @sec-latent-variable), we wrote $H_{ij} = f(U_i, V_j)$ as a deterministic quantity, with stochasticity entering through the observation process $Y_{ij} \sim \text{Bernoulli}(\sigma(H_{ij}))$. The key difference:
 
@@ -677,7 +677,7 @@ A random utility model $H_j$ satisfies IIA if and only if we can write it as $H_
 **(⇐) Gumbel implies IIA.** If $\varepsilon_j$ are i.i.d. Gumbel, then for any choice set $\mathcal{S}$ and any $j, k \in \mathcal{S}$:
 $$
 \frac{p(j \mid \mathcal{S})}{p(k \mid \mathcal{S})} = \frac{e^{V_j}/\sum_{\ell \in \mathcal{S}} e^{V_\ell}}{e^{V_k}/\sum_{\ell \in \mathcal{S}} e^{V_\ell}} = \frac{e^{V_j}}{e^{V_k}} = e^{V_j - V_k}
-$$
+$$ {#eq-gumbel-iia-proof}
 This ratio depends only on $V_j - V_k$ and is independent of other alternatives in $\mathcal{S}$, so IIA holds.
 
 **(⇒) IIA implies Gumbel.** The converse is more subtle: one must show that IIA together with regularity (adding alternatives cannot increase choice probability) uniquely determines the Gumbel distribution. The key insight is that IIA forces a multiplicative structure on choice probabilities, and the only continuous distributions compatible with this structure are the extreme value distributions. See @yellott1977relationship for the complete proof.
@@ -731,15 +731,15 @@ We derive (@eq-choice-prob). Item $j$ is chosen from $\mathcal{S}$ if $H_j > H_k
 Conditioning on $\varepsilon_j = t$, we need $\varepsilon_k < V_j - V_k + t$ for all $k \neq j$. Since the $\varepsilon_k$ are independent Gumbel with CDF $F(x) = e^{-e^{-x}}$:
 $$
 p(j \text{ wins} \mid \varepsilon_j = t) = \prod_{k \in \mathcal{S}, k \neq j} F(V_j - V_k + t) = \prod_{k \neq j} e^{-e^{-(V_j - V_k + t)}}
-$$
+$$ {#eq-conditional-win-prob}
 The Gumbel density is $f(t) = e^{-t} e^{-e^{-t}}$. Integrating over $t$:
 $$
 p(j \mid \mathcal{S}) = \int_{-\infty}^{\infty} \prod_{k \neq j} e^{-e^{-(V_j - V_k + t)}} \cdot e^{-t} e^{-e^{-t}} \, dt
-$$
+$$ {#eq-choice-prob-integral}
 Let $u = e^{-t}$, so $du = -e^{-t} dt$. After substitution and simplification (Exercise 2 asks you to complete this), we obtain:
 $$
 p(j \mid \mathcal{S}) = \frac{e^{V_j}}{\sum_{k \in \mathcal{S}} e^{V_k}}
-$$
+$$ {#eq-softmax-result}
 :::
 In particular, the choice probabilities $p(j \mid \mathcal{S})$ are equivalent to the multi-class logistic regression model (also called multinomial logit model), and generation from this model, that is, sampling $j$ with probability $p(j \mid \{1, \ldots, M\})$ is given by softmax-sampling $\operatorname{softmax}((V_j)_{j=1}^M)$.
 
@@ -760,7 +760,7 @@ Consider three items with utilities $V = (0, 1, 2)$. The Bradley-Terry pairwise 
 For choice from the full set $\{1, 2, 3\}$, softmax gives:
 $$
 p(j \mid \{1,2,3\}) = \frac{e^{V_j}}{e^0 + e^1 + e^2} = \frac{e^{V_j}}{1 + 2.72 + 7.39} \approx (0.09, 0.24, 0.67)
-$$
+$$ {#eq-softmax-example}
 Item 3 (highest utility) is most likely to be chosen. Note that these utilities are only identified up to a constant: $(0, 1, 2)$ and $(5, 6, 7)$ yield identical choice probabilities.
 :::
 
@@ -802,12 +802,12 @@ When learning utility parameters from choice data, two fundamental challenges ar
 **Stochastic case:** For any $\mathcal{S}$ and $j \in \mathcal{S}$:
 $$
 \frac{e^{V_j + c}}{\sum_{k \in \mathcal{S}} e^{V_k + c}} = \frac{e^c \cdot e^{V_j}}{e^c \cdot \sum_{k \in \mathcal{S}} e^{V_k}} = \frac{e^{V_j}}{\sum_{k \in \mathcal{S}} e^{V_k}}
-$$
+$$ {#eq-identification-stochastic}
 
 **Deterministic case:** For pairwise comparisons:
 $$
 p(j \succ k \mid i) = \sigma((H_{ij} + c) - (H_{ik} + c)) = \sigma(H_{ij} - H_{ik})
-$$
+$$ {#eq-identification-deterministic}
 
 This shows that choice/comparison data only identifies utility **differences**, not absolute levels. The identification problem is a structural property of both frameworks—it doesn't matter how much data we collect; we can never distinguish between $(V_1, V_2, V_3)$ and $(V_1 + 10, V_2 + 10, V_3 + 10)$ from choice behavior alone, nor between $(H_{i1}, H_{i2}, H_{i3})$ and $(H_{i1} + 10, H_{i2} + 10, H_{i3} + 10)$ from pairwise comparisons alone.
 
@@ -872,7 +872,7 @@ IIA is surprisingly strong, but does not allow for choice probabilities that are
 
 $$
 p(Y_{jj'} = 1) = \sum_{i=1}^N \alpha_i \, p(Y_{jj'} = 1 \mid \text{group } i) = \sum_{i=1}^N \alpha_i \, \sigma(V_j^{(i)} - V_{j'}^{(i)}).
-$$
+$$ {#eq-mixture-bt}
 
 Sadly, such mixtures are far from IIA, as we see in the following coding example.
 
@@ -951,7 +951,7 @@ plt.show()
 Classic ways to solve this concern is to consider a model with explicit representation of heterogeneity, where preferences depend on a latent type $\alpha \sim F$ for some distribution $F$, and $(V_j)_{j=1}^M$ given $\alpha$ follows a random utility model with independent error terms. For example, consider a logit random utility model
 $$
 V_j = \beta^\top x_j + \varepsilon_j
-$$
+$$ {#eq-random-coefficients}
 and assume $\beta \sim N(\mu, \Sigma)$ is a normally distributed vector, a model called the random coefficients logit model. Equivalently, we can view this as a model with correlated utility shocks.
 
 #### Similar Options (Red-Bus/Blue-Bus) {#sec-red-bus}
@@ -988,7 +988,7 @@ print("After splitting, total bus share:", probs_after[1] + probs_after[2])
 The choice probability of `train` is reduced. Why is our intuition making us think that items $1$ and $2$ should split their choice probability? One option is because we assume some correlation: If you like item $1$ over item $3$ then you should also like item $2$ over item $3$, and vice versa. Hence, we would like correlation between choice probabilities in random utility models. For example, if we allow in a logit random utility model the error terms for items $1, 2$ to be perfectly correlated (and we break ties uniformly at random), then
 $$
 (p(1 \mid \{1, 2, 3\}), p(2 \mid \{1, 2, 3\}), p(3 \mid \{1, 2, 3\})) = \left(\frac{p(1 \mid \{1, 3\})}{2}, \frac{p(2 \mid \{2, 3\})}{2}, p(3 \mid \{1, 3\})\right),
-$$
+$$ {#eq-correlated-choice}
 confirming our intuition.
 
 This is the end of our discussion of the Independence of Irrelevant Alternatives. Additional features can be found in [@train2009discrete;@ben1985discrete;@mcfadden1981econometric] and the original paper for logit analysis @mcfadden1972conditional.
@@ -1009,7 +1009,7 @@ How do these relate? This section clarifies the connections and provides guidanc
 *General Factor Model → User-specific Preferences:* If $H_{ij} = U_i^\top V_j + Z_j$, then:
 $$
 p(j \succ k \mid i) = \sigma\left(U_i^\top (V_j - V_k) + (Z_j - Z_k)\right)
-$$
+$$ {#eq-factor-pairwise}
 This is **not** standard Bradley-Terry---the preference probability depends on the user $U_i$! Different users may rank the same items differently. This captures the reality that a horror fan and a comedy fan will have opposite preferences between *The Shining* and *The Hangover*.
 
 **When User Parameters Cancel.** User parameters cancel out in pairwise comparisons when:
@@ -1062,7 +1062,7 @@ The Bradley-Terry model underlying DPO is just one member of a rich family of *r
 The most flexible extension is the *random coefficients logit* (also called *mixed logit*), which we already encountered in the heterogeneity discussion. Here, the utility coefficients $\beta$ are random:
 $$
 V_j = \beta^\top x_j, \quad \beta \sim F
-$$
+$$ {#eq-mixed-logit}
 for some distribution $F$ (often Gaussian). This model can approximate any random utility model arbitrarily well [@mcfadden2000mixed], making it extremely flexible. Modern implementations use simulation-based estimation; see @train2009discrete for details.
 
 **Gaussian Process models for nonlinear rewards.** {#sec-gp-models}
@@ -1072,16 +1072,16 @@ The random coefficients logit still assumes utility is *linear* in features $x_j
 **Gaussian Processes (GPs)** provide a nonparametric alternative that can model arbitrary smooth functions:
 $$
 r(x) \sim \mathcal{GP}(m, k)
-$$
+$$ {#eq-gp-prior}
 where $m: \mathcal{X} \to \mathbb{R}$ is the mean function and $k: \mathcal{X} \times \mathcal{X} \to \mathbb{R}$ is the covariance function (kernel). A GP is defined by the property that any finite collection of function values follows a multivariate Gaussian:
 $$
 [r(x_1), \ldots, r(x_n)]^\top \sim \mathcal{N}(\boldsymbol{\mu}, K), \quad \text{where } \mu_i = m(x_i), \; K_{ij} = k(x_i, x_j)
-$$
+$$ {#eq-gp-finite}
 
 The most common kernel is the Radial Basis Function (RBF):
 $$
 k(x, x') = \sigma_f^2 \exp\left(-\frac{\|x - x'\|^2}{2\ell^2}\right)
-$$
+$$ {#eq-rbf-kernel}
 which encodes the assumption that nearby points have correlated function values, with length-scale $\ell$ controlling smoothness.
 
 ```{pyodide-python}
@@ -1288,10 +1288,14 @@ This exercise connects Bradley-Terry estimation to DPO.
 Consider the Rasch model $p(Y_{ij} = 1) = \sigma(U_i + V_j)$ where $U_i$ is user appetite and $V_j$ is item appeal.
 
 (a) Show that the log-odds of acceptance is linear in the parameters:
-$$\log \frac{p(Y_{ij} = 1)}{p(Y_{ij} = 0)} = U_i + V_j$$
+$$
+\log \frac{p(Y_{ij} = 1)}{p(Y_{ij} = 0)} = U_i + V_j
+$$ {#eq-log-odds}
 
 (b) Prove that for a single user $i$ comparing items $j$ and $k$, the Rasch model implies Bradley-Terry:
-$$p(j \succ k \mid i) = \sigma(V_j - V_k)$$
+$$
+p(j \succ k \mid i) = \sigma(V_j - V_k)
+$$ {#eq-rasch-bt-exercise}
 What happens to the user parameter $U_i$?
 
 (c) Explain why item-wise data from $N$ users can identify both $\{U_i\}_{i=1}^N$ and $\{V_j\}_{j=1}^M$ (up to a single additive constant), while pairwise comparison data cannot identify the $U_i$ parameters at all.
@@ -1333,18 +1337,18 @@ Sadly, you lost all user identifiers. Unashamedly, you assume a model where a pr
 
 $$
 x_{t+1}=\begin{cases} \tilde Q(\bullet | x_t) & \text{with probability } A, \\ x_t & \text{with probability } 1 - A. \end{cases}
-$$
-where 
+$$ {#eq-mh-update}
+where
 $$
 A= \min \left( 1, \frac{\pi(\bullet )Q(x_t | \bullet )}{\pi(x_t)Q( \bullet | x_t)} \right).
-$$
+$$ {#eq-mh-acceptance}
 We will extract samples from the Markov chain after a "burn-in period", $(x_{T+1}, x_{T+2},\cdots, x_{N})$. 
 
 To build some intuition, suppose we have a biased coin that turns heads with probability $p_{\text{heads}}$. We observe $12$ coin flips to have $9$ heads (H) and $3$ tails (T). If our prior for $p_{\text{H}}$ was $B(1, 1)$, then, by properties of the Beta distribution, our posterior will be $B(1 + 9, 1 + 3)=B(10, 4)$. The Bayesian update is given by
 
 $$
 p(p_{\text{H}}|9\text{H}, 3\text{T}) = \frac{p(9\text{H}, 3\text{T} | p_{\text{H}})B(1, 1)(p_{\text{H}})}{\int_0^1 P(9\text{H}, 3\text{T} | p_{\text{H}})B(1, 1)(p_{\text{H}}) \, \mathrm dp_{\text{H}}} =\frac{p(9\text{H}, 3\text{T} | p_{\text{H}})}{\int_0^1 p(9\text{H}, 3\text{T} | p_{\text{H}}) \, \mathrm dp_{\text{H}}}.
-$$
+$$ {#eq-bayesian-update}
 
 **Find the acceptance probability** $A$ in the setting of the biased coin assuming the proposal distribution $Q(\cdot|x_t)=x_t+N(0,\sigma)$ for given $\sigma$. Notice that this choice of $Q$ is symmetric, i.e., $Q(x_t|p)=Q(p|x_t)$ for all $p \in \mathbb R$. Note that it is unnecessary to compute the normalizing constant of the Bayesian update (i.e., the integral in the denominator). This simplification is one of the main practical advantages of Metropolis-Hastings.
 

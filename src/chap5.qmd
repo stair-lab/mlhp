@@ -86,13 +86,13 @@ In a general mechanism design setting, let $\Omega$ be the set of possible outco
 
 $$
 \omega^* = \arg\max_{\omega \in \Omega} \sum_{i=1}^n b_i(\omega) \,,
-$$ 
+$$ {#eq-vcg-allocation} 
 
 i.e. $\omega^*$ is the outcome that would be socially optimal if the $b_i$ were true values. To induce truth-telling, VCG sets payments such that each agent pays the externality they impose on others by their presence. Specifically, one convenient form of the VCG payment for agent $i$ is: 
 
 $$
 p_i(b) = \max_{\omega \in \Omega} \sum_{j \neq i} b_j(\omega)\;-\;\sum_{j \neq i} b_j(\omega^*) \,,
-$$ 
+$$ {#eq-vcg-externality} 
 
 which can be interpreted as: what would the total value of others be if $i$ were not present (first term, maximizing without $i$) minus the total value others actually get in the chosen outcome $\omega^*$. Equivalently, we can write the payment as the agent’s bid for the chosen outcome minus a rebate term: 
 
@@ -154,7 +154,7 @@ $$
     &+ (1 - \frac{1}{L}) \mathbb{E}[\mu_1 - \mu_2 | \mu_1 < \mu_2] \times p[\mu_1 < \mu_2] \quad \text{(Loss if you are not and $\mu_1 < \mu_2$)}\\
     &\leq 0
 \end{split}
-$$
+$$ {#eq-guinea-pig-incentive}
 
 This holds when $L \geq 12$. It means that the gains from not taking the recommended action are negative, which implies that users should always take the recommendation. So far we have considered the case where rewards are deterministic, but what about stochastic rewards? We are now going to consider the case where rewards are independent and identically distributed from some distribution, and where each action $A_i$ has some reward distribution $r_i^t \sim D_i, \mathbb{E}[r_i^t] = \mu_i$. Back to the case where there are only two actions, we are going to adapt the prior algorithm of guinea pig-picking to the stochastic reward setting. Since one reward observation is not enough to fully know $\mu_1$ anymore, we'll instead observe the outcome of the first action $M$ times to form a strong posterior $\mathbb{E}[\mu_1 | r_1^1, \ldots r_1^M]$. We can use with stochastic rewards when there are two actions. Similarly, as before, we pick one guinea pig uniformly at random from the next $L$ users and use the reward we get as the exploratory signal.\ In a very similar manner, we can generalize this algorithm from always having two actions to the general multi-armed bandit problem. Now suppose we have a general multi-armed bandit algorithm $A$. We will wrap this algorithm around our black box reduction algorithm to make it incentive-compatible. We wrap every decision that $A$ would make by exactly $L-1$ recommendations of the action believed to be the best so far. This guarantees that the expected rewards for the users that are not chosen as guinea pigs are at least as good as $A$'s reward at phase $n$.
 

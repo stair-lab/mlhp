@@ -177,16 +177,16 @@ Having the train and test datasets from the Bradley–Terry response, which are 
 
 $$
 \hat{V} = \arg\max_{V} \sum_{j,j' \in \mathcal{D}_{\text{train}}} \log p(Y_{0,jj'} | \sigma(H_{0,jj'})), \quad H_{0} = V 1_M^\top - 1_M V^\top,
-$$
+$$ {#eq-mle-objective}
 where $1_M$ is a column vector of 1 with length $M$ and $H_{0,jj'} = v_j-v_{j'}$ for a fixed user $0$. The optimization can be carried out with standard optimizers, such as gradient descent.
 
 Let $\mathcal{N}_m^+ = \{(m,k) \in \mathcal{D}_{\text{train}}\}$ be pairs recorded in the order $(m,k)$. Let $\mathcal{N}_m^- = \{(k,m) \in \mathcal{D}_{\text{train}}\}$ be pairs recorded in the order $(k,m)$. Define residuals $r_{mk} = y_{mk} - \sigma(V_m - V_k)$ and $r_{km} = y_{km} - \sigma(V_k-V_m)$. Then
 
 $$
-\frac{\partial \ell}{\partial V_m} 
-= \sum_{(m,k)\in \mathcal{N}^+_m} r_{mk} 
+\frac{\partial \ell}{\partial V_m}
+= \sum_{(m,k)\in \mathcal{N}^+_m} r_{mk}
 - \sum_{(k,m)\in \mathcal{N}^-_m} r_{km}.
-$$
+$$ {#eq-mle-gradient}
 
 This shows the contribution of data about $m$ only. Each comparison with opponent $k$ adds a term equal to the observed-minus-predicted win indicator, with a plus sign if $m$ is listed first and a minus sign if $m$ is listed second. Intuitively, if $m$ beats $k$ more often than the model predicts, the residual is positive and the gradient pushes $V_m$ up. If $m$ loses to $k$ more than predicted, the residual is negative and the gradient pushes $V_m$ down.
 
@@ -320,20 +320,20 @@ In particular, the Metropolis–Hastings (MH) algorithm is straightforward to ap
 
 Let the prior be i.i.d. standard normal for each item parameter: $p(V) = \prod_{j=1}^M \mathcal N(V_j \mid 0, 1)$. Then the posterior distribution is $p(V \mid \mathcal D) = p(\mathcal D \mid V)p(V)/p(\mathcal D),$ where the likelihood is
 $$
-p(\mathcal D \mid V) = \prod_{(j,j')\in\mathcal I} \sigma(V_j - V_{j'})^{Y_{jj'}} 
+p(\mathcal D \mid V) = \prod_{(j,j')\in\mathcal I} \sigma(V_j - V_{j'})^{Y_{jj'}}
 \bigl(1-\sigma(V_j - V_{j'})\bigr)^{1-Y_{jj'}}.
-$$
+$$ {#eq-bt-likelihood}
 
 The denominator is the marginal likelihood (evidence), which is intractable in closed form, so we resort to MCMC (e.g., MH) to sample from the posterior. Suppose we are at current (parameter) state $V^{(t)}$. We propose a new state $V'$ from a proposal distribution, such as Gaussian: $q(V' \mid V^{(t)}) = \mathcal N (V'; V^{(t)}, \tau^2 I),$ where $\tau^2$ is a step-size variance. This proposal is symmetric, meaning $q(V' \mid V^{(t)}) = q(V^{(t)} \mid V').$ For any proposal distribution $q(V' \mid V^{(t)})$, the Metropolis–Hastings acceptance probability is
 
 $$
 \alpha = \min \left\{1, \frac{p(V' \mid \mathcal D) \cdot q(V^{(t)} \mid V')}{p(V^{(t)} \mid \mathcal D) \cdot q(V' \mid V^{(t)})}\right\}.
-$$
+$$ {#eq-mh-acceptance-general}
 
 This says: accept the proposal with probability proportional to how much more plausible it is under the posterior, adjusted by how easy it is to propose back. If we choose a Gaussian proposal, the proposal terms cancel out in the ratio due to symmetry. So the acceptance rule simplifies to
 $$
 \alpha = \min \left\{1, \frac{p(V' \mid \mathcal D)}{p(V^{(t)} \mid \mathcal D)}\right\} = \min \left\{1, \frac{p(\mathcal D \mid V') \cdot p(V')}{p(\mathcal D \mid V^{(t)}) \cdot p(V^{(t)})}\right\}.
-$$
+$$ {#eq-mh-acceptance-symmetric}
 
 ```{pyodide-python}
 #| autorun: true
@@ -397,12 +397,12 @@ Chapter 2 introduced Gaussian Processes (GPs) as a flexible nonparametric altern
 **The inference problem.** Given pairwise comparisons $\mathcal{D} = \{(x_A^{(i)}, x_B^{(i)}, y_i)\}_{i=1}^n$ where $y_i = 1$ if item $A$ was preferred, we want to compute the posterior:
 $$
 p(r \mid \mathcal{D}) \propto p(\mathcal{D} \mid r) \cdot p(r)
-$$
+$$ {#eq-gp-posterior}
 
 The likelihood follows the Bradley-Terry model:
 $$
 p(y_i = 1 \mid r) = \sigma\left(r(x_A^{(i)}) - r(x_B^{(i)})\right)
-$$
+$$ {#eq-gp-bt-likelihood}
 
 Because this sigmoid likelihood is not Gaussian, the posterior $p(r \mid \mathcal{D})$ is no longer a Gaussian Process.
 
@@ -416,24 +416,24 @@ The **Laplace approximation** provides a tractable Gaussian approximation to the
 For preference data with GP prior (zero mean), the mode satisfies:
 $$
 \mathbf{r}^* = \arg\max_{\mathbf{r}} \sum_{i=1}^n \log \sigma\left(y_i (r(x_A^{(i)}) - r(x_B^{(i)}))\right) - \frac{1}{2}\mathbf{r}^\top K^{-1} \mathbf{r}
-$$
+$$ {#eq-gp-mode}
 
 where $K$ is the kernel matrix and $\mathbf{r} = [r(x_1), \ldots, r(x_m)]^\top$ collects function values at all unique points appearing in comparisons.
 
 **Newton's method for finding the mode.** The gradient and Hessian of the log-posterior are:
 $$
 \nabla_{\mathbf{r}} \log p(\mathbf{r} \mid \mathcal{D}) = \mathbf{g} - K^{-1}\mathbf{r}
-$$
+$$ {#eq-gp-gradient}
 $$
 \nabla^2_{\mathbf{r}} \log p(\mathbf{r} \mid \mathcal{D}) = -W - K^{-1}
-$$
+$$ {#eq-gp-hessian}
 
 where $\mathbf{g}$ is the gradient of the log-likelihood and $W$ is a diagonal matrix with entries $W_{ii} = p_i(1 - p_i)$ for predictions $p_i = \sigma(r(x_A^{(i)}) - r(x_B^{(i)}))$.
 
 **The approximate posterior.** After finding $\mathbf{r}^*$, the Laplace approximation gives:
 $$
 p(\mathbf{r} \mid \mathcal{D}) \approx \mathcal{N}\left(\mathbf{r}^*, (K^{-1} + W)^{-1}\right)
-$$
+$$ {#eq-laplace-posterior}
 
 This is structurally similar to standard GP regression, but with the data-dependent precision matrix $W$ arising from the Bradley-Terry likelihood rather than observation noise.
 
@@ -538,7 +538,7 @@ print(f"Posterior uncertainty varies: min std = {std_pred.min():.3f}, max std = 
 The Laplace approximation has a natural connection to the Fisher information framework we developed for linear models. The Hessian of the negative log-likelihood at the mode gives the *observed Fisher information*:
 $$
 I_{\text{obs}} = W = \text{diag}(p_1(1-p_1), \ldots, p_n(1-p_n))
-$$
+$$ {#eq-fisher-information}
 
 Just as with linear preference models, comparisons with $p \approx 0.5$ contribute the most information (highest $p(1-p)$), while "easy" comparisons where one option clearly dominates contribute little.
 
@@ -554,7 +554,7 @@ Just as with linear preference models, comparisons with $p \approx 0.5$ contribu
 **Hyperparameter learning.** The kernel hyperparameters (length-scale $\ell$, signal variance $\sigma_f^2$) can be learned by maximizing the Laplace-approximated marginal likelihood:
 $$
 \log p(\mathcal{D} \mid \theta) \approx \log p(\mathcal{D} \mid \mathbf{r}^*) + \log p(\mathbf{r}^* \mid \theta) + \frac{1}{2}\log |K^{-1} + W|^{-1}
-$$
+$$ {#eq-marginal-likelihood}
 
 In Chapter 4, we will see how the GP posterior uncertainty enables *active* query selection—choosing which comparisons to ask to learn most efficiently.
 
@@ -568,12 +568,12 @@ The Elo rule can be derived as a stochastic gradient ascent method on the Bradle
 $$
 \frac{\partial \ell}{\partial V_j} = (y - p), \qquad
 \frac{\partial \ell}{\partial V_{j'}} = -(y - p).
-$$
+$$ {#eq-elo-gradient}
 
 A stochastic gradient ascent step with learning rate $\eta$ gives the update:
 $$
   V_j \leftarrow V_j + \eta (y - p), \qquad V_{j'} \leftarrow V_{j'} - \eta (y - p).
-$$
+$$ {#eq-elo-update}
 
 This is exactly the Elo update rule. The learning rate $\eta$ is often called the **K-factor** in Elo literature. If $y=1$ (item $j$ wins) but the model predicted a low $p$, then $(y - p)$ is positive and $V_j$ increases, $V_{j'}$ decreases — the system learns that $j$ is stronger than previously believed. If $y=0$ (item $j'$ wins), the opposite adjustment happens. The magnitude of the update is larger when the outcome is surprising (large prediction error), and smaller when the outcome is expected (small prediction error). Thus, Elo is an online learning algorithm for the Bradley–Terry model, interpretable as stochastic gradient ascent with a fixed step size.
 
@@ -617,13 +617,13 @@ The maximum likelihood estimator maximizes fit to observed training data but may
 The most common regularization approach adds an L2 penalty term to the log-likelihood. For the Bradley-Terry model, the regularized objective becomes:
 $$
 \mathcal{L}_{\text{reg}}(V) = \sum_{(j,j') \in \mathcal{D}_{\text{train}}} \log p(Y_{jj'} \mid V_j - V_{j'}) - \frac{\lambda}{2} \|V\|_2^2
-$$
+$$ {#eq-regularized-objective}
 where $\lambda \geq 0$ is the **regularization strength**. The penalty $\frac{\lambda}{2} \|V\|_2^2 = \frac{\lambda}{2} \sum_{j=1}^M V_j^2$ discourages large parameter values. When $\lambda = 0$, we recover standard MLE. As $\lambda$ increases, parameters shrink toward zero.
 
 The regularized gradient adds a simple term to the MLE gradient:
 $$
 \frac{\partial \mathcal{L}_{\text{reg}}}{\partial V_m} = \sum_{(m,k)\in \mathcal{N}^+_m} r_{mk} - \sum_{(k,m)\in \mathcal{N}^-_m} r_{km} - \lambda V_m
-$$
+$$ {#eq-regularized-gradient}
 
 Intuitively, regularization creates a bias-variance tradeoff: small $\lambda$ permits complex fits (low bias, high variance), while large $\lambda$ enforces simpler models (high bias, low variance). The optimal $\lambda$ balances these to minimize test error.
 
@@ -889,7 +889,7 @@ AUC measures ranking quality but does not capture all aspects of model performan
 **Log-Likelihood**: Measures the probability the model assigns to observed outcomes. Higher is better.
 $$
 \text{LL} = \sum_{(j,j') \in \mathcal{D}_{\text{test}}} \left[ Y_{jj'} \log \sigma(V_j - V_{j'}) + (1 - Y_{jj'}) \log (1 - \sigma(V_j - V_{j'})) \right]
-$$
+$$ {#eq-log-likelihood-metric}
 
 **Calibration Error**: Measures whether predicted probabilities match empirical frequencies. Bin predictions into intervals (e.g., [0.0, 0.1), [0.1, 0.2), ...) and compare average predicted probability to observed frequency in each bin.
 
@@ -979,7 +979,7 @@ m_t &\leftarrow \beta_1 m_{t-1} + (1 - \beta_1) g_t && \text{(momentum)} \\
 v_t &\leftarrow \beta_2 v_{t-1} + (1 - \beta_2) g_t^2 && \text{(variance)} \\
 \hat{m}_t &\leftarrow m_t / (1 - \beta_1^t), \quad \hat{v}_t \leftarrow v_t / (1 - \beta_2^t) && \text{(bias correction)} \\
 V &\leftarrow V + \alpha \frac{\hat{m}_t}{\sqrt{\hat{v}_t} + \epsilon} && \text{(parameter update)}
-\end{align}
+\end{align} {#eq-adam-update}
 
 where $g_t$ is the gradient at step $t$, $\beta_1 = 0.9$ and $\beta_2 = 0.999$ are typical, and $\epsilon = 10^{-8}$ prevents division by zero.
 
@@ -1297,7 +1297,7 @@ Exercises are marked with difficulty levels: (*) for introductory, (**) for inte
 The Plackett-Luce model extends Bradley-Terry to full rankings. Given a ranking $(j_1 \succ j_2 \succ \cdots \succ j_M)$, the likelihood is:
 $$
 p(\text{ranking} \mid V) = \prod_{k=1}^{M-1} \frac{\exp(V_{j_k})}{\sum_{\ell=k}^M \exp(V_{j_\ell})}
-$$
+$$ {#eq-plackett-luce}
 
 (a) Write the log-likelihood for a single ranking as a function of utilities $V$.
 
@@ -1340,7 +1340,7 @@ The Metropolis-Hastings implementation in @sec-bayesian produces a chain of samp
 (a) Implement the **effective sample size** (ESS) diagnostic: ESS estimates how many independent samples the chain is equivalent to, accounting for autocorrelation. For a chain $\{V^{(t)}\}_{t=1}^T$, the ESS for parameter $V_j$ is approximately:
 $$
 \text{ESS}_j = \frac{T}{1 + 2\sum_{k=1}^K \rho_k}
-$$
+$$ {#eq-effective-sample-size}
 where $\rho_k$ is the autocorrelation at lag $k$.
 
 (b) Run the MH algorithm from @sec-bayesian with different proposal step sizes $\tau \in \{0.01, 0.05, 0.1, 0.5\}$. Plot ESS vs $\tau$. What happens when $\tau$ is too small? Too large?
