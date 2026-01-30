@@ -72,10 +72,9 @@ Myerson’s work also highlighted the gap between revenue maximization and welfa
 An interesting insight in auction theory is that increasing competition can yield more revenue than fine-tuning the auction mechanism. The Bulow–Klemperer theorem [@bulow-klemperer1996] demonstrates that, under certain regularity assumptions, a simple welfare-maximizing auction with one extra bidder outperforms the optimal auction with fewer bidders. Specifically, for i.i.d. bidders with a regular distribution $F$, the expected revenue of a second-price auction with $n+1$ bidders is at least as high as the expected revenue of the Myerson-optimal auction with $n$ bidders. In formula form:
 
 $$
-\mathbb{E}_{v_1,\ldots,v_{n+1} \sim F}[\text{Rev}^{\text{(second-price)}}(n+1 \text{ bidders})] \geq 
-\mathbb{E}_{v_1,\ldots,v_n \sim F}[\text{Rev}^{\text{(optimal)}}(n \text{ bidders})] \,. 
-\tag{4.1}\label{eq-eq3.64}
-$$
+\mathbb{E}_{v_1,\ldots,v_{n+1} \sim F}[\text{Rev}^{\text{(second-price)}}(n+1 \text{ bidders})] \geq
+\mathbb{E}_{v_1,\ldots,v_n \sim F}[\text{Rev}^{\text{(optimal)}}(n \text{ bidders})] \,.
+$$ {#eq-bulow-klemperer}
 
 This result suggests that, in practice, having more participants (competition) is often more valuable than exploiting detailed knowledge of bidder distributions. As a corollary, a policy recommendation is that a seller is usually better off using a simple auction design (like a Vickrey auction or other transparent mechanism) and putting effort into attracting more bidders, rather than using a complex optimal mechanism that might discourage participation.
 
@@ -98,8 +97,8 @@ $$
 which can be interpreted as: what would the total value of others be if $i$ were not present (first term, maximizing without $i$) minus the total value others actually get in the chosen outcome $\omega^*$. Equivalently, we can write the payment as the agent’s bid for the chosen outcome minus a rebate term: 
 
 $$
-p_i(b) = b_i(\omega^*) \;-\; \Big[\sum_{j=1}^n b_j(\omega^*) - \max_{\omega \in \Omega} \sum_{j \neq i} b_j(\omega)\Big] \,. \tag{4.2}\label{eq-eq3.67}
-$$
+p_i(b) = b_i(\omega^*) \;-\; \Big[\sum_{j=1}^n b_j(\omega^*) - \max_{\omega \in \Omega} \sum_{j \neq i} b_j(\omega)\Big] \,.
+$$ {#eq-vcg-payment}
 
 This formula (which in single-item auction reduces to second-price logic) ensures that each agent’s net payoff is $v_i(\omega^*) - p_i = \max_{\omega} \sum_{j\neq i} v_j(\omega) + v_i(\omega^*) - \sum_{j\neq i} v_j(\omega^*)$. All terms except $v_i(\omega^*)$ cancel out, meaning each agent’s utility equals the max total welfare of others plus their own value for the chosen outcome minus others’ welfare in the chosen outcome – which does not depend on $v_i(\omega^*)$ except through the decision of $\omega^*$. By construction, an agent cannot influence $\omega^*$ in a way that improves this expression unless it genuinely increases total welfare, so misreporting $v_i$ cannot increase their utility. Thus truthful reporting is a dominant strategy. VCG is dominant-strategy incentive compatible (DSIC) and produces an outcome that maximizes $\sum_i v_i(\omega)$, achieving social welfare maximization.
 
