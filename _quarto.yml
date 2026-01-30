@@ -25,8 +25,8 @@ language:
   crossref-apx-prefix: Appendix
 
 df-print: kable
-filters:
-  - pseudocode
+# filters:
+#   - pseudocode
 
 format:
   html:
@@ -92,8 +92,6 @@ format:
           breaksymbolleft={},
           breaklines
         }
-        \numberwithin{algorithm}{chapter}
-        \algrenewcommand{\algorithmiccomment}[1]{\hskip3em$\rightarrow$ #1}
 
 
 knitr:
@@ -137,11 +135,11 @@ book:
   # cookie-consent: true
   chapters:
     - index.qmd
+    - src/chap1.qmd
     - src/chap2.qmd
     - src/chap3.qmd
     - src/chap4.qmd
     - src/chap5.qmd
     - src/chap6.qmd
     - src/chap7.qmd
-    - src/chap8.qmd
     - src/ack.qmd

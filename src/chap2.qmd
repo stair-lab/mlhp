@@ -1,535 +1,95 @@
 ---
-title: "Foundations of Preference Modeling"
-format:
-  html:
-    include-after-body:
-      text: |
-        <script>
-        // Auto-execute all pyodide cells after initialization
-        document.addEventListener('DOMContentLoaded', function() {
-          // Wait for pyodide to be ready
-          function waitForPyodide() {
-            if (typeof qpyodideInstance !== 'undefined' && qpyodideInstance) {
-              // Execute all cells with autorun=true
-              if (typeof globalThis.qpyodideCellDetails !== 'undefined') {
-                globalThis.qpyodideCellDetails.forEach((cell, index) => {
-                  if (cell.options && cell.options.autorun === 'true') {
-                    setTimeout(() => {
-                      const runButton = document.querySelector(`#qpyodide-button-run-${cell.id}`);
-                      if (runButton) {
-                        runButton.click();
-                      }
-                    }, index * 1000); // Stagger execution by 1 second each
-                  }
-                });
-              }
-            } else {
-              setTimeout(waitForPyodide, 500);
-            }
-          }
-          setTimeout(waitForPyodide, 2000); // Start checking after 2 seconds
-        });
-        </script>
+title: Learning
+format: html
 filters:
   - pyodide
-
+execute:
+  engine: pyodide
+  pyodide:
+    auto: true
 ---
-
-::: {.content-visible when-format="html"}
-
-<iframe
-  src="../slides/2.1.choice_models/"
-  style="width:45%; height:225px;"
-></iframe>
-<iframe
-  src="../slides/2.2.choice_models/"
-  style="width:45%; height:225px;"
-></iframe>
-[Fullscreen Part 1](../slides/2.1.choice_models/){.btn .btn-outline-primary .btn role="button"}
-[Fullscreen Part 2](../slides/2.2.choice_models/){.btn .btn-outline-primary .btn role="button"}
-
-:::
-
 
 ::: {.callout-note}
 ## Intended Learning Outcomes
 
 By the end of this chapter you will be able to:
 
-- **Identify** where preference learning appears across machine learning: recommender systems, information retrieval, robotics, language model alignment, and ranking systems.
-- **Distinguish** between *item-wise* preference data (accept/reject, ratings) and *pairwise* comparison data, understanding when each is appropriate.
-- **Differentiate** deterministic preferences from *stochastic (random)* preferences and justify why randomness is essential for modeling noisy human choice.
-- **Formulate** the *Rasch model* as the simplest factor model for item-wise data, identifying user appetite ($U_i$) and item appeal ($V_j$) as latent parameters.
-- **Extend** 1D item utilities to *K-dimensional factor models*, explaining why multi-dimensional representations are essential for recommender systems.
-- **Derive** how *Bradley-Terry emerges* as a special case of the Rasch model when conditioning on a single user.
-- **Define** and **apply** the *Independence of Irrelevant Alternatives (IIA)* axiom, explaining how it collapses the full preference distribution to an $M$-parameter logit model.
-- **Derive** choice probabilities for binary comparisons (Bradley–Terry), accept–reject decisions (logistic regression), and full or partial rankings (Plackett–Luce) from a random-utility model with i.i.d. Gumbel shocks.
-- **Connect** the *Bradley–Terry model* to modern methods like *Direct Preference Optimization (DPO)* and *Elo ratings*.
-- **Simulate** preference data from both item-wise (Rasch) and pairwise (Bradley-Terry) models, and **visualize** response matrices.
-- **Diagnose** two key limitations of IIA—population heterogeneity (mixture models) and the *red-bus/blue-bus* cloning problem—and **motivate** richer models with correlated utility shocks.
-- **Explain** why *Gaussian Processes (GPs)* provide a flexible nonparametric alternative to linear reward models, and identify when GPs are preferred over parametric approaches.
-
-:::
-
-::: {.callout-note title="Notation"}
-Throughout this book, we use the following conventions:
-
-- Items are indexed by $j, j', k \in \{1, \ldots, M\}$
-- Users are indexed by $i \in \{1, \ldots, N\}$
-- Latent utility for user $i$ on item $j$ is $H_{ij} \in \mathbb{R}$
-- Item appeal (item-specific parameter) is $V_j \in \mathbb{R}$
-- Binary preference outcomes are random variables $Y_{jj'} \in \{0, 1\}$, where $Y_{jj'} = 1$ means item $j$ is preferred over $j'$
-- Probabilities are written as $p(\cdot)$ with conditioning after $\mid$
-- The sigmoid function is $\sigma(x) = 1/(1 + e^{-x})$
-:::
-
-This is a book about machine learning from human preferences. Preference data arises throughout machine learning: recommender systems learn which products users prefer, search engines learn which results are most relevant, robots learn which trajectories humans find natural, and language models learn which responses are helpful. This chapter lays the theoretical foundation for understanding how preference data can be modeled and used for learning across all these domains.
-
-## Preference Learning Across Machine Learning {#sec-motivation}
-
-Preference data appears in many forms across machine learning applications:
-
-- **Recommender systems**: Users implicitly express preferences through clicks, purchases, ratings, and engagement time. A user clicking on item A rather than item B reveals $A \succ B$. Netflix's recommendation engine, Amazon's product suggestions, and Spotify's playlist generation all learn from such preference signals.
-
-- **Information retrieval**: Search engines learn from user clicks which documents are relevant to queries. If a user searches for "best restaurants nearby" and clicks on the third result, this suggests the third result was preferred over the first two---at least for that query.
-
-- **Robotics and control**: When teaching robots through demonstration or feedback, humans express preferences over trajectories. A human might indicate that a robot arm's smooth motion is preferred over a jerky one, or that one grasping strategy is better than another.
-
-- **Language model alignment**: Large language models are fine-tuned using human preferences over responses. Given a prompt, annotators compare candidate outputs and indicate which is more helpful, harmless, or honest.
-
-- **Game playing and sports**: The Elo rating system, used in chess and many video games, is fundamentally a preference model---each game outcome is a pairwise comparison revealing which player was "preferred" (stronger) in that match.
-
-Despite the diversity of applications, these all share a common mathematical structure: *pairwise comparisons* or *choices from sets* that reveal underlying preferences. The Bradley-Terry model and its extensions provide a unified framework for all these settings.
-
-## A Running Example: Language Model Alignment {#sec-llm-example}
-
-To ground our discussion, we use language model alignment as a detailed running example. The ideas apply broadly, but LLMs provide concrete notation and have driven recent interest in preference learning.
-
-Modern large language models like GPT-4 and Claude are trained in two distinct phases. Understanding this pipeline illustrates why preference models are essential to building AI systems that behave as humans intend.
-
-**Pretraining: Learning to Predict.** In the first phase, called *pretraining*, a language model learns to predict the next token in a sequence. Given a corpus of text, the model is trained to minimize the cross-entropy loss:
-$$
-\mathcal{L}_{\text{pretrain}} = -\mathbb{E}_{x \sim \mathcal{D}}\left[\sum_{t=1}^{T} \log \pi_\theta(x_t \mid x_{<t})\right]
-$$ {#eq-pretrain}
-where $\pi_\theta(x_t \mid x_{<t})$ is the model's predicted probability of token $x_t$ given the preceding tokens. This objective has a remarkable property: it is a *proper scoring rule*. A scoring rule is proper if a forecaster maximizes their expected score by reporting their true beliefs. For cross-entropy, this means that a model minimizing this loss will produce *calibrated* probability estimates---its predicted probabilities will match empirical frequencies in the training data.
-
-::: {.callout-note title="Proper Scoring Rules"}
-A scoring rule $S(p, y)$ assigns a score to a probability forecast $p$ when outcome $y$ is observed. The rule is *proper* if the expected score $\mathbb{E}_{y \sim q}[S(p, y)]$ is maximized when $p = q$, i.e., when the forecaster reports their true belief. The logarithmic scoring rule $S(p, y) = \log p(y)$ (negative cross-entropy) is strictly proper: any deviation from true probabilities strictly decreases expected score. This is why cross-entropy is the standard training objective for classification and language modeling---it incentivizes honest probability reporting.
-:::
-
-Pretraining produces models that are remarkably capable at predicting text, but prediction alone does not ensure the model will behave helpfully, harmlessly, or honestly. A model trained only to predict text will happily continue any prompt, including harmful ones.
-
-**Posttraining: Aligning with Human Preferences.** The second phase, called *posttraining* or *alignment*, teaches the model to produce outputs that humans prefer. This requires a fundamentally different kind of data: rather than predicting what text comes next, we need to learn *which outputs are better than others*.
-
-The dominant approach for posttraining is *Reinforcement Learning from Human Feedback (RLHF)* @christiano2017deep @ouyang2022training. At a high level, RLHF works as follows:
-
-1. **Collect preference data**: Given prompts $x$, sample pairs of responses $(y_1, y_2)$ from the model and ask human annotators which response is better.
-2. **Train a reward model**: Fit a reward function $r(x, y)$ to the preference data, predicting which response humans will prefer.
-3. **Optimize the policy**: Fine-tune the language model to maximize the learned reward while staying close to the original model (to prevent reward hacking).
-
-A recent and influential simplification is *Direct Preference Optimization (DPO)* @rafailov2023direct, which skips the explicit reward model. DPO directly optimizes the policy on preference data using the objective:
-$$
-\mathcal{L}_{\text{DPO}} = -\mathbb{E}_{(x, y_w, y_l) \sim \mathcal{D}}\left[\log \sigma\left(\beta \log \frac{\pi_\theta(y_w \mid x)}{\pi_{\text{ref}}(y_w \mid x)} - \beta \log \frac{\pi_\theta(y_l \mid x)}{\pi_{\text{ref}}(y_l \mid x)}\right)\right]
-$$ {#eq-dpo}
-where $y_w$ is the preferred ("winning") response, $y_l$ is the dispreferred ("losing") response, $\pi_{\text{ref}}$ is a reference policy (typically the pretrained model), and $\beta$ controls how much the optimized policy can deviate from the reference.
-
-**The Bradley-Terry Connection.** The key insight behind DPO is that it assumes human preferences follow a specific probabilistic model. If we define an implicit reward $r^*(x, y) = \beta \log \frac{\pi_\theta(y \mid x)}{\pi_{\text{ref}}(y \mid x)}$, then the DPO objective is equivalent to maximum likelihood estimation under the assumption:
-$$
-p(y_w \succ y_l \mid x) = \sigma(r^*(x, y_w) - r^*(x, y_l)) = \frac{1}{1 + e^{-(r^*(x, y_w) - r^*(x, y_l))}}
-$$ {#eq-bradley-terry-dpo}
-This is precisely the *Bradley-Terry model* @bradley1952rank, one of the oldest and most widely-used models for pairwise comparisons. The Bradley-Terry model says that the probability of preferring item $j$ over item $j'$ is a sigmoid function of the difference in their "strengths" or utilities.
-
-This raises natural questions: *Why is the Bradley-Terry model a reasonable assumption? Where does it come from? When does it fail?* Answering these questions is the goal of the rest of this chapter. We will see that Bradley-Terry arises naturally from a *random utility model* with specific noise assumptions, and that its key property---the *Independence of Irrelevant Alternatives*---is both powerful and limiting.
-
-::: {.callout-important title="Key Takeaway: The Bradley-Terry Model"}
-Whether aligning language models, building recommender systems, or ranking chess players, many preference learning methods assume the Bradley-Terry model: $p(j \succ k) = \sigma(V_j - V_k)$. Understanding *why* this model is reasonable---and when it fails---requires the theory of random utility models and the Independence of Irrelevant Alternatives. The same mathematical framework applies across all these applications.
+- **Identify** appropriate train/test splitting strategies for preference data and understand their implications for model evaluation.
+- **Implement** maximum likelihood estimation via gradient descent for the Bradley-Terry model, deriving and computing gradients efficiently.
+- **Apply** Bayesian inference using Markov Chain Monte Carlo (MCMC) to quantify parameter uncertainty and obtain posterior distributions.
+- **Apply** Laplace approximation to perform inference for Gaussian Process preference models, understanding why non-Gaussian likelihoods require approximation.
+- **Derive** online learning algorithms (Elo ratings) as stochastic gradient ascent and explain when online methods are preferred over batch learning.
+- **Compare** batch maximum likelihood, Bayesian inference, and online learning approaches in terms of computational cost, statistical efficiency, and practical applicability.
+- **Evaluate** learned preference models using multiple metrics including AUC, log-likelihood, and calibration error.
+- **Apply** regularization techniques (L2 penalty, early stopping) to prevent overfitting and improve generalization.
+- **Conduct** k-fold cross-validation for model selection and hyperparameter tuning in preference learning settings.
+- **Implement** modern optimization methods (Adam, learning rate schedules) and diagnose convergence through loss curves and gradient norms.
+- **Analyze** real-world preference data from language model alignment, addressing practical challenges such as noise, sparsity, and cold-start problems.
 :::
 
 ::: {.callout-tip title="Suggested Lecture Plan" collapse="true"}
-This chapter can be covered in two 50-minute lectures plus a discussion section:
+This chapter can be covered in two 50-minute lectures plus a hands-on lab session:
 
-**Lecture 1** (Sections 1--3): Motivation and foundations
+**Lecture 1** (Sections 3.1--3.4): Core parameter estimation methods
 
-- Preference learning across ML: recommenders, search, robotics, LLMs (10 min)
-- LLM alignment example: RLHF, DPO, and Bradley-Terry (20 min)
-- Random preferences, types of comparison data (20 min)
+- Train/test splitting and evaluation metrics (10 min)
+- Maximum likelihood estimation for Bradley-Terry: derivation, implementation, evaluation (20 min)
+- Bayesian inference with MCMC: posterior distributions, Metropolis-Hastings (15 min)
+- Comparison of MLE vs Bayesian approaches (5 min)
 
-**Lecture 2** (Sections 4--6): Theory and limitations
+**Lecture 2** (Sections 3.5--3.8): Advanced learning topics
 
-- Random utility models, the Ackley function examples (20 min)
-- IIA, Gumbel equivalence, derivation of choice probabilities (20 min)
-- Limitations: heterogeneity and red-bus/blue-bus (10 min)
+- Online learning with Elo ratings: derivation as SGD, applications (15 min)
+- Regularization and overfitting: L2 penalty, validation curves (15 min)
+- Cross-validation and model selection (10 min)
+- Optimization methods: GD vs Adam, learning rate schedules (10 min)
 
-**Discussion section**: Exercises 1--3, code walkthroughs for Ackley simulations
+**Lab session**: Real-world application and exercises
+
+- Apply methods to LLM preference data (30 min)
+- Work on selected exercises (20 min)
 :::
+
+Designing a good reward signal by hand for a complex AI system is difficult and error-prone. Instead of manually specifying desirable behavior, we can learn a utility signal from preference data. In this chapter, we explore how to infer an underlying utility from various forms of feedback. Throughout, we include mathematical formulations and code examples to illustrate the learning process.
 
 ## Chapter Overview
 
-Having motivated preference models through their role across machine learning---from recommender systems to language model alignment---we now develop the theoretical foundations. The rest of this chapter covers:
+@sec-latent-variable in Chapter 2 established the foundational models for preference data: the Rasch model for item-wise responses, the Bradley-Terry model for pairwise comparisons, and K-dimensional factor models for richer representations. We saw how these models formalize the relationship between latent parameters and observed choices.
 
-- **Random preferences** (@sec-foundations): Why we model preferences as stochastic, and the mathematical framework for doing so.
-- **Types of comparison data**: Full rankings, choices from sets, and binary comparisons---all as observations from the same underlying preference distribution.
-- **Random utility models**: Representing preferences through utility functions with noise, and deriving choice probabilities.
-- **Independence of Irrelevant Alternatives (IIA)**: The key assumption that makes Bradley-Terry and related models tractable, plus its limitations.
+This chapter addresses the central question of **learning**: given observed preference data, how do we estimate the parameters of these models? We explore four complementary perspectives on parameter learning, each with distinct advantages:
 
-Chapters 3-6 will then cover how to *learn* preference models from data, *actively collect* informative comparisons, make *decisions* based on learned preferences, and handle *heterogeneous* populations with diverse preferences.
+- **Maximum Likelihood Estimation** (@sec-mle): Find parameters that maximize the probability of observed data. Fast and scalable, but provides only point estimates.
+- **Bayesian Inference** (@sec-bayesian): Treat parameters as random variables with prior distributions. Quantifies uncertainty but requires more computation.
+- **Gaussian Process Inference** (@sec-gp-inference): Learn nonparametric reward functions using Laplace approximation. Provides both flexibility and principled uncertainty quantification.
+- **Online Learning** (@sec-online): Update estimates incrementally as new data arrives. Essential for dynamic systems with continuously arriving feedback.
 
-**Historical Notes.** The ideas in this chapter draw from nearly a century of research across psychology, economics, and statistics:
+Beyond these core methods, we cover essential machine learning techniques for practical applications:
 
-- **Thurstone (1927)** introduced the *law of comparative judgment* in psychophysics, proposing that perceived stimuli have random "discriminal processes"---the first random utility model.
-- **Luce (1959)** provided an axiomatic foundation through his *choice axiom*, which is equivalent to IIA. This work established the mathematical foundations for probabilistic choice theory.
-- **Bradley & Terry (1952)** developed the paired comparison model that bears their name, originally for ranking chess players and other competitive settings.
-- **McFadden (1974)** connected random utility theory to econometrics, developing the conditional logit model for analyzing discrete choices. This work, along with his development of the nested logit and mixed logit models, earned him the Nobel Prize in Economics in 2000.
-- **Modern ML**: The application of preference models to machine learning accelerated with @christiano2017deep's introduction of RLHF for training AI systems. @rafailov2023direct's DPO provided a direct connection between preference optimization and the classical Bradley-Terry model.
+- **Regularization** (@sec-regularization): Prevent overfitting through L2 penalties and early stopping.
+- **Model Selection** (@sec-model-selection): Use cross-validation to tune hyperparameters and compare approaches.
+- **Optimization** (@sec-optimization): Improve convergence with modern methods like Adam and adaptive learning rates.
+- **Real-World Application** (@sec-real-world): Apply all methods to language model preference data, confronting practical challenges.
 
-> "The theory of discrete choice...has become a cornerstone of modern microeconometrics, with applications ranging from transportation to marketing to environmental economics." --- Daniel McFadden, Nobel Lecture (2000)
+Chapters 4-6 will build on these learning foundations to address active data collection (Chapter 4), decision-making under learned preferences (Chapter 5), and heterogeneous populations (Chapter 6).
 
-## Random Preferences as a Model of Comparisons {#sec-foundations}
-We start with a set of **items** $j \in \{1, \ldots, M\}$---be they products, robot trajectories, or language model responses. We will consider models to generate comparisons that are orders. For realism, but also for mathematical simplicity, we will assume in this book that the set of items is discrete and has $M$ items.
+## Learning from Preference Data
 
-Comparisons may be random and are generated by random draws of (total) orders. (Total) Orders have two properties.
+@sec-latent-variable introduced the latent variable models for preference data: the Rasch model for item-wise responses, K-dimensional factor models (including the logistic factor model and the ideal point model), and the Bradley-Terry model for pairwise comparisons. We saw how these models relate user parameters $U_i$ and item parameters $V_j$ to observed responses, and how pairwise models can be derived from item-wise models.
 
- - First, for two items $j, j'$ either $j \prec j'$ and/or $j \succ j'$ must hold, an assumption called *totality*:\footnote{One often also allows for preferences to capture a notion of equivalence, called indifference, which is unlikely to happen in random choice models we will learn from data. We use the benefit of simplified notation and restrict to no indifference.} Either $j$ is weakly preferred to $j'$ or $j'$ is weakly preferred to $j$.
- - The second assumption is transitivity: if $j \succ j'$ and $j' \succ k$, then also $j \succ k$.
+This chapter focuses on *learning* the parameters of these models from observed data. We cover three complementary approaches:
 
-In the following, we consider randomness as generated from a *decision-maker* who has an order, or preference relation, $\prec$ on a set of items. We refer to the random object $\prec$ as the oracle preference. Each preference $\prec$ has an associated probability mass $p(\prec)$, leading to an $(M!-1)$-dimensional vector encoding the full random preference distribution. This grows extremely fast: even with just $M=4$ items, we need $4! - 1 = 23$ parameters; with $M=10$, we need over 3.6 million. Reducing this complexity is a central goal of this chapter---we will see that the Independence of Irrelevant Alternatives collapses this to just $M$ parameters.
+1. **Maximum Likelihood Estimation** for Bradley-Terry and Rasch models — finding parameters that maximize the probability of the observed data
+2. **Bayesian Inference** for uncertainty quantification — treating parameters as random variables with prior distributions
+3. **Online Learning** with the Elo rating system — updating parameter estimates incrementally as new data arrives
 
-One might wonder why we need to have a random preference. Deterministic preferences are conceptually helpful constructs and are used broadly in the fields of Consumer theory (e.g., @mas1995microeconomic). However, they suffer when bringing them to data, as data is inherently noisy.
-
-Even when allowing for randomness, assumptions we will impose in this chapter---transitivity and the Independence of Irrelevant Alternatives---are strong yet practical. In many situations they will fail, for good reasons: humans cannot always clearly rank alternatives, their choices may reflect cultural norms, or they might exhibit self-control problems. These limitations of classical preference models will be discussed in later chapters. Until then, we will make full use of learning stochastic preferences.
-
-## Types of Comparison Data
-There are different types of comparison data we may observe. We can relate them back to the population preferences $\prec$.
-
-**Full Preference Lists.** The conceptually simplest and practically most verbose preference sampling is to get the full preference ranking, i.e., $L = (j_1, j_2, \dots, j_M)$, where $j_1 \succ j_2 \succ \cdots \succ j_M$. In this case, we know not only that $j_1$ is preferred to $j_2$, but also, by transitivity, that it is preferred to all other options. Similarly, we know that $j_2$ is preferred to all options but $j_1$, *etc.* In many cases, we do not observe full preferences as the cognitive load for humans is too high.
-
-**Choices from Subsets.** Another type of sample is $(j, \mathcal{S})$ where $j$ is the most preferred alternative from subset $\mathcal{S}$ for a sampled preference. Formally, $j \succ k$ for all $k \in \mathcal{S} \setminus \{j\}$---$j$ is preferred to all elements of $\mathcal{S}$ other than itself.
-
-Formally, the probability that we observe $(j, \mathcal{S})$ is
-$$
-p(j \mid \mathcal{S}) = \sum_{\prec: j \succ k \; \forall k \in \mathcal{S} \setminus \{j\}} p(\prec).
-$$
-That is, the probability of observing $(j, \mathcal{S})$ is given by the sum of all preferred samples $\prec$ such that $j$ is preferred to all $k$ in $\mathcal{S}$ other than $j$.
-
-If the choice is binary, $\mathcal{S} = \{j, j'\}$, we write this as $Y_{jj'} = 1$ (item $j$ preferred over $j'$). We highlight that these outcomes are random, and depend on the sample of $\prec$. Binary data is convenient and quick to elicit and has been prominently applied in language model finetuning and evaluation.
-
-Sometimes, particularly when a decision-maker is offered an item or "nothing", we will implicitly assume that there is an "outside option" indexed by $0$, allowing us to interpret $Y_{j0} = 1$ as "accepting" item $j$, and $Y_{j0} = 0$ as rejecting it. Outside options can be thought of as fundamental limits to what a system designer can obtain. Consider a recommendation system. A user of that system might engage with content or not. In principle, instead of engaging, they will do something else. We do not model this explicitly as a fundamental abstraction. *All models are wrong, but some are useful.*
-
-**Item-wise Responses.** In many applications, users respond to individual items rather than comparing pairs. We denote $Y_{ij} \in \{0, 1\}$ as the binary response of user $i$ to item $j$, where $Y_{ij} = 1$ indicates acceptance (like, purchase, engagement) and $Y_{ij} = 0$ indicates rejection. This yields an $N \times M$ *response matrix*:
-$$
-Y = \begin{bmatrix} Y_{11} & Y_{12} & \cdots & Y_{1M} \\
-Y_{21} & Y_{22} & \cdots & Y_{2M} \\
-\vdots & \vdots & \ddots & \vdots \\
-Y_{N1} & Y_{N2} & \cdots & Y_{NM} \end{bmatrix}
-$$
-Examples of item-wise data include: e-commerce purchases (did user $i$ buy product $j$?), streaming behavior (did user $i$ play or skip track $j$?), dating apps (did user $i$ swipe right on profile $j$?), and content moderation (did annotator $i$ flag content $j$?). Item-wise data is often more abundant than pairwise data---every user-item interaction generates one data point---but requires modeling both user and item parameters to capture heterogeneity across users.
-
-**Context.** Choices are often conditional, and data is given by $(i, L)$ (for list-based data), $(i, j, \mathcal{S})$ (for general choice-based data), $(i, j, j')$ for pairwise data, or $(i, j)$ for item-wise data. Here $i$ indexes the *user* or *context*: the environment of a purchase, the goal of a robot, or a user prompt for a large language model. It can also be a prompt to the decision-maker, e.g., to human raters on whether they should pick preferences based on helpfulness or harmlessness @ganguli2022redteaminglanguagemodels. The inclusion of context in learning allows for the generalization of preferences, as we will see in subsequent chapters.
-
-::: {.callout-note title="Example: Preference Data Across Domains"}
-**Recommender Systems.** A user browsing an e-commerce site sees products $\{A, B, C\}$ and clicks on $B$. This reveals the choice $(B, \{A, B, C\})$---item $B$ was preferred from the displayed set. If we only track whether the user purchased, we observe accept-reject data: $Y_{B0} = 1$ (accepted $B$ over the outside option of not buying).
-
-**Information Retrieval.** A user searches "best pizza near me" and clicks on the third result. This provides implicit feedback that result 3 was preferred over results 1 and 2 for this query context.
-
-**Language Model Alignment.** Given a prompt $x$ = "Explain quantum entanglement to a 10-year-old," annotators compare two responses and indicate $A \succ B$. This triple $(x, y_w = A, y_l = B)$ constitutes one training example for RLHF or DPO. Public datasets in this format include Anthropic's HH-RLHF, OpenAI's summarization preferences, and the Stanford Human Preferences (SHP) dataset.
-
-**Sports Rankings.** Each chess match between players $j$ and $k$ yields a pairwise comparison. If player $j$ wins, we observe $Y_{jk} = 1$. The Elo rating system models these outcomes using the Bradley-Terry model.
-
-In all cases, the mathematical structure is the same: observations reveal preferences over items, and our goal is to learn the underlying utility function.
-:::
-
-## Deterministic Utility Models {#sec-latent-variable}
-
-The preference models discussed so far treat items as having fixed utilities $V_j$. But in many applications---especially recommender systems---different users have different preferences over the same items. A horror movie fan and a romantic comedy fan will have very different utility for the same film. This section introduces **deterministic utility models** (also called latent variable models) that accommodate both user-specific and item-specific parameters.
-
-**From Items to Users and Items.** When we observe binary responses $Y_{ij} \in \{0,1\}$ from $N$ users to $M$ items, we model the response probability using a latent utility that depends on both user and item:
-$$
-p(Y_{ij} = 1) = \sigma(H_{ij}), \quad H_{ij} = f(U_i, V_j)
-$$
-where $U_i$ captures user $i$'s characteristics and $V_j$ captures item $j$'s characteristics. In this **deterministic utility framework**, stochasticity enters through the Bernoulli sampling $Y_{ij} \sim \text{Bernoulli}(\sigma(H_{ij}))$, not through noise in $H_{ij}$ itself. The function $f$ and the dimensionality of $U_i, V_j$ define different model families.
-
-### The Rasch Model
-
-The **Rasch model** (also called the 1-parameter logistic model in psychometrics) is the simplest factor model, where $f$ is additive:
-$$
-p(Y_{ij} = 1 \mid U_i, V_j) = \sigma(U_i + V_j)
-$$ {#eq-rasch}
-Here:
-
-- $U_i \in \mathbb{R}$ is the **user appetite**: user $i$'s general tendency to accept items. High $U_i$ means an enthusiastic user who likes many things; low $U_i$ means a selective user.
-- $V_j \in \mathbb{R}$ is the **item appeal**: how universally appealing item $j$ is. High $V_j$ means a crowd-pleaser; low $V_j$ means a niche item.
-
-The probability of acceptance depends only on the sum $U_i + V_j$: enthusiastic users accept more items, and popular items are accepted by more users.
+We begin by discussing how to split preference data into training and test sets, then develop estimation procedures for each approach.
 
 ```{pyodide-python}
 #| autorun: true
+#| echo: false
 import numpy as np
 import matplotlib.pyplot as plt
 
-rng = np.random.default_rng(2601)
-N, M = 50, 30  # 50 users, 30 items
-
-# Sample latent parameters
-U = rng.normal(loc=0.0, scale=1.0, size=N)  # user appetites
-V = rng.normal(loc=0.0, scale=1.0, size=M)  # item appeals
-
-# Compute response probabilities: p(Y_ij = 1) = sigmoid(U_i + V_j)
-P = 1.0 / (1.0 + np.exp(-(U[:, None] + V[None, :])))
-
-# Sample binary responses
-Y = (rng.random(size=(N, M)) < P).astype(int)
-
-# Sort by row/column means for visualization
-row_order = np.argsort(Y.mean(axis=1))
-col_order = np.argsort(Y.mean(axis=0))
-Y_sorted = Y[row_order][:, col_order]
-
-plt.figure(figsize=(8, 6))
-plt.imshow(Y_sorted, cmap='coolwarm', aspect='auto')
-plt.colorbar(label='Response (0=reject, 1=accept)')
-plt.xlabel("Items (sorted by popularity)")
-plt.ylabel("Users (sorted by appetite)")
-plt.title("Rasch Model: Response Matrix")
-plt.tight_layout()
-plt.show()
-```
-
-The sorted response matrix reveals the structure: high-appetite users (top) accept most items, popular items (right) are accepted by most users, and the transition from rejection to acceptance follows a diagonal pattern determined by the sum $U_i + V_j$.
-
-### Connecting Rasch to Bradley-Terry
-
-A remarkable fact connects item-wise and pairwise models: for a **single user**, the Rasch model implies Bradley-Terry for pairwise comparisons.
-
-**Derivation:** Suppose user $i$ makes a pairwise comparison between items $j$ and $k$. In the Rasch framework, the user has deterministic utilities $H_{ij} = U_i + V_j$ and $H_{ik} = U_i + V_k$. When comparing, the user's binary responses $Y_{ij}, Y_{ik} \sim \text{Bernoulli}(\sigma(H_{ij})), \text{Bernoulli}(\sigma(H_{ik}))$ are noisy observations of these utilities.
-
-One natural comparison mechanism is to prefer $j$ over $k$ if the user would accept $j$ in isolation more readily than $k$. Under the **logistic difference model**, the pairwise preference arises from comparing the latent utilities with logistic noise:
-$$
-p(j \succ k \mid i) = p(H_{ij} + \eta_{ij} > H_{ik} + \eta_{ik})
-$$
-where $\eta_{ij}, \eta_{ik}$ are independent logistic noise terms (corresponding to the inverse CDF of the Bernoulli observation process). Since the difference of two logistic random variables is also logistic:
-$$
-p(j \succ k \mid i) = \sigma(H_{ij} - H_{ik}) = \sigma((U_i + V_j) - (U_i + V_k)) = \sigma(V_j - V_k)
-$$
-
-The user-specific parameter $U_i$ **cancels out**! This has important implications:
-
-::: {.callout-important title="Key Insight: What Different Data Types Reveal"}
-| Data Type | What It Reveals | Parameters Identified |
-|-----------|-----------------|----------------------|
-| Pairwise $(j \succ k)$ | Item differences only | $V_j - V_k$ (up to constant) |
-| Item-wise $(Y_{ij})$ | User appetites + item appeals | $U_i$ and $V_j$ (up to constant) |
-
-Pairwise data cannot distinguish between a world where all items are excellent and users are selective, versus all items are mediocre and users are enthusiastic. Item-wise data can make this distinction.
-:::
-
-::: {.callout-tip title="Proof: Rasch Implies Bradley-Terry" collapse="true"}
-
-**Goal:** Show rigorously that the deterministic utility Rasch model with Bernoulli observations yields Bradley-Terry pairwise probabilities.
-
-**Setup:** User $i$ has deterministic utilities $H_{ij} = U_i + V_j$ for each item. Binary responses are:
-$$
-Y_{ij} \sim \text{Bernoulli}(p_{ij}), \quad p_{ij} = \sigma(H_{ij}) = \frac{1}{1 + e^{-(U_i + V_j)}}
-$$
-
-**Pairwise comparison mechanism:** When comparing items $j$ and $k$, one natural model is the **logistic noise model**: we sample independent logistic noise $\eta_{ij}, \eta_{ik}$ and prefer $j$ if:
-$$
-H_{ij} + \eta_{ij} > H_{ik} + \eta_{ik}
-$$
-
-This corresponds to the observation that each Bernoulli response $Y_{ij}$ can be viewed as thresholding a latent continuous variable with logistic noise:
-$$
-Y_{ij} = \mathbb{1}[H_{ij} + \eta_{ij} > 0]
-$$
-
-**Derivation:**
-\begin{align}
-p(j \succ k \mid i) &= p(H_{ij} + \eta_{ij} > H_{ik} + \eta_{ik}) \\
-&= p(\eta_{ij} - \eta_{ik} > H_{ik} - H_{ij}) \\
-&= p(\eta_{ij} - \eta_{ik} > (U_i + V_k) - (U_i + V_j)) \\
-&= p(\eta_{ij} - \eta_{ik} > V_k - V_j)
-\end{align}
-
-Since $\eta_{ij}$ and $\eta_{ik}$ are independent logistic random variables, their difference $\eta_{ij} - \eta_{ik}$ is also logistic. Therefore:
-$$
-p(j \succ k \mid i) = \sigma(V_j - V_k)
-$$
-
-This is exactly the Bradley-Terry formula, and notice that $U_i$ cancels out—pairwise probabilities depend only on item parameters $V_j, V_k$.
-
-**Interpretation:** The Bernoulli observation model with deterministic utilities is **equivalent** to having noisy utilities with logistic noise for the purpose of pairwise comparisons.
-
-:::
-
-This explains why recommender systems, which need to personalize, rely heavily on item-wise data (clicks, purchases, ratings), while ranking systems that only need to order items (chess ratings, LLM evaluation) can use pairwise comparisons.
-
-### K-Dimensional Factor Models
-
-The Rasch model assumes users and items can each be characterized by a single number. This is limiting: a user might love action movies but dislike romance, while another has the opposite preference. To capture such heterogeneity, we extend to **K-dimensional** representations.
-
-**The Logistic Factor Model:**
-$$
-H_{ij} = U_i^\top V_j + Z_j
-$$ {#eq-factor-model}
-where:
-
-- $U_i \in \mathbb{R}^K$ is the **user embedding**: user $i$'s preferences along $K$ latent dimensions
-- $V_j \in \mathbb{R}^K$ is the **item embedding**: item $j$'s characteristics along the same $K$ dimensions
-- $Z_j \in \mathbb{R}$ is the **item offset**: baseline popularity independent of user preferences
-
-The dot product $U_i^\top V_j$ measures alignment between user preferences and item characteristics. When $K = 1$ and $Z_j = 0$, this reduces to a reparameterized Rasch model.
-
-**The Ideal Point Model:**
-$$
-H_{ij} = -\|U_i - V_j\|_2 + Z_j
-$$ {#eq-ideal-point}
-Here, users and items live in the same $K$-dimensional space, and users prefer items *close* to their ideal point $U_i$. This model is natural for:
-
-- Political preferences: voters (users) and candidates (items) on an ideological spectrum
-- Music taste: listeners prefer songs similar to their preferred style
-- Product recommendations: users prefer products near their ideal specifications
-
-```{pyodide-python}
-#| autorun: true
-K = 3  # latent dimensions
-rng = np.random.default_rng(42)
-
-# User and item embeddings
-U_k = rng.normal(0, 1.0, size=(N, K))  # N users × K dimensions
-V_k = rng.normal(0, 1.0, size=(M, K))  # M items × K dimensions
-Z = rng.normal(0, 0.5, size=M)          # item offsets
-
-# Latent utilities via dot product
-H = U_k @ V_k.T + Z[None, :]  # shape: (N, M)
-P_factor = 1.0 / (1.0 + np.exp(-H))
-
-# For pairwise data: compute all pairs for each user
-# H_diff[i, j, k] = H[i, j] - H[i, k] = utility difference for user i comparing j vs k
-H_diff = H[:, :, None] - H[:, None, :]  # shape: (N, M, M)
-P_pair = 1.0 / (1.0 + np.exp(-H_diff))
-
-print(f"Item-wise data shape: {P_factor.shape}  (N × M = {N} × {M})")
-print(f"Pairwise data shape:  {P_pair.shape}  (N × M × M = {N} × {M} × {M})")
-print(f"\nItem-wise: {N * M:,} possible observations")
-print(f"Pairwise:  {N * M * (M-1) // 2:,} possible observations per user")
-```
-
-Notice that pairwise data grows as $O(M^2)$ per user, while item-wise data grows as $O(M)$. This combinatorial explosion makes exhaustive pairwise comparison impractical for large item sets.
-
-### Why Factor Models Matter
-
-Factor models are the foundation of modern recommender systems:
-
-1. **Matrix Factorization** (Netflix Prize): The winning approaches learned low-rank factorizations $Y \approx UV^\top$ of the user-item rating matrix.
-
-2. **Collaborative Filtering**: Similar users have similar embeddings $U_i \approx U_{i'}$; similar items have similar embeddings $V_j \approx V_{j'}$. This enables predicting preferences for unobserved user-item pairs.
-
-3. **Two-Tower Models**: Modern industrial systems use neural networks to compute $U_i = f_\theta(\text{user features})$ and $V_j = g_\phi(\text{item features})$, then score via dot product.
-
-4. **Low-Rank Structure**: The $N \times M$ response matrix can be approximately reconstructed from $N \times K$ user embeddings and $M \times K$ item embeddings, where typically $K \ll \min(N, M)$. This compression enables generalization.
-
-We defer *learning* factor model parameters to Chapter 3, but understanding their structure is essential for modeling preference data.
-
-::: {.callout-important title="Key Takeaway: The Latent Variable View"}
-The latent variable view extends preference models to handle user heterogeneity:
-
-- **Rasch model**: $p(Y_{ij} = 1) = \sigma(U_i + V_j)$ — 1D user appetite + item appeal
-- **Factor model**: $H_{ij} = U_i^\top V_j + Z_j$ — K-dimensional embeddings
-- **Ideal point**: $H_{ij} = -\|U_i - V_j\|_2 + Z_j$ — proximity in latent space
-
-For a single user, Rasch implies Bradley-Terry for pairwise comparisons. But item-wise data reveals richer structure (both $U_i$ and $V_j$) than pairwise data (only $V_j - V_k$).
-:::
-
-### Two Equivalent Views of Stochastic Choice
-
-Before introducing random utility models formally, we clarify an important conceptual point. The **latent variable models** above and the **random utility models** we introduce next represent **two equivalent ways to model the same stochastic choice behavior**.
-
-#### Deterministic Utility View (Latent Variable Framework)
-
-In latent variable models (such as the Rasch and factor models), utilities are **deterministic**:
-$$
-H_{ij} = f(U_i, V_j) \quad \text{(no randomness)}
-$$
-Stochasticity enters through the **observation process**:
-$$
-Y_{ij} \sim \text{Bernoulli}(\sigma(H_{ij}))
-$$
-For pairwise comparisons, when $f$ is additive (e.g., $f(U_i, V_j) = U_i + V_j$), this yields $p(j \succ k \mid i) = \sigma(V_j - V_k)$ when $U_i$ cancels.
-
-**Conceptual interpretation:** The user has fixed, deterministic preferences $H_{ij}$, but their binary responses (clicks, likes) are noisy observations of these preferences. The randomness is in the measurement or response mechanism.
-
-#### Stochastic Utility View (Random Utility Framework)
-
-In random utility models, utilities themselves are **random variables**:
-$$
-\tilde{H}_{ij} = f(U_i, V_j) + \varepsilon_{ij} \quad \text{(where } \varepsilon_{ij} \sim \text{Gumbel)}
-$$
-Choices are determined by **which item achieves the highest realized utility**:
-$$
-j \succ k \iff \tilde{H}_{ij} > \tilde{H}_{ik}
-$$
-With Gumbel-distributed noise and additive $f$, this also yields $p(j \succ k \mid i) = \sigma(V_j - V_k)$ when $U_i$ cancels.
-
-**Conceptual interpretation:** The user's utility evaluation for item $j$ fluctuates randomly across decision instances due to context, mood, unmeasured factors, or cognitive noise. The randomness is in the utility evaluation itself, not the response mechanism.
-
-#### Why Both Views are Equivalent
-
-For **pairwise choice probabilities**, both frameworks predict:
-$$
-p(j \succ k \mid i) = \sigma(V_j - V_k)
-$$
-
-They are **observationally equivalent**—given only pairwise comparison data, we cannot distinguish between them. The difference is purely conceptual:
-
-- **Latent variable view:** Suited when we have explicit binary responses $Y_{ij}$ (clicks, ratings) and want to model user heterogeneity explicitly
-- **Random utility view:** Suited when we observe direct choices/rankings and want to model utility fluctuations
-
-Neither view is "better"—they are **complementary perspectives** from different research traditions:
-- **Latent variable/Psychometrics tradition:** Measurement theory, test reliability, explicit binary responses
-- **Random utility/Economics tradition:** Discrete choice theory, revealed preferences, direct choices
-
-The random utility framework we develop next provides powerful theoretical tools (IIA, Gumbel maximum properties) that explain **why** the softmax/Bradley-Terry form emerges from first principles.
-
-## Stochastic Utility Models
-
-We now turn to a powerful mathematical framework for understanding stochastic preferences: **stochastic utility models** (also called random utility models). This framework provides the theoretical foundation for preference-based methods across machine learning---from collaborative filtering in recommender systems to RLHF in language models. As we will see, the Bradley-Terry model emerges naturally from stochastic utility models with specific noise assumptions.
-
-An equivalent way to represent random preferences is to identify a sample $\prec$ with a vector of utilities $H = (H_j)_{j=1}^M \in \mathbb{R}^M$ where $j \succ j'$ if and only if $H_j > H_{j'}$. (For the concerned reader: We assume that $H_j = H_{j'}$ happens with zero probability; and for discrete item sets such a vector always exists.)
-
-To get a sense for different random utility models, we consider a particular model that has the complexity of many models in modern machine learning: The Ackley function. In this model, each alternative is represented by a $d$-dimensional vector $(x_1, \ldots, x_d) \in \mathbb{R}^d$, the Ackley function is given by
-$$
-\text{Ackley}(x_1, x_2, \dots, x_d) = -a e^{-b \sqrt{\frac{1}{d} \sum_{j=1}^d x_j^2}} - e^{\frac{1}{d} \sum_{j=1}^d \cos(c x_j)} + a + e.
-$$
-for some constants $a, b, c \in \mathbb{R}$. By stacking a number $k$ of human preferences, we can compute for $k$ samples from a random model the function in a vectorized way.
-
-```{pyodide-python}
-#| autorun: true
-import numpy as np
-np.random.seed(0)
-
-def ackley(X, a=20, b=0.2, c=2*np.pi):
-    """
-    Compute the Ackley function.
-    Parameters:
-      X: A NumPy array of shape (n, d) where each row is a n-dimensional point.
-      a, b, c: Parameters of the Ackley function.
-    Returns:
-      A NumPy array of shape (n,) of function values
-    """
-    X = np.atleast_2d(X)
-    d = X.shape[1]
-    sum_sq = np.sum(X ** 2, axis=1)
-    term1 = -a * np.exp(-b * np.sqrt(sum_sq / d))
-    term2 = -np.exp(np.sum(np.cos(c * X), axis=1) / d)
-    return term1 + term2 + a + np.e
-```
-
-We can think of the rows of $X$ as features of different alternatives. We can visualize the full landscape of the utility function for two alternatives ($n=2$) and features of a single dimension ($d=1$).
-
-```{pyodide-python}
-#| autorun: true
-import matplotlib.pyplot as plt
-from matplotlib.colors import LinearSegmentedColormap
-ccmap = LinearSegmentedColormap.from_list("ackley", ["#f76a05", "#FFF2C9"])
 plt.rcParams.update({
     "font.size": 14,
     "axes.labelsize": 16,
@@ -537,550 +97,345 @@ plt.rcParams.update({
     "ytick.labelsize": 14,
     "legend.fontsize": 14,
     "axes.titlesize": 16,
+    "figure.figsize": (6, 6),
+    "figure.autolayout": True,
 })
+rng = np.random.default_rng(2601)
 
-def draw_surface():
-    inps = np.linspace(-2, 2, 100)
-    X, Y = np.meshgrid(inps, inps)
-    grid = np.column_stack([X.ravel(), Y.ravel()])
-    Z = ackley(grid).reshape(X.shape)
-    
-    plt.figure(figsize=(6, 5))
-    contour = plt.contourf(X, Y, Z, 50, cmap=ccmap)
-    plt.contour(X, Y, Z, levels=15, colors='black', linewidths=0.5, alpha=0.6)
-    plt.colorbar(contour, label=r'$f(x)$', ticks=[0, 3, 6])
-    plt.xlim(-2, 2)
-    plt.ylim(-2, 2)
-    plt.xticks([-2, 0, 2])
-    plt.yticks([-2, 0, 2])
-    plt.xlabel(r'$x_1$')
-    plt.ylabel(r'$x_2$')
+N = 50 # users
+M = 30 # items
+U = rng.normal(loc=0.0, scale=1, size=N) # users' appetites
+V = rng.normal(loc=0.0, scale=1, size=M) # items' appeals
 ```
 
-In this model, we can sample choice data when assuming a random generating model of, e.g., `np.random.randn(n, d)*0.5 + np.ones((n, d))*0.5`.
+## Maximum Likelihood Estimation {#sec-mle}
 
-**Item-wise (Accept-Reject) Sampling.** One method for data collection is accept-reject sampling, where the decision-maker considers one item at a time and decides if they like it compared to an outside option. This is common in applications like recommendation systems, where accepting refers to a consumption signal.
+Given a response from a particular generating process, there are various standard statistical inference procedures, such as maximum likelihood, maximum marginal likelihood, or Bayesian inference. These procedures are designed to infer parameters that are generalizable to new datasets. Hence, we discuss the training and testing dataset next. 
 
-We will use a simulation to familiarize ourselves with accept-reject sampling. On the surface below, blue and red points correspond to accept or reject points.
+The simplest train/test splitting is random, where we select a random subset (e.g., 80%) of the response matrix to be in the training set, and the rest in the test set. We can demonstrate, for example, with the Bradley-Terry response with 80% training and 20% testing data:
 
 ```{pyodide-python}
 #| autorun: true
-d = 2
-n = 800
-items = np.random.randn(n, d)*0.5 + np.ones((n, d))*0.5
-utilities = ackley(items)
-y = (utilities > utilities.mean())
-draw_surface()
-plt.scatter(items[:, 0], items[:, 1], c=y, cmap='coolwarm', alpha=0.5)
+V = rng.normal(loc=0.0, scale=1, size=M)
+diff = V[:, None] - V[None, :]
+P = 1.0 / (1.0 + np.exp(-diff))
+
+Y_BT = np.full((M, M), np.nan)
+triu_idx = np.triu_indices(M, k=1)
+randu = rng.random(size=triu_idx[0].shape[0])
+wins_j_over_k = (randu < P[triu_idx])  # 1 if j beats k
+Y_BT[triu_idx] = wins_j_over_k
+Y_BT[(triu_idx[1], triu_idx[0])] = 1.0 - wins_j_over_k
+
+# Indices for upper triangle (excluding diagonal)
+triu_r, triu_c = np.triu_indices(M, k=1)
+
+# Keep only pairs that are observed (not NaN) in the source matrix
+valid_mask = ~np.isnan(Y_BT[triu_r, triu_c])
+triu_r = triu_r[valid_mask]
+triu_c = triu_c[valid_mask]
+
+n_pairs = triu_r.shape[0]
+n_train = int(0.8 * n_pairs)
+idx = rng.choice(n_pairs, size=n_train, replace=False)
+
+train_pairs = np.zeros(n_pairs, dtype=bool)
+train_pairs[idx] = True
+
+Y_train = np.full_like(Y_BT, np.nan, dtype=float)
+Y_test  = np.full_like(Y_BT, np.nan, dtype=float)
+
+r_tr, c_tr = triu_r[train_pairs], triu_c[train_pairs]
+Y_train[r_tr, c_tr] = Y_BT[r_tr, c_tr]
+Y_train[c_tr, r_tr] = 1.0 - Y_BT[r_tr, c_tr]
+
+# Fill test set (remaining pairs), both symmetric entries
+r_te, c_te = triu_r[~train_pairs], triu_c[~train_pairs]
+Y_test[r_te, c_te] = Y_BT[r_te, c_te]
+Y_test[c_te, r_te] = 1.0 - Y_BT[r_te, c_te]
+
+# Diagonals stay NaN
+np.fill_diagonal(Y_train, np.nan)
+np.fill_diagonal(Y_test, np.nan)
+
+cmap = plt.cm.get_cmap('coolwarm').copy()
+cmap.set_bad(color='white')
+plt.subplot(1, 2, 1)
+im1 = plt.imshow(np.ma.masked_invalid(Y_train), vmin=0, vmax=1, cmap=cmap)
+plt.title("Train")
+plt.xlabel("Items")
+plt.ylabel("Items")
+plt.subplot(1, 2, 2)
+im2 = plt.imshow(np.ma.masked_invalid(Y_test), vmin=0, vmax=1, cmap=cmap)
+plt.title("Test")
+plt.xlabel("Items")
+plt.colorbar(im2, fraction=0.046, pad=0.04)
 plt.show()
 ```
 
-**Pairwise Comparisons.** Pairwise comparisons, now used to fine-tune large language models can similarly be generated in this model.
+Having the train and test datasets from the Bradley–Terry response, which are denoted as $\mathcal{D}_{\text{train}}$ and $\mathcal{D}_{\text{test}}$, we first demonstrate the parameter learning with full information maximum likelihood estimation on a single user:
 
-::: {.content-visible when-format="html"}
+$$
+\hat{V} = \arg\max_{V} \sum_{j,j' \in \mathcal{D}_{\text{train}}} \log p(Y_{0,jj'} | \sigma(H_{0,jj'})), \quad H_{0} = V 1_M^\top - 1_M V^\top,
+$$
+where $1_M$ is a column vector of 1 with length $M$ and $H_{0,jj'} = v_j-v_{j'}$ for a fixed user $0$. The optimization can be carried out with standard optimizers, such as gradient descent.
 
-<iframe
-  src="https://app.opinionx.co/6bef4ca1-82f5-4c1d-8c5a-2274509f22e2"
-  style="width:100%; height:450px;"
-></iframe>
+Let $\mathcal{N}_m^+ = \{(m,k) \in \mathcal{D}_{\text{train}}\}$ be pairs recorded in the order $(m,k)$. Let $\mathcal{N}_m^- = \{(k,m) \in \mathcal{D}_{\text{train}}\}$ be pairs recorded in the order $(k,m)$. Define residuals $r_{mk} = y_{mk} - \sigma(V_m - V_k)$ and $r_{km} = y_{km} - \sigma(V_k-V_m)$. Then
 
-:::
+$$
+\frac{\partial \ell}{\partial V_m} 
+= \sum_{(m,k)\in \mathcal{N}^+_m} r_{mk} 
+- \sum_{(k,m)\in \mathcal{N}^-_m} r_{km}.
+$$
+
+This shows the contribution of data about $m$ only. Each comparison with opponent $k$ adds a term equal to the observed-minus-predicted win indicator, with a plus sign if $m$ is listed first and a minus sign if $m$ is listed second. Intuitively, if $m$ beats $k$ more often than the model predicts, the residual is positive and the gradient pushes $V_m$ up. If $m$ loses to $k$ more than predicted, the residual is negative and the gradient pushes $V_m$ down.
 
 ```{pyodide-python}
 #| autorun: true
-n_pairs = 10000
-pair_indices = np.random.randint(0, n, size=(n_pairs, 2))
-# Exclude pairs where both indices are the same
-mask = pair_indices[:, 0] != pair_indices[:, 1]
-pair_indices = pair_indices[mask]
-
-scores = np.zeros(n, dtype=int)
-wins = utilities[pair_indices[:, 0]] > utilities[pair_indices[:, 1]]
-
-# For pairs where the first item wins:
-#   - Increase score for the first item by 1
-#   - Decrease score for the second item by 1
-np.add.at(scores, pair_indices[wins, 0], 1)
-np.add.at(scores, pair_indices[wins, 1], -1)
-
-# For pairs where the second item wins or it's a tie:
-#   - Decrease score for the first item by 1
-#   - Increase score for the second item by 1
-np.add.at(scores, pair_indices[~wins, 0], -1)
-np.add.at(scores, pair_indices[~wins, 1], 1)
-
-# Determine preferred and non-preferred items based on scores
-preferred = scores > 0
-non_preferred = scores < 0
-
-draw_surface()
-plt.scatter(items[preferred, 0], items[preferred, 1], c='blue', label='Preferred', alpha=0.5)
-plt.scatter(items[non_preferred, 0], items[non_preferred, 1], c='purple', label='Non-preferred', alpha=0.5)
-plt.legend()
-plt.show()
-```
-
-Similarly, we can sample data for $(j, \mathcal{S})$ for $j \in \mathcal{S} \subseteq \{1, \ldots, M\}$.
-
-### Mean Utilities
-
-In the **stochastic utility framework**, we model utilities as stochastic random variables. Let $\tilde{H}_{ij}$ denote a random utility that can be decomposed as:
-$$
-\tilde{H}_{ij} = f(U_i, V_j) + \varepsilon_{ij}
-$$
-where $f(U_i, V_j)$ is the **mean utility** (deterministic component) and $\varepsilon_{ij}$ is the **noise** (stochastic component), typically assumed independent across items.
-
-For the **single-user or population-aggregated case** (dropping the user index $i$), this simplifies to:
-$$
-\tilde{H}_j = V_j + \varepsilon_j
-$$
-
-**Parallel with latent variable models:** Recall that in the deterministic utility framework (Section @sec-latent-variable), we wrote $H_{ij} = f(U_i, V_j)$ as a deterministic quantity, with stochasticity entering through the observation process $Y_{ij} \sim \text{Bernoulli}(\sigma(H_{ij}))$. The key difference:
-
-- **Deterministic utility view:** $H_{ij} = f(U_i, V_j)$ is fixed; randomness is in Bernoulli sampling of $Y_{ij}$
-- **Stochastic utility view:** $\tilde{H}_{ij} = f(U_i, V_j) + \varepsilon_{ij}$ is random; randomness is in $\varepsilon_{ij}$ within the utility itself
-
-Both frameworks yield the same pairwise probabilities (when $f$ is additive and the user parameter cancels), demonstrating their **observational equivalence**.
-
-When users are modeled explicitly (as in Chapter 3), we return to the latent variable approach with $H_{ij}$ depending on both user and item parameters. For the remainder of this chapter, we focus on the single-user or population-aggregated case using random utilities. There are different forms of noise possible. We will focus on a particular one (called Type-1 Extreme value), but others are also popular, for example Gaussian noise.
-
-There are (at least) three different ways to view this noise $\varepsilon_{ij}$ in the random utility framework:
-
- - Either it is capturing the heterogeneity of different decision-makers---a view that is taken in the Economics field of Industrial Organization. Under this view, observing $(j, \mathcal{S})$ more frequently than $(j', \mathcal{S})$ is a sign of there being a higher number of decision-makers preferring $j$ over $j'$ than the other way around.
- - or as errors of a decision-maker's optimization of utilities $V_j$. This view is endorsed in the literature on Bounded Rationality. Under this view, it cannot be directly concluded from frequent observation of $(j, \mathcal{S})$ compared to $(j', \mathcal{S})$ that $j$ is preferred to $j'$. It might have been chosen in error.
- - We can also view it as a belief of the designer about the preferences $(V_j)_{j=1}^M$. In this view, the posterior after observing data can be used to make claims about relative preferences.
-
-These interpretations explain **why** one might model utilities as stochastic ($\tilde{H}_{ij} = f(U_i, V_j) + \varepsilon_{ij}$) rather than placing all randomness in the observation process ($Y_{ij} \sim \text{Bernoulli}(\sigma(H_{ij}))$ where $H_{ij} = f(U_i, V_j)$). The choice of framework depends on which conceptual interpretation best matches the application domain and available data.
-
-The interpretation will guide our decision-making predictions in Chapters 4 and 5.
-
-We next introduce a main way to simplify learning utility functions: The axiom of Independence of Irrelevant Alternatives.
-
-## Independence of Irrelevant Alternatives
-In later chapters, we will consider cases where we sample from the most preferred elements from all items, which we call the generation task. A simple assumption will allow us to recover the probabilities of choosing any item, and in fact, the full distribution of $\prec$ from binary comparisons: The so-called Independence of Irrelevant Alternatives, introduced in @luce1959individual. This assumption not only allows us to easily identify a preference model, it will also massively reduce what is needed to be estimated from data: Instead of the full $(M!-1)$-dimensional object, it will be sufficient to learn $M$ values.
-
-IIA assumes that the relative likelihood of choosing $j$ compared to $k$ does not change whether a third alternative $\ell$ is in the choice set or not. Formally, for every $\mathcal{S} \subseteq \{1, \ldots, M\}$, $j, k \in \mathcal{S}$, and $\ell \notin \mathcal{S}$,
-$$
-\frac{p(j \mid \mathcal{S})}{p(k \mid \mathcal{S})} = \frac{p(j \mid \mathcal{S} \cup \{\ell\})}{p(k \mid \mathcal{S} \cup \{\ell\})}.
-$$ {#eq-iia}
-(In particular, it must be that $p(k \mid \mathcal{S}) \neq 0$ and $p(k \mid \mathcal{S} \cup \{\ell\}) \neq 0$.) That is, the relative probability of choosing $j$ over $k$ should be independent of whether $\ell$ is present in the choice set. We will show that this single assumption is sufficient to make the choice model $M$-dimensional, making learning feasible.
-
-First, to our primary example: All random utility models with *independent and identically distributed* noise terms satisfy IIA. (We ask the reader to convince themselves that the Ackley function does not satisfy IIA.)
-
-::: {.callout-tip title="Theorem 1 (IIA-Gumbel Equivalence)"}
-
-A random utility model $H_j$ satisfies IIA if and only if we can write it as $H_j = V_j + \varepsilon_j$, where $V_j$ is deterministic and $\varepsilon_j$ is sampled independently and identically from the Gumbel distribution. The Gumbel distribution has cumulative distribution function $F(x) = e^{-e^{-x}}$.
-
-:::
-
-::: {.callout-tip title="Proof Sketch" collapse="true"}
-**(⇐) Gumbel implies IIA.** If $\varepsilon_j$ are i.i.d. Gumbel, then for any choice set $\mathcal{S}$ and any $j, k \in \mathcal{S}$:
-$$
-\frac{p(j \mid \mathcal{S})}{p(k \mid \mathcal{S})} = \frac{e^{V_j}/\sum_{\ell \in \mathcal{S}} e^{V_\ell}}{e^{V_k}/\sum_{\ell \in \mathcal{S}} e^{V_\ell}} = \frac{e^{V_j}}{e^{V_k}} = e^{V_j - V_k}
-$$
-This ratio depends only on $V_j - V_k$ and is independent of other alternatives in $\mathcal{S}$, so IIA holds.
-
-**(⇒) IIA implies Gumbel.** The converse is more subtle: one must show that IIA together with regularity (adding alternatives cannot increase choice probability) uniquely determines the Gumbel distribution. The key insight is that IIA forces a multiplicative structure on choice probabilities, and the only continuous distributions compatible with this structure are the extreme value distributions. See @yellott1977relationship for the complete proof.
-:::
-
-::: {.callout-note title="Connection to Latent Variable Models"}
-
-**How does IIA relate to the deterministic utility (Bernoulli sampling) view?**
-
-Recall that we showed two equivalent frameworks for pairwise choice: the deterministic utility view ($H_{ij} = f(U_i, V_j)$ with Bernoulli observations) and the stochastic utility view ($\tilde{H}_{ij} = f(U_i, V_j) + \varepsilon_{ij}$ with Gumbel noise).
-
-The connection to IIA is subtle:
-
-- **Latent variable models** ($H_{ij} = f(U_i, V_j)$, $Y_{ij} \sim \text{Bernoulli}(\sigma(H_{ij}))$) do not inherently assume IIA. Whether IIA holds depends on the functional form $f$ and how choices are generated from the binary responses $Y_{ij}$.
-
-- **Random utility models with i.i.d. Gumbel noise** ($\tilde{H}_{ij} = f(U_i, V_j) + \varepsilon_{ij}$) automatically satisfy IIA because the noise is i.i.d. across items.
-
-For **pairwise comparisons** from a single user with additive $f(U_i, V_j) = U_i + V_j$, both frameworks yield the same Bradley-Terry probabilities $p(j \succ k \mid i) = \sigma(V_j - V_k)$, which trivially satisfies IIA (the ratio $p(j \succ k)/p(k \succ j) = e^{2(V_j - V_k)}$ is constant).
-
-However, for **multi-way choices** (choosing from sets $\mathcal{S}$), the frameworks can differ:
-- The Gumbel view yields softmax: $p(j \mid \mathcal{S}) = e^{V_j}/\sum_{k \in \mathcal{S}} e^{V_k}$ (IIA holds by construction)
-- The Bernoulli view requires additional assumptions about how binary responses aggregate into multi-way choices
-
-Thus, IIA is most naturally associated with the random utility framework, though both frameworks are equivalent for pairwise data.
-
-:::
-
-This is quite strong, and an **equivalence**. If we are willing to assume IIA, it is sufficient to learn $M$ parameters to characterize the full distribution---an exponential decrease in parameters to learn. The Gumbel model may be unusual in particular for those with a stronger background in machine learning. A more familiar formulation arises for the probabilities of choice.
-
-::: {.callout-tip title="Theorem 2 (Choice Probabilities under IIA)"}
-
-Assume a random preference model satisfies IIA, hence $H_j = V_j + \varepsilon_j$ with i.i.d. Gumbel noise. Then, the probabilities of lists are:
-$$
-p(j_1 \succ j_2 \succ \cdots \succ j_M) = \frac{e^{V_{j_1}}}{\sum_{m=1}^M e^{V_{j_m}}} \cdot \frac{e^{V_{j_2}}}{\sum_{m=2}^M e^{V_{j_m}}} \cdots \frac{e^{V_{j_{M-1}}}}{e^{V_{j_{M-1}}} + e^{V_{j_M}}}.
-$$ {#eq-plackett-luce}
-For choices from sets,
-$$
-p(j \mid \mathcal{S}) = \frac{e^{V_j}}{\sum_{k \in \mathcal{S}} e^{V_k}} = \operatorname{softmax}_j ((V_k)_{k \in \mathcal{S}}).
-$$ {#eq-choice-prob}
-In particular, for binary comparisons
-$$
-p(Y_{jj'} = 1) = \frac{e^{V_j}}{e^{V_j} + e^{V_{j'}}} = \frac{1}{1 + e^{-(V_j - V_{j'})}} = \sigma(V_j - V_{j'}).
-$$ {#eq-bradley-terry}
-where $\sigma(x) = 1/(1 + e^{-x})$ is the sigmoid function.
-
-:::
-
-::: {.callout-tip title="Proof of Choice Probability Formula" collapse="true"}
-We derive (@eq-choice-prob). Item $j$ is chosen from $\mathcal{S}$ if $H_j > H_k$ for all $k \in \mathcal{S} \setminus \{j\}$, i.e., if $V_j + \varepsilon_j > V_k + \varepsilon_k$ for all $k \neq j$.
-
-Conditioning on $\varepsilon_j = t$, we need $\varepsilon_k < V_j - V_k + t$ for all $k \neq j$. Since the $\varepsilon_k$ are independent Gumbel with CDF $F(x) = e^{-e^{-x}}$:
-$$
-p(j \text{ wins} \mid \varepsilon_j = t) = \prod_{k \in \mathcal{S}, k \neq j} F(V_j - V_k + t) = \prod_{k \neq j} e^{-e^{-(V_j - V_k + t)}}
-$$
-The Gumbel density is $f(t) = e^{-t} e^{-e^{-t}}$. Integrating over $t$:
-$$
-p(j \mid \mathcal{S}) = \int_{-\infty}^{\infty} \prod_{k \neq j} e^{-e^{-(V_j - V_k + t)}} \cdot e^{-t} e^{-e^{-t}} \, dt
-$$
-Let $u = e^{-t}$, so $du = -e^{-t} dt$. After substitution and simplification (Exercise 2 asks you to complete this), we obtain:
-$$
-p(j \mid \mathcal{S}) = \frac{e^{V_j}}{\sum_{k \in \mathcal{S}} e^{V_k}}
-$$
-:::
-In particular, the choice probabilities $p(j \mid \mathcal{S})$ are equivalent to the multi-class logistic regression model (also called multinomial logit model), and generation from this model, that is, sampling $j$ with probability $p(j \mid \{1, \ldots, M\})$ is given by softmax-sampling $\operatorname{softmax}((V_j)_{j=1}^M)$.
-
-This model has many names, depending on the feedback type we consider. For binary comparison data, it is the Bradley-Terry model @bradley1952rank. If data is in forms of list, it is called the Plackett-Luce model @plackett1975analysis. For accept-reject sampling it is also called logistic regression. For choices from subsets, it is called the (discrete choice) logit model. We will usually call the model the **logit model** and specify the feedback type.
-
-::: {.callout-note title="Example: Bradley-Terry Probabilities"}
-Consider three items with utilities $V = (0, 1, 2)$. The Bradley-Terry pairwise probabilities are:
-
-| Comparison | Probability | Calculation |
-|------------|-------------|-------------|
-| $p(1 \succ 2)$ | 0.27 | $\sigma(0 - 1) = 1/(1 + e^1) \approx 0.27$ |
-| $p(2 \succ 1)$ | 0.73 | $\sigma(1 - 0) = 1/(1 + e^{-1}) \approx 0.73$ |
-| $p(1 \succ 3)$ | 0.12 | $\sigma(0 - 2) = 1/(1 + e^2) \approx 0.12$ |
-| $p(2 \succ 3)$ | 0.27 | $\sigma(1 - 2) = 1/(1 + e^1) \approx 0.27$ |
-| $p(3 \succ 1)$ | 0.88 | $\sigma(2 - 0) = 1/(1 + e^{-2}) \approx 0.88$ |
-| $p(3 \succ 2)$ | 0.73 | $\sigma(2 - 1) = 1/(1 + e^{-1}) \approx 0.73$ |
-
-For choice from the full set $\{1, 2, 3\}$, softmax gives:
-$$
-p(j \mid \{1,2,3\}) = \frac{e^{V_j}}{e^0 + e^1 + e^2} = \frac{e^{V_j}}{1 + 2.72 + 7.39} \approx (0.09, 0.24, 0.67)
-$$
-Item 3 (highest utility) is most likely to be chosen. Note that these utilities are only identified up to a constant: $(0, 1, 2)$ and $(5, 6, 7)$ yield identical choice probabilities.
-:::
-
-::: {.callout-note title="Connection to DPO"}
-We can now see why DPO assumes the Bradley-Terry model (@eq-bradley-terry-dpo). When we posit that human preferences arise from comparing implicit rewards with i.i.d. Gumbel noise---that is, a human prefers response $y$ over $y'$ when $r(x, y) + \varepsilon > r(x, y') + \varepsilon'$---the resulting preference probability is exactly Bradley-Terry: $p(y \succ y' \mid x) = \sigma(r(x, y) - r(x, y'))$. DPO's loss function is then the negative log-likelihood under this model.
-
-**Numerical example.** Suppose for a prompt $x$, the model assigns:
-
-- $\log \pi_\theta(y_w \mid x) - \log \pi_{\text{ref}}(y_w \mid x) = 0.5$ (preferred response upweighted)
-- $\log \pi_\theta(y_l \mid x) - \log \pi_{\text{ref}}(y_l \mid x) = -0.3$ (dispreferred response downweighted)
-
-With $\beta = 1$, the implicit reward difference is $0.5 - (-0.3) = 0.8$, giving preference probability $\sigma(0.8) \approx 0.69$. Under Bradley-Terry, this datapoint contributes $-\log(0.69) \approx 0.37$ to the loss.
-
-**What if Bradley-Terry fails?** If human preferences exhibit:
-
-- *Context effects*: preferences depend on what other options are shown → IIA violated
-- *Intransitive preferences*: $A \succ B \succ C \succ A$ → no consistent utility exists
-- *Annotator disagreement*: different people have different preferences → mixture model needed
-
-DPO will learn a "compromise" policy that may not match any individual's true preferences. See Chapter 6 for approaches to handling heterogeneity.
-:::
-
-The IIA assumption has many desirable properties, such as stochastic transitivity and relativity. The reader is asked to prove them in the exercises to this chapter. The learning of, and optimization based on, the mean utilities $(V_j)_{j=1}^M$ is one of the central goals of this book. Supervised learning based on it will be covered in the next chapter.
-
-## Identification and the Rashomon Effect {#sec-identification-rashomon}
-
-When learning utility parameters from choice data, two fundamental challenges arise: the **identification problem** and the **Rashomon effect**. Both concern the multiplicity of models that can explain the same observations, but they operate at different levels. These challenges apply to **both deterministic and stochastic utility models**.
-
-**The Identification Problem.** A fundamental issue in utility-based models is **identification**: different utility vectors can generate identical choice probabilities or response patterns.
-
-::: {.callout-tip title="Proposition (Identification)"}
-**For stochastic utility models (IIA/softmax):** For any constant $c \in \mathbb{R}$, the mean utilities $(V_1, \ldots, V_M)$ and $(V_1 + c, \ldots, V_M + c)$ generate the same choice probabilities from $p(j \mid \mathcal{S}) = e^{V_j}/\sum_{k \in \mathcal{S}} e^{V_k}$.
-
-**For deterministic utility models:** For any constant $c \in \mathbb{R}$, when utilities depend only on differences (e.g., pairwise comparisons where $p(j \succ k \mid i) = \sigma(H_{ij} - H_{ik})$), the utilities $(H_{i1}, \ldots, H_{iM})$ and $(H_{i1} + c, \ldots, H_{iM} + c)$ generate the same probabilities for user $i$.
-:::
-
-*Proof.*
-
-**Stochastic case:** For any $\mathcal{S}$ and $j \in \mathcal{S}$:
-$$
-\frac{e^{V_j + c}}{\sum_{k \in \mathcal{S}} e^{V_k + c}} = \frac{e^c \cdot e^{V_j}}{e^c \cdot \sum_{k \in \mathcal{S}} e^{V_k}} = \frac{e^{V_j}}{\sum_{k \in \mathcal{S}} e^{V_k}}
-$$
-
-**Deterministic case:** For pairwise comparisons:
-$$
-p(j \succ k \mid i) = \sigma((H_{ij} + c) - (H_{ik} + c)) = \sigma(H_{ij} - H_{ik})
-$$
-
-This shows that choice/comparison data only identifies utility **differences**, not absolute levels. The identification problem is a structural property of both frameworks—it doesn't matter how much data we collect; we can never distinguish between $(V_1, V_2, V_3)$ and $(V_1 + 10, V_2 + 10, V_3 + 10)$ from choice behavior alone, nor between $(H_{i1}, H_{i2}, H_{i3})$ and $(H_{i1} + 10, H_{i2} + 10, H_{i3} + 10)$ from pairwise comparisons alone.
-
-**Implications:**
-
-1. **Normalization required**: When learning utilities, we must fix one value. The standard convention is $V_0 = 0$ for an outside option, making all other utilities interpretable as "value relative to opting out."
-
-2. **Only differences matter**: From choice data, we can only identify utility *differences* $V_j - V_k$, not absolute levels. This is why Bradley-Terry uses $\sigma(V_j - V_{j'})$.
-
-3. **Connection to DPO**: In DPO, the reference policy $\pi_{\text{ref}}$ provides the normalization. The implicit reward $r^*(x, y) = \beta \log \frac{\pi_\theta(y|x)}{\pi_{\text{ref}}(y|x)}$ measures deviation from the reference, avoiding the identification problem.
-
-**The Rashomon Effect.** Even after imposing identification constraints, there may exist many *structurally different* models that fit the data equally well. This phenomenon, named after Akira Kurosawa's 1950 film *Rashomon* (where multiple witnesses give contradictory but internally consistent accounts of the same event), is called the **Rashomon effect** [@breiman2001statistical; @rudin2022interpretable].
-
-Consider these examples:
-
-- **Model class multiplicity**: A mixture of two Bradley-Terry models with group-specific utilities $(V_j^{(1)}, V_j^{(2)})$ might predict equally well as a single Bradley-Terry model with different utilities $V_j$, or even a non-IIA model with correlated noise.
-
-- **Representation multiplicity**: In factor models with $K$ dimensions, many different $(K \times M)$ embedding matrices can generate similar predicted preferences through different geometric arrangements of items.
-
-- **Feature multiplicity**: In contextual preference models (Chapter 5), many different feature weightings $\theta$ might achieve similar prediction accuracy but assign different importance to features.
-
-The **Rashomon ratio** quantifies this multiplicity: if the best model achieves loss $L^*$, the Rashomon set $\mathcal{R}_\epsilon$ contains all models with loss at most $(1 + \epsilon) L^*$. When $|\mathcal{R}_\epsilon|$ is large, many explanations coexist [@semenova2022existence].
-
-**Why This Matters:**
-
-1. **Interpretation uncertainty**: If many models fit equally well, interpreting any single model's parameters as "the truth" is suspect. Which utility values are the "real" ones?
-
-2. **Scientific understanding**: The Rashomon effect suggests we should report *sets* of good models rather than a single "best" model, especially for scientific inference [@breiman2001statistical].
-
-3. **Alignment implications**: In RLHF, if many reward functions explain human feedback equally well, which one should we optimize? Different reward functions in the Rashomon set may induce different policies, even if they agree on the training comparisons [@skalse2022defining].
-
-**Relationship Between Identification and Rashomon:**
-
-- **Identification** is about the model's mathematical structure: parameters that are *algebraically equivalent* within a single model class.
-- **Rashomon effect** is about empirical indistinguishability: *different models or parameterizations* that happen to fit the observed data equally well.
-
-Think of identification as "these parameters mean the same thing," while Rashomon says "these different models perform the same."
-
-::: {.callout-note title="Example: Rashomon in Practice"}
-Suppose we collect 100 pairwise comparisons between 5 items and fit:
-
-1. A Bradley-Terry model with utilities $(0, V_2, V_3, V_4, V_5)$ achieving 90% accuracy
-2. A 2-group mixture model with group utilities and mixing weights, also 90% accuracy
-3. A nested logit model with correlation parameters, also 90% accuracy
-
-All three models satisfy different identification constraints (so parameters within each model are well-defined), yet all three fit equally well. This is the Rashomon effect. Without additional data or prior knowledge, we cannot determine which model is "correct."
-:::
-
-In later chapters, we'll see how regularization (Chapter 3), Bayesian approaches, and structural assumptions can help navigate both identification and Rashomon challenges. For now, remember: **be cautious when interpreting learned utilities as ground truth**—there may be many equally valid explanations.
-
-IIA has limitations, which might require more flexible specifications of noise and heterogeneity.
-
-::: {.callout-important title="Key Takeaway: IIA and Bradley-Terry"}
-The Independence of Irrelevant Alternatives (IIA) is equivalent to i.i.d. Gumbel noise in random utility models. Under IIA, choice probabilities take the softmax form, and pairwise comparisons follow the Bradley-Terry model: $p(j \succ k) = \sigma(V_j - V_k)$. This reduces parameter complexity from $M! - 1$ to just $M$, making learning tractable. However, IIA can fail when alternatives are similar (red-bus/blue-bus) or when the population is heterogeneous.
-:::
-
-### IIA's Limitations
-
-IIA is surprisingly strong, but does not allow for choice probabilities that are, fundamentally, results of multiple decision-makers making choices together. A first restriction is given by
-
-**Heterogeneity.** A crucial shortcoming of IIA is that if sub-populations satisfy IIA this does not mean that the full population satisfies IIA. Assume that our population consists of sub-populations $i = 1, \dots, N$ which have mass $\alpha_1, \alpha_2, \dots, \alpha_N$, respectively, in the population, and that each of the groups has preferences satisfying IIA. Because of IIA, we can represent each sub-group's stochastic preferences with an average utility vector $(V_j^{(i)})_{j=1}^M$ for group $i$. The distribution of the full population is then given by a mixture of the sub-population preferences. For example, for binary comparisons
-
-$$
-p(Y_{jj'} = 1) = \sum_{i=1}^N \alpha_i \, p(Y_{jj'} = 1 \mid \text{group } i) = \sum_{i=1}^N \alpha_i \, \sigma(V_j^{(i)} - V_{j'}^{(i)}).
-$$
-
-Sadly, such mixtures are far from IIA, as we see in the following coding example.
-
-```{pyodide-python}
-#| autorun: true
-import numpy as np
-
-# Define utilities for each group
-group1_utilities = {'A': 1.0, 'B': 2.0, 'C': 3.0}
-group2_utilities = {'A': 3.0, 'B': 2.0, 'C': 1.0}
-
-# Group weights
-alpha1 = 0.5
-alpha2 = 0.5
-
-def softmax(utilities):
-    exp_vals = np.exp(list(utilities.values()))
-    total = np.sum(exp_vals)
-    return {k: np.exp(v) / total for k, v in utilities.items()}
-
-# Compute mixed logit probabilities over all 3 options
-p1_full = softmax(group1_utilities)
-p2_full = softmax(group2_utilities)
-p_mix_full = {k: alpha1 * p1_full[k] + alpha2 * p2_full[k] for k in group1_utilities}
-
-# Compute ratio A/B in full model
-ratio_full = p_mix_full['A'] / p_mix_full['B']
-
-# Now remove option C
-reduced_utils1 = {'A': group1_utilities['A'], 'B': group1_utilities['B']}
-reduced_utils2 = {'A': group2_utilities['A'], 'B': group2_utilities['B']}
-p1_reduced = softmax(reduced_utils1)
-p2_reduced = softmax(reduced_utils2)
-p_mix_reduced = {k: alpha1 * p1_reduced[k] + alpha2 * p2_reduced[k] for k in reduced_utils1}
-
-# Compute ratio A/B in reduced model
-ratio_reduced = p_mix_reduced['A'] / p_mix_reduced['B']
-
-# Show violation of IIA
-print(f"Ratio A/B with all options: {ratio_full:.4f}")
-print(f"Ratio A/B after removing C: {ratio_reduced:.4f}")
-```
-
-An intuition for IIA's failure comes from viewing it as random utility functions: A mixture of vectors that have independent entries is not Gaussian.
-
-```{pyodide-python}
-#| autorun: true
-import numpy as np
-import matplotlib.pyplot as plt
-from scipy.stats import norm
-
-# Define two Gaussian distributions
-mu1, sigma1 = 0, 1
-mu2, sigma2 = 4, 1
-x = np.linspace(-4, 8, 1000)
-
-# Evaluate the PDFs
-pdf1 = norm.pdf(x, mu1, sigma1)
-pdf2 = norm.pdf(x, mu2, sigma2)
-
-# Mixture: equal weight
-mixture_pdf = 0.5 * pdf1 + 0.5 * pdf2
+def auc_from_scores(scores, labels):
+    pos = scores[labels == 1]
+    neg = scores[labels == 0]
+    if pos.size == 0 or neg.size == 0:
+        return np.nan
+    # Brute-force definition to avoid dependencies and handle ties
+    cmp = (pos[:, None] > neg[None, :]).mean()
+    ties = (pos[:, None] == neg[None, :]).mean()
+    return cmp + 0.5 * ties
+
+# Collect observed training pairs and labels from the upper triangle only
+r_obs, c_obs = np.where(~np.isnan(Y_train))
+upper_mask = r_obs < c_obs
+r_tr_fit = r_obs[upper_mask]
+c_tr_fit = c_obs[upper_mask]
+y_tr_fit = Y_train[r_tr_fit, c_tr_fit].astype(float)
+
+epochs = 100
+lr = 0.01
+train_auc_hist = []
+n_pairs = r_tr_fit.size
+V_hat = np.zeros(M, dtype=float)
+
+for t in range(epochs):
+    # Scores and probabilities for observed training pairs
+    H = V_hat[r_tr_fit] - V_hat[c_tr_fit]
+    p = 1.0 / (1.0 + np.exp(-H))
+    err = (y_tr_fit - p)
+    grad = np.zeros_like(V_hat)
+    np.add.at(grad, r_tr_fit, err)
+    np.add.at(grad, c_tr_fit, -err)
+    V_hat += lr * grad
+    train_auc_hist.append(auc_from_scores(H, y_tr_fit))
+
+# Collect observed test pairs and labels from the upper triangle
+r_te_obs, c_te_obs = np.where(~np.isnan(Y_test))
+upper_mask_te = r_te_obs < c_te_obs
+r_te_fit = r_te_obs[upper_mask_te]
+c_te_fit = c_te_obs[upper_mask_te]
+y_te_fit = Y_test[r_te_fit, c_te_fit].astype(float)
+
+# Scores for test pairs
+s_te = V_hat[r_te_fit] - V_hat[c_te_fit]
+test_auc = auc_from_scores(s_te, y_te_fit)
 
 # Plot
-plt.plot(x, pdf1, label='N(0, 1)', linestyle='--')
-plt.plot(x, pdf2, label='N(4, 1)', linestyle='--')
-plt.plot(x, mixture_pdf, label='Mixture 0.5*N(0,1) + 0.5*N(4,1)', linewidth=2)
-plt.title("Mixture of Two Gaussians is Not Gaussian")
-plt.xlabel("x")
-plt.ylabel("Density")
-plt.legend()
-plt.grid(True)
+plt.plot(np.arange(1, epochs + 1), train_auc_hist, label="Train")
+plt.hlines(test_auc, xmin=0, xmax=epochs, linestyle="--", label="Test")
+plt.xlabel("Epoch")
+plt.ylabel("Train AUC")
+plt.ylim(0.75, 0.85)
 plt.show()
 ```
 
-Classic ways to solve this concern is to consider a model with explicit representation of heterogeneity, where preferences depend on a latent type $\alpha \sim F$ for some distribution $F$, and $(V_j)_{j=1}^M$ given $\alpha$ follows a random utility model with independent error terms. For example, consider a logit random utility model
-$$
-V_j = \beta^\top x_j + \varepsilon_j
-$$
-and assume $\beta \sim N(\mu, \Sigma)$ is a normally distributed vector, a model called the random coefficients logit model. Equivalently, we can view this as a model with correlated utility shocks.
-
-**Similar Options (Red-Bus/Blue-Bus).** A second limitation is only relevant if we move beyond binary choices, or observe preference lists. Let $\{1, 2, 3\}$ be three items, where items $1$ and $2$ are (almost) identical and different from item $3$. (In the classical example, items $1, 2$ are red and blue buses, respectively, and item $3$ is a train). Assume an IIA model given by average utilities $(V_j)$. As items $1$ and $2$ are almost identical, assume $V_1 = V_2$. We have $p(3 \mid \{1, 3\}) = p(3 \mid \{2, 3\})$. How do these values compare to $p(3 \mid \{1, 2, 3\})$? It would be intuitive to think that item $3$ is chosen with the same frequency, as there should not be more "demand" for item $3$ only because item $1$ is cloned. This is not the case.
+In this synthetic setting, one way to interpret the result is to compare with the Bayes optimal AUC. Here we quantify an upper bound on achievable test AUC under the assumed data-generating process. For each test pair $(j,k)$ we know the ground-truth win probability $P_{jk}=\sigma(V_j-V_k)$ from the simulator. The Bayes-optimal score for that pair is exactly this probability, $s^*_{jk}=P_{jk}$. Any classifier that ranks pairs by $s^*$ maximizes AUC in expectation because it orders pairs by their true success probabilities. To estimate the corresponding Bayes AUC on our finite test set, we keep the same index set of pairs and repeatedly resample binary labels $Y_{jk} \sim \mathrm{Bern}(P_{jk})$, then compute $\mathrm{AUC}(s^*, Y)$ on each resample using a tie-aware definition. The mean of these Monte Carlo AUCs is the Bayes-optimal test AUC, and the empirical quantiles give a sampling range induced purely by label noise. For comparison, we compute the model’s AUC by replacing $s^*_{jk}$ with the learned scores $s^{*\text{model}}_{jk}=\sigma(\hat V_j-\hat V_k)$. The gap between the two summarizes how far the fitted model is from the oracle ranking implied by the true $P^*_{jk}$ on the exact same test pairs.
 
 ```{pyodide-python}
 #| autorun: true
-import numpy as np
+def collect_pairs(Y):
+    r, c = np.where(~np.isnan(Y))
+    upper = r < c
+    return r[upper], c[upper], Y[r[upper], c[upper]].astype(float)
 
-# Deterministic utilities
-v_car = 1.0
-v_bus = 2.0  # Initially a single bus alternative
+# Unordered test set
+r_te_u, c_te_u, y_te_u = collect_pairs(Y_test)
 
-# Logit choice probabilities (before splitting bus)
-def softmax(utilities: np.ndarray) -> np.ndarray:
-    exp_util = np.exp(utilities)
-    return exp_util / np.sum(exp_util)
+# Bayes scores and model scores for those exact pairs
+s_bayes = P[r_te_u, c_te_u]                 # ground-truth probs
+s_model = 1.0/(1.0+np.exp(-(V_hat[r_te_u]-V_hat[c_te_u])))
 
-# Before splitting: two alternatives
-utilities_before = np.array([v_car, v_bus])
-probs_before = softmax(utilities_before)
-print("Before splitting (Car, Bus):", probs_before)
+auc_bayes = auc_from_scores(s_bayes, y_te_u)
+auc_model = auc_from_scores(s_model, y_te_u)
+print(f"Test AUC. Bayes: {auc_bayes:.4f}. Model: {auc_model:.4f}.")
 
-# After splitting: three alternatives
-v_red_bus = v_bus
-v_blue_bus = v_bus
-utilities_after = np.array([v_car, v_red_bus, v_blue_bus])
-probs_after = softmax(utilities_after)
-print("After splitting (Car, Red Bus, Blue Bus):", probs_after)
-print("After splitting, total bus share:", probs_after[1] + probs_after[2])
+def resample_labels_from_P(r_idx, c_idx, P_mat, rng):
+    p = P_mat[r_idx, c_idx]
+    return (rng.random(size=p.size) < p).astype(float)
+
+R = 2000  # repeats
+bayes_list = []
+model_list = []
+for _ in range(R):
+    y_resamp = resample_labels_from_P(r_te_u, c_te_u, P, rng)
+    bayes_list.append(auc_from_scores(s_bayes, y_resamp))
+    model_list.append(auc_from_scores(s_model, y_resamp))
+
+print(f"Mean AUC over resamples. Bayes: {np.mean(bayes_list):.4f}. Model: {np.mean(model_list):.4f}.")
+print(f"5–95% range Bayes: {np.percentile(bayes_list,[5,95])}. Model: {np.percentile(model_list,[5,95])}.")
 ```
 
-The choice probability of `car` is reduced. Why is our intuition making us think that items $1$ and $2$ should split their choice probability? One option is because we assume some correlation: If you like item $1$ over item $3$ then you should also like item $2$ over item $3$, and vice versa. Hence, we would like correlation between choice probabilities in random utility models. For example, if we allow in a logit random utility model the error terms for items $1, 2$ to be perfectly correlated (and we break ties uniformly at random), then
-$$
-(p(1 \mid \{1, 2, 3\}), p(2 \mid \{1, 2, 3\}), p(3 \mid \{1, 2, 3\})) = \left(\frac{p(1 \mid \{1, 3\})}{2}, \frac{p(2 \mid \{2, 3\})}{2}, p(3 \mid \{1, 3\})\right),
-$$
-confirming our intuition.
+The result shows that the inference has found a good solution compared to the Bayes optimal estimator! An additional, natural test is to see if the estimated parameters match the true ones. Since the likelihood function only pays attention to the difference of item appeal for any pair, the appeal is only identifiable up to a shift and scale transform. The standard practice is to center and whiten the solution.
 
-This is the end of our discussion of the Independence of Irrelevant Alternatives. Additional features can be found in [@train2009discrete;@ben1985discrete;@mcfadden1981econometric] and the original paper for logit analysis @mcfadden1972conditional.
+```{pyodide-python}
+#| autorun: true
+# Center and whiten V_hat (zero mean, unit variance)
+V_hat_norm = (V_hat - V_hat.mean()) / (V_hat.std() + 1e-12)
 
-## Connecting Item-wise and Pairwise Models {#sec-connecting-models}
+# Fit best affine map a*V_hat_norm + b to V (least squares)
+A = np.vstack([V_hat_norm, np.ones_like(V_hat_norm)]).T
+a, b = np.linalg.lstsq(A, V, rcond=None)[0]
+V_hat_aligned = a * V_hat_norm + b
 
-We have now seen two families of preference models:
+# After alignment, points should cluster near the diagonal
+plt.scatter(V, V_hat, s=12, c="red")
+plt.scatter(V, V_hat_aligned, s=12, c="blue")
+lims = [-3, 3]
+plt.plot(lims, lims, linestyle="--")
+plt.xlabel("V")
+plt.ylabel("Estimated V")
 
-- **Pairwise models** (Bradley-Terry, Plackett-Luce): Model comparisons between items using item parameters $V_j$ only
-- **Item-wise models** (Rasch, factor models): Model individual responses using both user parameters $U_i$ and item parameters $V_j$
+# Report alignment quality
+corr = np.corrcoef(V, V_hat)[0, 1]
+mse = np.mean((V - V_hat) ** 2)
+print(f"Before center and whiten: Corr {corr:.4f}, MSE: {mse:.6f}")
 
-How do these relate? This section clarifies the connections and provides guidance on when to use each.
-
-**From Item-wise to Pairwise.** Given a factor model for item-wise data, we can derive pairwise preferences by comparing latent utilities:
-
-*Rasch → Bradley-Terry (single user):* As shown in @sec-latent-variable, if $H_{ij} = U_i + V_j$, then $p(j \succ k \mid i) = \sigma(V_j - V_k)$, which is exactly Bradley-Terry. The user parameter cancels.
-
-*General Factor Model → User-specific Preferences:* If $H_{ij} = U_i^\top V_j + Z_j$, then:
-$$
-p(j \succ k \mid i) = \sigma\left(U_i^\top (V_j - V_k) + (Z_j - Z_k)\right)
-$$
-This is **not** standard Bradley-Terry---the preference probability depends on the user $U_i$! Different users may rank the same items differently. This captures the reality that a horror fan and a comedy fan will have opposite preferences between *The Shining* and *The Hangover*.
-
-**When User Parameters Cancel.** User parameters cancel out in pairwise comparisons when:
-
-1. **Rasch model**: The additive structure $H_{ij} = U_i + V_j$ means user appetite scales all items equally
-2. **Single user**: With $N = 1$, there's only one $U_i$, which becomes part of the constant
-3. **Homogeneous population**: When all users are identical ($U_i = U$ for all $i$)
-
-In these cases, Bradley-Terry suffices for ranking items. But for personalized recommendations, we need factor models that preserve user information.
-
-**A Unified Generative View.** Both model families arise from the same latent utility framework:
-
-```
-              Latent Utility: H_{ij} = f(U_i, V_j) + ε_{ij}
-                           /                        \
-          Item-wise Response:                 Pairwise Comparison:
-          Y_{ij} = 𝟙[H_{ij} > 0]              Y_{i,jk} = 𝟙[H_{ij} > H_{ik}]
+corr = np.corrcoef(V, V_hat_aligned)[0, 1]
+mse = np.mean((V - V_hat_aligned) ** 2)
+print(f"After center and whiten: Corr {corr:.4f}, MSE: {mse:.6f}")
 ```
 
-The choice between data types depends on the application:
+## Bayesian Inference {#sec-bayesian}
 
-| Consideration | Item-wise Favored | Pairwise Favored |
-|--------------|-------------------|------------------|
-| **Data abundance** | Every interaction is one datapoint | Comparisons require explicit elicitation |
-| **User identity** | Users are logged in / identifiable | Users are anonymous or pooled |
-| **Goal** | Personalized recommendations | Global ranking of items |
-| **Scale** | $O(NM)$ observations | $O(NM^2)$ possible comparisons |
-| **Cold start** | Can use user/item features | Relies only on comparison outcomes |
+A Bayesian approach provides a natural alternative to maximum likelihood for parameter estimation in the Bradley–Terry model. Instead of finding a single point estimate for the item parameters (V), we place a prior distribution on them (e.g., independent standard normals) and update this prior using the Bernoulli likelihood from the observed comparisons. This yields a posterior distribution over (V), which captures both central estimates and the uncertainty around them. In practice, this posterior cannot be computed in closed form, so we turn to approximate inference. One common method is Markov chain Monte Carlo (MCMC), which constructs a sequence of samples that, in the limit, follow the posterior distribution.
 
-::: {.callout-tip title="Practical Guidance"}
-- Use **Bradley-Terry / pairwise models** when: ranking items for a population (LLM evaluation, sports rankings), users are anonymous, or comparisons are the natural data format (A/B testing, tournament brackets)
-- Use **Factor models / item-wise models** when: building personalized recommendations, users have persistent identities, or you need to predict responses to new items
-- Use **both** when: you have rich interaction data and want both global quality rankings and personalized recommendations (e.g., a streaming service ranking shows globally while personalizing the home page)
-:::
+In particular, the Metropolis–Hastings (MH) algorithm is straightforward to apply: at each step, we propose a new value for one or more coordinates of (V) (e.g., from a Gaussian centered at the current state), compute the acceptance ratio as the ratio of posterior densities between the proposed and current states, and accept the proposal with that probability. Repeating this process produces a chain of samples that can be used to approximate posterior means, variances, or other functionals of interest. This approach not only yields point predictions but also quantifies uncertainty about the relative strengths of items under the Bradley–Terry model.
 
-## Beyond Bradley-Terry: Random Choice Models (Optional) {#sec-beyond-bradley-terry}
-
-::: {.callout-note}
-This section is optional and covers advanced extensions of the Bradley-Terry framework for readers interested in the broader literature on discrete choice models.
-:::
-
-The Bradley-Terry model underlying DPO is just one member of a rich family of *random choice models* (also called *discrete choice models*) developed primarily in economics and psychology. These models provide principled ways to relax IIA when it fails to capture observed preference patterns.
-
-**Probit models.** Instead of Gumbel-distributed noise (which yields Bradley-Terry/logit), we can assume Gaussian noise: $H_j = V_j + \varepsilon_j$ with $\varepsilon \sim \mathcal{N}(0, \Sigma)$. When $\Sigma = I$ (independent noise), this yields the *multinomial probit* model. The key advantage is that probit allows for arbitrary correlation structures in $\Sigma$, naturally handling the red-bus/blue-bus problem. If red and blue buses have correlated noise ($\Sigma_{12} > 0$), adding one does not steal probability from the train. The disadvantage is computational: unlike logit, probit choice probabilities lack closed-form expressions and require numerical integration.
-
-**Nested logit.** A tractable middle ground is the *nested logit* model, which groups alternatives into "nests" with correlated noise within each nest. For the transportation example, we might have Bus nest = {red bus, blue bus} and Car nest = {car}. The model first chooses a nest, then an alternative within the nest. This preserves IIA *within* nests while allowing substitution patterns *across* nests that violate IIA.
-
-**Random coefficients (mixed) logit.**
-
-The most flexible extension is the *random coefficients logit* (also called *mixed logit*), which we already encountered in the heterogeneity discussion. Here, the utility coefficients $\beta$ are random:
+Let the prior be i.i.d. standard normal for each item parameter: $p(V) = \prod_{j=1}^M \mathcal N(V_j \mid 0, 1)$. Then the posterior distribution is $p(V \mid \mathcal D) = p(\mathcal D \mid V)p(V)/p(\mathcal D),$ where the likelihood is
 $$
-V_j = \beta^\top x_j, \quad \beta \sim F
-$$
-for some distribution $F$ (often Gaussian). This model can approximate any random utility model arbitrarily well [@mcfadden2000mixed], making it extremely flexible. Modern implementations use simulation-based estimation; see @train2009discrete for details.
-
-**Gaussian Process models for nonlinear rewards.** {#sec-gp-models}
-
-The random coefficients logit still assumes utility is *linear* in features $x_j$. This assumption is limiting: linear reward functions can only achieve their optima at extreme points (corners of the feasible region). Consider a robot learning preferences over mini-golf shots parameterized by speed and angle—a linear reward $r = w_1 \cdot \text{speed} + w_2 \cdot \text{angle}$ cannot express "I prefer a moderate shot to the middle target."
-
-**Gaussian Processes (GPs)** provide a nonparametric alternative that can model arbitrary smooth functions:
-$$
-r(x) \sim \mathcal{GP}(m, k)
-$$
-where $m: \mathcal{X} \to \mathbb{R}$ is the mean function and $k: \mathcal{X} \times \mathcal{X} \to \mathbb{R}$ is the covariance function (kernel). A GP is defined by the property that any finite collection of function values follows a multivariate Gaussian:
-$$
-[r(x_1), \ldots, r(x_n)]^\top \sim \mathcal{N}(\boldsymbol{\mu}, K), \quad \text{where } \mu_i = m(x_i), \; K_{ij} = k(x_i, x_j)
+p(\mathcal D \mid V) = \prod_{(j,j')\in\mathcal I} \sigma(V_j - V_{j'})^{Y_{jj'}} 
+\bigl(1-\sigma(V_j - V_{j'})\bigr)^{1-Y_{jj'}}.
 $$
 
-The most common kernel is the Radial Basis Function (RBF):
+The denominator is the marginal likelihood (evidence), which is intractable in closed form, so we resort to MCMC (e.g., MH) to sample from the posterior. Suppose we are at current (parameter) state $V^{(t)}$. We propose a new state $V'$ from a proposal distribution, such as Gaussian: $q(V' \mid V^{(t)}) = \mathcal N (V'; V^{(t)}, \tau^2 I),$ where $\tau^2$ is a step-size variance. This proposal is symmetric, meaning $q(V' \mid V^{(t)}) = q(V^{(t)} \mid V').$ For any proposal distribution $q(V' \mid V^{(t)})$, the Metropolis–Hastings acceptance probability is
+
 $$
-k(x, x') = \sigma_f^2 \exp\left(-\frac{\|x - x'\|^2}{2\ell^2}\right)
+\alpha = \min \left\{1, \frac{p(V' \mid \mathcal D) \cdot q(V^{(t)} \mid V')}{p(V^{(t)} \mid \mathcal D) \cdot q(V' \mid V^{(t)})}\right\}.
 $$
-which encodes the assumption that nearby points have correlated function values, with length-scale $\ell$ controlling smoothness.
+
+This says: accept the proposal with probability proportional to how much more plausible it is under the posterior, adjusted by how easy it is to propose back. If we choose a Gaussian proposal, the proposal terms cancel out in the ratio due to symmetry. So the acceptance rule simplifies to
+$$
+\alpha = \min \left\{1, \frac{p(V' \mid \mathcal D)}{p(V^{(t)} \mid \mathcal D)}\right\} = \min \left\{1, \frac{p(\mathcal D \mid V') \cdot p(V')}{p(\mathcal D \mid V^{(t)}) \cdot p(V^{(t)})}\right\}.
+$$
+
+```{pyodide-python}
+#| autorun: true
+def logpost(v, r_idx, c_idx, y_obs, prior_var=1.0):
+    s = v[r_idx] - v[c_idx]
+    # Stable log-sigmoid pieces
+    # log p = -softplus(-s), log(1-p) = -softplus(s)
+    ll = (y_obs * -np.log1p(np.exp(-s)) + (1 - y_obs) * -np.log1p(np.exp(s))).sum()
+    lp = -0.5 * np.dot(v, v) / prior_var
+    return ll + lp
+
+steps = 10000
+prop_scale = 0.05
+
+# Test labels (upper)
+y_te = Y_test[r_te, c_te].astype(float)
+
+rng = np.random.default_rng(3)
+v_cur = rng.normal(scale=0.1, size=M)
+v_cur -= v_cur.mean()
+lp_cur = logpost(v_cur, r_tr_fit, c_tr_fit, y_tr_fit)
+
+trace_every = 1
+trace = []
+acc = 0
+
+for t in range(steps):
+    v_prop = v_cur.copy()
+    # Single-coordinate random walk
+    j = rng.integers(M)
+    v_prop[j] += rng.normal(scale=prop_scale)
+    # Fix shift invariance
+    v_prop -= v_prop.mean()
+    lp_prop = logpost(v_prop, r_tr_fit, c_tr_fit, y_tr_fit)
+    if np.log(rng.random()) < (lp_prop - lp_cur):
+        v_cur, lp_cur = v_prop, lp_prop
+        acc += 1
+    if (t + 1) % trace_every == 0:
+        trace.append(v_cur.copy())
+
+trace = np.array(trace)  # shape (steps/trace_every, M)
+acc_rate = acc / steps
+print(f"[MH] Acceptance rate: {acc_rate:.3f} with prop_scale={prop_scale}")
+
+# Show trace for a few items
+fig, axes = plt.subplots(1, 2, figsize=(12, 4))
+axes[0].plot(trace[:, 0], lw=0.8)
+axes[0].set_title("Trace of v[0]")
+axes[0].set_xlabel("Iteration / 5")
+axes[0].set_ylabel("Value")
+
+axes[1].hist(trace[:, 0], bins=100, density=True)
+axes[1].set_title("Posterior of v[0]")
+plt.show()
+```
+
+## Inference for Gaussian Process Preference Models {#sec-gp-inference}
+
+Chapter 2 introduced Gaussian Processes (GPs) as a flexible nonparametric alternative to linear reward models. With GPs, we place a prior distribution over reward functions $r \sim \mathcal{GP}(m, k)$ and combine it with the Bradley-Terry likelihood for preferences. The challenge is that this likelihood is *non-Gaussian*, breaking the standard GP posterior formulas.
+
+**The inference problem.** Given pairwise comparisons $\mathcal{D} = \{(x_A^{(i)}, x_B^{(i)}, y_i)\}_{i=1}^n$ where $y_i = 1$ if item $A$ was preferred, we want to compute the posterior:
+$$
+p(r \mid \mathcal{D}) \propto p(\mathcal{D} \mid r) \cdot p(r)
+$$
+
+The likelihood follows the Bradley-Terry model:
+$$
+p(y_i = 1 \mid r) = \sigma\left(r(x_A^{(i)}) - r(x_B^{(i)})\right)
+$$
+
+Because this sigmoid likelihood is not Gaussian, the posterior $p(r \mid \mathcal{D})$ is no longer a Gaussian Process.
+
+### Laplace Approximation
+
+The **Laplace approximation** provides a tractable Gaussian approximation to the true posterior:
+
+1. **Find the posterior mode** $\mathbf{r}^* = \arg\max_{\mathbf{r}} \log p(\mathcal{D} \mid \mathbf{r}) + \log p(\mathbf{r})$
+2. **Approximate with a Gaussian** centered at the mode, using the Hessian of the log-posterior as precision
+
+For preference data with GP prior (zero mean), the mode satisfies:
+$$
+\mathbf{r}^* = \arg\max_{\mathbf{r}} \sum_{i=1}^n \log \sigma\left(y_i (r(x_A^{(i)}) - r(x_B^{(i)}))\right) - \frac{1}{2}\mathbf{r}^\top K^{-1} \mathbf{r}
+$$
+
+where $K$ is the kernel matrix and $\mathbf{r} = [r(x_1), \ldots, r(x_m)]^\top$ collects function values at all unique points appearing in comparisons.
+
+**Newton's method for finding the mode.** The gradient and Hessian of the log-posterior are:
+$$
+\nabla_{\mathbf{r}} \log p(\mathbf{r} \mid \mathcal{D}) = \mathbf{g} - K^{-1}\mathbf{r}
+$$
+$$
+\nabla^2_{\mathbf{r}} \log p(\mathbf{r} \mid \mathcal{D}) = -W - K^{-1}
+$$
+
+where $\mathbf{g}$ is the gradient of the log-likelihood and $W$ is a diagonal matrix with entries $W_{ii} = p_i(1 - p_i)$ for predictions $p_i = \sigma(r(x_A^{(i)}) - r(x_B^{(i)}))$.
+
+**The approximate posterior.** After finding $\mathbf{r}^*$, the Laplace approximation gives:
+$$
+p(\mathbf{r} \mid \mathcal{D}) \approx \mathcal{N}\left(\mathbf{r}^*, (K^{-1} + W)^{-1}\right)
+$$
+
+This is structurally similar to standard GP regression, but with the data-dependent precision matrix $W$ arising from the Bradley-Terry likelihood rather than observation noise.
 
 ```{pyodide-python}
 #| autorun: true
@@ -1088,613 +443,975 @@ import numpy as np
 import matplotlib.pyplot as plt
 np.random.seed(42)
 
-def rbf_kernel(X1, X2, sigma_f=1.0, length_scale=1.0):
-    """Compute RBF kernel matrix between two sets of points."""
+def rbf_kernel(X1, X2, sigma_f=1.0, length_scale=0.5):
+    """RBF kernel matrix."""
     sq_dist = np.sum(X1**2, axis=1, keepdims=True) + np.sum(X2**2, axis=1) - 2 * X1 @ X2.T
     return sigma_f**2 * np.exp(-sq_dist / (2 * length_scale**2))
 
-# Sample from GP prior
+sigmoid = lambda x: 1.0 / (1.0 + np.exp(-np.clip(x, -500, 500)))
+
+# True reward function (nonlinear!)
+def true_reward(x):
+    return np.sin(2 * x) + 0.5 * x
+
+# Generate synthetic preference data
+n_comparisons = 30
+X_A = np.random.uniform(-3, 3, n_comparisons).reshape(-1, 1)
+X_B = np.random.uniform(-3, 3, n_comparisons).reshape(-1, 1)
+r_A = true_reward(X_A.flatten())
+r_B = true_reward(X_B.flatten())
+y = (np.random.rand(n_comparisons) < sigmoid(r_A - r_B)).astype(float)
+
+# Collect unique points
+X_all = np.vstack([X_A, X_B])
+X_unique, inv_idx = np.unique(X_all.flatten(), return_inverse=True)
+X_unique = X_unique.reshape(-1, 1)
+m = len(X_unique)
+idx_A = inv_idx[:n_comparisons]
+idx_B = inv_idx[n_comparisons:]
+
+# Build kernel matrix
+K = rbf_kernel(X_unique, X_unique) + 1e-4 * np.eye(m)
+K_inv = np.linalg.inv(K)
+
+# Laplace approximation via Newton's method
+r = np.zeros(m)
+for iteration in range(20):
+    # Compute predictions and likelihood gradient
+    diff = r[idx_A] - r[idx_B]
+    p = sigmoid(diff)
+
+    # Gradient of log-likelihood w.r.t. r at each unique point
+    grad = np.zeros(m)
+    for i in range(n_comparisons):
+        residual = y[i] - p[i]
+        grad[idx_A[i]] += residual
+        grad[idx_B[i]] -= residual
+
+    # Full gradient including GP prior
+    grad_total = grad - K_inv @ r
+
+    # Hessian: diagonal from likelihood + K_inv from prior
+    W = np.zeros(m)
+    for i in range(n_comparisons):
+        W[idx_A[i]] += p[i] * (1 - p[i])
+        W[idx_B[i]] += p[i] * (1 - p[i])
+
+    H = -np.diag(W) - K_inv
+
+    # Newton step
+    r = r - np.linalg.solve(H, grad_total)
+
+# Posterior covariance at mode
+Sigma_post = np.linalg.inv(K_inv + np.diag(W))
+
+# Predictions on a grid
 X_grid = np.linspace(-3, 3, 100).reshape(-1, 1)
-K = rbf_kernel(X_grid, X_grid, sigma_f=1.0, length_scale=1.0)
-K += 1e-6 * np.eye(len(K))  # numerical stability
+K_star = rbf_kernel(X_grid, X_unique)
+mu_pred = K_star @ K_inv @ r
+K_star_star = rbf_kernel(X_grid, X_grid)
+var_pred = np.diag(K_star_star - K_star @ (K_inv - K_inv @ Sigma_post @ K_inv) @ K_star.T)
+std_pred = np.sqrt(np.maximum(var_pred, 0))
 
-# Draw samples from GP prior
-samples = np.random.multivariate_normal(np.zeros(len(X_grid)), K, size=5)
+# Plot
+fig, ax = plt.subplots(figsize=(10, 5))
+ax.fill_between(X_grid.flatten(), mu_pred - 2*std_pred, mu_pred + 2*std_pred,
+                alpha=0.3, color='blue', label='95% CI')
+ax.plot(X_grid, mu_pred, 'b-', lw=2, label='GP posterior mean')
+ax.plot(X_grid, true_reward(X_grid), 'k--', lw=2, label='True reward')
+ax.scatter(X_A[y==1], np.zeros(int(y.sum())) - 2.5, c='green', marker='^', s=50, label='Preferred A')
+ax.scatter(X_B[y==0], np.zeros(int((1-y).sum())) - 2.5, c='red', marker='v', s=50, label='Preferred B')
+ax.set_xlabel('x')
+ax.set_ylabel('r(x)')
+ax.set_title(f'GP Preference Learning via Laplace Approximation ({n_comparisons} comparisons)')
+ax.legend(loc='upper left')
+ax.grid(True, alpha=0.3)
+plt.tight_layout()
+plt.show()
 
-fig, axes = plt.subplots(1, 2, figsize=(12, 4))
+print(f"Learned from {n_comparisons} pairwise comparisons")
+print(f"Posterior uncertainty varies: min std = {std_pred.min():.3f}, max std = {std_pred.max():.3f}")
+```
 
-# Left: Sample functions from GP prior
-for i, sample in enumerate(samples):
-    axes[0].plot(X_grid, sample, alpha=0.7, label=f'Sample {i+1}')
-axes[0].axhline(y=0, color='k', linestyle='--', alpha=0.3)
-axes[0].set_xlabel('Input x')
-axes[0].set_ylabel('r(x)')
-axes[0].set_title('Samples from GP Prior (RBF kernel, ℓ=1.0)')
-axes[0].legend()
-axes[0].grid(True, alpha=0.3)
+### Connection to Fisher Information
 
-# Right: Compare different length scales
-for ls, color in [(0.3, '#1f77b4'), (1.0, '#ff7f0e'), (3.0, '#2ca02c')]:
-    K_ls = rbf_kernel(X_grid, X_grid, sigma_f=1.0, length_scale=ls)
-    K_ls += 1e-6 * np.eye(len(K_ls))
-    sample = np.random.multivariate_normal(np.zeros(len(X_grid)), K_ls)
-    axes[1].plot(X_grid, sample, color=color, alpha=0.8, label=f'ℓ = {ls}')
+The Laplace approximation has a natural connection to the Fisher information framework we developed for linear models. The Hessian of the negative log-likelihood at the mode gives the *observed Fisher information*:
+$$
+I_{\text{obs}} = W = \text{diag}(p_1(1-p_1), \ldots, p_n(1-p_n))
+$$
 
-axes[1].set_xlabel('Input x')
-axes[1].set_ylabel('r(x)')
-axes[1].set_title('Effect of Length-scale on GP Samples')
-axes[1].legend()
-axes[1].grid(True, alpha=0.3)
+Just as with linear preference models, comparisons with $p \approx 0.5$ contribute the most information (highest $p(1-p)$), while "easy" comparisons where one option clearly dominates contribute little.
+
+### Computational Considerations
+
+**Complexity.** Each Newton iteration requires $O(m^3)$ computation for the matrix solve, where $m$ is the number of unique points. For $n$ comparisons involving $m \leq 2n$ unique points, the total cost is $O(n^3)$ per iteration.
+
+**Scalability.** For large datasets, several approximations are available:
+- **Inducing points**: Approximate the GP using $k \ll m$ pseudo-inputs, reducing complexity to $O(k^2 n)$
+- **Variational inference**: Optimize a lower bound on the marginal likelihood
+- **Conjugate gradient methods**: Avoid explicit matrix inversion
+
+**Hyperparameter learning.** The kernel hyperparameters (length-scale $\ell$, signal variance $\sigma_f^2$) can be learned by maximizing the Laplace-approximated marginal likelihood:
+$$
+\log p(\mathcal{D} \mid \theta) \approx \log p(\mathcal{D} \mid \mathbf{r}^*) + \log p(\mathbf{r}^* \mid \theta) + \frac{1}{2}\log |K^{-1} + W|^{-1}
+$$
+
+In Chapter 4, we will see how the GP posterior uncertainty enables *active* query selection—choosing which comparisons to ask to learn most efficiently.
+
+## Online Learning with Elo Ratings {#sec-online}
+
+In many applications, comparisons between items arrive sequentially over time rather than being observed all at once. For example, players in online games are continuously matched, or recommendation systems log one user preference at a time. In such settings, it is often computationally infeasible to refit the full Bradley–Terry model by maximum likelihood or MCMC after each new observation. Instead, we want an online update rule that adjusts item strengths incrementally as new outcomes arrive.
+
+This is precisely the motivation behind the **Elo rating system**, originally introduced for ranking chess players and later widely adopted in competitive games, online platforms, and even information retrieval. The key idea is to maintain a current estimate of each item's (or player's) latent strength, and update only the two items involved in a match when a new result comes in.
+
+The Elo rule can be derived as a stochastic gradient ascent method on the Bradley–Terry log-likelihood. Suppose item $j$ plays against item $j'$. Given the current parameters, the log-likelihood gradient with respect to $V_j$ and $V_{j'}$ is
+$$
+\frac{\partial \ell}{\partial V_j} = (y - p), \qquad
+\frac{\partial \ell}{\partial V_{j'}} = -(y - p).
+$$
+
+A stochastic gradient ascent step with learning rate $\eta$ gives the update:
+$$
+  V_j \leftarrow V_j + \eta (y - p), \qquad V_{j'} \leftarrow V_{j'} - \eta (y - p).
+$$
+
+This is exactly the Elo update rule. The learning rate $\eta$ is often called the **K-factor** in Elo literature. If $y=1$ (item $j$ wins) but the model predicted a low $p$, then $(y - p)$ is positive and $V_j$ increases, $V_{j'}$ decreases — the system learns that $j$ is stronger than previously believed. If $y=0$ (item $j'$ wins), the opposite adjustment happens. The magnitude of the update is larger when the outcome is surprising (large prediction error), and smaller when the outcome is expected (small prediction error). Thus, Elo is an online learning algorithm for the Bradley–Terry model, interpretable as stochastic gradient ascent with a fixed step size.
+
+```{pyodide-python}
+#| autorun: true
+# Build a stream of observed pairs for the single user from Y_BT upper triangle
+pairs_stream = list(zip(triu_r, triu_c))
+labels_stream = Y_BT[triu_r, triu_c].astype(float)
+
+# Initialize ratings r (Elo analog of v)
+r = np.zeros(M)
+Kfactor = 1.0  # step size
+
+def logistic_prob(a, b):
+    return 1.0 / (1.0 + np.exp(-(a - b)))
+
+for (j, k), y in zip(pairs_stream, labels_stream):
+    p = logistic_prob(r[j], r[k])
+    # Update: winner gets +K*(1-p), loser gets -K*(1-p)
+    # If y=1 means j wins. If y=0 means k wins.
+    if y == 1.0:
+        r[j] += Kfactor * (1 - p)
+        r[k] -= Kfactor * (1 - p)
+    else:
+        r[k] += Kfactor * p
+        r[j] -= Kfactor * p
+    # optional centering
+    r -= r.mean()
+
+# Evaluate Elo ratings on held-out test pairs (same y_te from above)
+p_te_elo = 1.0 / (1.0 + np.exp(-(r[r_te] - r[c_te])))
+auc_elo = auc_from_scores(p_te_elo, y_te)
+```
+
+## Regularization and Overfitting {#sec-regularization}
+
+The maximum likelihood estimator maximizes fit to observed training data but may overfit, especially when the number of parameters is large relative to the amount of data. In preference learning, overfitting manifests as learned item parameters that capture noise in the training comparisons rather than true relative strengths. Regularization techniques penalize model complexity to improve generalization to held-out test data.
+
+### L2 Regularization
+
+The most common regularization approach adds an L2 penalty term to the log-likelihood. For the Bradley-Terry model, the regularized objective becomes:
+$$
+\mathcal{L}_{\text{reg}}(V) = \sum_{(j,j') \in \mathcal{D}_{\text{train}}} \log p(Y_{jj'} \mid V_j - V_{j'}) - \frac{\lambda}{2} \|V\|_2^2
+$$
+where $\lambda \geq 0$ is the **regularization strength**. The penalty $\frac{\lambda}{2} \|V\|_2^2 = \frac{\lambda}{2} \sum_{j=1}^M V_j^2$ discourages large parameter values. When $\lambda = 0$, we recover standard MLE. As $\lambda$ increases, parameters shrink toward zero.
+
+The regularized gradient adds a simple term to the MLE gradient:
+$$
+\frac{\partial \mathcal{L}_{\text{reg}}}{\partial V_m} = \sum_{(m,k)\in \mathcal{N}^+_m} r_{mk} - \sum_{(k,m)\in \mathcal{N}^-_m} r_{km} - \lambda V_m
+$$
+
+Intuitively, regularization creates a bias-variance tradeoff: small $\lambda$ permits complex fits (low bias, high variance), while large $\lambda$ enforces simpler models (high bias, low variance). The optimal $\lambda$ balances these to minimize test error.
+
+::: {.callout-note title="Connection to Bayesian Inference"}
+L2 regularization corresponds exactly to maximum a posteriori (MAP) estimation with a Gaussian prior $p(V_j) = \mathcal{N}(0, 1/\lambda)$. The regularization strength $\lambda$ is the inverse prior variance: strong regularization (large $\lambda$) means a tight prior belief that parameters are near zero.
+:::
+
+```{pyodide-python}
+#| autorun: true
+# Compare unregularized vs regularized Bradley-Terry on synthetic data
+# Generate data with few items and limited comparisons to induce overfitting
+
+rng_reg = np.random.default_rng(42)
+M_small = 10  # few items
+V_true_small = rng_reg.normal(0, 1, M_small)
+
+# Generate limited training data (sparse comparisons)
+n_train_pairs = 30  # only 30 comparisons among 10 items
+train_pairs_idx = rng_reg.choice(M_small * (M_small - 1) // 2, n_train_pairs, replace=False)
+all_pairs = [(i, j) for i in range(M_small) for j in range(i+1, M_small)]
+train_pairs = [all_pairs[idx] for idx in train_pairs_idx]
+
+# Generate outcomes
+Y_train_sparse = np.full((M_small, M_small), np.nan)
+for (i, j) in train_pairs:
+    p_win = 1.0 / (1.0 + np.exp(-(V_true_small[i] - V_true_small[j])))
+    outcome = 1.0 if rng_reg.random() < p_win else 0.0
+    Y_train_sparse[i, j] = outcome
+    Y_train_sparse[j, i] = 1.0 - outcome
+
+# Generate test data (all remaining pairs)
+test_pairs = [pair for pair in all_pairs if pair not in train_pairs]
+Y_test_sparse = np.full((M_small, M_small), np.nan)
+for (i, j) in test_pairs:
+    p_win = 1.0 / (1.0 + np.exp(-(V_true_small[i] - V_true_small[j])))
+    outcome = 1.0 if rng_reg.random() < p_win else 0.0
+    Y_test_sparse[i, j] = outcome
+    Y_test_sparse[j, i] = 1.0 - outcome
+
+# Extract training and test pair indices
+r_tr_s, c_tr_s, y_tr_s = collect_pairs(Y_train_sparse)
+r_te_s, c_te_s, y_te_s = collect_pairs(Y_test_sparse)
+
+def fit_regularized_bt(r_idx, c_idx, y_obs, M, lam=0.0, lr=0.05, epochs=200):
+    """Fit Bradley-Terry with L2 regularization."""
+    V = np.zeros(M)
+    for _ in range(epochs):
+        H = V[r_idx] - V[c_idx]
+        p = 1.0 / (1.0 + np.exp(-H))
+        err = y_obs - p
+        grad = np.zeros(M)
+        np.add.at(grad, r_idx, err)
+        np.add.at(grad, c_idx, -err)
+        # Add regularization gradient
+        grad -= lam * V
+        V += lr * grad
+    return V
+
+# Fit models with different regularization strengths
+lambdas = [0.0, 0.01, 0.1, 0.5, 1.0, 5.0]
+train_aucs = []
+test_aucs = []
+
+for lam in lambdas:
+    V_fit = fit_regularized_bt(r_tr_s, c_tr_s, y_tr_s, M_small, lam=lam)
+    # Train AUC
+    s_tr = V_fit[r_tr_s] - V_fit[c_tr_s]
+    train_aucs.append(auc_from_scores(s_tr, y_tr_s))
+    # Test AUC
+    s_te = V_fit[r_te_s] - V_fit[c_te_s]
+    test_aucs.append(auc_from_scores(s_te, y_te_s))
+
+# Plot validation curve
+plt.figure(figsize=(8, 5))
+plt.semilogx(lambdas, train_aucs, 'o-', label='Train AUC', markersize=8)
+plt.semilogx(lambdas, test_aucs, 's-', label='Test AUC', markersize=8)
+plt.xlabel(r'Regularization strength $\lambda$')
+plt.ylabel('AUC')
+plt.title('Validation Curve: Regularization vs Performance')
+plt.legend()
+plt.grid(True, alpha=0.3)
+plt.tight_layout()
+plt.show()
+
+# Report optimal lambda
+best_idx = np.argmax(test_aucs)
+print(f"Optimal λ: {lambdas[best_idx]:.3f} (Test AUC: {test_aucs[best_idx]:.4f})")
+print(f"Unregularized (λ=0): Train AUC {train_aucs[0]:.4f}, Test AUC {test_aucs[0]:.4f}")
+```
+
+The validation curve demonstrates the regularization trade-off: at $\lambda = 0$ (no regularization), the model overfits to training data, achieving high training AUC but lower test AUC. As $\lambda$ increases, test performance improves until an optimal point, after which excessive regularization underfits. The gap between training and test AUC narrows with proper regularization, indicating better generalization.
+
+### Early Stopping
+
+An alternative to explicit regularization is **early stopping**: monitor validation performance during training and stop when it begins to degrade, even if training performance continues improving. This exploits the empirical observation that gradient descent follows a path from simple to complex models.
+
+```{pyodide-python}
+#| autorun: true
+# Demonstrate early stopping
+def fit_bt_with_validation(r_tr, c_tr, y_tr, r_val, c_val, y_val, M, lr=0.01, max_epochs=300):
+    """Fit Bradley-Terry with early stopping."""
+    V = np.zeros(M)
+    train_auc_hist = []
+    val_auc_hist = []
+
+    for epoch in range(max_epochs):
+        # Gradient step
+        H = V[r_tr] - V[c_tr]
+        p = 1.0 / (1.0 + np.exp(-H))
+        err = y_tr - p
+        grad = np.zeros(M)
+        np.add.at(grad, r_tr, err)
+        np.add.at(grad, c_tr, -err)
+        V += lr * grad
+
+        # Evaluate
+        s_tr = V[r_tr] - V[c_tr]
+        train_auc_hist.append(auc_from_scores(s_tr, y_tr))
+        s_val = V[r_val] - V[c_val]
+        val_auc_hist.append(auc_from_scores(s_val, y_val))
+
+    return V, train_auc_hist, val_auc_hist
+
+V_es, tr_hist, val_hist = fit_bt_with_validation(
+    r_tr_s, c_tr_s, y_tr_s, r_te_s, c_te_s, y_te_s, M_small
+)
+
+# Find early stopping point (best validation performance)
+best_epoch = np.argmax(val_hist)
+
+plt.figure(figsize=(8, 5))
+plt.plot(tr_hist, label='Train AUC', alpha=0.7)
+plt.plot(val_hist, label='Validation AUC', alpha=0.7)
+plt.axvline(best_epoch, color='red', linestyle='--', label=f'Best epoch: {best_epoch}')
+plt.xlabel('Epoch')
+plt.ylabel('AUC')
+plt.title('Early Stopping: Training vs Validation Performance')
+plt.legend()
+plt.grid(True, alpha=0.3)
+plt.tight_layout()
+plt.show()
+
+print(f"Best validation AUC {val_hist[best_epoch]:.4f} at epoch {best_epoch}")
+print(f"Final epoch ({len(val_hist)-1}): Train {tr_hist[-1]:.4f}, Val {val_hist[-1]:.4f}")
+```
+
+Early stopping automatically selects model complexity through the training trajectory. Unlike L2 regularization, it requires no tuning of $\lambda$, but does require held-out validation data to monitor.
+
+::: {.callout-important title="Key Takeaway: When to Regularize"}
+Regularization is most critical when:
+
+- **Few observations** relative to parameters (e.g., 50 comparisons, 20 items)
+- **Imbalanced data**: Some items have many comparisons, others have few
+- **High noise**: Label noise or measurement error in comparisons
+
+For large datasets with many comparisons per item, overfitting is less of a concern and regularization may have minimal impact. Always use validation data or cross-validation to tune regularization strength.
+:::
+
+
+## Model Selection and Cross-Validation {#sec-model-selection}
+
+A single train/test split provides one estimate of generalization performance, but this estimate has high variance: a different random split may yield different results. **Cross-validation** (CV) systematically evaluates multiple train/test splits to obtain more reliable performance estimates and enable principled model selection.
+
+### K-Fold Cross-Validation
+
+In **k-fold cross-validation**, we partition the data into $k$ equally-sized folds. For each fold $i \in \{1, \ldots, k\}$:
+
+1. Train the model on all folds except fold $i$
+2. Evaluate on fold $i$ (held-out validation)
+3. Record the validation metric (e.g., AUC, log-likelihood)
+
+The final CV score is the average across all $k$ folds: $\text{CV}_k = \frac{1}{k} \sum_{i=1}^k \text{metric}_i$. The standard error quantifies uncertainty in the estimate.
+
+For preference data, we partition the set of observed pairwise comparisons (not items) into folds, ensuring each fold contains a representative sample of comparisons.
+
+```{pyodide-python}
+def kfold_split_pairs(r_idx, c_idx, y_obs, k=5, rng=None):
+    """Split pairwise comparison data into k folds."""
+    if rng is None:
+        rng = np.random.default_rng()
+    n_pairs = len(r_idx)
+    fold_ids = np.arange(n_pairs) % k
+    rng.shuffle(fold_ids)
+    return fold_ids
+
+def cross_validate_bt(r_idx, c_idx, y_obs, M, k=5, lam=0.0, lr=0.05, epochs=200):
+    """Perform k-fold cross-validation for Bradley-Terry model."""
+    rng_cv = np.random.default_rng(123)
+    fold_ids = kfold_split_pairs(r_idx, c_idx, y_obs, k, rng_cv)
+    
+    fold_scores = []
+    for fold in range(k):
+        # Split into train and validation
+        train_mask = fold_ids != fold
+        val_mask = fold_ids == fold
+        
+        r_tr = r_idx[train_mask]
+        c_tr = c_idx[train_mask]
+        y_tr = y_obs[train_mask]
+        
+        r_val = r_idx[val_mask]
+        c_val = c_idx[val_mask]
+        y_val = y_obs[val_mask]
+        
+        # Train model
+        V = fit_regularized_bt(r_tr, c_tr, y_tr, M, lam=lam, lr=lr, epochs=epochs)
+        
+        # Evaluate on validation fold
+        s_val = V[r_val] - V[c_val]
+        auc_val = auc_from_scores(s_val, y_val)
+        fold_scores.append(auc_val)
+    
+    return np.array(fold_scores)
+
+# Perform 5-fold CV on the synthetic dataset
+cv_scores = cross_validate_bt(r_tr_s, c_tr_s, y_tr_s, M_small, k=5, lam=0.1)
+
+print(f"5-Fold CV Scores: {cv_scores}")
+print(f"Mean CV AUC: {cv_scores.mean():.4f} ± {cv_scores.std():.4f}")
+```
+
+The CV estimate of {cv_scores.mean():.4f} ± {cv_scores.std():.4f} is more reliable than a single train/test split. The standard deviation quantifies variability across folds.
+
+### Hyperparameter Tuning with Cross-Validation
+
+Cross-validation enables principled hyperparameter selection: evaluate each candidate hyperparameter on CV performance and select the best. For Bradley-Terry, key hyperparameters include regularization strength $\lambda$ and learning rate.
+
+```{pyodide-python}
+# Grid search over regularization strengths using cross-validation
+lambda_grid = [0.0, 0.01, 0.05, 0.1, 0.5, 1.0]
+cv_means = []
+cv_stds = []
+
+for lam in lambda_grid:
+    scores = cross_validate_bt(r_tr_s, c_tr_s, y_tr_s, M_small, k=5, lam=lam)
+    cv_means.append(scores.mean())
+    cv_stds.append(scores.std())
+
+cv_means = np.array(cv_means)
+cv_stds = np.array(cv_stds)
+
+# Plot CV performance vs hyperparameter
+plt.figure(figsize=(8, 5))
+plt.errorbar(lambda_grid, cv_means, yerr=cv_stds, fmt='o-', capsize=5, markersize=8)
+plt.xscale('log')
+plt.xlabel(r'Regularization strength $\lambda$')
+plt.ylabel('Cross-Validation AUC')
+plt.title('Hyperparameter Tuning via 5-Fold Cross-Validation')
+plt.grid(True, alpha=0.3)
+plt.tight_layout()
+plt.show()
+
+best_lam_idx = np.argmax(cv_means)
+print(f"Best λ: {lambda_grid[best_lam_idx]:.3f} (CV AUC: {cv_means[best_lam_idx]:.4f} ± {cv_stds[best_lam_idx]:.4f})")
+```
+
+The error bars show the standard deviation across folds, indicating uncertainty in the CV estimate for each hyperparameter. Select the hyperparameter with highest mean CV performance.
+
+### Beyond AUC: Multiple Evaluation Metrics
+
+AUC measures ranking quality but does not capture all aspects of model performance. Additional metrics provide complementary insights:
+
+**Log-Likelihood**: Measures the probability the model assigns to observed outcomes. Higher is better.
+$$
+\text{LL} = \sum_{(j,j') \in \mathcal{D}_{\text{test}}} \left[ Y_{jj'} \log \sigma(V_j - V_{j'}) + (1 - Y_{jj'}) \log (1 - \sigma(V_j - V_{j'})) \right]
+$$
+
+**Calibration Error**: Measures whether predicted probabilities match empirical frequencies. Bin predictions into intervals (e.g., [0.0, 0.1), [0.1, 0.2), ...) and compare average predicted probability to observed frequency in each bin.
+
+```{pyodide-python}
+def compute_log_likelihood(V, r_idx, c_idx, y_obs):
+    """Compute log-likelihood on test data."""
+    s = V[r_idx] - V[c_idx]
+    p = 1.0 / (1.0 + np.exp(-s))
+    # Numerical stability: use log(p) and log(1-p) carefully
+    ll = (y_obs * np.log(p + 1e-12) + (1 - y_obs) * np.log(1 - p + 1e-12)).sum()
+    return ll
+
+def compute_calibration_error(V, r_idx, c_idx, y_obs, n_bins=10):
+    """Compute calibration error: difference between predicted prob and observed freq."""
+    s = V[r_idx] - V[c_idx]
+    p_pred = 1.0 / (1.0 + np.exp(-s))
+    
+    # Bin predictions
+    bins = np.linspace(0, 1, n_bins + 1)
+    cal_error = 0.0
+    for i in range(n_bins):
+        in_bin = (p_pred >= bins[i]) & (p_pred < bins[i+1])
+        if in_bin.sum() > 0:
+            avg_pred = p_pred[in_bin].mean()
+            avg_obs = y_obs[in_bin].mean()
+            cal_error += np.abs(avg_pred - avg_obs) * in_bin.sum()
+    cal_error /= len(y_obs)
+    return cal_error
+
+# Compare multiple metrics for different regularization strengths
+lambdas_compare = [0.0, 0.1, 1.0]
+metrics_results = []
+
+for lam in lambdas_compare:
+    V_fit = fit_regularized_bt(r_tr_s, c_tr_s, y_tr_s, M_small, lam=lam)
+    
+    # Compute metrics on test data
+    s_te = V_fit[r_te_s] - V_fit[c_te_s]
+    auc_te = auc_from_scores(s_te, y_te_s)
+    ll_te = compute_log_likelihood(V_fit, r_te_s, c_te_s, y_te_s)
+    cal_err = compute_calibration_error(V_fit, r_te_s, c_te_s, y_te_s)
+    
+    metrics_results.append({
+        'lambda': lam,
+        'AUC': auc_te,
+        'Log-Likelihood': ll_te,
+        'Calibration Error': cal_err
+    })
+
+# Display results
+print("\nMulti-Metric Comparison:")
+print(f"{'λ':<8} {'AUC':<8} {'Log-Lik':<12} {'Cal Error':<12}")
+print("-" * 40)
+for res in metrics_results:
+    print(f"{res['lambda']:<8.2f} {res['AUC']:<8.4f} {res['Log-Likelihood']:<12.2f} {res['Calibration Error']:<12.4f}")
+```
+
+Different metrics may favor different models. AUC focuses on ranking, log-likelihood on probability estimates, and calibration on frequency matching. Use multiple metrics to gain a comprehensive view of model quality.
+
+::: {.callout-important title="Key Takeaway: Cross-Validation Best Practices"}
+- **Use CV for hyperparameter tuning**, not test set evaluation (avoid overfitting to the test set)
+- **Report mean ± std** across folds to quantify uncertainty
+- **Stratified splitting**: For imbalanced data, ensure each fold has representative class proportions
+- **Temporal splitting**: For sequential data (e.g., chess games over time), use time-based splits instead of random CV to avoid leaking future information into past predictions
+- **Nested CV**: For unbiased performance estimates, use outer CV loop for evaluation and inner CV loop for hyperparameter selection
+:::
+
+## Optimization Methods {#sec-optimization}
+
+Gradient descent is the foundation for learning Bradley-Terry parameters, but modern optimization methods can accelerate convergence and improve final performance. We compare three widely-used optimizers and discuss when each is appropriate.
+
+### Beyond Vanilla Gradient Descent
+
+Standard gradient descent updates parameters with a fixed learning rate: $V \leftarrow V + \eta \nabla \mathcal{L}(V)$. This has two limitations:
+
+1. **Fixed step size**: Large $\eta$ causes instability; small $\eta$ slows convergence
+2. **No momentum**: Each step ignores the optimization history
+
+Modern optimizers address these issues through adaptive learning rates and momentum.
+
+### Adam Optimizer
+
+**Adam** (Adaptive Moment Estimation) maintains running averages of both gradients and squared gradients, adapting the learning rate per parameter. The update rule is:
+
+\begin{align}
+m_t &\leftarrow \beta_1 m_{t-1} + (1 - \beta_1) g_t && \text{(momentum)} \\
+v_t &\leftarrow \beta_2 v_{t-1} + (1 - \beta_2) g_t^2 && \text{(variance)} \\
+\hat{m}_t &\leftarrow m_t / (1 - \beta_1^t), \quad \hat{v}_t \leftarrow v_t / (1 - \beta_2^t) && \text{(bias correction)} \\
+V &\leftarrow V + \alpha \frac{\hat{m}_t}{\sqrt{\hat{v}_t} + \epsilon} && \text{(parameter update)}
+\end{align}
+
+where $g_t$ is the gradient at step $t$, $\beta_1 = 0.9$ and $\beta_2 = 0.999$ are typical, and $\epsilon = 10^{-8}$ prevents division by zero.
+
+```{pyodide-python}
+def fit_bt_adam(r_idx, c_idx, y_obs, M, lr=0.1, epochs=200, beta1=0.9, beta2=0.999, eps=1e-8):
+    """Fit Bradley-Terry using Adam optimizer."""
+    V = np.zeros(M)
+    m = np.zeros(M)  # first moment
+    v = np.zeros(M)  # second moment
+    
+    loss_history = []
+    
+    for t in range(1, epochs + 1):
+        # Compute gradient
+        H = V[r_idx] - V[c_idx]
+        p = 1.0 / (1.0 + np.exp(-H))
+        err = y_obs - p
+        grad = np.zeros(M)
+        np.add.at(grad, r_idx, err)
+        np.add.at(grad, c_idx, -err)
+        
+        # Adam update
+        m = beta1 * m + (1 - beta1) * grad
+        v = beta2 * v + (1 - beta2) * (grad ** 2)
+        
+        # Bias correction
+        m_hat = m / (1 - beta1 ** t)
+        v_hat = v / (1 - beta2 ** t)
+        
+        # Parameter update
+        V += lr * m_hat / (np.sqrt(v_hat) + eps)
+        
+        # Log-likelihood for monitoring
+        ll = (y_obs * np.log(p + 1e-12) + (1 - y_obs) * np.log(1 - p + 1e-12)).sum()
+        loss_history.append(-ll)  # negative log-likelihood (loss)
+    
+    return V, np.array(loss_history)
+
+# Compare GD vs Adam on the same problem
+V_gd, loss_gd = [], []
+V_adam, loss_adam = fit_bt_adam(r_tr_s, c_tr_s, y_tr_s, M_small, lr=0.1, epochs=150)
+
+# Also fit with vanilla GD
+V = np.zeros(M_small)
+for epoch in range(150):
+    H = V[r_tr_s] - V[c_tr_s]
+    p = 1.0 / (1.0 + np.exp(-H))
+    err = y_tr_s - p
+    grad = np.zeros(M_small)
+    np.add.at(grad, r_tr_s, err)
+    np.add.at(grad, c_tr_s, -err)
+    V += 0.05 * grad  # smaller LR for GD stability
+    ll = (y_tr_s * np.log(p + 1e-12) + (1 - y_tr_s) * np.log(1 - p + 1e-12)).sum()
+    loss_gd.append(-ll)
+
+loss_gd = np.array(loss_gd)
+
+# Plot convergence comparison
+plt.figure(figsize=(8, 5))
+plt.plot(loss_gd, label='Gradient Descent (lr=0.05)', alpha=0.8)
+plt.plot(loss_adam, label='Adam (lr=0.1)', alpha=0.8)
+plt.xlabel('Epoch')
+plt.ylabel('Negative Log-Likelihood (Loss)')
+plt.title('Optimization Comparison: GD vs Adam')
+plt.legend()
+plt.grid(True, alpha=0.3)
+plt.yscale('log')
+plt.tight_layout()
+plt.show()
+
+print(f"Final loss - GD: {loss_gd[-1]:.4f}, Adam: {loss_adam[-1]:.4f}")
+```
+
+Adam typically converges faster than vanilla gradient descent and is less sensitive to learning rate tuning. The adaptive per-parameter learning rates help in problems with varying gradient magnitudes across parameters.
+
+### Learning Rate Schedules
+
+Instead of a fixed learning rate, **schedules** decay $\eta$ over time to enable large initial steps (fast progress) followed by small refinements (precision):
+
+- **Step decay**: $\eta_t = \eta_0 \cdot \gamma^{\lfloor t / k \rfloor}$ (reduce by factor $\gamma$ every $k$ epochs)
+- **Exponential decay**: $\eta_t = \eta_0 e^{-\lambda t}$
+- **Cosine annealing**: $\eta_t = \eta_{\min} + \frac{1}{2}(\eta_0 - \eta_{\min})(1 + \cos(\pi t / T))$
+
+Learning rate schedules are especially useful for training to convergence without extensive hyperparameter tuning.
+
+::: {.callout-important title="Key Takeaway: Choosing an Optimizer"}
+**When to use each optimizer:**
+
+- **Vanilla GD**: Simple problems, well-tuned learning rate available, or for pedagogical clarity
+- **Adam**: Default choice for most problems; robust to learning rate, fast convergence, handles sparse gradients well
+- **SGD with momentum**: When you need the theoretical guarantees of SGD (e.g., convergence proofs) but want faster practical convergence
+
+**Hyperparameter guidelines:**
+- Adam: $\alpha = 0.001$ to $0.1$, default $\beta_1 = 0.9$, $\beta_2 = 0.999$
+- GD: $\eta = 0.01$ to $0.1$, may need careful tuning
+- Learning rate schedules: Helpful when training for many epochs
+:::
+
+
+## Real-World Application: LLM Preference Learning {#sec-real-world}
+
+We now apply all three parameter learning methods to a realistic preference learning scenario inspired by language model alignment. While production LLM alignment uses datasets like Stanford Human Preferences (SHP) or Anthropic's HH-RLHF, we construct a synthetic dataset that captures key properties of real preference data: noisy labels, varying item quality, and response embeddings.
+
+### Dataset: Simulated LLM Response Preferences
+
+We simulate a setting where a language model generates multiple responses to prompts, and human annotators provide pairwise preferences. Each response is represented by a learned embedding (e.g., from a pretrained model), and the true utility is a linear function of this embedding plus noise.
+
+```{pyodide-python}
+# Simulate LLM response preference data
+rng_llm = np.random.default_rng(2024)
+
+# Setting: 50 LLM responses across different prompts
+n_responses = 50
+embedding_dim = 8  # low-dimensional for interpretability
+
+# Generate response embeddings (simulate learned representations)
+# In reality, these would be from a language model's hidden states
+response_embeddings = rng_llm.normal(0, 1, size=(n_responses, embedding_dim))
+# Normalize embeddings
+response_embeddings /= np.linalg.norm(response_embeddings, axis=1, keepdims=True)
+
+# True utility weights (what humans actually care about)
+# Positive weights favor certain embedding dimensions
+true_weights = rng_llm.normal(0, 1, size=embedding_dim)
+true_weights[0] = 2.0  # Strong preference for first dimension (e.g., helpfulness)
+true_weights[1] = -1.5  # Dispreference for second dimension (e.g., verbosity)
+
+# Compute true utilities
+true_utilities = response_embeddings @ true_weights
+
+# Generate pairwise comparisons with label noise (realistic!)
+n_comparisons = 200
+comparison_pairs = []
+comparison_labels = []
+
+for _ in range(n_comparisons):
+    # Sample a pair of responses
+    i, j = rng_llm.choice(n_responses, size=2, replace=False)
+    comparison_pairs.append((i, j))
+    
+    # True win probability with Bradley-Terry
+    p_i_wins = 1.0 / (1.0 + np.exp(-(true_utilities[i] - true_utilities[j])))
+    
+    # Add label noise: 10% of annotations are random
+    if rng_llm.random() < 0.1:
+        label = rng_llm.choice([0, 1])  # noisy label
+    else:
+        label = 1 if rng_llm.random() < p_i_wins else 0
+    
+    comparison_labels.append(label)
+
+comparison_pairs = np.array(comparison_pairs)
+comparison_labels = np.array(comparison_labels, dtype=float)
+
+print(f"Generated {n_comparisons} comparisons over {n_responses} LLM responses")
+print(f"True utility range: [{true_utilities.min():.2f}, {true_utilities.max():.2f}]")
+print(f"Label noise: ~10% of comparisons are random")
+```
+
+This synthetic dataset mimics real LLM preference data: responses have embedding representations, utilities are learned functions of embeddings, and annotations contain noise.
+
+### Applying All Three Learning Methods
+
+We apply MLE, Bayesian inference, and online learning (Elo) to the same data and compare results.
+
+```{pyodide-python}
+# Split into train/test (80/20)
+n_train = int(0.8 * n_comparisons)
+train_idx = rng_llm.choice(n_comparisons, n_train, replace=False)
+test_idx = np.array([i for i in range(n_comparisons) if i not in train_idx])
+
+r_train = comparison_pairs[train_idx, 0]
+c_train = comparison_pairs[train_idx, 1]
+y_train = comparison_labels[train_idx]
+
+r_test = comparison_pairs[test_idx, 0]
+c_test = comparison_pairs[test_idx, 1]
+y_test = comparison_labels[test_idx]
+
+# Method 1: Maximum Likelihood with L2 Regularization
+V_mle = fit_regularized_bt(r_train, c_train, y_train, n_responses, lam=0.05, lr=0.1, epochs=300)
+
+# Method 2: Bayesian Inference (simplified - just get point estimate from posterior mean)
+# Full MCMC would be expensive; here we use MAP estimate (equivalent to regularized MLE)
+V_bayes = fit_regularized_bt(r_train, c_train, y_train, n_responses, lam=0.1, lr=0.1, epochs=300)
+
+# Method 3: Online Learning (Elo) - process comparisons sequentially
+V_elo = np.zeros(n_responses)
+K_factor = 0.1
+for i, j, y in zip(r_train, c_train, y_train):
+    p = 1.0 / (1.0 + np.exp(-(V_elo[i] - V_elo[j])))
+    if y == 1.0:
+        V_elo[i] += K_factor * (1 - p)
+        V_elo[j] -= K_factor * (1 - p)
+    else:
+        V_elo[j] += K_factor * p
+        V_elo[i] -= K_factor * p
+    V_elo -= V_elo.mean()  # center
+
+# Evaluate all three methods on test data
+s_mle = V_mle[r_test] - V_mle[c_test]
+s_bayes = V_bayes[r_test] - V_bayes[c_test]
+s_elo = V_elo[r_test] - V_elo[c_test]
+
+auc_mle = auc_from_scores(s_mle, y_test)
+auc_bayes = auc_from_scores(s_bayes, y_test)
+auc_elo = auc_from_scores(s_elo, y_test)
+
+ll_mle = compute_log_likelihood(V_mle, r_test, c_test, y_test)
+ll_bayes = compute_log_likelihood(V_bayes, r_test, c_test, y_test)
+ll_elo = compute_log_likelihood(V_elo, r_test, c_test, y_test)
+
+# Compare learned utilities to ground truth
+# Align learned utilities to true utilities (up to affine transformation)
+def align_utilities(V_learned, V_true):
+    """Align learned to true utilities via least squares."""
+    V_norm = (V_learned - V_learned.mean()) / (V_learned.std() + 1e-8)
+    A = np.vstack([V_norm, np.ones_like(V_norm)]).T
+    a, b = np.linalg.lstsq(A, V_true, rcond=None)[0]
+    return a * V_norm + b
+
+V_mle_aligned = align_utilities(V_mle, true_utilities)
+V_bayes_aligned = align_utilities(V_bayes, true_utilities)
+V_elo_aligned = align_utilities(V_elo, true_utilities)
+
+corr_mle = np.corrcoef(true_utilities, V_mle_aligned)[0, 1]
+corr_bayes = np.corrcoef(true_utilities, V_bayes_aligned)[0, 1]
+corr_elo = np.corrcoef(true_utilities, V_elo_aligned)[0, 1]
+
+# Display results
+print("\n=== Method Comparison ===")
+print(f"{'Method':<20} {'Test AUC':<12} {'Test LL':<12} {'Corr w/ True':<15}")
+print("-" * 60)
+print(f"{'MLE (λ=0.05)':<20} {auc_mle:<12.4f} {ll_mle:<12.2f} {corr_mle:<15.4f}")
+print(f"{'Bayesian (λ=0.1)':<20} {auc_bayes:<12.4f} {ll_bayes:<12.2f} {corr_bayes:<15.4f}")
+print(f"{'Online (Elo K=0.1)':<20} {auc_elo:<12.4f} {ll_elo:<12.2f} {corr_elo:<15.4f}")
+
+# Visualize learned vs true utilities
+fig, axes = plt.subplots(1, 3, figsize=(14, 4))
+
+for ax, V_learned, method, corr in zip(axes, 
+                                         [V_mle_aligned, V_bayes_aligned, V_elo_aligned],
+                                         ['MLE', 'Bayesian', 'Elo'],
+                                         [corr_mle, corr_bayes, corr_elo]):
+    ax.scatter(true_utilities, V_learned, alpha=0.6, s=30)
+    ax.plot([true_utilities.min(), true_utilities.max()], 
+            [true_utilities.min(), true_utilities.max()], 
+            'r--', alpha=0.5)
+    ax.set_xlabel('True Utility')
+    ax.set_ylabel('Learned Utility')
+    ax.set_title(f'{method} (r={corr:.3f})')
+    ax.grid(True, alpha=0.3)
 
 plt.tight_layout()
 plt.show()
 ```
 
-When combined with the Bradley-Terry likelihood, we model preferences as $p(A \succ B \mid r) = \sigma(r(x_A) - r(x_B))$ where $r \sim \mathcal{GP}(m, k)$. Unlike standard GP regression where we observe function values directly, preference data provides only ordinal information—which item is preferred—making inference more challenging.
+### Key Observations
 
-**Why GPs for preferences?** (1) *Expressiveness*: Can represent complex nonlinear functions without specifying a parametric form. (2) *Uncertainty quantification*: GP provides predictive means and confidence intervals. (3) *Active learning*: Uncertainty guides which comparisons to query (Chapter 4). (4) *Bayesian framework*: Principled posterior updates as new comparisons arrive.
+The three methods yield similar performance on this synthetic LLM preference task:
 
-**Trade-offs:** GPs are well-suited when the reward function has unknown nonlinear structure and the feature dimension is low-to-moderate ($d \lesssim 10$). For high-dimensional problems or large datasets, linear models or neural networks may be more practical due to the $O(n^3)$ computational cost of GP inference. Chapter 3 covers inference techniques (including Laplace approximation for non-Gaussian likelihoods), and Chapter 4 shows how GP uncertainty enables sample-efficient active query selection.
+1. **MLE** is fastest and most scalable, suitable for large-scale applications
+2. **Bayesian** inference (here approximated via MAP) provides similar point estimates but can quantify uncertainty (full MCMC omitted for brevity)
+3. **Online (Elo)** learns incrementally, ideal for streaming data but may be less data-efficient than batch methods
 
-**Implications for preference learning.** For practitioners using DPO or RLHF, these extensions suggest directions for improvement:
+All methods successfully recover utilities correlated with the ground truth despite 10% label noise, demonstrating robustness. In production LLM alignment:
 
-1. **Heterogeneous populations**: If annotators have diverse preferences, a single Bradley-Terry model may be misspecified. Random coefficients models (or mixture models) can capture this heterogeneity.
-2. **Correlated alternatives**: When comparing responses that differ only slightly (e.g., same content with different formatting), IIA violations may occur. Nested or probit models can help.
-3. **Choice set effects**: If preferences depend on what alternatives are present, IIA fails. This is particularly relevant for k-wise comparisons with $k > 2$.
+- **Data scale**: Real datasets have 10K-100K+ comparisons
+- **Cold start**: New responses have no comparison history; requires initialization strategies
+- **Computational cost**: MCMC becomes expensive; MLE or online methods preferred
+- **Temporal drift**: User preferences may evolve; online methods naturally adapt
 
-These extensions are active areas of research in machine learning from human preferences; see @siththaranjan2023distributional for recent work on distributional preference learning that relaxes Bradley-Terry assumptions.
-
-The next chapter is the first to study learning of average utility functions from preference data, and assumes that a dataset is given of utility vectors $(V_j)_{j=1}^M$ for different types of sampling and for different notions of "inference".
-
-| Notation | Meaning | Domain / Type |
-|---|---|---|
-| $M$ | Number of items | $\mathbb{N}$ |
-| $j, j', k$ | Item indices | $\{1, \ldots, M\}$ |
-| $0$ | Outside ("no-choice") option index | Reference item |
-| $\prec$ / $\succ$ | Weak preference relation / its strict part | Binary relation on items |
-| $L=(j_1,\dots ,j_M)$ | Full ranking (preference list) | Permutation of items |
-| $(j, \mathcal{S})$ | Observation that $j$ is chosen from subset $\mathcal{S}$ | $j \in \mathcal{S} \subseteq \{1,\ldots,M\}$ |
-| $Y_{jj'}$ | Binary preference outcome ($j$ vs $j'$) | $\{0, 1\}$ |
-| $i$ | User/context index | $\{1, \ldots, N\}$ |
-| $N$ | Number of users | $\mathbb{N}$ |
-| $x$ | Context/prompt (in LLM setting) | Input space |
-| $y, y_w, y_l$ | Responses (winning/losing in preference data) | Output space |
-| $\pi_\theta$ | Policy (language model) parameterized by $\theta$ | Distribution over outputs |
-| $\pi_{\text{ref}}$ | Reference policy | Distribution over outputs |
-| $r(x, y)$ | Reward function | $\mathbb{R}$ |
-| $U_i$ | User embedding/appetite | $\mathbb{R}^K$ |
-| $V_j$ | Item loading/appeal | $\mathbb{R}^K$ (or $\mathbb{R}$ when $K=1$) |
-| $Z_j$ | Item offset | $\mathbb{R}$ |
-| $H_{ij}$ | Latent utility for user $i$, item $j$ | $\mathbb{R}$ |
-| $H_j$ | Latent utility (single-user case) | $\mathbb{R}$ |
-| $\varepsilon_j$ | Stochastic utility shock for item $j$ | $\mathbb{R}$ (i.i.d.) |
-| $p(\cdot)$ | Probability | $[0,1]$ |
-| $p(j \mid \mathcal{S})$ | Logit/Plackett-Luce choice probability of $j$ from $\mathcal{S}$ | $[0,1]$ |
-| $\sigma(x)$ | Sigmoid $1/(1+e^{-x})$ | $(0,1)$ |
-| $d$ | Dimensionality of feature vectors | $\mathbb{N}$ |
-| $\boldsymbol{x}_j \in\mathbb{R}^{d}$ | Feature vector of item $j$ | $\mathbb{R}^{d}$ |
-| $\text{Ackley}(\boldsymbol{x})$ | Ackley test-function value | $\mathbb{R}$ |
-| $a,b,c$ | Ackley parameters | Scalars |
-| $\alpha_i$ | Population weight of subgroup $i$ | $(0,1)$ with $\sum_i\alpha_i=1$ |
-| $\beta$ | Random-coefficients vector in linear RUM / KL penalty in DPO | $\mathbb{R}^{d}$ or $\mathbb{R}^+$ |
-| $\Sigma$ | Covariance matrix of $\beta$ | $\mathbb{R}^{d\times d}$ |
-| $\mathcal{GP}(m, k)$ | Gaussian Process with mean $m$ and kernel $k$ | Distribution over functions |
-| $k(x, x')$ | Kernel (covariance) function | $\mathbb{R}$ |
-| $\ell$ | Length-scale parameter in RBF kernel | $\mathbb{R}^+$ |
-| $\sigma_f^2$ | Signal variance in GP kernel | $\mathbb{R}^+$ |
-
-: **Table 1 — Notation used in Chapter "Foundations of Preference Modeling".** {#tbl-notation}
+::: {.callout-note title="Connecting to DPO"}
+Recall from @sec-llm-example that Direct Preference Optimization (DPO) for language models is equivalent to Bradley-Terry MLE where the "utility" is $\beta \log \frac{\pi_\theta(y \mid x)}{\pi_{\text{ref}}(y \mid x)}$. The MLE techniques developed in this chapter directly apply to DPO training: regularization prevents overfitting to preference data, and optimization methods (Adam, learning rate schedules) accelerate convergence.
+:::
 
 ## Discussion Questions
 
-- How does modeling preferences as **random** (rather than deterministic) help us capture real-world choice behavior?
-- How does the **Rasch model** differ from standard logistic regression? What additional structure does it impose by having separate user and item parameters?
-- Why does **user appetite $U_i$ cancel out** in pairwise comparisons under the Rasch model? When is this a feature (simplification) versus a limitation (loss of information)?
-- What is the **Independence of Irrelevant Alternatives** (IIA) axiom, and why does it simplify the estimation of choice models?
-- Why do i.i.d. Gumbel shocks in a random utility model lead to the Plackett–Luce (list) and softmax/logit (choice) formulas?
-- In what ways can **binary comparisons**, **choice-from-a-set**, and **full rankings** each be seen as observations of the same underlying stochastic preference distribution?
-- When would you prefer to collect **item-wise data** (accept/reject, ratings) versus **pairwise comparisons**? Consider cost, information content, and downstream tasks.
-- How does introducing an "outside option" (item $0$) allow us to interpret **accept–reject** data (e.g., clicks in a recommender system) within the same logit framework?
-- Why does mixing multiple IIA-satisfying sub-populations generally **violate** IIA at the aggregate level? What does this imply for preference learning from diverse user populations?
-- Explain the "**red bus–blue bus**" problem: why does splitting a single alternative into two identical ones distort logit choice probabilities? Give an example of when this might occur in recommender systems or search ranking.
-- Modern recommender systems use **neural networks** to compute user and item embeddings. How does this relate to the K-dimensional factor model $H_{ij} = U_i^\top V_j + Z_j$?
-- The **ideal point model** ($H_{ij} = -\|U_i - V_j\|_2 + Z_j$) is popular in political science. Why might Euclidean distance be more appropriate than dot product for modeling political preferences?
-- Compare implicit preference signals (clicks, watch time, purchases) with explicit ratings. What are the tradeoffs for preference learning?
-- The Elo rating system in chess uses the Bradley-Terry model. What assumptions does this make about player skill, and when might these assumptions fail?
+- In the synthetic experiments, why is the Bayes optimal AUC less than 1.0 even though we know the true parameters? What does this reveal about the fundamental limits of prediction from noisy preference data?
+
+- How does L2 regularization affect the bias-variance tradeoff in Bradley-Terry estimation? Under what data conditions (sample size, noise level, number of items) would you expect regularization to have the largest impact on test performance?
+
+- When would you prefer online learning (Elo) over batch learning (MLE) for preference model estimation? Consider computational cost, data arrival patterns, and statistical efficiency. Can you design a hybrid approach that combines benefits of both?
+
+- The Bayesian approach via MCMC provides posterior distributions over parameters, while MLE gives point estimates. Beyond uncertainty quantification, what practical advantages might the full posterior provide? How would you use posterior samples to make decisions (e.g., which items to present to users)?
+
+- Cross-validation assumes that folds are exchangeable—that the data distribution is the same across all folds. For sequential preference data (e.g., chess games ordered in time, or LLM preferences from a changing user population), this assumption may be violated. How should cross-validation be adapted for temporal data? What are the risks of using standard k-fold CV on sequential data?
+
+- In the LLM preference learning example, all three methods (MLE, Bayesian, Elo) achieved similar test AUC despite different training procedures. Under what circumstances would you expect the methods to diverge in performance? Consider data scale, noise level, model mis-specification, and computational budget.
 
 ## Bibliographic Notes
 
-**Random utility models** originate in Thurstone's [-@thurstone1927law] work on psychophysical scaling, where he proposed that perceived stimuli have random "discriminal processes." The axiomatic approach via the choice axiom (equivalent to IIA) was developed by @luce1959individual, providing the mathematical foundations for probabilistic choice theory. @yellott1977relationship proved the remarkable equivalence between IIA and Gumbel-distributed noise.
+**Maximum likelihood estimation** for preference models dates back to @bradley1952rank's original work on paired comparisons. The connection to modern machine learning was established through applications in ranking [@herbrich2006trueskill] and recommender systems [@koren2009matrix]. @hunter2004mm provided efficient MM algorithms for Bradley-Terry MLE that scale to large problems.
 
-**The Rasch model** was introduced by @rasch1960probabilistic for psychometric testing, where $U_i$ represents student ability and $V_j$ represents item difficulty. The model has become foundational in educational testing and is used in standardized tests like the GRE. For comprehensive treatment of item response theory, see @baker2001basics. The connection between Rasch models and Bradley-Terry was explored in the paired comparison literature; see @andrich1978relationships.
+**Bayesian inference for preference data** has a long history in psychometrics and experimental design. @davidson1970extending developed Bayesian approaches for paired comparisons. Modern MCMC methods for Bradley-Terry models are surveyed in @caron2012bayesian. The connection between L2 regularization and Gaussian priors (MAP estimation) is standard in Bayesian machine learning [@murphy2012machine].
 
-**Factor models for recommendations** gained prominence after the Netflix Prize competition, where matrix factorization methods proved highly effective [@koren2009matrix]. The probabilistic interpretation connecting matrix factorization to latent factor models is developed in @mnih2007probabilistic. Modern neural approaches to collaborative filtering build on these foundations; see @he2017neural for neural collaborative filtering.
+**The Elo rating system** was introduced by @elo1978rating for chess rankings and has since been applied broadly to competitive games [@glickman1999parameter introduced the Glicko system with uncertainty estimates], online platforms [@herbrich2006trueskill for Xbox matchmaking], and information retrieval. The interpretation of Elo as stochastic gradient descent on the Bradley-Terry log-likelihood clarifies its connection to machine learning [@weng2006bayesian].
 
-**Ideal point models** originate in @coombs1950psychological's unfolding theory and were developed for political science applications by @poole1985spatial for analyzing roll-call voting. The connection to preference learning is explored in @carroll1972individual. For modern computational approaches, see @armstrong2014analyzing.
+**Regularization** in statistical learning has roots in ridge regression [@hoerl1970ridge] and has become central to modern machine learning [@hastie2009elements]. Early stopping as implicit regularization was analyzed by @yao2007early. The bias-variance tradeoff provides the theoretical foundation for why regularization improves generalization [@geman1992neural].
 
-**Discrete choice econometrics** was pioneered by @mcfadden1974conditional, who developed the conditional logit model and its applications to transportation choice. His subsequent work on nested logit and mixed logit models, along with his contributions to the econometric theory of discrete choice, earned him the Nobel Prize in Economics in 2000 (shared with James Heckman). The definitive graduate textbook treatment is @train2009discrete.
+**Cross-validation** was formalized by @stone1974cross and @geisser1975predictive for model selection. @kohavi1995study provided practical guidance for k-fold CV. Nested cross-validation to avoid selection bias was emphasized by @cawley2010overfitting. Temporal validation strategies for time-series data are discussed in @bergmeir2018note.
 
-**The Bradley-Terry model** was introduced by @bradley1952rank for analyzing paired comparisons in ranking problems, though similar models were developed independently by Zermelo (1929) for chess ratings. The extension to partial rankings is due to @plackett1975analysis and @luce1959individual. For modern statistical treatments, see @cattelan2012models.
+**Optimization methods** for machine learning are surveyed in @ruder2016overview. Adam was introduced by @kingma2014adam and has become the default optimizer for deep learning. Convergence analysis for gradient descent on convex problems (including logistic regression, which includes Bradley-Terry) is classical [@boyd2004convex]. Learning rate schedules and their impact on generalization are discussed in @loshchilov2016sgdr.
 
-**Proper scoring rules** have a long history in probability forecasting; see @gneiting2007strictly for a comprehensive treatment. The connection between proper scoring rules and calibration is fundamental to understanding why cross-entropy is the standard loss for classification and language modeling.
+**LLM alignment** via preference learning gained prominence with @christiano2017deep's introduction of RLHF. The connection to Bradley-Terry and reward modeling was made explicit in @ouyang2022training (InstructGPT). Direct Preference Optimization (DPO) [@rafailov2023direct] showed that RLHF can be reformulated as Bradley-Terry MLE, eliminating the need for a separate reward model. Recent work explores calibration [@stiennon2020learning], robustness to noise [@bai2022constitutional], and scaling laws [@gao2022scaling] for preference-based LLM training.
 
-**Preference learning in machine learning** has grown rapidly since @christiano2017deep introduced RLHF for learning from human preferences without hand-specified reward functions. @ouyang2022training scaled this approach to large language models. @rafailov2023direct introduced DPO, making explicit the Bradley-Terry assumption underlying reward modeling. For connections to social choice theory, see @arrow1951social and @sen1986social.
-
-**For further reading**: On the economics of discrete choice, @ben1985discrete provides accessible coverage. On the psychology of choice, @kahneman2011thinking discusses bounded rationality and systematic deviations from utility maximization. On recent advances in preference learning for AI, see the surveys by @kaufmann2023survey.
+**For further reading**: @agresti2002categorical provides comprehensive coverage of categorical data analysis including paired comparisons. @marden1995analyzing covers ranking models from a statistical perspective. @liu2011learning surveys learning-to-rank methods in information retrieval, many of which build on preference models.
 
 ## Exercises
+
 Exercises are marked with difficulty levels: (*) for introductory, (**) for intermediate, and (***) for challenging.
 
-### Properties of IIA Models (*)
+### Gradient Derivation for Plackett-Luce (*)
 
-Prove that if a preference model satisfies IIA, it will also satisfy $p(j \mid \mathcal{S}) \le p(j \mid \mathcal{S}')$ for any $j$ and $\mathcal{S} \supseteq \mathcal{S}'$ (called regularity) and for all $(j, k, \ell)$, if $p(j \mid \{j, k\}) \ge 0.5$ and $p(k \mid \{k, \ell\}) \ge 0.5$, then necessarily $p(j \mid \{j, \ell\}) \ge 0.5$.
-
-### Discrete Choice Models (**)
-
-Consider a linear random utility model $V_j = \beta^\top x_j + \varepsilon_j$ for $j = 1, 2, \ldots, M$, where $\varepsilon_j$ is i.i.d. sampled from a Gumbel distribution. We would like to compute $p(j \mid \{1, \ldots, M\})$ and connect it to multi-class logistic regression.
-
-(a) First compute $p(H_j < t)$ for any $j$ in terms of $F$. Use this probability to provide a formula for $p(j \mid \{1, \ldots, M\})$ over $t$ in terms of $f$ and $F$.
-
-(b) Compute the integral derived in part (a) with the appropriate $u$-substitution. You should arrive at the multi-class logistic regression model.
-
-### Mixtures and correlations (*)
-Prove that the class of random preferences induced by the following two are identical: (a) mixtures of IIA random utility models (that is, those with i.i.d. noise) (b) random utility models with correlated noise.
-
-### Sufficient Statistics (***)
-(a) Show that choice data completely specifies the preference model. That is, express $p(\prec)$ for any $\prec$ in terms of $p(j \mid \mathcal{S})$, $j \in \mathcal{S} \subseteq \{1, \ldots, M\}$.
-
-(b) Show that this is not the case for binary comparisons. That is, give an example of two different preference models that induce the same probabilities $p(Y_{jk} = 1)$.
-
-*Hint: For (a), consider how you would reconstruct the probability of a ranking $j_1 \succ j_2 \succ j_3$ from choice probabilities. For (b), consider M=3 and try to find two distributions over the 6 possible rankings that agree on all pairwise margins.*
-
-### Non-Random Utility Models (***)
-Not all probability assignments for binary comparisons $p_{jk} = p(Y_{jk} = 1)$ can be realized with a random preference model. Give an example of binary comparisons $(p_{12}, p_{23}, p_{31})$ that cannot be a result of a random preference model.
-
-*Hint: Think about what constraints transitivity imposes. If $p_{12} > 0.5$ and $p_{23} > 0.5$, what can you say about $p_{13}$?*
-
-### Bradley-Terry Maximum Likelihood (**)
-
-You observe the following pairwise comparison outcomes between 4 chess players over a tournament:
-
-| Comparison | Player A wins | Player B wins |
-|------------|---------------|---------------|
-| 1 vs 2     | 65            | 35            |
-| 1 vs 3     | 72            | 28            |
-| 1 vs 4     | 80            | 20            |
-| 2 vs 3     | 58            | 42            |
-| 2 vs 4     | 70            | 30            |
-| 3 vs 4     | 55            | 45            |
-
-(a) Write the log-likelihood for the Bradley-Terry model as a function of utilities $V = (V_1, V_2, V_3, V_4)$ with the identification constraint $V_4 = 0$.
-
-(b) Derive the gradient of the log-likelihood. Implement gradient ascent to find the MLE.
-
-(c) Interpret the learned utilities. Which player is strongest? What is the estimated probability that Player 1 beats Player 2?
-
-### From Preferences to Policy (**)
-
-This exercise connects Bradley-Terry estimation to DPO.
-
-(a) Show that minimizing the DPO loss (@eq-dpo) on a dataset of preferences is equivalent to maximizing the Bradley-Terry log-likelihood, where the "utility" of response $y$ given prompt $x$ is $\beta \log \frac{\pi_\theta(y \mid x)}{\pi_{\text{ref}}(y \mid x)}$.
-
-(b) Suppose 20% of preference labels are "noisy"---i.e., the annotator flipped a coin instead of expressing their true preference. How does this affect the learned policy compared to noise-free data?
-
-(c) If you had access to the noise rate, how would you modify the DPO objective to account for it?
-
-### Rasch Model Properties (*)
-
-Consider the Rasch model $p(Y_{ij} = 1) = \sigma(U_i + V_j)$ where $U_i$ is user appetite and $V_j$ is item appeal.
-
-(a) Show that the log-odds of acceptance is linear in the parameters:
-$$\log \frac{p(Y_{ij} = 1)}{p(Y_{ij} = 0)} = U_i + V_j$$
-
-(b) Prove that for a single user $i$ comparing items $j$ and $k$, the Rasch model implies Bradley-Terry:
-$$p(j \succ k \mid i) = \sigma(V_j - V_k)$$
-What happens to the user parameter $U_i$?
-
-(c) Explain why item-wise data from $N$ users can identify both $\{U_i\}_{i=1}^N$ and $\{V_j\}_{j=1}^M$ (up to a single additive constant), while pairwise comparison data cannot identify the $U_i$ parameters at all.
-
-### Factor Model Comparison (**)
-
-Consider two factor models with $K$-dimensional embeddings:
-
-- **Dot-product model**: $H_{ij} = U_i^\top V_j$
-- **Ideal-point model**: $H_{ij} = -\|U_i - V_j\|_2^2$
-
-(a) Show that with $K = 1$, the two models can represent the same set of preference probabilities. *Hint: Find a transformation between the parameters.*
-
-(b) Give an intuitive example of a preference pattern that the dot-product model can represent but the ideal-point model cannot. *Hint: Consider what happens when a user's embedding points in the opposite direction from an item's embedding.*
-
-(c) In what application domains (beyond those mentioned in the chapter) would you prefer the ideal-point model over the dot-product model? Justify your answer.
-
-### From Rasch to Recommendations (*)
-
-A music streaming service has 1000 users and 500 songs. Each user has listened to some songs (listen = $Y_{ij} = 1$) and skipped others when recommended (skip = $Y_{ij} = 0$). You model this with the Rasch model.
-
-(a) Write down the log-likelihood for the Rasch model given an observed response matrix $Y$.
-
-(b) After fitting the model, you estimate user appetite $U_{\text{Alice}} = 1.5$ for user Alice and item appeal $V_{\text{song}} = -0.5$ for the song "Bohemian Rhapsody". What is the probability that Alice will listen to this song if recommended?
-
-(c) User Bob has estimated appetite $U_{\text{Bob}} = -0.5$. Without knowing the item parameters, compute the odds ratio comparing Alice's probability of listening to *any* song versus Bob's probability.
-
-### Posterior Inference for Mixture Preferences (**)
-
-(This exercise previews some of the aspects for learning utility functions from the next chapter but is self-contained.) You are part of the ML team on the movie streaming site "Preferential". You receive full preference orderings in the form $j_1 \succ j_2 \succ \cdots \succ j_M$, where $j_1$ is the most, and $j_M$ the least preferred option. The preferences come from $600$ distinct users with $50$ examples per user. Each movie $j$ has a $10$-dimensional feature vector $\mathbf{x}_j$, and each user $i$ has a $10$-dimensional weight vector $\mathbf{w}_i$. The preferences for user $i$ follow the random utility model $V_j = \mathbf{w}_i^\top \mathbf{x}_j + \varepsilon_j$, where $\varepsilon_j$ is i.i.d. Gumbel distributed.
-
-Sadly, you lost all user identifiers. Unashamedly, you assume a model where a proportion $p$ of the users have weights $\mathbf{w}_1$, and a proportion $1-p$ has weights $\mathbf{w}_2$. Each user belongs to one of two groups: users with weights $\mathbf{w}_1$ are part of Group 1, and users with weights $\mathbf{w}_2$ are part of Group 2.
-
-(a) For a datapoint $(j_1 \succ j_2)$ and conditional on $p$, $\mathbf{w}_1$ and $\mathbf{w}_2$, compute the likelihood $p(Y_{j_1 j_2} = 1 \mid p, \mathbf{w}_1, \mathbf{w}_2)$.
-
-(b) Use the likelihood to simplify the posterior distribution of $p, \mathbf{w}_1, \mathbf{w}_2$ after updating on $(\mathbf{x}_{j_1}, \mathbf{x}_{j_2})$ leaving terms for the priors unchanged.
-
-(c) Assume priors $p\sim B(1, 1)$, $w_1\sim N (0, \mathbf{I})$, and $w_2\sim N(0, \mathbf{I})$ where $B$ represents the Beta distribution and $\mathcal{N}$ represents the normal distribution (all three sampled independently). You will notice that the posterior from part (b) has no simple closed form, requiring numerical methods. One such method, allowing to approximate sample from the posterior $\pi$, is called Metropolis-Hastings. (The reason why one might want to sample from the posterior will be discussed later.) Broadly, the idea of Metropolis-Hastings and similar, so-called Markov Chain Monte Carlo methods is the following: Construct a Markov chain $\{x_t\}_{t=1}^\infty$ which has as "ergodic" distribution given by your desired distribution.\footnote{That is, $x_{t}$ is independent of $(x_1, x_2, \dots, x_{t-2})$ conditional on $x_{t-1}$.} By properties of Markov chains, for $t \gg 0$, $x_t$ will be almost as good as sampled from the "ergodic" distribution. In Metropolis-Hastings, the distribution is a proposal $P$ for $x_{t+1}$ is made via sampling from a chosen probability kernel $Q(\bullet | x_t)$ (e.g., adding Gaussian noise). The acceptance probability of the proposal is given by
-
+The Plackett-Luce model extends Bradley-Terry to full rankings. Given a ranking $(j_1 \succ j_2 \succ \cdots \succ j_M)$, the likelihood is:
 $$
-x_{t+1}=\begin{cases} \tilde Q(\bullet | x_t) & \text{with probability } A, \\ x_t & \text{with probability } 1 - A. \end{cases}
-$$
-where 
-$$
-A= \min \left( 1, \frac{\pi(\bullet )Q(x_t | \bullet )}{\pi(x_t)Q( \bullet | x_t)} \right).
-$$
-We will extract samples from the Markov chain after a "burn-in period", $(x_{T+1}, x_{T+2},\cdots, x_{N})$. 
-
-To build some intuition, suppose we have a biased coin that turns heads with probability $p_{\text{heads}}$. We observe $12$ coin flips to have $9$ heads (H) and $3$ tails (T). If our prior for $p_{\text{H}}$ was $B(1, 1)$, then, by properties of the Beta distribution, our posterior will be $B(1 + 9, 1 + 3)=B(10, 4)$. The Bayesian update is given by
-
-$$
-p(p_{\text{H}}|9\text{H}, 3\text{T}) = \frac{p(9\text{H}, 3\text{T} | p_{\text{H}})B(1, 1)(p_{\text{H}})}{\int_0^1 P(9\text{H}, 3\text{T} | p_{\text{H}})B(1, 1)(p_{\text{H}}) \, \mathrm dp_{\text{H}}} =\frac{p(9\text{H}, 3\text{T} | p_{\text{H}})}{\int_0^1 p(9\text{H}, 3\text{T} | p_{\text{H}}) \, \mathrm dp_{\text{H}}}.
+p(\text{ranking} \mid V) = \prod_{k=1}^{M-1} \frac{\exp(V_{j_k})}{\sum_{\ell=k}^M \exp(V_{j_\ell})}
 $$
 
-**Find the acceptance probability** $A$ in the setting of the biased coin assuming the proposal distribution $Q(\cdot|x_t)=x_t+N(0,\sigma)$ for given $\sigma$. Notice that this choice of $Q$ is symmetric, i.e., $Q(x_t|p)=Q(p|x_t)$ for all $p \in \mathbb R$. Note that it is unnecessary to compute the normalizing constant of the Bayesian update (i.e., the integral in the denominator). This simplification is one of the main practical advantages of Metropolis-Hastings.
-
-(d) Implement Metropolis-Hastings to sample from the posterior distribution of the biased coin in `multimodal_preferences/biased_coin.py`. Attach a histogram of your MCMC samples overlayed on top of the true posterior $B(10, 4)$ by running `python biased_coin.py`.
-
-```{pyodide-python}
-#| autorun: true
-#| error: true
-import numpy as np
-import matplotlib.pyplot as plt
-from scipy.stats import beta
-
-def likelihood(p: float) -> float:
-    """
-    Computes the likelihood of 9 heads and 3 tails, assuming p_heads is p.
-
-    Args:
-    p (float): A value between 0 and 1 representing the probability of heads.
-
-    Returns:
-    float: The likelihood value at p_heads=p. Return 0 if p is outside the range [0, 1].
-    """
-    # YOUR CODE HERE (~1-3 lines)
-    pass
-    # END OF YOUR CODE
-
-
-def propose(x_current: float, sigma: float) -> float:
-    """
-    Proposes a new sample from the proposal distribution Q.
-    Here, Q is a normal distribution centered at x_current with standard deviation sigma.
-
-    Args:
-    x_current (float): The current value in the Markov chain.
-    sigma (float): Standard deviation of the normal proposal distribution.
-
-    Returns:
-    float: The proposed new sample.
-    """
-    # YOUR CODE HERE (~1-3 lines)
-    pass
-    # END OF YOUR CODE
-
-
-def acceptance_probability(x_current: float, x_proposed: float) -> float:
-    """
-    Computes the acceptance probability A for the proposed sample.
-    Since the proposal distribution is symmetric, Q cancels out.
-
-    Args:
-    x_current (float): The current value in the Markov chain.
-    x_proposed (float): The proposed new value.
-
-    Returns:
-    float: The acceptance probability
-    """
-    # YOUR CODE HERE (~4-6 lines)
-    pass
-    # END OF YOUR CODE
-
-
-def metropolis_hastings(N: int, T: int, x_init: float, sigma: float) -> np.ndarray:
-    """
-    Runs the Metropolis-Hastings algorithm to sample from a posterior distribution.
-
-    Args:
-    N (int): Total number of iterations.
-    T (int): Burn-in period (number of initial samples to discard).
-    x_init (float): Initial value of the chain.
-    sigma (float): Standard deviation of the proposal distribution.
-
-    Returns:
-    list: Samples collected after the burn-in period.
-    """
-    samples = []
-    x_current = x_init
-
-    for t in range(N):
-        # YOUR CODE HERE (~7-10 lines)
-        # Use the propose and acceptance_probability functions to get x_{t+1} and store it in samples after the burn-in period T
-        pass
-        # END OF YOUR CODE
-
-    return samples
-
-
-def plot_results(samples: np.ndarray) -> None:
-    """
-    Plots the histogram of MCMC samples along with the true Beta(10, 4) PDF.
-
-    Args:
-    samples (np.ndarray): Array of samples collected from the Metropolis-Hastings algorithm.
-
-    Returns:
-    None
-    """
-    # Histogram of the samples from the Metropolis-Hastings algorithm
-    plt.hist(samples, bins=50, density=True, alpha=0.5, label="MCMC Samples")
-
-    # True Beta(10, 4) distribution for comparison
-    p = np.linspace(0, 1, 1000)
-    beta_pdf = beta.pdf(p, 10, 4)
-    plt.plot(p, beta_pdf, "r-", label="Beta(10, 4) PDF")
-
-    plt.xlabel("p_heads")
-    plt.ylabel("Density")
-    plt.title("Metropolis-Hastings Sampling of Biased Coin Posterior")
-    plt.legend()
-    plt.show()
-
-
-if __name__ == "__main__":
-    # MCMC Parameters (DO NOT CHANGE!)
-    N = 50000  # Total number of iterations
-    T = 10000  # Burn-in period to discard
-    x_init = 0.5  # Initial guess for p_heads
-    sigma = 0.1  # Standard deviation of the proposal distribution
-
-    # Run Metropolis-Hastings and plot the results
-    samples = metropolis_hastings(N, T, x_init, sigma)
-    plot_results(samples)
-```
-
-(e) Implement Metropolis-Hastings in the movie setting inside\ `multimodal_preferences/movie_metropolis.py`. You should be able to achieve a $90\%$ success rate with most `fraction_accepted` values above $0.1$. Success is measured by thresholded closeness of predicted parameters to true parameters. You may notice occasional failures that occur due to lack of convergence which we will account for in grading.
-
-```{pyodide-python}
-#| autorun: true
-#| error: true
-import torch
-import torch.distributions as dist
-import math
-from tqdm import tqdm
-from typing import Tuple
-
-def make_data(
-    true_p: torch.Tensor, true_weights_1: torch.Tensor, true_weights_2: torch.Tensor, num_movies: int, feature_dim: int
-) -> Tuple[torch.Tensor, torch.Tensor]:
-    """
-    Generates a synthetic movie dataset according to the CardinalStreams model.
-
-    Args:
-        true_p (torch.Tensor): Probability of coming from Group 1.
-        true_weights_1 (torch.Tensor): Weights for Group 1.
-        true_weights_2 (torch.Tensor): Weights for Group 2.
-
-    Returns:
-        Tuple[torch.Tensor, torch.Tensor]: A tuple containing the dataset and labels.
-    """
-    # Create movie features
-    first_movie_features = torch.randn((num_movies, feature_dim))
-    second_movie_features = torch.randn((num_movies, feature_dim))
-
-    # Only care about difference of features for Bradley-Terry
-    dataset = first_movie_features - second_movie_features
-
-    # Get probabilities that first movie is preferred assuming Group 1 or Group 2
-    weight_1_probs = torch.sigmoid(dataset @ true_weights_1)
-    weight_2_probs = torch.sigmoid(dataset @ true_weights_2)
-
-    # Probability that first movie is preferred overall can be viewed as sum of conditioning on Group 1 and Group 2
-    first_movie_preferred_probs = (
-        true_p * weight_1_probs + (1 - true_p) * weight_2_probs
-    )
-    labels = dist.Bernoulli(first_movie_preferred_probs).sample()
-    return dataset, labels
-
-
-def compute_likelihoods(
-    dataset: torch.Tensor,
-    labels: torch.Tensor,
-    p: torch.Tensor,
-    w_1: torch.Tensor,
-    w_2: torch.Tensor,
-) -> torch.Tensor:
-    """
-    Computes the likelihood of each datapoint. Use your calculation from part (a) to help.
-
-    Args:
-        dataset (torch.Tensor): The dataset of differences between movie features.
-        labels (torch.Tensor): The labels where 1 indicates the first movie is preferred, and 0 indicates preference of the second movie.
-        p (torch.Tensor): The probability of coming from Group 1.
-        w_1 (torch.Tensor): Weights for Group 1.
-        w_2 (torch.Tensor): Weights for Group 2.
-
-    Returns:
-        torch.Tensor: The likelihoods for each datapoint. Should have shape (dataset.shape[0], )
-    """
-    # YOUR CODE HERE (~6-8 lines)
-    pass
-    # END OF YOUR CODE
-
-def compute_prior_density(
-    p: torch.Tensor, w_1: torch.Tensor, w_2: torch.Tensor
-) -> torch.Tensor:
-    """
-    Computes the prior density of the parameters.
-
-    Args:
-        p (torch.Tensor): The probability of preferring model 1.
-        w_1 (torch.Tensor): Weights for model 1.
-        w_2 (torch.Tensor): Weights for model 2.
-
-    Returns:
-        torch.Tensor: The prior densities of p, w_1, and w_2.
-    """
-    # Adjusts p to stay in the range [0.3, 0.7] to prevent multiple equilibria issues at p=0 and p=1
-    p_prob = torch.tensor([2.5]) if 0.3 <= p <= 0.7 else torch.tensor([0.0])
-
-    def normal_pdf(x: torch.Tensor) -> torch.Tensor:
-        """Computes the PDF of the standard normal distribution at x."""
-        return (1.0 / torch.sqrt(torch.tensor(2 * math.pi))) * torch.exp(-0.5 * x**2)
-
-    weights_1_prob = normal_pdf(w_1)
-    weights_2_prob = normal_pdf(w_2)
-
-    # Concatenate the densities
-    concatenated_prob = torch.cat([p_prob, weights_1_prob, weights_2_prob])
-    return concatenated_prob
-
-
-def metropolis_hastings(
-    dataset: torch.Tensor,
-    labels: torch.Tensor,
-    sigma: float = 0.01,
-    num_iters: int = 30000,
-    burn_in: int = 20000,
-) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, float]:
-    """
-    Performs the Metropolis-Hastings algorithm to sample from the posterior distribution.
-    DO NOT CHANGE THE DEFAULT VALUES!
-
-    Args:
-        dataset (torch.Tensor): The dataset of differences between movie features.
-        labels (torch.Tensor): The labels indicating which movie is preferred.
-        sigma (float, optional): Standard deviation for proposal distribution.
-            Defaults to 0.01.
-        num_iters (int, optional): Total number of iterations. Defaults to 30000.
-        burn_in (int, optional): Number of iterations to discard as burn-in.
-            Defaults to 20000.
-
-    Returns:
-        Tuple[torch.Tensor, torch.Tensor, torch.Tensor, float]: Samples of p,
-        w_1, w_2, and the fraction of accepted proposals.
-    """
-    feature_dim = dataset.shape[1]
-
-    # Initialize random starting parameters by sampling priors
-    curr_p = 0.3 + 0.4 * torch.rand(1)
-    curr_w_1 = torch.randn(feature_dim)
-    curr_w_2 = torch.randn(feature_dim)
-
-    # Keep track of samples and total number of accepted proposals
-    p_samples = []
-    w_1_samples = []
-    w_2_samples = []
-    accept_count = 0 
-
-    for T in tqdm(range(num_iters)):
-        # YOUR CODE HERE (~3 lines)
-        pass # Sample proposals for p, w_1, w_2
-        # END OF YOUR CODE
-
-        # YOUR CODE HERE (~4-6 lines)
-        pass # Compute likehoods and prior densities on both the proposed and current samples
-        # END OF YOUR CODE
-
-        # YOUR CODE HERE (~2-4 lines)
-        pass # Obtain the ratios of the likelihoods and prior densities between the proposed and current samples 
-        # END OF YOUR CODE 
-
-        # YOUR CODE HERE (~1-2 lines)
-        pass # Multiply all ratios (both likelihoods and prior densities) and use this to calculate the acceptance probability of the proposal
-        # END OF YOUR CODE
-
-        # YOUR CODE HERE (~4-6 lines)
-        pass # Sample randomness to determine whether the proposal should be accepted to update curr_p, curr_w_1, curr_w_2, and accept_count
-        # END OF YOUR CODE 
-
-        # YOUR CODE HERE (~4-6 lines)
-        pass # Update p_samples, w_1_samples, w_2_samples if we have passed the burn in period T
-        # END OF YOUR CODE 
-
-    fraction_accepted = accept_count / num_iters
-    print(f"Fraction of accepted proposals: {fraction_accepted}")
-    return (
-        torch.stack(p_samples),
-        torch.stack(w_1_samples),
-        torch.stack(w_2_samples),
-        fraction_accepted,
-    )
-
-
-def evaluate_metropolis(num_sims: int, num_movies: int, feature_dim: int) -> None:
-    """
-    Runs the Metropolis-Hastings algorithm N times and compare estimated parameters
-    with true parameters to obtain success rate. You should attain a success rate of around 90%. 
-
-    Note that there are two successful equilibria to converge to. They are true_weights_1 and true_weights_2 with probabilities
-    p and 1-p in addition to true_weights_2 and true_weights_1 with probabilities 1-p and p. This is why even though it may appear your
-    predicted parameters don't match the true parameters, they are in fact equivalent. 
-
-    Args:
-        num_sims (int): Number of simulations to run.
-
-    Returns:
-        None
-    """
-    
-    success_count = 0
-    for _ in range(num_sims):
-        # Sample random ground truth parameters
-        true_p = 0.3 + 0.4 * torch.rand(1)
-        true_weights_1 = torch.randn(feature_dim)
-        true_weights_2 = torch.randn(feature_dim)
-
-        print("\n---- MCMC Simulation ----")
-        print("True parameters:", true_p, true_weights_1, true_weights_2)
-
-        dataset, labels = make_data(true_p, true_weights_1, true_weights_2, num_movies, feature_dim)
-        p_samples, w_1_samples, w_2_samples, _ = metropolis_hastings(dataset, labels)
-
-        p_pred = p_samples.mean(dim=0)
-        w_1_pred = w_1_samples.mean(dim=0)
-        w_2_pred = w_2_samples.mean(dim=0)
-
-        print("Predicted parameters:", p_pred, w_1_pred, w_2_pred)
-
-        # Do casework on two equilibria cases to check for success
-        p_diff_case_1 = torch.abs(p_pred - true_p)
-        p_diff_case_2 = torch.abs(p_pred - (1 - true_p))
-
-        w_1_diff_case_1 = torch.max(torch.abs(w_1_pred - true_weights_1))
-        w_1_diff_case_2 = torch.max(torch.abs(w_1_pred - true_weights_2))
-
-        w_2_diff_case_1 = torch.max(torch.abs(w_2_pred - true_weights_2))
-        w_2_diff_case_2 = torch.max(torch.abs(w_2_pred - true_weights_1))
-
-        pass_case_1 = (
-            p_diff_case_1 < 0.1 and w_1_diff_case_1 < 0.5 and w_2_diff_case_1 < 0.5
-        )
-        pass_case_2 = (
-            p_diff_case_2 < 0.1 and w_1_diff_case_2 < 0.5 and w_2_diff_case_2 < 0.5
-        )
-        passes = pass_case_1 or pass_case_2
-
-        print(f'Result: {"Success" if passes else "FAILED"}')
-        if passes:
-            success_count += 1
-    print(f'Success rate: {success_count / num_sims}')
-
-
-if __name__ == "__main__":
-    evaluate_metropolis(num_sims=10, num_movies=30000, feature_dim=10)
-```
+(a) Write the log-likelihood for a single ranking as a function of utilities $V$.
 
+(b) Derive the gradient $\frac{\partial \log p}{\partial V_m}$ for an arbitrary item $m$. *Hint: Consider three cases: $m$ appears at position $k$, $m$ appears after position $k$, and $m$ does not appear in the ranking.*
+
+(c) Implement gradient ascent for Plackett-Luce on simulated ranking data. Compare convergence to Bradley-Terry MLE—which converges faster and why?
+
+### L2 Regularized Bradley-Terry (**)
+
+(a) Implement Bradley-Terry MLE with L2 regularization for a range of $\lambda$ values. Generate synthetic data with $M = 20$ items and vary the number of comparisons from 50 to 500. Plot test AUC vs $\lambda$ for each dataset size.
+
+(b) Explain why the optimal $\lambda$ decreases as the number of comparisons increases. At what rate does it decay?
+
+(c) Derive the Hessian matrix of the regularized log-likelihood. Under what conditions is it positive definite (ensuring a unique global maximum)?
+
+### K-Fold Cross-Validation Implementation (**)
+
+(a) Implement 5-fold cross-validation for Bradley-Terry estimation from scratch (without using sklearn or similar libraries). Your implementation should:
+   - Randomly partition comparison data into 5 folds
+   - Train on 4 folds, validate on 1 fold
+   - Repeat for all 5 folds
+   - Return mean and standard deviation of validation AUC
+
+(b) Compare your CV implementation to a single 80/20 train/test split over 20 random seeds. Which provides a more stable performance estimate?
+
+(c) Extend your implementation to stratified CV: ensure each fold has approximately equal proportions of wins for each item. Why might stratification improve CV estimates for imbalanced data?
+
+### Learning Rate Sensitivity Analysis (*)
+
+(a) For Bradley-Terry MLE on synthetic data ($M = 15$ items, 100 comparisons), experiment with learning rates $\eta \in \{0.001, 0.01, 0.05, 0.1, 0.5, 1.0\}$. Plot the training loss curve for each learning rate.
+
+(b) Identify the learning rate that achieves the lowest final loss. What happens with learning rates that are too large? Too small?
+
+(c) Implement a learning rate schedule (e.g., exponential decay $\eta_t = \eta_0 \cdot 0.95^t$) and compare to fixed learning rate. Does the schedule improve final performance?
+
+### MCMC Diagnostics (**)
+
+The Metropolis-Hastings implementation in @sec-bayesian produces a chain of samples. Assess convergence quality:
+
+(a) Implement the **effective sample size** (ESS) diagnostic: ESS estimates how many independent samples the chain is equivalent to, accounting for autocorrelation. For a chain $\{V^{(t)}\}_{t=1}^T$, the ESS for parameter $V_j$ is approximately:
+$$
+\text{ESS}_j = \frac{T}{1 + 2\sum_{k=1}^K \rho_k}
+$$
+where $\rho_k$ is the autocorrelation at lag $k$.
+
+(b) Run the MH algorithm from @sec-bayesian with different proposal step sizes $\tau \in \{0.01, 0.05, 0.1, 0.5\}$. Plot ESS vs $\tau$. What happens when $\tau$ is too small? Too large?
+
+(c) Implement trace plots for multiple chains (run MH 3 times with different initializations). Do all chains converge to the same stationary distribution?
+
+### Optimization Method Comparison (**)
+
+(a) Implement gradient descent with momentum: $m_t \leftarrow \beta m_{t-1} + \nabla \mathcal{L}(V_t)$, $V_{t+1} \leftarrow V_t + \eta m_t$ where $\beta \in [0, 1)$ controls momentum.
+
+(b) On the same synthetic Bradley-Terry problem, compare four optimizers: vanilla GD, GD with momentum ($\beta = 0.9$), Adam, and RMSprop. Plot convergence curves (loss vs iteration).
+
+(c) For each optimizer, find the best learning rate via grid search. Which optimizer is most sensitive to learning rate tuning?
+
+### Convergence Proof (***)
+
+Prove that gradient ascent on the Bradley-Terry log-likelihood converges to the global maximum (assuming the maximum exists).
+
+(a) Show that the Bradley-Terry log-likelihood is strictly concave when the comparison graph is strongly connected (every pair of items is connected by a directed path of comparisons).
+
+(b) Prove that gradient ascent with sufficiently small step size $\eta$ converges to the unique global maximum. *Hint: Use the fact that the gradient vanishes only at the maximum for strictly concave functions.*
+
+(c) What happens when the comparison graph is not strongly connected? Construct an example with multiple disconnected components and characterize the set of maximum likelihood estimators.
+
+### Calibration Metrics (*)
+
+(a) Implement a calibration plot: bin predicted probabilities into 10 intervals $[0, 0.1), [0.1, 0.2), \ldots, [0.9, 1.0]$, and for each bin, compute the average predicted probability and the empirical frequency of wins.
+
+(b) Generate synthetic Bradley-Terry data and fit two models: one correctly specified (Bradley-Terry) and one mis-specified (assume all items have equal utility). Plot calibration curves for both. Which is better calibrated?
+
+(c) Define the Expected Calibration Error (ECE): $\text{ECE} = \sum_{b=1}^B \frac{|B_b|}{N} |\bar{p}_b - \bar{y}_b|$ where $\bar{p}_b$ is the average predicted probability in bin $b$, $\bar{y}_b$ is the empirical frequency, and $|B_b|$ is the number of predictions in bin $b$. Compute ECE for your models.
+
+### Online to Batch Convergence (*)
+
+(a) Implement Elo with a decreasing K-factor: $K_t = K_0 / \sqrt{t}$ where $t$ is the iteration number. This is known as the Robbins-Monro condition for stochastic approximation.
+
+(b) On synthetic Bradley-Terry data, run Elo with decreasing $K_t$ and compare the final learned parameters to batch MLE. How close do they converge?
+
+(c) Prove (or argue informally) that Elo with $K_t = \eta / \sqrt{t}$ converges to the MLE in the limit as $t \to \infty$. Under what conditions does this hold?
+
+### Hyperparameter Tuning with Nested Cross-Validation (***)
+
+To obtain an unbiased estimate of generalization performance when hyperparameters are selected via CV, we use nested (double) CV:
+
+- **Outer loop**: K-fold CV to estimate generalization
+- **Inner loop**: For each outer fold, use K-fold CV on the training data to select hyperparameters
+
+(a) Implement nested 5-fold CV for Bradley-Terry with L2 regularization. The inner loop tunes $\lambda$, the outer loop estimates test AUC.
+
+(b) Compare the nested CV test AUC estimate to: (i) a single train/test split with CV on training data for $\lambda$ selection, and (ii) CV test AUC when $\lambda$ is selected using the outer CV test set (data leakage). Which is more optimistic? Pessimistic?
+
+(c) Why is nested CV important? Give an example where selecting hyperparameters on the same data used for final evaluation leads to overly optimistic performance estimates.
+
+### Real-World Dataset Application (***)
+
+Apply the methods from this chapter to a real preference dataset:
+
+(a) Obtain a dataset such as the Jester jokes dataset (user ratings), a subset of MovieLens, or chess game outcomes from Lichess. Describe the data: number of items, number of comparisons, sparsity.
+
+(b) Apply all three methods (MLE with regularization, Bayesian inference, online Elo) and compare their performance using multiple metrics (AUC, log-likelihood, calibration error). Use cross-validation to tune hyperparameters.
+
+(c) Visualize the learned item parameters. Do they agree with intuition (e.g., highly-rated movies have high utility)? Identify the top-5 and bottom-5 items according to each method—do the methods agree?
+
+(d) Discuss practical challenges encountered: computational cost, cold-start items, missing data, temporal effects. How would you address these in a production system?
+
+### Bias-Variance Tradeoff Demonstration (**)
+
+(a) Generate synthetic Bradley-Terry data with $M = 10$ items and vary the training set size $n \in \{20, 50, 100, 200, 500\}$ comparisons. For each $n$ and several regularization strengths $\lambda$, fit models and compute:
+   - **Bias**: Average difference between learned and true parameters
+   - **Variance**: Standard deviation of learned parameters across 50 random datasets
+
+(b) Plot bias and variance vs $\lambda$ for each training set size. Verify that as $\lambda$ increases, bias increases and variance decreases.
+
+(c) Plot test AUC vs $\lambda$ and identify the optimal $\lambda$ for each $n$. How does the optimal regularization strength change with dataset size?
