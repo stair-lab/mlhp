@@ -48,7 +48,7 @@ footer: "CS329H - Chapter 3.2: Metric Elicitation"
 </ul>
 
 ## 2. Metric Elicitation through Preferences
-<img src="figures/metric_elicitation.png" alt="Metric Elicitation through Preferences" style="width: 50%;" />
+<img src="figures/metric_elicitation_3.2.png" alt="Metric Elicitation through Preferences" style="width: 50%;" />
 <ul>
   <li>Determining metrics by interacting with individual stakeholders</li>
   <ul>
