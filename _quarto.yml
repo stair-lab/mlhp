@@ -29,8 +29,9 @@ language:
   crossref-apx-prefix: Appendix
 
 df-print: kable
-# filters:
-#   - pseudocode
+filters:
+  - resources/tex/protect-crossrefs.lua
+# Note: pseudocode extension not installed, algorithm cross-refs handled by protect-crossrefs.lua
 
 format:
   html:
@@ -79,7 +80,6 @@ format:
     citeproc: false # don't run pandoc default citation handling
     csl: chicago-author-date-no-em-dash.csl
     filters:
-      - resources/tex/protect-crossrefs.lua
       - section-bibliographies
     toc-depth: 2 # level 1 headings (i.e. parts and chapters)
     toc-title: Table of Contents # title of table of contents
