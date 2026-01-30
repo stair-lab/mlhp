@@ -9,3 +9,109 @@ execute:
     auto: true
 ---
 
+Machine learning systems are increasingly shaping consequential decisions in our lives—from the content we consume to the opportunities we receive. A central challenge in developing trustworthy AI is ensuring these systems align with human preferences rather than optimizing for proxies that diverge from what people actually value. This book has presented a comprehensive framework for learning from human feedback, drawing on nearly a century of research across economics, psychology, statistics, and computer science.
+
+## Our Approach
+
+This book has taken an interdisciplinary approach to machine learning from human preferences, weaving together insights from diverse fields into a unified technical and conceptual framework.
+
+### Foundations from Multiple Disciplines
+
+Our treatment began with foundational models that originated outside of machine learning. The Bradley-Terry model (@sec-bradley-terry), introduced in 1952 for ranking chess players, provides the mathematical backbone for modern preference learning—including state-of-the-art methods like Direct Preference Optimization for language model alignment. Thurstone's law of comparative judgment from psychophysics (1927), Luce's choice axiom (1959), and McFadden's discrete choice econometrics (1974) all inform how we model the relationship between latent utilities and observed choices.
+
+This interdisciplinary foundation is not merely historical context. Understanding *why* the Bradley-Terry model arises from random utility assumptions, and *when* its key assumption—Independence of Irrelevant Alternatives—fails, equips practitioners to recognize the limitations of their methods. The red-bus/blue-bus problem and preference heterogeneity are not abstract concerns but practical challenges that arise in real applications.
+
+### From Axioms to Algorithms
+
+The book progressed from axiomatic foundations to practical algorithms:
+
+**Chapter 1** established the mathematical language of preferences. We showed how random utility models with Gumbel-distributed noise yield the tractable logit form, and how the IIA axiom collapses an exponentially large preference space to a linear number of parameters. These are not arbitrary modeling choices—they encode specific assumptions about human cognition that may or may not hold in practice.
+
+**Chapter 2** developed estimation methods for preference models. Maximum likelihood estimation provides point estimates efficiently, while Bayesian inference quantifies uncertainty—essential for downstream decision-making. The Elo rating system, used from chess to video games, emerges naturally as stochastic gradient descent on the Bradley-Terry likelihood. Gaussian Processes offer flexible nonparametric alternatives when linear reward functions are too restrictive.
+
+**Chapter 3** addressed active data collection. Human feedback is expensive; we cannot afford to collect data naively. Fisher information quantifies how much each comparison teaches us about preferences, enabling intelligent query selection. The connection to optimal experimental design—A-optimal, D-optimal, E-optimal criteria—grounds active learning in classical statistical theory.
+
+**Chapter 4** turned to decision-making under learned preferences. Thompson Sampling elegantly balances exploration and exploitation by sampling from the posterior and acting optimally under the sample. Dueling bandits extend multi-armed bandits to the comparison setting, with distinct winner concepts (Condorcet, Borda, von Neumann) and regret notions appropriate for different applications.
+
+**Chapter 5** examined aggregation when multiple stakeholders have heterogeneous preferences. Arrow's Impossibility Theorem and the Gibbard-Satterthwaite Theorem establish fundamental limits on what any aggregation mechanism can achieve. Mechanism design, including VCG auctions and Myerson's optimal auctions, shows how to align individual incentives with collective objectives—but at a cost.
+
+### The Critical Turn
+
+A distinctive feature of this book is **Chapter 6**, which stepped back from technical methods to ask a normative question: *Whose preferences matter?*
+
+Every technical choice in the preference learning pipeline—from who gets queried to how preferences are aggregated—embeds value judgments about whose interests count. Optimizing for efficiency may systematically underserve minority populations. Assuming IIA treats context-dependent preferences as irrational, potentially disadvantaging overburdened users. Using existing data to define a reference policy encodes historical inequities into the learning objective.
+
+This critical lens does not reject the technical methods developed in earlier chapters. Rather, it calls for conscious recognition that preference learning is not value-neutral. The designer's choices shape who benefits and who is harmed. Fairness constraints, stratified evaluation, and participatory design are not add-ons but essential components of responsible system development.
+
+## Forwarding the Field
+
+Machine learning from human preferences is a vibrant area of research with many open challenges. We highlight several directions that we believe are particularly important for the field's advancement.
+
+### Beyond Pairwise Comparisons
+
+Much of this book focused on pairwise comparisons—the simplest and most well-understood form of preference data. But humans express preferences in many ways:
+
+- **Natural language feedback**: "This response is helpful but could be more concise" conveys richer information than a binary comparison.
+- **Partial rankings**: A user might confidently rank their top three choices but be uncertain about the rest.
+- **Ratings and Likert scales**: Absolute judgments on a scale provide cardinal (not just ordinal) information, though they introduce calibration challenges.
+- **Implicit signals**: Engagement time, scroll patterns, and click behavior reveal preferences without explicit queries.
+
+Integrating these diverse modalities into unified preference models is an important open problem. Each modality has strengths: pairwise comparisons are reliable but expensive; implicit signals are cheap but noisy; natural language is rich but difficult to formalize. Hybrid approaches that combine multiple feedback types, weighting each appropriately, hold promise for more efficient and accurate preference learning.
+
+### Scalable Oversight
+
+As AI systems become more capable, the tasks they perform become harder for humans to evaluate. A language model writing code may produce solutions that work but are subtly flawed in ways a non-expert cannot detect. A scientific assistant might propose experiments whose validity requires deep domain expertise to assess.
+
+*Scalable oversight* addresses this challenge through techniques like:
+
+- **Recursive reward modeling**: Decomposing complex evaluation tasks into simpler subtasks that humans can reliably judge.
+- **AI-assisted evaluation**: Using AI systems to help humans provide more accurate feedback, while remaining vigilant about circular dependencies.
+- **Debate and amplification**: Adversarial procedures where AI systems critique each other's outputs, surfacing flaws that a single evaluator might miss.
+
+These approaches extend preference learning beyond direct human feedback to settings where humans provide oversight indirectly, through structured procedures that leverage AI assistance while preserving meaningful human control.
+
+### Heterogeneity and Personalization
+
+The IIA assumption, while convenient, fails systematically when preferences are heterogeneous across users or contexts. Real populations contain diverse subgroups with legitimately different preferences—not noise to be averaged away but signal to be respected.
+
+Future work must develop:
+
+- **Mixture models** that identify latent preference clusters without requiring users to self-identify.
+- **Contextual preference models** that account for how the same user's preferences vary with cognitive load, time pressure, and framing.
+- **Personalization with fairness constraints** that provide tailored assistance while ensuring no group is systematically underserved.
+
+The tension between personalization (giving each user what they want) and fairness (ensuring equitable outcomes across groups) is not fully resolved by the technical tools we have today. Progress requires both better algorithms and clearer normative frameworks for navigating these tradeoffs.
+
+### Fairness and Value Alignment
+
+Chapter 6 introduced fairness considerations; making them operational requires ongoing research:
+
+- **Fairness metrics for preference learning**: Standard fairness definitions (demographic parity, equalized odds) were developed for classification. What are the appropriate analogs for preference models? When is it fair for a system to learn different preference models for different groups?
+- **Value alignment under disagreement**: When stakeholders have genuinely conflicting preferences, what should a system optimize for? Majority preferences? Pareto improvements? Maximin welfare?
+- **Transparency and contestability**: Users should understand why a system makes the recommendations it does, and have meaningful recourse when they disagree.
+
+These are not purely technical questions—they require engagement with philosophy, law, and democratic theory. But technical researchers must be part of the conversation, ensuring that fairness frameworks are implementable and that their limitations are well understood.
+
+### Foundation Model Alignment
+
+Large language models trained via RLHF and DPO represent the most prominent current application of preference learning. Yet significant challenges remain:
+
+- **Reward hacking**: Models may find ways to achieve high reward without actually satisfying human preferences—exploiting ambiguities in the reward signal rather than genuinely helpful behavior.
+- **Distributional shift**: Preferences collected in one context may not generalize to deployment settings, especially as models are used for novel tasks.
+- **Constitutional AI and rule-based approaches**: Can we move beyond learning from examples to learning from principles? How do we reconcile principle-based and preference-based approaches?
+
+The alignment of foundation models with human values is arguably the most consequential application of preference learning today. Progress in this area requires both fundamental research on preference modeling and careful empirical work on what actually makes language model outputs helpful, harmless, and honest.
+
+## Final Thought
+
+At its core, this book has been about a simple idea: rather than specifying objectives by hand, we can learn them from human feedback. This idea is powerful because it promises AI systems that serve human values rather than proxy metrics—systems that improve as we better understand what we want.
+
+But the idea is also subtle. Human preferences are noisy, inconsistent, context-dependent, and heterogeneous. They can be manipulated, and they evolve over time. Learning from preferences does not automatically solve the alignment problem; it transforms it into questions about whose preferences to learn from, how to aggregate them, and when to defer to them versus override them.
+
+The technical methods in this book—Bradley-Terry models, Bayesian inference, active learning, Thompson Sampling, mechanism design—are tools. Like all tools, their value depends on how they are used. A hammer can build a house or break a window. The same algorithms that personalize recommendations to delight users can personalize manipulation to exploit them.
+
+We hope this book has equipped you not only with technical skills but also with the conceptual frameworks to use them wisely. The field of machine learning from human preferences is young and evolving rapidly. The researchers and practitioners who engage with it today will shape how AI systems learn from and serve humanity in the decades to come.
+
+We invite you to contribute—to develop new methods, to apply existing ones thoughtfully, to critique approaches that fall short, and to engage with the broader societal implications of this work. The challenge of building AI systems that truly align with human values is too important to be left to any single discipline or community. It requires the collective effort of computer scientists, economists, psychologists, philosophers, policymakers, and the public.
+
+The journey from this book's mathematical foundations to AI systems that reliably serve human flourishing is long. But every improvement in how we learn from human preferences brings us closer to that goal. We hope you will join us on this path.

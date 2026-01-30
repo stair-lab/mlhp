@@ -101,7 +101,7 @@ This chapter equips you to recognize value tradeoffs, make conscious fairness ch
 
 ## Introduction: Whose Preferences Matter? {#sec-whose-preferences}
 
-This book has taught you *how* to learn from human preferences. You can model preferences through Bradley-Terry (@sec-bradley-terry), estimate parameters via maximum likelihood (@sec-mle), actively collect informative comparisons (@sec-active-learning), make sequential decisions (@sec-decisions), and aggregate heterogeneous preferences (@sec-aggregation). These are powerful technical tools.
+This book has taught you *how* to learn from human preferences. You can model preferences through Bradley-Terry (@sec-bradley-terry), estimate parameters via maximum likelihood (@sec-mle), actively collect informative comparisons (@sec-active-learning), make sequential decisions (@sec-liberal-illiberal), and aggregate heterogeneous preferences (@sec-aggregation). These are powerful technical tools.
 
 But now we ask a deeper question: **Whose preferences should we learn from, and how should we weigh them?**
 
@@ -171,7 +171,7 @@ This chapter builds directly on the technical foundations from Chapters 2--6:
 
 **From Chapter 5 (Decisions)**: Thompson Sampling explores based on posterior uncertainty (@sec-thompson-sampling). But should we explore over what users *want* (liberal) or what's *best* for them (illiberal)? In @sec-liberal-illiberal, we'll formalize this distinction using Sen's framework of nosy preferences.
 
-**From Chapter 6 (Aggregation)**: Arrow's theorem and Sen's Impossibility of a Paretian Liberal (@sec-impossibility-results) show that no aggregation mechanism satisfies all desirable properties. In @sec-fairness-impossibility, we'll see how adding fairness constraints further limits our options.
+**From Chapter 6 (Aggregation)**: Arrow's theorem and Sen's Impossibility of a Paretian Liberal (@sec-fairness-concepts) show that no aggregation mechanism satisfies all desirable properties. In @sec-fairness-incompatibility, we'll see how adding fairness constraints further limits our options.
 
 The technical methods are powerful. But applying them responsibly requires understanding *whose* preferences you're optimizing for and *whose* interests you're serving.
 
@@ -185,7 +185,7 @@ The rest of this chapter proceeds as follows:
 
 - **@sec-design-principles** provides eight concrete design principles for building fairer preference learning systems, along with red flags to watch for.
 
-- **@sec-governance** examines governance mechanisms for deciding whose preferences matter: designer discretion, user control, participatory design, regulatory oversight, and professional standards.
+- **Governance** (discussed throughout the chapter) examines governance mechanisms for deciding whose preferences matter: designer discretion, user control, participatory design, regulatory oversight, and professional standards.
 
 - **@sec-case-studies** applies the full framework to real-world systems, extracting lessons from paper-reviewer matching, LaMPost, Multi-Value preference elicitation, and social skill training via LLMs.
 
@@ -982,11 +982,11 @@ Next, we'll see how the decision stage adds another layer: when should we defer 
 
 **Technical Question**: Should the AI review assistant help reviewers follow their stated preferences, or should it sometimes override those preferences?
 
-This isn't a technical question—it's a normative question about when paternalism is justified. We draw on Amartya Sen's framework from Chapter 6 (@sec-sen-liberal).
+This isn't a technical question—it's a normative question about when paternalism is justified. We draw on Amartya Sen's framework from Chapter 6 (@sec-nosy-preferences).
 
 #### Sen's Framework: Nosy vs. Non-Nosy Preferences {#sec-nosy-preferences}
 
-From Chapter 6, recall Sen's "Impossibility of a Paretian Liberal" (@sec-sen-liberal). Sen distinguishes between:
+From Chapter 6, recall Sen's "Impossibility of a Paretian Liberal" (@sec-nosy-preferences). Sen distinguishes between:
 
 - **Non-nosy preferences**: Preferences about your own outcomes ("I want to review ML papers")
 - **Nosy preferences**: Preferences about others' choices ("Junior reviewers should handle tedious papers")
@@ -1031,7 +1031,7 @@ Both liberal and illiberal assistance have fairness problems:
 
 **No easy answer**: This is the core tension in fairness. Do we respect individual autonomy (liberal, may entrench bias) or enforce equity (illiberal, may erase diversity)?
 
-**Connection to Chapter 6**: Arrow's theorem (@sec-arrow) and Sen's Paretian Liberal (@sec-sen-liberal) show impossibility results—no mechanism satisfies all desirable properties. Adding fairness constraints makes this worse. We must choose which properties to prioritize.
+**Connection to Chapter 6**: Arrow's theorem (@sec-arrow) and Sen's Paretian Liberal (@sec-nosy-preferences) show impossibility results—no mechanism satisfies all desirable properties. Adding fairness constraints makes this worse. We must choose which properties to prioritize.
 
 #### Code Example: Liberal vs. Illiberal Assistance {#sec-code-decision}
 
@@ -1916,7 +1916,7 @@ Mitigation: [e.g., Minimum sampling quotas for underrepresented groups]
 
 ### Principle 4: Choose Fairness Definition Consciously {#sec-principle-fairness-choice}
 
-**Principle**: Accept that individual/group and process/outcome fairness are often incompatible (@sec-fairness-impossibility). Choose based on domain and stakes. Be transparent about choice and justify.
+**Principle**: Accept that individual/group and process/outcome fairness are often incompatible (@sec-fairness-incompatibility). Choose based on domain and stakes. Be transparent about choice and justify.
 
 **Rationale**: Impossibility theorems (Dwork et al. for individual/group, Sen for process/outcome) prove you cannot satisfy all criteria. Attempting to satisfy all leads to incoherent systems. Better to prioritize explicitly.
 
@@ -1973,7 +1973,7 @@ where $\mathcal{G}$ is the set of protected groups and $\tau$ is the fairness th
 
 **Caution**: Participatory design is costly and doesn't scale perfectly. But it's essential for high-stakes systems affecting marginalized groups. Low-stakes systems can use lighter-weight feedback (surveys, usage analytics).
 
-**Connection**: Governance question from @sec-governance (to be written in Phase 3). Complements Principle 1 (make tradeoffs explicit) by involving stakeholders in the tradeoff decisions.
+**Connection**: Governance considerations are woven throughout this chapter. Complements Principle 1 (make tradeoffs explicit) by involving stakeholders in the tradeoff decisions.
 
 ---
 
@@ -2224,7 +2224,7 @@ These open-ended questions promote critical thinking about fairness, values, and
 
 This chapter draws on diverse literatures in fairness, social choice theory, human-computer interaction, and preference learning. Below we trace the intellectual history and point to key references.
 
-**Fairness in Machine Learning**: The modern fairness in ML literature began with @hardt2016equality on equalized odds and @dwork2012fairness on individual fairness. @barocas2019fairness provide a comprehensive textbook covering group fairness, individual fairness, and impossibility results. @friedler2021possibility formalize when different fairness criteria are compatible vs. impossible to satisfy simultaneously—the mathematical foundations for @sec-fairness-impossibility. For fairness in preference learning and RLHF specifically, see @kirk2023personalisation on diverse perspectives in LLM alignment and @ganguli2023capacity on capacity for fairness vs. harmlessness tradeoffs.
+**Fairness in Machine Learning**: The modern fairness in ML literature began with @hardt2016equality on equalized odds and @dwork2012fairness on individual fairness. @barocas2019fairness provide a comprehensive textbook covering group fairness, individual fairness, and impossibility results. @friedler2021possibility formalize when different fairness criteria are compatible vs. impossible to satisfy simultaneously—the mathematical foundations for @sec-fairness-incompatibility. For fairness in preference learning and RLHF specifically, see @kirk2023personalisation on diverse perspectives in LLM alignment and @ganguli2023capacity on capacity for fairness vs. harmlessness tradeoffs.
 
 **Sen's Social Choice Theory**: Amartya Sen's work provides the normative foundations for this chapter. @sen1970impossibility introduced the "Impossibility of a Paretian Liberal," showing that individual liberty (respecting non-nosy preferences) and Pareto efficiency are incompatible—the liberal/illiberal tension in @sec-liberal-illiberal. @sen1977rational introduced the distinction between revealed preferences and mental states, anticipating the inversion problem (@sec-inversion-problem). @sen2017collective (extended edition) synthesizes Sen's social choice work. The connection to preference learning was formalized by @sah2024whose.
 
@@ -4098,7 +4098,7 @@ implementations of these human-centered AI principles through detailed
 case studies, illustrating the tangible impact of adaptive interfaces in
 various domains.
 
-### Case Studies in Human-Centered AI
+### Case Studies in Human-Centered AI {#sec-case-studies}
 
 In this section, we examine practical examples that illustrate the
 application of human-centered principles in the development and

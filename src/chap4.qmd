@@ -70,7 +70,7 @@ In the linear case, we assume $h_i(V_j) = U_i^\top V_j$, with $U_i \in \mathbb{R
 
 In the nonlinear case, a common choice is to place a Gaussian process prior over $h_i$: $h_i \sim \mathcal{GP}(m(\cdot), k(\cdot,\cdot)),$ where the kernel $k(V, V')$ encodes similarity between items. This yields the Bayesian optimization formulation. The system uses acquisition functions (e.g., Thompson Sampling or expected improvement) to trade off exploitation and exploration.
 
-## Thompson Sampling under Linear Objective
+## Thompson Sampling under Linear Objective {#sec-thompson-sampling}
 
 Thompson Sampling (TS) is among the most conceptually transparent and empirically successful methods for decision-making under uncertainty. It converts Bayesian inference into a simple randomized decision rule: sample a plausible world, then act optimally within it. Formally, suppose we maintain a posterior distribution over the latent user embedding $p(U_i \mid \mathcal{D}_t) \propto p(\mathcal{D}_t \mid U_i) p(U_i),$ where $\mathcal{D}_t = {(V_j, Y_{ij})}_{j=1}^t$ denotes the user’s observed responses. At each round $t+1$, Thompson Sampling draws a single sample $\tilde{U}_i^{(t)} \sim p(U_i \mid \mathcal{D}_t),$
 and then chooses the next item that maximizes the sampled expected utility: $j^* = \arg\max_j \tilde{U}_i^{(t)\top} V_j.$
@@ -610,7 +610,7 @@ discrete bandits), we can define two notions of regret:
     we provide at a given
     step:$\tilde{R}_T = \sum_{t = 1}^T \text{min} \left\{ \epsilon(b^*, b_1^{(t)}), \epsilon(b^*, b_2^{(t)}) \right\}$
 
-### Winner Concepts
+### Winner Concepts {#sec-borda}
 
 The best bandit described in our regret definition is called a
 **Condorcet Winner**. This is the strongest form of winner. It's the

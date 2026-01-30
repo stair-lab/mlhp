@@ -533,7 +533,7 @@ print(f"Learned from {n_comparisons} pairwise comparisons")
 print(f"Posterior uncertainty varies: min std = {std_pred.min():.3f}, max std = {std_pred.max():.3f}")
 ```
 
-### Connection to Fisher Information
+### Connection to Fisher Information {#sec-fisher-information}
 
 The Laplace approximation has a natural connection to the Fisher information framework we developed for linear models. The Hessian of the negative log-likelihood at the mode gives the *observed Fisher information*:
 $$

@@ -296,7 +296,7 @@ plt.show()
 
 The sorted response matrix reveals the structure: high-appetite users (top) accept most items, popular items (right) are accepted by most users, and the transition from rejection to acceptance follows a diagonal pattern determined by the sum $U_i + V_j$.
 
-### Connecting Rasch to Bradley-Terry
+### Connecting Rasch to Bradley-Terry {#sec-bradley-terry}
 
 A remarkable fact connects item-wise and pairwise models: for a **single user**, the Rasch model implies Bradley-Terry for pairwise comparisons.
 
@@ -362,7 +362,7 @@ This is exactly the Bradley-Terry formula, and notice that $U_i$ cancels out—p
 
 This explains why recommender systems, which need to personalize, rely heavily on item-wise data (clicks, purchases, ratings), while ranking systems that only need to order items (chess ratings, LLM evaluation) can use pairwise comparisons.
 
-### K-Dimensional Factor Models
+### K-Dimensional Factor Models {#sec-factor-models}
 
 The Rasch model assumes users and items can each be characterized by a single number. This is limiting: a user might love action movies but dislike romance, while another has the opposite preference. To capture such heterogeneity, we extend to **K-dimensional** representations.
 
@@ -656,7 +656,7 @@ The interpretation will guide our decision-making predictions in Chapters 4 and 
 
 We next introduce a main way to simplify learning utility functions: The axiom of Independence of Irrelevant Alternatives.
 
-## Independence of Irrelevant Alternatives
+## Independence of Irrelevant Alternatives {#sec-iia}
 In later chapters, we will consider cases where we sample from the most preferred elements from all items, which we call the generation task. A simple assumption will allow us to recover the probabilities of choosing any item, and in fact, the full distribution of $\prec$ from binary comparisons: The so-called Independence of Irrelevant Alternatives, introduced in @luce1959individual. This assumption not only allows us to easily identify a preference model, it will also massively reduce what is needed to be estimated from data: Instead of the full $(M!-1)$-dimensional object, it will be sufficient to learn $M$ values.
 
 IIA assumes that the relative likelihood of choosing $j$ compared to $k$ does not change whether a third alternative $\ell$ is in the choice set or not. Formally, for every $\mathcal{S} \subseteq \{1, \ldots, M\}$, $j, k \in \mathcal{S}$, and $\ell \notin \mathcal{S}$,
@@ -954,7 +954,9 @@ V_j = \beta^\top x_j + \varepsilon_j
 $$
 and assume $\beta \sim N(\mu, \Sigma)$ is a normally distributed vector, a model called the random coefficients logit model. Equivalently, we can view this as a model with correlated utility shocks.
 
-**Similar Options (Red-Bus/Blue-Bus).** A second limitation is only relevant if we move beyond binary choices, or observe preference lists. Let $\{1, 2, 3\}$ be three items, where items $1$ and $2$ are (almost) identical and different from item $3$. (In the classical example, items $1, 2$ are red and blue buses, respectively, and item $3$ is a train). Assume an IIA model given by average utilities $(V_j)$. As items $1$ and $2$ are almost identical, assume $V_1 = V_2$. We have $p(3 \mid \{1, 3\}) = p(3 \mid \{2, 3\})$. How do these values compare to $p(3 \mid \{1, 2, 3\})$? It would be intuitive to think that item $3$ is chosen with the same frequency, as there should not be more "demand" for item $3$ only because item $1$ is cloned. This is not the case.
+#### Similar Options (Red-Bus/Blue-Bus) {#sec-red-bus}
+
+A second limitation is only relevant if we move beyond binary choices, or observe preference lists. Let $\{1, 2, 3\}$ be three items, where items $1$ and $2$ are (almost) identical and different from item $3$. (In the classical example, items $1, 2$ are red and blue buses, respectively, and item $3$ is a train). Assume an IIA model given by average utilities $(V_j)$. As items $1$ and $2$ are almost identical, assume $V_1 = V_2$. We have $p(3 \mid \{1, 3\}) = p(3 \mid \{2, 3\})$. How do these values compare to $p(3 \mid \{1, 2, 3\})$? It would be intuitive to think that item $3$ is chosen with the same frequency, as there should not be more "demand" for item $3$ only because item $1$ is cloned. This is not the case.
 
 ```{pyodide-python}
 #| autorun: true
