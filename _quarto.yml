@@ -75,6 +75,7 @@ format:
     citeproc: false # don't run pandoc default citation handling
     csl: chicago-author-date-no-em-dash.csl
     filters:
+      - resources/tex/protect-crossrefs.lua
       - section-bibliographies
     toc-depth: 2 # level 1 headings (i.e. parts and chapters)
     toc-title: Table of Contents # title of table of contents
@@ -142,4 +143,3 @@ book:
     - src/chap5.qmd
     - src/chap6.qmd
     - src/chap7.qmd
-    - src/ack.qmd
