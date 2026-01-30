@@ -963,7 +963,7 @@ A second limitation is only relevant if we move beyond binary choices, or observ
 import numpy as np
 
 # Deterministic utilities
-v_car = 1.0
+v_train = 1.0
 v_bus = 2.0  # Initially a single bus alternative
 
 # Logit choice probabilities (before splitting bus)
@@ -972,20 +972,20 @@ def softmax(utilities: np.ndarray) -> np.ndarray:
     return exp_util / np.sum(exp_util)
 
 # Before splitting: two alternatives
-utilities_before = np.array([v_car, v_bus])
+utilities_before = np.array([v_train, v_bus])
 probs_before = softmax(utilities_before)
-print("Before splitting (Car, Bus):", probs_before)
+print("Before splitting (Train, Bus):", probs_before)
 
 # After splitting: three alternatives
 v_red_bus = v_bus
 v_blue_bus = v_bus
-utilities_after = np.array([v_car, v_red_bus, v_blue_bus])
+utilities_after = np.array([v_train, v_red_bus, v_blue_bus])
 probs_after = softmax(utilities_after)
-print("After splitting (Car, Red Bus, Blue Bus):", probs_after)
+print("After splitting (Train, Red Bus, Blue Bus):", probs_after)
 print("After splitting, total bus share:", probs_after[1] + probs_after[2])
 ```
 
-The choice probability of `car` is reduced. Why is our intuition making us think that items $1$ and $2$ should split their choice probability? One option is because we assume some correlation: If you like item $1$ over item $3$ then you should also like item $2$ over item $3$, and vice versa. Hence, we would like correlation between choice probabilities in random utility models. For example, if we allow in a logit random utility model the error terms for items $1, 2$ to be perfectly correlated (and we break ties uniformly at random), then
+The choice probability of `train` is reduced. Why is our intuition making us think that items $1$ and $2$ should split their choice probability? One option is because we assume some correlation: If you like item $1$ over item $3$ then you should also like item $2$ over item $3$, and vice versa. Hence, we would like correlation between choice probabilities in random utility models. For example, if we allow in a logit random utility model the error terms for items $1, 2$ to be perfectly correlated (and we break ties uniformly at random), then
 $$
 (p(1 \mid \{1, 2, 3\}), p(2 \mid \{1, 2, 3\}), p(3 \mid \{1, 2, 3\})) = \left(\frac{p(1 \mid \{1, 3\})}{2}, \frac{p(2 \mid \{2, 3\})}{2}, p(3 \mid \{1, 3\})\right),
 $$
@@ -1055,7 +1055,7 @@ The Bradley-Terry model underlying DPO is just one member of a rich family of *r
 
 **Probit models.** Instead of Gumbel-distributed noise (which yields Bradley-Terry/logit), we can assume Gaussian noise: $H_j = V_j + \varepsilon_j$ with $\varepsilon \sim \mathcal{N}(0, \Sigma)$. When $\Sigma = I$ (independent noise), this yields the *multinomial probit* model. The key advantage is that probit allows for arbitrary correlation structures in $\Sigma$, naturally handling the red-bus/blue-bus problem. If red and blue buses have correlated noise ($\Sigma_{12} > 0$), adding one does not steal probability from the train. The disadvantage is computational: unlike logit, probit choice probabilities lack closed-form expressions and require numerical integration.
 
-**Nested logit.** A tractable middle ground is the *nested logit* model, which groups alternatives into "nests" with correlated noise within each nest. For the transportation example, we might have Bus nest = {red bus, blue bus} and Car nest = {car}. The model first chooses a nest, then an alternative within the nest. This preserves IIA *within* nests while allowing substitution patterns *across* nests that violate IIA.
+**Nested logit.** A tractable middle ground is the *nested logit* model, which groups alternatives into "nests" with correlated noise within each nest. For the transportation example, we might have Bus nest = {red bus, blue bus} and Train nest = {train}. The model first chooses a nest, then an alternative within the nest. This preserves IIA *within* nests while allowing substitution patterns *across* nests that violate IIA.
 
 **Random coefficients (mixed) logit.**
 
