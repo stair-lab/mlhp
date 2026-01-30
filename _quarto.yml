@@ -1,3 +1,8 @@
+# Required Quarto extensions (install with `quarto add <name>`):
+#   - coatless/pyodide
+#   - pandoc-ext/boxes
+#   - pandoc-ext/section-bibliographies
+
 project:
   type: book
   output-dir: _book
@@ -5,7 +10,6 @@ project:
     port: 4200
 
 resources:
-  - CNAME
   - "*.pdf"
   
 reference-location: document # footnotes in margin

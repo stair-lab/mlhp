@@ -1,4 +1,0 @@
-name: boxes
-contributes:
-  filters:
-    - boxes.lua

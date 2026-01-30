@@ -44,8 +44,8 @@ images/management/analysis_pipeline.pdf
 *_files/
 /.quarto/
 /_book/
-/_extensions/
 /_freeze/
+/_extensions/
 
 # LaTeX intermediates
 *.blg
