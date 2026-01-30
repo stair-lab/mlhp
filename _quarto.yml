@@ -136,8 +136,7 @@ book:
   sidebar:
     style: "docked"
     footer: license.qmd
-  # google-analytics:
-  # cookie-consent: true
+  google-analytics: "G-05EBMFEHP2"
   chapters:
     - index.qmd
     - src/chap1.qmd
