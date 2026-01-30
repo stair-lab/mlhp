@@ -2,6 +2,7 @@
 #   - coatless/pyodide
 #   - pandoc-ext/boxes
 #   - pandoc-ext/section-bibliographies
+#   - leovan/quarto-pseudocode
 
 project:
   type: book
@@ -30,8 +31,7 @@ language:
 
 df-print: kable
 filters:
-  - resources/tex/protect-crossrefs.lua
-# Note: pseudocode extension not installed, algorithm cross-refs handled by protect-crossrefs.lua
+  - pseudocode
 
 format:
   html:
