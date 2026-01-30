@@ -78,7 +78,6 @@ format:
     template-partials:
       - resources/tex/partials/before-body.tex
     citeproc: false # don't run pandoc default citation handling
-    csl: chicago-author-date-no-em-dash.csl
     filters:
       - resources/tex/protect-crossrefs.lua
       - section-bibliographies
