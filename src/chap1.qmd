@@ -264,13 +264,13 @@ The probability of acceptance depends only on the sum $U_i + V_j$: enthusiastic 
 #| autorun: true
 import numpy as np
 import matplotlib.pyplot as plt
-
-# ICML-style figure settings
 plt.rcParams.update({
-    "figure.figsize": (5, 3.5),
+    "figure.figsize": (3.5, 3),
     "figure.dpi": 150,
     "figure.autolayout": True,
     "font.size": 8,
+    "font.family": "serif",
+    "mathtext.fontset": "cm",
     "axes.labelsize": 8,
     "axes.titlesize": 9,
     "xtick.labelsize": 7,
@@ -278,8 +278,8 @@ plt.rcParams.update({
     "legend.fontsize": 7,
     "lines.linewidth": 1.0,
 })
-
 rng = np.random.default_rng(2601)
+
 N, M = 50, 30  # 50 users, 30 items
 
 # Sample latent parameters
@@ -297,13 +297,12 @@ row_order = np.argsort(Y.mean(axis=1))
 col_order = np.argsort(Y.mean(axis=0))
 Y_sorted = Y[row_order][:, col_order]
 
-plt.figure(figsize=(5, 3.5))
+plt.figure()
 plt.imshow(Y_sorted, cmap='coolwarm', aspect='auto')
 plt.colorbar(label='Response (0=reject, 1=accept)')
 plt.xlabel("Items (sorted by popularity)")
 plt.ylabel("Users (sorted by appetite)")
 plt.title("Rasch Model: Response Matrix")
-plt.tight_layout()
 plt.show()
 ```
 
@@ -516,9 +515,6 @@ for some constants $a, b, c \in \mathbb{R}$. By stacking a number $k$ of human p
 
 ```{pyodide-python}
 #| autorun: true
-import numpy as np
-np.random.seed(0)
-
 def ackley(X, a=20, b=0.2, c=2*np.pi):
     """
     Compute the Ackley function.
@@ -540,7 +536,6 @@ We can think of the rows of $X$ as features of different alternatives. We can vi
 
 ```{pyodide-python}
 #| autorun: true
-import matplotlib.pyplot as plt
 from matplotlib.colors import LinearSegmentedColormap
 ccmap = LinearSegmentedColormap.from_list("ackley", ["#f76a05", "#FFF2C9"])
 
@@ -551,7 +546,7 @@ def draw_surface(show=True):
     grid = np.column_stack([X.ravel(), Y.ravel()])
     Z = ackley(grid).reshape(X.shape)
 
-    plt.figure(figsize=(5, 3.5))
+    plt.figure()
     contour = plt.contourf(X, Y, Z, 50, cmap=ccmap)
     plt.contour(X, Y, Z, levels=15, colors='black', linewidths=0.5, alpha=0.6)
     plt.colorbar(contour, label=r'$f(x)$', ticks=[0, 3, 6])
@@ -793,6 +788,126 @@ DPO will learn a "compromise" policy that may not match any individual's true pr
 
 The IIA assumption has many desirable properties, such as stochastic transitivity and relativity. The reader is asked to prove them in the exercises to this chapter. The learning of, and optimization based on, the mean utilities $(V_j)_{j=1}^M$ is one of the central goals of this book. Supervised learning based on it will be covered in the next chapter.
 
+IIA is surprisingly strong, but does not allow for choice probabilities that are, fundamentally, results of multiple decision-makers making choices together. A first restriction is given by
+
+**Heterogeneity.** A crucial shortcoming of IIA is that if sub-populations satisfy IIA this does not mean that the full population satisfies IIA. Assume that our population consists of sub-populations $i = 1, \dots, N$ which have mass $\alpha_1, \alpha_2, \dots, \alpha_N$, respectively, in the population, and that each of the groups has preferences satisfying IIA. Because of IIA, we can represent each sub-group's stochastic preferences with an average utility vector $(V_j^{(i)})_{j=1}^M$ for group $i$. The distribution of the full population is then given by a mixture of the sub-population preferences. For example, for binary comparisons
+
+$$
+p(Y_{jj'} = 1) = \sum_{i=1}^N \alpha_i \, p(Y_{jj'} = 1 \mid \text{group } i) = \sum_{i=1}^N \alpha_i \, \sigma(V_j^{(i)} - V_{j'}^{(i)}).
+$$ {#eq-mixture-bt}
+
+Sadly, such mixtures are far from IIA, as we see in the following coding example.
+
+```{pyodide-python}
+#| autorun: true
+# Define utilities for each group
+group1_utilities = {'A': 1.0, 'B': 2.0, 'C': 3.0}
+group2_utilities = {'A': 3.0, 'B': 2.0, 'C': 1.0}
+
+# Group weights
+alpha1 = 0.5
+alpha2 = 0.5
+
+def softmax(utilities):
+    exp_vals = np.exp(list(utilities.values()))
+    total = np.sum(exp_vals)
+    return {k: np.exp(v) / total for k, v in utilities.items()}
+
+# Compute mixed logit probabilities over all 3 options
+p1_full = softmax(group1_utilities)
+p2_full = softmax(group2_utilities)
+p_mix_full = {k: alpha1 * p1_full[k] + alpha2 * p2_full[k] for k in group1_utilities}
+
+# Compute ratio A/B in full model
+ratio_full = p_mix_full['A'] / p_mix_full['B']
+
+# Now remove option C
+reduced_utils1 = {'A': group1_utilities['A'], 'B': group1_utilities['B']}
+reduced_utils2 = {'A': group2_utilities['A'], 'B': group2_utilities['B']}
+p1_reduced = softmax(reduced_utils1)
+p2_reduced = softmax(reduced_utils2)
+p_mix_reduced = {k: alpha1 * p1_reduced[k] + alpha2 * p2_reduced[k] for k in reduced_utils1}
+
+# Compute ratio A/B in reduced model
+ratio_reduced = p_mix_reduced['A'] / p_mix_reduced['B']
+
+# Show violation of IIA
+print(f"Ratio A/B with all options: {ratio_full:.4f}")
+print(f"Ratio A/B after removing C: {ratio_reduced:.4f}")
+```
+
+An intuition for IIA's failure comes from viewing it as random utility functions: A mixture of vectors that have independent entries is not Gaussian.
+
+```{pyodide-python}
+#| autorun: true
+from scipy.stats import norm
+
+# Define two Gaussian distributions
+x = np.linspace(-4, 8, 1000)
+pdf1 = norm.pdf(x, 0, 1)
+pdf2 = norm.pdf(x, 4, 1)
+
+# Mixture: equal weight
+mixture_pdf = 0.5 * pdf1 + 0.5 * pdf2
+
+# Plot
+plt.figure()
+plt.plot(x, pdf1, label=r'$\mathcal{N}(0, 1)$', linestyle='--')
+plt.plot(x, pdf2, label=r'$\mathcal{N}(4, 1)$', linestyle='--')
+plt.plot(x, mixture_pdf, label='Mixture', linewidth=2)
+plt.xlabel(r'$x$')
+plt.ylabel(r'$p(x)$')
+plt.legend()
+plt.show()
+```
+
+Classic ways to solve this concern is to consider a model with explicit representation of heterogeneity, where preferences depend on a latent type $\alpha \sim F$ for some distribution $F$, and $(V_j)_{j=1}^M$ given $\alpha$ follows a random utility model with independent error terms. For example, consider a logit random utility model
+$$
+V_j = \beta^\top x_j + \varepsilon_j
+$$ {#eq-random-coefficients}
+and assume $\beta \sim N(\mu, \Sigma)$ is a normally distributed vector, a model called the random coefficients logit model. Equivalently, we can view this as a model with correlated utility shocks.
+
+A second limitation is only relevant if we move beyond binary choices, or observe preference lists. Let $\{1, 2, 3\}$ be three items, where items $1$ and $2$ are (almost) identical and different from item $3$. (In the classical example, items $1, 2$ are red and blue buses, respectively, and item $3$ is a train). Assume an IIA model given by average utilities $(V_j)$. As items $1$ and $2$ are almost identical, assume $V_1 = V_2$. We have $p(3 \mid \{1, 3\}) = p(3 \mid \{2, 3\})$. How do these values compare to $p(3 \mid \{1, 2, 3\})$? It would be intuitive to think that item $3$ is chosen with the same frequency, as there should not be more "demand" for item $3$ only because item $1$ is cloned. This is not the case.
+
+```{pyodide-python}
+#| autorun: true
+# Deterministic utilities
+v_train = 1.0
+v_bus = 2.0  # Initially a single bus alternative
+
+# Logit choice probabilities (before splitting bus)
+def softmax(utilities: np.ndarray) -> np.ndarray:
+    exp_util = np.exp(utilities)
+    return exp_util / np.sum(exp_util)
+
+# Before splitting: two alternatives
+utilities_before = np.array([v_train, v_bus])
+probs_before = softmax(utilities_before)
+print("Before splitting (Train, Bus):", probs_before)
+
+# After splitting: three alternatives
+v_red_bus = v_bus
+v_blue_bus = v_bus
+utilities_after = np.array([v_train, v_red_bus, v_blue_bus])
+probs_after = softmax(utilities_after)
+print("After splitting (Train, Red Bus, Blue Bus):", probs_after)
+print("After splitting, total bus share:", probs_after[1] + probs_after[2])
+```
+
+The choice probability of `train` is reduced. Why is our intuition making us think that items $1$ and $2$ should split their choice probability? One option is because we assume some correlation: If you like item $1$ over item $3$ then you should also like item $2$ over item $3$, and vice versa. Hence, we would like correlation between choice probabilities in random utility models. For example, if we allow in a logit random utility model the error terms for items $1, 2$ to be perfectly correlated (and we break ties uniformly at random), then
+$$
+(p(1 \mid \{1, 2, 3\}), p(2 \mid \{1, 2, 3\}), p(3 \mid \{1, 2, 3\})) = \left(\frac{p(1 \mid \{1, 3\})}{2}, \frac{p(2 \mid \{2, 3\})}{2}, p(3 \mid \{1, 3\})\right),
+$$ {#eq-correlated-choice}
+confirming our intuition.
+
+IIA has limitations, which might require more flexible specifications of noise and heterogeneity.
+
+::: {.callout-important title="Key Takeaway: IIA and Bradley-Terry"}
+The Independence of Irrelevant Alternatives (IIA) is equivalent to i.i.d. Gumbel noise in random utility models. Under IIA, choice probabilities take the softmax form, and pairwise comparisons follow the Bradley-Terry model: $p(j \succ k) = \sigma(V_j - V_k)$. This reduces parameter complexity from $M! - 1$ to just $M$, making learning tractable. However, IIA can fail when alternatives are similar (red-bus/blue-bus) or when the population is heterogeneous.
+:::
+
+This is the end of our discussion of the Independence of Irrelevant Alternatives. Additional features can be found in [@train2009discrete;@ben1985discrete;@mcfadden1981econometric] and the original paper for logit analysis @mcfadden1972conditional.
+
 ## Identification and the Rashomon Effect {#sec-identification-rashomon}
 
 When learning utility parameters from choice data, two fundamental challenges arise: the **identification problem** and the **Rashomon effect**. Both concern the multiplicity of models that can explain the same observations, but they operate at different levels. These challenges apply to **both deterministic and stochastic utility models**.
@@ -865,141 +980,6 @@ All three models satisfy different identification constraints (so parameters wit
 :::
 
 In later chapters, we'll see how regularization (Chapter 3), Bayesian approaches, and structural assumptions can help navigate both identification and Rashomon challenges. For now, remember: **be cautious when interpreting learned utilities as ground truth**—there may be many equally valid explanations.
-
-IIA has limitations, which might require more flexible specifications of noise and heterogeneity.
-
-::: {.callout-important title="Key Takeaway: IIA and Bradley-Terry"}
-The Independence of Irrelevant Alternatives (IIA) is equivalent to i.i.d. Gumbel noise in random utility models. Under IIA, choice probabilities take the softmax form, and pairwise comparisons follow the Bradley-Terry model: $p(j \succ k) = \sigma(V_j - V_k)$. This reduces parameter complexity from $M! - 1$ to just $M$, making learning tractable. However, IIA can fail when alternatives are similar (red-bus/blue-bus) or when the population is heterogeneous.
-:::
-
-### IIA's Limitations
-
-IIA is surprisingly strong, but does not allow for choice probabilities that are, fundamentally, results of multiple decision-makers making choices together. A first restriction is given by
-
-**Heterogeneity.** A crucial shortcoming of IIA is that if sub-populations satisfy IIA this does not mean that the full population satisfies IIA. Assume that our population consists of sub-populations $i = 1, \dots, N$ which have mass $\alpha_1, \alpha_2, \dots, \alpha_N$, respectively, in the population, and that each of the groups has preferences satisfying IIA. Because of IIA, we can represent each sub-group's stochastic preferences with an average utility vector $(V_j^{(i)})_{j=1}^M$ for group $i$. The distribution of the full population is then given by a mixture of the sub-population preferences. For example, for binary comparisons
-
-$$
-p(Y_{jj'} = 1) = \sum_{i=1}^N \alpha_i \, p(Y_{jj'} = 1 \mid \text{group } i) = \sum_{i=1}^N \alpha_i \, \sigma(V_j^{(i)} - V_{j'}^{(i)}).
-$$ {#eq-mixture-bt}
-
-Sadly, such mixtures are far from IIA, as we see in the following coding example.
-
-```{pyodide-python}
-#| autorun: true
-import numpy as np
-
-# Define utilities for each group
-group1_utilities = {'A': 1.0, 'B': 2.0, 'C': 3.0}
-group2_utilities = {'A': 3.0, 'B': 2.0, 'C': 1.0}
-
-# Group weights
-alpha1 = 0.5
-alpha2 = 0.5
-
-def softmax(utilities):
-    exp_vals = np.exp(list(utilities.values()))
-    total = np.sum(exp_vals)
-    return {k: np.exp(v) / total for k, v in utilities.items()}
-
-# Compute mixed logit probabilities over all 3 options
-p1_full = softmax(group1_utilities)
-p2_full = softmax(group2_utilities)
-p_mix_full = {k: alpha1 * p1_full[k] + alpha2 * p2_full[k] for k in group1_utilities}
-
-# Compute ratio A/B in full model
-ratio_full = p_mix_full['A'] / p_mix_full['B']
-
-# Now remove option C
-reduced_utils1 = {'A': group1_utilities['A'], 'B': group1_utilities['B']}
-reduced_utils2 = {'A': group2_utilities['A'], 'B': group2_utilities['B']}
-p1_reduced = softmax(reduced_utils1)
-p2_reduced = softmax(reduced_utils2)
-p_mix_reduced = {k: alpha1 * p1_reduced[k] + alpha2 * p2_reduced[k] for k in reduced_utils1}
-
-# Compute ratio A/B in reduced model
-ratio_reduced = p_mix_reduced['A'] / p_mix_reduced['B']
-
-# Show violation of IIA
-print(f"Ratio A/B with all options: {ratio_full:.4f}")
-print(f"Ratio A/B after removing C: {ratio_reduced:.4f}")
-```
-
-An intuition for IIA's failure comes from viewing it as random utility functions: A mixture of vectors that have independent entries is not Gaussian.
-
-```{pyodide-python}
-#| autorun: true
-import numpy as np
-import matplotlib.pyplot as plt
-from scipy.stats import norm
-
-# Define two Gaussian distributions
-mu1, sigma1 = 0, 1
-mu2, sigma2 = 4, 1
-x = np.linspace(-4, 8, 1000)
-
-# Evaluate the PDFs
-pdf1 = norm.pdf(x, mu1, sigma1)
-pdf2 = norm.pdf(x, mu2, sigma2)
-
-# Mixture: equal weight
-mixture_pdf = 0.5 * pdf1 + 0.5 * pdf2
-
-# Plot
-plt.plot(x, pdf1, label='N(0, 1)', linestyle='--')
-plt.plot(x, pdf2, label='N(4, 1)', linestyle='--')
-plt.plot(x, mixture_pdf, label='Mixture 0.5*N(0,1) + 0.5*N(4,1)', linewidth=2)
-plt.title("Mixture of Two Gaussians is Not Gaussian")
-plt.xlabel("x")
-plt.ylabel("Density")
-plt.legend()
-plt.grid(True)
-plt.show()
-```
-
-Classic ways to solve this concern is to consider a model with explicit representation of heterogeneity, where preferences depend on a latent type $\alpha \sim F$ for some distribution $F$, and $(V_j)_{j=1}^M$ given $\alpha$ follows a random utility model with independent error terms. For example, consider a logit random utility model
-$$
-V_j = \beta^\top x_j + \varepsilon_j
-$$ {#eq-random-coefficients}
-and assume $\beta \sim N(\mu, \Sigma)$ is a normally distributed vector, a model called the random coefficients logit model. Equivalently, we can view this as a model with correlated utility shocks.
-
-#### Similar Options (Red-Bus/Blue-Bus) {#sec-red-bus}
-
-A second limitation is only relevant if we move beyond binary choices, or observe preference lists. Let $\{1, 2, 3\}$ be three items, where items $1$ and $2$ are (almost) identical and different from item $3$. (In the classical example, items $1, 2$ are red and blue buses, respectively, and item $3$ is a train). Assume an IIA model given by average utilities $(V_j)$. As items $1$ and $2$ are almost identical, assume $V_1 = V_2$. We have $p(3 \mid \{1, 3\}) = p(3 \mid \{2, 3\})$. How do these values compare to $p(3 \mid \{1, 2, 3\})$? It would be intuitive to think that item $3$ is chosen with the same frequency, as there should not be more "demand" for item $3$ only because item $1$ is cloned. This is not the case.
-
-```{pyodide-python}
-#| autorun: true
-import numpy as np
-
-# Deterministic utilities
-v_train = 1.0
-v_bus = 2.0  # Initially a single bus alternative
-
-# Logit choice probabilities (before splitting bus)
-def softmax(utilities: np.ndarray) -> np.ndarray:
-    exp_util = np.exp(utilities)
-    return exp_util / np.sum(exp_util)
-
-# Before splitting: two alternatives
-utilities_before = np.array([v_train, v_bus])
-probs_before = softmax(utilities_before)
-print("Before splitting (Train, Bus):", probs_before)
-
-# After splitting: three alternatives
-v_red_bus = v_bus
-v_blue_bus = v_bus
-utilities_after = np.array([v_train, v_red_bus, v_blue_bus])
-probs_after = softmax(utilities_after)
-print("After splitting (Train, Red Bus, Blue Bus):", probs_after)
-print("After splitting, total bus share:", probs_after[1] + probs_after[2])
-```
-
-The choice probability of `train` is reduced. Why is our intuition making us think that items $1$ and $2$ should split their choice probability? One option is because we assume some correlation: If you like item $1$ over item $3$ then you should also like item $2$ over item $3$, and vice versa. Hence, we would like correlation between choice probabilities in random utility models. For example, if we allow in a logit random utility model the error terms for items $1, 2$ to be perfectly correlated (and we break ties uniformly at random), then
-$$
-(p(1 \mid \{1, 2, 3\}), p(2 \mid \{1, 2, 3\}), p(3 \mid \{1, 2, 3\})) = \left(\frac{p(1 \mid \{1, 3\})}{2}, \frac{p(2 \mid \{2, 3\})}{2}, p(3 \mid \{1, 3\})\right),
-$$ {#eq-correlated-choice}
-confirming our intuition.
-
-This is the end of our discussion of the Independence of Irrelevant Alternatives. Additional features can be found in [@train2009discrete;@ben1985discrete;@mcfadden1981econometric] and the original paper for logit analysis @mcfadden1972conditional.
 
 ## Connecting Item-wise and Pairwise Models {#sec-connecting-models}
 
@@ -1094,9 +1074,6 @@ which encodes the assumption that nearby points have correlated function values,
 
 ```{pyodide-python}
 #| autorun: true
-import numpy as np
-import matplotlib.pyplot as plt
-np.random.seed(42)
 
 def rbf_kernel(X1, X2, sigma_f=1.0, length_scale=1.0):
     """Compute RBF kernel matrix between two sets of points."""
@@ -1111,15 +1088,15 @@ K += 1e-6 * np.eye(len(K))  # numerical stability
 # Draw samples from GP prior
 samples = np.random.multivariate_normal(np.zeros(len(X_grid)), K, size=5)
 
-fig, axes = plt.subplots(1, 2, figsize=(9, 3.5))
+fig, axes = plt.subplots(1, 2, figsize=(6, 3))
 
 # Left: Sample functions from GP prior
 for i, sample in enumerate(samples):
     axes[0].plot(X_grid, sample, alpha=0.7, label=f'Sample {i+1}')
 axes[0].axhline(y=0, color='k', linestyle='--', alpha=0.3)
 axes[0].set_xlabel('Input x')
-axes[0].set_ylabel('r(x)')
-axes[0].set_title('Samples from GP Prior (RBF kernel, ℓ=1.0)')
+axes[0].set_ylabel(r'$r(x)$')
+axes[0].set_title(r'Samples from GP Prior')
 axes[0].legend()
 axes[0].grid(True, alpha=0.3)
 
@@ -1128,15 +1105,13 @@ for ls, color in [(0.3, '#1f77b4'), (1.0, '#ff7f0e'), (3.0, '#2ca02c')]:
     K_ls = rbf_kernel(X_grid, X_grid, sigma_f=1.0, length_scale=ls)
     K_ls += 1e-6 * np.eye(len(K_ls))
     sample = np.random.multivariate_normal(np.zeros(len(X_grid)), K_ls)
-    axes[1].plot(X_grid, sample, color=color, alpha=0.8, label=f'ℓ = {ls}')
+    axes[1].plot(X_grid, sample, color=color, alpha=0.8, label=r'$\ell$'+ f'= {ls}')
 
 axes[1].set_xlabel('Input x')
-axes[1].set_ylabel('r(x)')
+axes[1].set_ylabel(r'$r(x)$')
 axes[1].set_title('Effect of Length-scale on GP Samples')
 axes[1].legend()
 axes[1].grid(True, alpha=0.3)
-
-plt.tight_layout()
 plt.show()
 ```
 
@@ -1233,7 +1208,7 @@ The next chapter is the first to study learning of average utility functions fro
 **For further reading**: On the economics of discrete choice, @ben1985discrete provides accessible coverage. On the psychology of choice, @kahneman2011thinking discusses bounded rationality and systematic deviations from utility maximization. On recent advances in preference learning for AI, see the surveys by @kaufmann2023survey.
 
 ## Exercises
-Exercises are marked with difficulty levels: (*) for introductory, (**) for intermediate, and (***) for challenging.
+Exercises are marked with difficulty levels: (\*) for introductory, (\*\*) for intermediate, and (\*\*\*) for challenging.
 
 ### Properties of IIA Models (*)
 
@@ -1365,8 +1340,6 @@ $$ {#eq-bayesian-update}
 ```{pyodide-python}
 #| autorun: true
 #| error: true
-import numpy as np
-import matplotlib.pyplot as plt
 from scipy.stats import beta
 
 def likelihood(p: float) -> float:
@@ -1461,9 +1434,9 @@ def plot_results(samples: np.ndarray) -> None:
     beta_pdf = beta.pdf(p, 10, 4)
     plt.plot(p, beta_pdf, "r-", label="Beta(10, 4) PDF")
 
-    plt.xlabel("p_heads")
+    plt.xlabel("$p_heads$")
     plt.ylabel("Density")
-    plt.title("Metropolis-Hastings Sampling of Biased Coin Posterior")
+    plt.title("MH Samples from Posterior")
     plt.legend()
     plt.show()
 
