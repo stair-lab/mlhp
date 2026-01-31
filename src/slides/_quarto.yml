@@ -5,6 +5,10 @@ project:
 website:
   title: "CS329H Slides"
 
+bibliography: ../references.bib
+link-citations: false
+citations-hover: true
+
 format:
   revealjs:
     theme: serif

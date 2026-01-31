@@ -1,8 +1,7 @@
 ---
-title: "Chapter 4: Preferential Bayesian Optimization"
-subtitle: "Model-Free Preference Optimization"
-author: "Sang Truong"
-footer: "CS329H - Chapter 4.2: Preferential Bayesian Optimization"
+title: "Machine Learning from Human Preferences"
+subtitle: "Chapter 4: Preferential Bayesian Optimization"
+footer: "Chapter 4.2: Preferential Bayesian Optimization"
 ---
 <div style="text-align:center;">
 <a href="https://web.stanford.edu/class/cs329h/slide_pdfs/Preference_Bayesian_Optimization.pdf">Export PDF</a>
@@ -16,9 +15,7 @@ Which looks more like fire? Left or Right?
 <img src="figures/fire_rendering_left.png" width="350">
 <img src="figures/fire_rendering.png" width="385">
 
-<p style="text-align: left; font-size: 16px;">
-Astudillo, R., Lin, Z. J., Bakshy, E., & Frazier, P. (2023, April). qEUBO: A decision-theoretic acquisition function for preferential Bayesian optimization. In International Conference on Artificial Intelligence and Statistics (pp. 1093-1114). PMLR.
-</p>
+[@astudillo2023qeubo]{.citation}
 
 ---
 
@@ -33,9 +30,7 @@ where $g$ is not directly accessible, and queries can only be performed in pairs
 
 The feedback is binary $y \in \\{0, 1\\}$. $y = 1$ if $x$ is preferred (lower value) and $y = 0$ otherwise. The goal is to find $x_{\text{min}}$ with the minimal number of query.
 
-<p style="text-align: left; font-size: 16px;">
-González, Javier, et al. "Preferential bayesian optimization." International Conference on Machine Learning. PMLR, 2017.
-</p>
+[@gonzalez2017preferential]{.citation}
 
 ---
 
@@ -49,9 +44,7 @@ where $r(\cdot)$ and $\sigma(\cdot)$ is the latent reward function and sigmoid f
 For any duel $[x, x']$, we have
 $$p(x \succ x') \geq 0.5 \iff g(x) \leq g(x')$$
 
-<p style="text-align: left; font-size: 16px;">
-González, Javier, et al. "Preferential bayesian optimization." International Conference on Machine Learning. PMLR, 2017.
-</p>
+[@gonzalez2017preferential]{.citation}
 
 ---
 
@@ -61,10 +54,7 @@ $$S(x) = \text{Vol}(\mathcal{X})^{-1} \int_{\mathcal{X}} \mathbb{I}(g(x) \leq g(
 $$
 where $\text{Vol}(\mathcal{X})$ normalizes the score to $[0, 1]$.
 
-<p style="text-align: left; font-size: 16px;">
-Zoghi, M., Karnin, Z. S., Whiteson, S., & De Rijke, M. (2015). Copeland dueling bandits. Advances in neural information processing systems, 28.<br>
-Nurmi, H. (1983). Voting procedures: a summary analysis. British Journal of Political Science, 13(2), 181-208.
-</p>
+[@zoghi2015copeland]{.citation}; [@nurmi1983voting]{.citation}
 
 ---
 
@@ -79,18 +69,14 @@ $$
 - If $x_C$ is preferred to all other points (i.e. Condorcet winner), then $C(x_C) = 1$, which is maximized.
 - This implies that by observing the results of a set of duels, we can solve the original optimization problem by finding Condorcet winner of Copeland score.
 
-<p style="text-align: left; font-size: 16px;">
-González, Javier, et al. "Preferential bayesian optimization." International Conference on Machine Learning. PMLR, 2017.
-</p>
+[@gonzalez2017preferential]{.citation}
 
 ---
 
 ### 1. Preliminary 
 <img src="figures/copeland.png" width="100%">
 
-<p style="text-align: left; font-size: 16px;">
-González, Javier, et al. "Preferential bayesian optimization." International Conference on Machine Learning. PMLR, 2017.
-</p>
+[@gonzalez2017preferential]{.citation}
 
 ---
 
@@ -100,9 +86,7 @@ González, Javier, et al. "Preferential bayesian optimization." International Co
   - Compute the posterior distribution $p(f_t | \mathcal{D}, [x_t, x_t'], \theta)$, where $f_t = g(x_t') - g(x_t)$, $\theta$ is learning parameters.
   - Compute the preference score $\pi([x_t, x_t'];\mathcal{D},\theta) = \int \left[ \sigma(f_t) p(f_t | \mathcal{D}, [x_t, x_t'], \theta) \right] df_t$.
 
-<p style="text-align: left; font-size: 16px;">
-González, Javier, et al. "Preferential bayesian optimization." International Conference on Machine Learning. PMLR, 2017.
-</p>
+[@gonzalez2017preferential]{.citation}
 
 ---
 
@@ -114,9 +98,7 @@ C(x; \mathcal{D}, \theta) &\propto \int_{\mathcal{X}} \pi([x, x']; \mathcal{D}, 
 \end{aligned}
 $$
 The Condorcet winner is a maximizer of the soft Copeland score found by any suitable optimizer: $x_C = \arg \max_{x \in \mathcal{X}} C(x; \mathcal{D}, \theta)$
-<p style="text-align: left; font-size: 16px;">
-González, Javier, et al. "Preferential bayesian optimization." International Conference on Machine Learning. PMLR, 2017.
-</p>
+[@gonzalez2017preferential]{.citation}
 
 ---
 
@@ -337,9 +319,7 @@ $$
 \log \pi(f^{(t)}) = \log p(y | f^{(t)}) + \log u
 $$
 
-<p style="text-align: left; font-size: 16px;">
-Murray, I., Adams, R., & MacKay, D. (2010, March). Elliptical slice sampling. In Proceedings of the thirteenth international conference on artificial intelligence and statistics (pp. 541-548). JMLR Workshop and Conference Proceedings.
-</p>
+[@murray2010elliptical]{.citation}
 
 ---
 
@@ -354,9 +334,7 @@ $$
 $$
 - **Step 5:** If $\log p(y | f^{(t+1)}) > \log \pi(f^{(t)})$, accept the sample $f^{(t+1)}$ and return to Step 2. Otherwise, go to Step 6.
 
-<p style="text-align: left; font-size: 16px;">
-Murray, I., Adams, R., & MacKay, D. (2010, March). Elliptical slice sampling. In Proceedings of the thirteenth international conference on artificial intelligence and statistics (pp. 541-548). JMLR Workshop and Conference Proceedings.
-</p>
+[@murray2010elliptical]{.citation}
 
 ---
 
@@ -366,9 +344,7 @@ Murray, I., Adams, R., & MacKay, D. (2010, March). Elliptical slice sampling. In
   - If $\theta > 0$, set $\theta_{\text{max}} = \theta$.
 - **Step 7:** Resampling $\theta$ from the interval $[\theta_{\text{min}}, \theta_{\text{max}}]$ and return to Step 3.
 
-<p style="text-align: left; font-size: 16px;">
-Murray, I., Adams, R., & MacKay, D. (2010, March). Elliptical slice sampling. In Proceedings of the thirteenth international conference on artificial intelligence and statistics (pp. 541-548). JMLR Workshop and Conference Proceedings.
-</p>
+[@murray2010elliptical]{.citation}
 
 ---
 
@@ -377,9 +353,7 @@ Murray, I., Adams, R., & MacKay, D. (2010, March). Elliptical slice sampling. In
 - Here is the comparison of some approximate inference methods in posterior approximation:
 <img src="figures/approx_post.png" width="90%">
 
-<p style="text-align: left; font-size: 16px;">
-Nickisch, H., & Rasmussen, C. E. (2008). Approximations for binary Gaussian process classification. Journal of Machine Learning Research, 9(Oct), 2035-2078.
-</p>
+[@nickisch2008approximations]{.citation}
 
 ---
 
@@ -389,9 +363,7 @@ Nickisch, H., & Rasmussen, C. E. (2008). Approximations for binary Gaussian proc
 
 - We can observe that the Expectation Propagation (EP) method provides the best approximation for the likelihood.
 
-<p style="text-align: left; font-size: 16px;">
-Nickisch, H., & Rasmussen, C. E. (2008). Approximations for binary Gaussian process classification. Journal of Machine Learning Research, 9(Oct), 2035-2078.
-</p>
+[@nickisch2008approximations]{.citation}
 
 ---
 
@@ -404,9 +376,7 @@ P(y_i | f_i) \approx t_i(f_i, \mu_i, \sigma_i^2, Z_i) := Z_i\mathcal{N}(f_i | \m
 $$
 where $\mu_i$, $\sigma_i^2$, and $Z_i$ will be iteratively optimized.
 
-<p style="text-align: left; font-size: 16px;">
-Minka, T. P. (2013). Expectation propagation for approximate Bayesian inference. arXiv preprint arXiv:1301.2294.
-</p>
+[@minka2013expectation]{.citation}
 
 ---
 
@@ -419,10 +389,7 @@ where $W = [\sigma_i^{-2}]_{ii}$ and $m =[I - K(K + W^{-1})^{-1}]KW\mu$.
 - The $\sigma_i^2$ is an element of the diagonal of the covariance matrix $K$.
 - The $\mu$ is the mean vector of the Gaussian Process.
 
-<p style="text-align: left; font-size: 16px;">
-Minka, T. P. (2013). Expectation propagation for approximate Bayesian inference. arXiv preprint arXiv:1301.2294.<br>
-Nickisch, H., & Rasmussen, C. E. (2008). Approximations for binary Gaussian process classification. Journal of Machine Learning Research, 9(Oct), 2035-2078.
-</p>
+[@minka2013expectation]{.citation}; [@nickisch2008approximations]{.citation}
 
 ---
 
@@ -436,10 +403,7 @@ $$
 &- \frac{1}{2}\log |K+W^{-1}| - \frac{n}{2}\log 2\pi
 \end{aligned}
 $$
-<p style="text-align: left; font-size: 16px;">
-Minka, T. P. (2013). Expectation propagation for approximate Bayesian inference. arXiv preprint arXiv:1301.2294.<br>
-Nickisch, H., & Rasmussen, C. E. (2008). Approximations for binary Gaussian process classification. Journal of Machine Learning Research, 9(Oct), 2035-2078.
-</p>
+[@minka2013expectation]{.citation}; [@nickisch2008approximations]{.citation}
 
 ---
 
@@ -456,9 +420,7 @@ In this lecture, we will explore three acquisition functions which can be used t
 - Copeland Expected Improvement
 - Dueling-Thompson sampling
 
-<p style="text-align: left; font-size: 16px;">
-González, Javier, et al. "Preferential bayesian optimization." International Conference on Machine Learning. PMLR, 2017.
-</p>
+[@gonzalez2017preferential]{.citation}
 
 ---
 
@@ -475,9 +437,7 @@ $$
 
 In practice, we can approximate the variance by using Monte-Carlo sampling.
 
-<p style="text-align: left; font-size: 16px;">
-González, Javier, et al. "Preferential bayesian optimization." International Conference on Machine Learning. PMLR, 2017.
-</p>
+[@gonzalez2017preferential]{.citation}
 
 ---
 
@@ -494,9 +454,7 @@ A_{\text{CEI}}([x_t, x_t'] | \mathcal{D}, \theta) &= \pi([x, x']|\mathcal{D}_t, 
 \end{aligned}
 $$
 
-<p style="text-align: left; font-size: 16px;">
-González, Javier, et al. "Preferential bayesian optimization." International Conference on Machine Learning. PMLR, 2017.
-</p>
+[@gonzalez2017preferential]{.citation}
 
 ---
 
@@ -507,9 +465,7 @@ González, Javier, et al. "Preferential bayesian optimization." International Co
   - Copeland Expected Improvement is over-exploitative and expensive to compute.
 - **Thompson sampling** can be used to balance between exploration and exploitation. The idea is to sample the preference score from the posterior distribution and select the duel with the highest preference score.
 
-<p style="text-align: left; font-size: 16px;">
-González, Javier, et al. "Preferential bayesian optimization." International Conference on Machine Learning. PMLR, 2017.
-</p>
+[@gonzalez2017preferential]{.citation}
 
 ---
 
@@ -523,9 +479,7 @@ x_{t} = \arg \max_{x \in \mathcal{X}} \int_{\mathcal{X}} \pi_{\tilde{f}}([x, x']
 $$
 where $\pi_{\tilde{f}}([x_t, x_t'];\mathcal{D}, \theta) = \int \sigma(\tilde{f}_t) p(\tilde{f}_t | \mathcal{D}, [x_t, x_t'], \theta) d\tilde{f}_t$.
 
-<p style="text-align: left; font-size: 16px;">
-González, Javier, et al. "Preferential bayesian optimization." International Conference on Machine Learning. PMLR, 2017.
-</p>
+[@gonzalez2017preferential]{.citation}
 
 ---
 
@@ -540,9 +494,7 @@ $$
 
 Finally, the selected duel $[x_t, x_t']$ is queried, and the process is repeated until the Condorcet winner is found.
 
-<p style="text-align: left; font-size: 16px;">
-González, Javier, et al. "Preferential bayesian optimization." International Conference on Machine Learning. PMLR, 2017.
-</p>
+[@gonzalez2017preferential]{.citation}
 
 ---
 
@@ -551,9 +503,7 @@ González, Javier, et al. "Preferential bayesian optimization." International Co
 
 <img src="figures/thompson_duel.png" width="100%">
 
-<p style="text-align: left; font-size: 16px;">
-González, Javier, et al. "Preferential bayesian optimization." International Conference on Machine Learning. PMLR, 2017.
-</p>
+[@gonzalez2017preferential]{.citation}
 
 ---
 
@@ -567,9 +517,7 @@ González, Javier, et al. "Preferential bayesian optimization." International Co
 <p style="text-align: left; font-size: 24px;">
 100 continuous samples of the Copeland score function (grey) in the Forrester example were generated using Thompson sampling. The three plots show the samples obtained once the model has been trained with different numbers of duels (10, 30, and 150). In black, we show the Copeland function computed using the preference function. The more samples are available, more exploitation is encouraged in the first element of the duel as the probability of selecting $x_t$ as the true optimum increases.
 </p>
-<p style="text-align: left; font-size: 16px;">
-González, Javier, et al. "Preferential bayesian optimization." International Conference on Machine Learning. PMLR, 2017.
-</p>
+[@gonzalez2017preferential]{.citation}
 
 ---
 
@@ -581,9 +529,7 @@ $$
 V_t(X) = \mathbb{E}_t \left[ \max_{x \in \mathcal{X}} \mathbb{E}_{t+1} [g(x)] | X_{t+1} = X \right]
 $$
 
-<p style="text-align: left; font-size: 16px;">
-Astudillo, R., Lin, Z. J., Bakshy, E., & Frazier, P. (2023, April). qEUBO: A decision-theoretic acquisition function for preferential Bayesian optimization. In International Conference on Artificial Intelligence and Statistics (pp. 1093-1114). PMLR.
-</p>
+[@astudillo2023qeubo]{.citation}
 
 ---
 
@@ -600,9 +546,7 @@ V_t(X) &= \mathbb{E}_t \left[ \max_{x \in \mathcal{X}} \mathbb{E}_{t+1} [g(x)] |
 &\propto \mathbb{E}_t \left[  \max_{x \in \mathcal{X}} \mathbb{E}_{t+1} [g(x)] -  \max_{x \in \mathcal{X}} \mathbb{E}_{t} [g(x)] \vert X_{t+1} = X \right]\\
 \end{aligned}
 $$
-<p style="text-align: left; font-size: 16px;">
-Astudillo, R., Lin, Z. J., Bakshy, E., & Frazier, P. (2023, April). qEUBO: A decision-theoretic acquisition function for preferential Bayesian optimization. In International Conference on Artificial Intelligence and Statistics (pp. 1093-1114). PMLR.
-</p>
+[@astudillo2023qeubo]{.citation}
 
 ---
 
@@ -617,9 +561,7 @@ $$
 $$
 Thus, optimizing the expected utility of the query is sufficient to find the optimal query (i.e., maximize the $A_{qEUBO, t}$).
 
-<p style="text-align: left; font-size: 16px;">
-Astudillo, R., Lin, Z. J., Bakshy, E., & Frazier, P. (2023, April). qEUBO: A decision-theoretic acquisition function for preferential Bayesian optimization. In International Conference on Artificial Intelligence and Statistics (pp. 1093-1114). PMLR.
-</p>
+[@astudillo2023qeubo]{.citation}
 
 ---
 
@@ -717,9 +659,7 @@ V_t^{\lambda}(X^*) \geq \max_{X \in \mathcal{X}} V_t^0(X) - \lambda C,
 $$
 where $C = L_W((q - 1)/ e)$, and $L_W$ is the Lambert W function (Corless et al., 1996).
 
-<p style="text-align: left; font-size: 16px;">
-Corless, R. M., Gonnet, G. H., Hare, D. E., Jeffrey, D. J., & Knuth, D. E. (1996). On the Lambert W function. Advances in Computational mathematics, 5, 329-359.
-</p>
+[@corless1996lambert]{.citation}
 
 ---
 
@@ -730,10 +670,7 @@ $$
 $$
 where $C = L_W((q - 1)/ e)$, where $L_W$ is the Lambert W function (Corless et al., 1996).
 
-<p style="text-align: left; font-size: 16px;">
-Corless, R. M., Gonnet, G. H., Hare, D. E., Jeffrey, D. J., & Knuth, D. E. (1996). On the Lambert W function. Advances in Computational mathematics, 5, 329-359.<br>
-Astudillo, R., Lin, Z. J., Bakshy, E., & Frazier, P. (2023, April). qEUBO: A decision-theoretic acquisition function for preferential Bayesian optimization. In International Conference on Artificial Intelligence and Statistics (pp. 1093-1114). PMLR.
-</p>
+[@corless1996lambert]{.citation}; [@astudillo2023qeubo]{.citation}
 
 ---
 
@@ -744,9 +681,7 @@ $$
 \sum_{i=1}^{q-1} \frac{t_i \exp(-t_i)}{1 + \sum_{j=1}^{q-1} \exp(-t_j)} \leq C.
 $$
 
-<p style="text-align: left; font-size: 16px;">
-Astudillo, R., Lin, Z. J., Bakshy, E., & Frazier, P. (2023, April). qEUBO: A decision-theoretic acquisition function for preferential Bayesian optimization. In International Conference on Artificial Intelligence and Statistics (pp. 1093-1114). PMLR.
-</p>
+[@astudillo2023qeubo]{.citation}
 
 ---
 
@@ -758,10 +693,7 @@ $$
 $$
 is bounded above by $C$.
 
-<p style="text-align: left; font-size: 16px;">
-Viappiani, P. and Boutilier, C. (2010). Optimal Bayesian recommendation sets and myopically optimal choice query sets. Advances in Neural Information Processing Systems, 23.<br>
-Astudillo, R., Lin, Z. J., Bakshy, E., & Frazier, P. (2023, April). qEUBO: A decision-theoretic acquisition function for preferential Bayesian optimization. In International Conference on Artificial Intelligence and Statistics (pp. 1093-1114). PMLR.
-</p>
+[@viappiani2010optimal]{.citation}; [@astudillo2023qeubo]{.citation}
 
 ---
 
@@ -823,9 +755,7 @@ $$
 ### 5. Decision-Theoretic Acquisition Function
 <img src="figures/qeubo_res.png" width="65%">
 
-<p style="text-align: left; font-size: 16px;">
-Astudillo, R., Lin, Z. J., Bakshy, E., & Frazier, P. (2023, April). qEUBO: A decision-theoretic acquisition function for preferential Bayesian optimization. In International Conference on Artificial Intelligence and Statistics (pp. 1093-1114). PMLR.
-</p>
+[@astudillo2023qeubo]{.citation}
 
 ---
 

@@ -1,8 +1,7 @@
 ---
-title: "Chapter 2: Choice Models"
-subtitle: "Machine Learning from Human Preferences"
-author: "Sanmi Koyejo & Sang Truong"
-footer: "CS329H - Chapter 2.1: Choice Models"
+title: "Machine Learning from Human Preferences"
+subtitle: "Chapter 2: Choice Models (Part 1)"
+footer: "Chapter 2.1: Choice Models"
 ---
 
 ## Overview
@@ -28,9 +27,7 @@ footer: "CS329H - Chapter 2.1: Choice Models"
 ::: {.column width="55%"}
 ![](figures/app_ener_eco.jpg)
 
-::: {.citation}
-Del Granado, Pedro Crespo, et al. "Modelling the energy transition: A nexus of energy system and economic models." *Energy strategy reviews*, 20 (2018): 229-235.
-:::
+[@delgranado2018modelling]{.citation}
 :::
 ::: {.column width="45%"}
 ![](figures/daily_travel.png)
@@ -287,11 +284,11 @@ $$Pr(\text{ranking } 1, 2, \dots, J) = \frac{\exp(\beta z_1)}{\sum_{j=1}^{J} \ex
 ## References
 
 ::: {.smaller}
-- Train, K. (1986). *Qualitative Choice Analysis: Theory, Econometrics, and an Application to Automobile Demand.* MIT Press. ISBN 9780262200554. Chapter 8.
-- McFadden, D.; Train, K. (2000). "Mixed MNL Models for Discrete Response" (PDF). *Journal of Applied Econometrics.* 15 (5): 447-470.
-- Luce, R. D. (1959). *Individual Choice Behavior: A Theoretical Analysis.* Wiley.
+- [@train1986qualitative]{.citation}
+- [@mcfadden2000mixed]{.citation}
+- [@luce1959individual]{.citation}
 - Additional:
-    - Ben-Akiva, M.; Lerman, S. (1985). *Discrete Choice Analysis: Theory and Application to Travel Demand.* Transportation Studies. Massachusetts: MIT Press.
-    - Park, Byeong U.; Simar, Leopold; Zelenyuk, Valentin (2017). "Nonparametric estimation of dynamic discrete choice models for time series data" (PDF). *Computational Statistics & Data Analysis.* 108: 97-120. doi:10.1016/j.csda.2016.10.024.
-    - Rafailov, Rafael, et al. "Direct preference optimization: Your language model is secretly a reward model." arXiv preprint arXiv:2305.18290 (2023).
+    - [@benakiva1985discrete]{.citation}
+    - [@park2017nonparametric]{.citation}
+    - [@rafailov2023direct]{.citation}
 :::

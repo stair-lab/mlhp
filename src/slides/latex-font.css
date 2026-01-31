@@ -53,3 +53,95 @@
   font-size: 1.2em;
   color: #666;
 }
+
+.reveal .title-slide .author {
+  font-size: 0.9em;
+  margin-top: 1.5em;
+}
+
+.reveal .title-slide .affiliation {
+  font-size: 0.7em;
+  color: #888;
+}
+
+/* Scrollable content for overflow */
+.reveal .scrollable {
+  overflow-y: auto;
+  max-height: 500px;
+  padding-right: 10px;
+}
+
+.reveal .scrollable::-webkit-scrollbar {
+  width: 6px;
+}
+
+.reveal .scrollable::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 3px;
+}
+
+/* Extra small text utility */
+.reveal .tiny {
+  font-size: 0.4em;
+}
+
+/* Attribution styling for source notes */
+.reveal .attribution {
+  font-size: 0.45em;
+  color: #888;
+  font-style: italic;
+  text-align: right;
+  margin-top: 0.5em;
+}
+
+/* Compact table styling */
+.reveal table.compact {
+  font-size: 0.5em;
+}
+
+.reveal table.compact td,
+.reveal table.compact th {
+  padding: 0.2em 0.4em;
+}
+
+/* ============================================
+   FIGURE OVERFLOW PREVENTION
+   Prevents images from overflowing into footer
+   ============================================ */
+
+/* Global constraint for all slide images */
+.reveal .slides section img {
+  max-height: 480px;  /* Slide height (~700px) minus header (~120px) and footer (~100px) */
+  object-fit: contain;
+  width: auto;
+}
+
+/* For figures with captions, constrain the figure element */
+.reveal .slides section figure {
+  max-height: 520px;
+  overflow: hidden;
+}
+
+.reveal .slides section figure img {
+  max-height: 450px;  /* Leave room for caption */
+}
+
+/* Explicit class for when you need tighter constraints */
+.reveal .constrained {
+  max-height: 400px !important;
+}
+
+/* For slides with citations below figures */
+.reveal .slides section:has(.citation) img,
+.reveal .slides section:has(.attribution) img {
+  max-height: 420px;  /* Leave more room for citation text */
+}
+
+/* Warning indicator for oversized content (development aid) */
+/* Uncomment to see red border on potentially overflowing images */
+/*
+.reveal .slides section img[height],
+.reveal .slides section img:not([width]):not([style*="width"]) {
+  outline: 2px dashed orange;
+}
+*/

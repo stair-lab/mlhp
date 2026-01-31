@@ -1,8 +1,7 @@
 ---
-title: "Chapter 4: Dueling Bandits"
-subtitle: "Model-Free Preference Optimization"
-author: "Sang Truong"
-footer: "CS329H - Chapter 4.1: Dueling Bandits"
+title: "Machine Learning from Human Preferences"
+subtitle: "Chapter 4: Dueling Bandits"
+footer: "Chapter 4.1: Dueling Bandits"
 ---
 
 ## 1. Introduction to Dueling Bandit
@@ -108,10 +107,7 @@ Traditional acquisition functions for dueling bandit problem:
 - Dueling Bandit Gradient Descent (DBGD) (Dudík et al., 2015)
 
 ::: {style="font-size: 0.4em; text-align: left;"}
-Auer, P. (2002). Using confidence bounds for exploitation-exploration trade-offs. Journal of Machine Learning Research, 3(Nov), 397-422.<br>
-Yue, Y., Broder, J., Kleinberg, R., & Joachims, T. (2012). The k-armed dueling bandits problem. Journal of Computer and System Sciences, 78(5), 1538-1556.<br>
-Agrawal, S., & Goyal, N. (2013, May). Thompson sampling for contextual bandits with linear payoffs. In International conference on machine learning (pp. 127-135). PMLR.<br>
-Dudík, M., Hofmann, K., Schapire, R. E., Slivkins, A., & Zoghi, M. (2015, June). Contextual dueling bandits. In Conference on Learning Theory (pp. 563-587). PMLR.
+[@auer2002using]{.citation}; [@yue2012k]{.citation}; [@agrawal2013thompson]{.citation}; [@dudik2015contextual]{.citation}
 :::
 
 ## 3. Dueling Posterior Sampling
@@ -122,9 +118,7 @@ Dudík, M., Hofmann, K., Schapire, R. E., Slivkins, A., & Zoghi, M. (2015, June)
 - We can observe that, in this setting, the context $x_t$ can be defined by the states $s_t$, and the bandits $b_i, b_j$ are the actions $a_i, a_j$.
 - In this lecture, we consider the discrete state space and action space.
 
-::: {style="font-size: 0.4em; text-align: left;"}
-Novoseller, E., Wei, Y., Sui, Y., Yue, Y., & Burdick, J. (2020, August). Dueling posterior sampling for preference-based reinforcement learning. In Conference on Uncertainty in Artificial Intelligence (pp. 1029-1038). PMLR.
-:::
+[@novoseller2020dueling]{.citation}
 
 ## 3. Dueling Posterior Sampling
 - At each turn $t$, the player selects a pair of actions $a_i, a_j \in \mathcal{A}$.
@@ -132,9 +126,7 @@ Novoseller, E., Wei, Y., Sui, Y., Yue, Y., & Burdick, J. (2020, August). Dueling
 - In the $i^{th}$ round, the agent rolls out the trajectory $\tau_{i1}$, $\tau_{i2}$, and observes the preference feedback. 
 - We denote the transition probability as $p(s_{t+1} | s_t, a_t)$ and the preference function $\phi$ as $\phi(\tau_{1}, \tau_{2}) = P(\tau_{1} \succ \tau_{2})$.
 
-::: {style="font-size: 0.4em; text-align: left;"}
-Novoseller, E., Wei, Y., Sui, Y., Yue, Y., & Burdick, J. (2020, August). Dueling posterior sampling for preference-based reinforcement learning. In Conference on Uncertainty in Artificial Intelligence (pp. 1029-1038). PMLR.
-:::
+[@novoseller2020dueling]{.citation}
 
 ## 3. Dueling Posterior Sampling
 - We introduce the policy $\pi: \mathcal{S} \times \{1,\dots,h\} \to \mathcal{A}$ that maps the state $s_t$ to the action $a_t$.
@@ -145,9 +137,7 @@ V_{\pi, j}(s) = \mathbb{E}_{\pi} \left[ \sum_{t=j}^{h} \bar{r}(s_t, \pi(s_t, t))
 $$
 where $\bar{r}(s_t, a_t)$ is the expected utility of the action $a_t$ at state $s_t$.
 
-::: {style="font-size: 0.4em; text-align: left;"}
-Novoseller, E., Wei, Y., Sui, Y., Yue, Y., & Burdick, J. (2020, August). Dueling posterior sampling for preference-based reinforcement learning. In Conference on Uncertainty in Artificial Intelligence (pp. 1029-1038). PMLR.
-:::
+[@novoseller2020dueling]{.citation}
 
 ## 3. Dueling Posterior Sampling
 - Our goal is to find optimal policy $\pi^*$ which can maximize the expected utility of all input states.
@@ -156,9 +146,7 @@ $$
 $$
 where $p_0(s)$ is the initial state distribution.
 
-::: {style="font-size: 0.4em; text-align: left;"}
-Novoseller, E., Wei, Y., Sui, Y., Yue, Y., & Burdick, J. (2020, August). Dueling posterior sampling for preference-based reinforcement learning. In Conference on Uncertainty in Artificial Intelligence (pp. 1029-1038). PMLR.
-:::
+[@novoseller2020dueling]{.citation}
 
 ## 3. Dueling Posterior Sampling
 - We quantify the learning agent performance via its cumulative T-step Bayesian regret relative to the optimal policy
@@ -166,9 +154,7 @@ $$
 \mathbb{E}[\text{Reg}(T)] = \mathbb{E} \left\{ \sum_{i=1}^{\left\lceil \frac{T}{2h} \right\rceil} \sum_{s \in \mathcal{S}} p_0(s) \left[ 2V_{\pi^*,1}(s) - V_{\pi_{i1},1}(s) - V_{\pi_{i2},1}(s) \right] \right\}.
 $$
 
-::: {style="font-size: 0.4em; text-align: left;"}
-Novoseller, E., Wei, Y., Sui, Y., Yue, Y., & Burdick, J. (2020, August). Dueling posterior sampling for preference-based reinforcement learning. In Conference on Uncertainty in Artificial Intelligence (pp. 1029-1038). PMLR.
-:::
+[@novoseller2020dueling]{.citation}
 
 ## 3. Dueling Posterior Sampling
 The DPS algorithm is summarized as follows:
@@ -177,9 +163,7 @@ The DPS algorithm is summarized as follows:
 
 where $\mathbb{I}_{[\tau_{i2} \succ \tau_{i1}]} = P(\tau_{i2} \succ \tau_{i1})$ is the indicator function that returns $1$ if $\tau_{i2} \succ \tau_{i1}$ and $0$ otherwise.
 
-::: {style="font-size: 0.4em; text-align: left;"}
-Novoseller, E., Wei, Y., Sui, Y., Yue, Y., & Burdick, J. (2020, August). Dueling posterior sampling for preference-based reinforcement learning. In Conference on Uncertainty in Artificial Intelligence (pp. 1029-1038). PMLR.
-:::
+[@novoseller2020dueling]{.citation}
 
 ## 3. Dueling Posterior Sampling
 **ADVANTAGE:** Sample policy from dynamics and utility models
@@ -190,9 +174,7 @@ Input: $f_p$: state transition posterior, $f_r$: utility posterior
 3. Solve $\pi^* = \arg \sup_{\pi} \sum_{s\in\mathcal{S}} p_0(s)V_{\pi, 1}(s | \tilde{p}, \tilde{r})$
 4. Return $\pi^*$
 
-::: {style="font-size: 0.4em; text-align: left;"}
-Novoseller, E., Wei, Y., Sui, Y., Yue, Y., & Burdick, J. (2020, August). Dueling posterior sampling for preference-based reinforcement learning. In Conference on Uncertainty in Artificial Intelligence (pp. 1029-1038). PMLR.
-:::
+[@novoseller2020dueling]{.citation}
 
 ## 3. Dueling Posterior Sampling
 **FEEDBACK:** Update dynamics and utility models based on new user feedback
@@ -202,9 +184,7 @@ Input: $\mathcal{H} = \{ \tau_{i1}, \tau_{i2}, y_i \}$, $f_p$: state transition 
 2. Apply Bayesian update to $f_r$ using $\mathcal{H}$
 3. Return $f_p$, $f_r$
 
-::: {style="font-size: 0.4em; text-align: left;"}
-Novoseller, E., Wei, Y., Sui, Y., Yue, Y., & Burdick, J. (2020, August). Dueling posterior sampling for preference-based reinforcement learning. In Conference on Uncertainty in Artificial Intelligence (pp. 1029-1038). PMLR.
-:::
+[@novoseller2020dueling]{.citation}
 
 ## 3. Dueling Posterior Sampling
 In DPS, the process of updating the dynamics posterior is straightforward. We can assume the dynamics are fully observed and model them with Dirichlet distribution. Then, the likelihood of the state transition is multinomial, and we can update the posterior as follows:
@@ -218,9 +198,7 @@ This formula can be interpreted as we update the posterior by adding the count o
 - The utility posterior is more complex because we perform Bayesian inference over state-action pairs, and feedback is at trajectory level. 
 - Based on Novoseller et al. (2020), we can model the utility using Bayesian linear regression.
 
-::: {style="font-size: 0.4em; text-align: left;"}
-Novoseller, E., Wei, Y., Sui, Y., Yue, Y., & Burdick, J. (2020, August). Dueling posterior sampling for preference-based reinforcement learning. In Conference on Uncertainty in Artificial Intelligence (pp. 1029-1038). PMLR.
-:::
+[@novoseller2020dueling]{.citation}
 
 ## 3. Dueling Posterior Sampling
 ### Theoretical Analysis
@@ -229,9 +207,7 @@ We will now analyze the asymptotic Bayesian regret of DFS under a Bayesian linea
 2. Bounding one-sided Bayesian regret for $\pi_{i2}$, which means DPS is only able to select $\pi_{i2}$ and $\pi_{i1}$ is sampled from a fixed distribution.
 3. Assuming the distribution of $\pi_{i1}$ is drifting but converging, we bound the Bayesian regret for $\pi_{i2}$.
 
-::: {style="font-size: 0.4em; text-align: left;"}
-Novoseller, E., Wei, Y., Sui, Y., Yue, Y., & Burdick, J. (2020, August). Dueling posterior sampling for preference-based reinforcement learning. In Conference on Uncertainty in Artificial Intelligence (pp. 1029-1038). PMLR.
-:::
+[@novoseller2020dueling]{.citation}
 
 ## 3. Dueling Posterior Sampling
 ### Asymptotic consistency of DPS
@@ -250,9 +226,7 @@ $$
 
 3. The remaining problem is to prove that DPS will visit all state-action pairs infinitely often. 
 
-::: {style="font-size: 0.4em; text-align: left;"}
-Novoseller, E., Wei, Y., Sui, Y., Yue, Y., & Burdick, J. (2020, August). Dueling posterior sampling for preference-based reinforcement learning. In Conference on Uncertainty in Artificial Intelligence (pp. 1029-1038). PMLR.
-:::
+[@novoseller2020dueling]{.citation}
 
 ## 3. Dueling Posterior Sampling
 ### Asymptotic consistency of DPS
@@ -263,17 +237,13 @@ Novoseller, E., Wei, Y., Sui, Y., Yue, Y., & Burdick, J. (2020, August). Dueling
 - The proof proceeds by assuming that there exists a state-action pair that is visited only finitely-many times. 
 - This assumption will lead to a contradiction: once this state-action pair is no longer visited, the reward model posterior is no longer updated with respect to it. Then, DPS is guaranteed to eventually sample a high enough reward for this state-action that the resultant policy will prioritize visiting it.
 
-::: {style="font-size: 0.4em; text-align: left;"}
-Novoseller, E., Wei, Y., Sui, Y., Yue, Y., & Burdick, J. (2020, August). Dueling posterior sampling for preference-based reinforcement learning. In Conference on Uncertainty in Artificial Intelligence (pp. 1029-1038). PMLR.
-:::
+[@novoseller2020dueling]{.citation}
 
 ## 3. Dueling Posterior Sampling
 ### Asymptotic consistency of DPS
 **Proposition 2:** With probability of $1 - \delta$, where delta is a parameter of the Bayesian linear regression model, the sampled rewards converge in distribution to the true reward parameters, $\bar{r}$, as the DPS iteration increases.
 
-::: {style="font-size: 0.4em; text-align: left;"}
-Novoseller, E., Wei, Y., Sui, Y., Yue, Y., & Burdick, J. (2020, August). Dueling posterior sampling for preference-based reinforcement learning. In Conference on Uncertainty in Artificial Intelligence (pp. 1029-1038). PMLR.
-:::
+[@novoseller2020dueling]{.citation}
 
 ## 3. Dueling Posterior Sampling
 ### Asymptotic consistency of DPS
@@ -286,9 +256,7 @@ $$
 - $\beta_i(\delta)$: confidence bound (depends on $\delta$)
 - This defines an ellipsoid around the true reward parameters.
 
-::: {style="font-size: 0.4em; text-align: left;"}
-Novoseller, E., Wei, Y., Sui, Y., Yue, Y., & Burdick, J. (2020, August). Dueling posterior sampling for preference-based reinforcement learning. In Conference on Uncertainty in Artificial Intelligence (pp. 1029-1038). PMLR.
-:::
+[@novoseller2020dueling]{.citation}
 
 ## 3. Dueling Posterior Sampling
 ### Asymptotic consistency of DPS
@@ -299,9 +267,7 @@ $$
 $$
 - This implies uncertainty in the reward parameters decreases over time, which implies the reward parameters converge to the true values.
   
-::: {style="font-size: 0.4em; text-align: left;"}
-Novoseller, E., Wei, Y., Sui, Y., Yue, Y., & Burdick, J. (2020, August). Dueling posterior sampling for preference-based reinforcement learning. In Conference on Uncertainty in Artificial Intelligence (pp. 1029-1038). PMLR.
-:::
+[@novoseller2020dueling]{.citation}
 
 ## 3. Dueling Posterior Sampling
 ### Asymptotic consistency of DPS
@@ -311,9 +277,7 @@ Novoseller, E., Wei, Y., Sui, Y., Yue, Y., & Burdick, J. (2020, August). Dueling
 - The reward function $\tilde{r}_{i1}$ converges in distribution to the true reward parameters $r$.
 - For each fixed $\pi$, the value function $V(\tilde{p}_{i1}, \tilde{r}_{i1}, \pi)$ converges in distribution to $V(p, r, \pi)$ as value functions are continuous in the dynamics and reward parameters.
 
-::: {style="font-size: 0.4em; text-align: left;"}
-Novoseller, E., Wei, Y., Sui, Y., Yue, Y., & Burdick, J. (2020, August). Dueling posterior sampling for preference-based reinforcement learning. In Conference on Uncertainty in Artificial Intelligence (pp. 1029-1038). PMLR.
-:::
+[@novoseller2020dueling]{.citation}
 
 ## 3. Dueling Posterior Sampling
 ### Asymptotic consistency of DPS
@@ -324,9 +288,7 @@ P\left( \left| V(\tilde{p}_{i1}, \tilde{r}_{i1}, \pi) - V(p, r, \pi) \right| > \
 $$
 This shows that the value of the sampled policies converges to that of the optimal policy.
 
-::: {style="font-size: 0.4em; text-align: left;"}
-Novoseller, E., Wei, Y., Sui, Y., Yue, Y., & Burdick, J. (2020, August). Dueling posterior sampling for preference-based reinforcement learning. In Conference on Uncertainty in Artificial Intelligence (pp. 1029-1038). PMLR.
-:::
+[@novoseller2020dueling]{.citation}
 
 ## 3. Dueling Posterior Sampling
 #### **Bound the one-sided regret under a fixed $\pi_{i1}$-distribution**
@@ -337,10 +299,7 @@ $$
 \Gamma_i = \frac{ \mathbb{E}_i[ (y^*_i - y_i)^2 ] }{ \mathbb{I}_i[\pi^*; (\pi_{i2}, \tau_{i1}, \tau_{i2}, x_{i2} - x_{i1}, y_i )] }
 $$
 
-::: {style="font-size: 0.4em; text-align: left;"}
-Russo, D., & Van Roy, B. (2016). An information-theoretic analysis of Thompson sampling. Journal of Machine Learning Research, 17(68), 1-30.<br>
-Novoseller, E., Wei, Y., Sui, Y., Yue, Y., & Burdick, J. (2020, August). Dueling posterior sampling for preference-based reinforcement learning. In Conference on Uncertainty in Artificial Intelligence (pp. 1029-1038). PMLR.
-:::
+[@russo2016information]{.citation}; [@novoseller2020dueling]{.citation}
 
 ## 3. Dueling Posterior Sampling
 #### **Bound the one-sided regret under a fixed $\pi_{i1}$-distribution**
@@ -350,10 +309,7 @@ $$
 - **Numerator**: Squared instantaneous one-sided regret of policy $\pi_{i2}$ (exploitation).
 - **Denominator**: Information gained about the optimal policy $\pi^*$ (exploration).
 
-::: {style="font-size: 0.4em; text-align: left;"}
-Russo, D., & Van Roy, B. (2016). An information-theoretic analysis of Thompson sampling. Journal of Machine Learning Research, 17(68), 1-30.<br>
-Novoseller, E., Wei, Y., Sui, Y., Yue, Y., & Burdick, J. (2020, August). Dueling posterior sampling for preference-based reinforcement learning. In Conference on Uncertainty in Artificial Intelligence (pp. 1029-1038). PMLR.
-:::
+[@russo2016information]{.citation}; [@novoseller2020dueling]{.citation}
 
 ## 3. Dueling Posterior Sampling
 #### **Bound the one-sided regret under a fixed $\pi_{i1}$-distribution**
@@ -365,9 +321,7 @@ $$
 \end{aligned}
 $$
 
-::: {style="font-size: 0.4em; text-align: left;"}
-Novoseller, E., Wei, Y., Sui, Y., Yue, Y., & Burdick, J. (2020, August). Dueling posterior sampling for preference-based reinforcement learning. In Conference on Uncertainty in Artificial Intelligence (pp. 1029-1038). PMLR.
-:::
+[@novoseller2020dueling]{.citation}
 
 ## 3. Dueling Posterior Sampling
 #### **Bound the one-sided regret under a fixed $\pi_{i1}$-distribution**
@@ -382,9 +336,7 @@ $$
 
 where $y_i = \bar{r}(\tau) = \bar{r}^{\top}x_{\tau_{i}}$ is the expected utility of the trajectory $\tau_i$.
 
-::: {style="font-size: 0.4em; text-align: left;"}
-Novoseller, E., Wei, Y., Sui, Y., Yue, Y., & Burdick, J. (2020, August). Dueling posterior sampling for preference-based reinforcement learning. In Conference on Uncertainty in Artificial Intelligence (pp. 1029-1038). PMLR.
-:::
+[@novoseller2020dueling]{.citation}
 
 ## 3. Dueling Posterior Sampling
 #### **Bound the one-sided regret under a fixed $\pi_{i1}$-distribution**
@@ -397,10 +349,7 @@ $$
 $$
 where $\mathbb{H}[\pi^*]$ is the entropy of the optimal policy $\pi^*$ and $N$ is the number of DPS iterations.
 
-::: {style="font-size: 0.4em; text-align: left;"}
-Russo, D., & Van Roy, B. (2016). An information-theoretic analysis of thompson sampling. Journal of Machine Learning Research, 17(68), 1-30.<br>
-Novoseller, E., Wei, Y., Sui, Y., Yue, Y., & Burdick, J. (2020, August). Dueling posterior sampling for preference-based reinforcement learning. In Conference on Uncertainty in Artificial Intelligence (pp. 1029-1038). PMLR.
-:::
+[@russo2016information]{.citation}; [@novoseller2020dueling]{.citation}
 
 ## 3. Dueling Posterior Sampling
 #### **Proof for information-theoretic regret bound**
@@ -520,9 +469,7 @@ $$
 where $Sh$ is the number of deterministic policies.
 - Thus, we can observe that regret can be asymptotically upper-bounded.
 
-::: {style="font-size: 0.4em; text-align: left;"}
-Novoseller, E., Wei, Y., Sui, Y., Yue, Y., & Burdick, J. (2020, August). Dueling posterior sampling for preference-based reinforcement learning. In Conference on Uncertainty in Artificial Intelligence (pp. 1029-1038). PMLR.
-:::
+[@novoseller2020dueling]{.citation}
 
 ## 3. Dueling Posterior Sampling
 #### **Bound the one-sided regret under a fixed $\pi_{i1}$-distribution**
@@ -534,9 +481,7 @@ $$
 $$
 Thus, with a finite set of $S$ states, $A$ actions, and $T$ steps, the regret of DPS in this case is bounded by $S \sqrt{ \frac{AT \log A}{2} }$.
 
-::: {style="font-size: 0.4em; text-align: left;"}
-Novoseller, E., Wei, Y., Sui, Y., Yue, Y., & Burdick, J. (2020, August). Dueling posterior sampling for preference-based reinforcement learning. In Conference on Uncertainty in Artificial Intelligence (pp. 1029-1038). PMLR.
-:::
+[@novoseller2020dueling]{.citation}
 
 ## 3. Dueling Posterior Sampling
 ### Bound the one-sided regret under a converging $\pi_{i1}$-distribution
@@ -548,9 +493,7 @@ $$
 $$
 - This is used to bound the one-sided regret for $\pi_{i2}$.
 
-::: {style="font-size: 0.4em; text-align: left;"}
-Novoseller, E., Wei, Y., Sui, Y., Yue, Y., & Burdick, J. (2020, August). Dueling posterior sampling for preference-based reinforcement learning. In Conference on Uncertainty in Artificial Intelligence (pp. 1029-1038). PMLR.
-:::
+[@novoseller2020dueling]{.citation}
 
 ## 3. Dueling Posterior Sampling
 ### Bound the one-sided regret under a converging $\pi_{i1}$-distribution
@@ -568,9 +511,7 @@ $$
 \end{aligned}
 $$
 
-::: {style="font-size: 0.4em; text-align: left;"}
-Novoseller, E., Wei, Y., Sui, Y., Yue, Y., & Burdick, J. (2020, August). Dueling posterior sampling for preference-based reinforcement learning. In Conference on Uncertainty in Artificial Intelligence (pp. 1029-1038). PMLR.
-:::
+[@novoseller2020dueling]{.citation}
 
 ## 3. Dueling Posterior Sampling
 ### Asymptotic Regret Rate
@@ -579,9 +520,7 @@ Recall Theorem 1, Theorem 2, and Lemma 17:
 - **Theorem 2**: If the policy $\pi_{i1}$ is drawn from a fixed distribution, the one-sided Bayesian regret rate for $\pi_{i2}$ is bounded by $S \sqrt{ \frac{AT \log A}{2} }$.
 - **Lemma 17**: If the sampling distribution of $\pi_{i1}$ is converging to a fixed distribution, then the information ratio $\Gamma_i$ for $\pi_{i2}$'s one-sided regret is bounded by $\frac{SA}{2}$.
 
-::: {style="font-size: 0.4em; text-align: left;"}
-Novoseller, E., Wei, Y., Sui, Y., Yue, Y., & Burdick, J. (2020, August). Dueling posterior sampling for preference-based reinforcement learning. In Conference on Uncertainty in Artificial Intelligence (pp. 1029-1038). PMLR.
-:::
+[@novoseller2020dueling]{.citation}
 
 ## 3. Dueling Posterior Sampling
 ### Asymptotic Regret Rate
@@ -595,9 +534,7 @@ $$
 $$
 - We now can conclude that the DPS algorithm is asymptotically optimal in terms of Bayesian regret.
 
-::: {style="font-size: 0.4em; text-align: left;"}
-Novoseller, E., Wei, Y., Sui, Y., Yue, Y., & Burdick, J. (2020, August). Dueling posterior sampling for preference-based reinforcement learning. In Conference on Uncertainty in Artificial Intelligence (pp. 1029-1038). PMLR.
-:::
+[@novoseller2020dueling]{.citation}
 
 ## 3. Dueling Posterior Sampling
 <img src="figures/dps_result.png" width="70%">
@@ -606,9 +543,7 @@ Novoseller, E., Wei, Y., Sui, Y., Yue, Y., & Burdick, J. (2020, August). Dueling
 Empirical performance of DPS: Each simulated environment is shown under the two least-noisy user preference models that were evaluated. The plots show DPS with three models: Gaussian process regression (GPR), Bayesian linear regression, and a Gaussian process preference model.
 :::
 
-::: {style="font-size: 0.4em; text-align: left;"}
-Novoseller, E., Wei, Y., Sui, Y., Yue, Y., & Burdick, J. (2020, August). Dueling posterior sampling for preference-based reinforcement learning. In Conference on Uncertainty in Artificial Intelligence (pp. 1029-1038). PMLR.
-:::
+[@novoseller2020dueling]{.citation}
 
 ## 3. Dueling Posterior Sampling
 <img src="figures/dps_result.png" width="70%">
@@ -617,9 +552,7 @@ Novoseller, E., Wei, Y., Sui, Y., Yue, Y., & Burdick, J. (2020, August). Dueling
 Plots display the mean +/- one standard deviation over 100 runs of each algorithm tested. Overall, we see that DPS performs well and is robust to the choice of credit assignment model.
 :::
 
-::: {style="font-size: 0.4em; text-align: left;"}
-Novoseller, E., Wei, Y., Sui, Y., Yue, Y., & Burdick, J. (2020, August). Dueling posterior sampling for preference-based reinforcement learning. In Conference on Uncertainty in Artificial Intelligence (pp. 1029-1038). PMLR.
-:::
+[@novoseller2020dueling]{.citation}
 
 ## Summary
 - The dueling bandit problem is a variant of the multi-armed bandit problem where the learner receives pairwise comparisons between arms.

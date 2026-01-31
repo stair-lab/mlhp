@@ -52,6 +52,15 @@ the posterior distributions.
 ```{python ex2-q1-1}
 import numpy as np
 import matplotlib.pyplot as plt
+from tueplots import bundles
+
+# Use tueplots icml2022 bundle for publication-quality figures
+plt.rcParams.update(bundles.icml2022())
+plt.rcParams.update({
+    "figure.figsize": (5, 3.5),
+    "figure.dpi": 150,
+    "figure.autolayout": True,
+})
 
 def expected_calibration_error(probs, labels, model_name, n_bins=20, n_ticks=10, plot=True):
     """
@@ -107,7 +116,7 @@ def expected_calibration_error(probs, labels, model_name, n_bins=20, n_ticks=10,
     avg_accuracy = np.mean(labels)
     
     # Create reliability diagram and histogram
-    fig, (ax1, ax2) = plt.subplots(2, 1, gridspec_kw={'height_ratios': [3, 1]}, figsize=(8, 10))
+    fig, (ax1, ax2) = plt.subplots(2, 1, gridspec_kw={'height_ratios': [3, 1]}, figsize=(5, 7))
     
     # Reliability diagram (top plot)
     ax1.plot([0, 1], [0, 1], 'k--', label='Perfect Calibration')
@@ -999,7 +1008,7 @@ def plot_confusion_region():
     tp_lower, tn_lower = zip(*lower_boundary)
 
     # Plot the results for upper boundary
-    plt.figure(figsize=(8, 6))
+    plt.figure(figsize=(5, 3.5))
     plt.plot(tp_upper, tn_upper, marker='o', linestyle='-', alpha=0.7, label="Upper Boundary")
     plt.plot(tp_lower, tn_lower, marker='o', linestyle='--', alpha=0.7, label="Lower Boundary")
     plt.title("True Positive vs. True Negative Rates (Upper & Lower Boundaries)")
@@ -1511,7 +1520,7 @@ def evaluate_elicited_metric(true_metric, elicited_metric):
 evaluate_elicited_metric(true_values_on_grid, average_samples)
 
 # Step 6: Plot the True Non-linear Function and Elicited Metric in 3D
-fig = plt.figure(figsize=(12, 8))
+fig = plt.figure(figsize=(9, 5))
 ax = fig.add_subplot(111, projection='3d')
 
 # Plot the true function

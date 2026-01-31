@@ -1,8 +1,7 @@
 ---
-title: "Chapter 3: Active Learning"
-subtitle: "Model-Based Preference Optimization"
-author: "Sang Truong"
-footer: "CS329H - Chapter 3.1: Active Learning"
+title: "Machine Learning from Human Preferences"
+subtitle: "Chapter 3: Active Learning"
+footer: "Chapter 3.1: Active Learning"
 ---
 
 ## 0. Review on Supervised Learning
@@ -36,10 +35,7 @@ There are two primary setups in active learning:
 - Example applications include autonomous driving, medical imaging, meteorology, and fraud detection.
 
 ::: {style="font-size: 0.4em; text-align: left;"}
-Sanna Jarl, Linus Aronsson, Sadegh Rahrovani, and Morteza Haghir Chehreghani. 2021. "Active Learning of Driving Scenario Trajectories." *Eng. Appl. Artif. Intell.* 113: 104972.<br>
-A. Biswas, N. Abdullah Al, M.S. Ali, I. Hossain, M.A. Ullah, S. Talukder (2023). Active Learning on Medical Image. In: Zheng, B., Andrei, S., Sarker, M.K., Gupta, K.D. (eds) *Data Driven Approaches on Medical Imaging.* Springer, Cham.<br>
-Aarti Singh, Robert D. Nowak, and Parameswaran Ramanathan. 2006. "Active Learning for Adaptive Mobile Sensing Networks." *2006 5th International Conference on Information Processing in Sensor Networks*, 60–68. <br>
-F. Carcillo, YA. Le Borgne, O. Caelen et al. Streaming active learning strategies for real-life credit card fraud detection: assessment and visualization. *Int J Data Sci Anal* 5, 285–300 (2018). 
+[@jarl2021active]{.citation}; [@biswas2023active]{.citation}; [@singh2006active]{.citation}; [@carcillo2018streaming]{.citation}
 :::
 
 ## 1. Active Preference Learning
@@ -151,9 +147,7 @@ We would select $x_1$ for labeling as it has the lowest confidence, indicating t
     - Consensus Entropy: $\alpha(x) = \mathbb{H}[P_C(y | x)]$ where $P_C(y|x) is the average probability distribution of the committee members. 
     - KL Divergence: $\alpha(x) = \frac{1}{C} \sum_{c=1}^{C} D_{KL}[P_c(y|x) || P_C(y|x)]$.
 
-::: {style="font-size: 0.4em; text-align: left;"}
-Zhu, Jingbo, Huizhen Wang, Benjamin Ka-Yin T’sou, and Matthew Y. Ma. 2010. "Active Learning with Sampling by Uncertainty and Density for Data Annotations." *IEEE Transactions on Audio, Speech, and Language Processing* 18: 1323–31.
-:::
+[@zhu2010active]{.citation}
 
 ---
 
@@ -229,9 +223,7 @@ $$
 $$
 where $\mathbb{H}[\cdot]$ denotes entropy. When there is significant disagreement among models, the predictive entropy (first term) will be large, but the expected entropy (second term)) will be lower. This difference represents how much the models disagree with each other. BALD selects points where this disagreement is maximized.
 
-::: {style="font-size: 0.4em; text-align: left;"}
-Houlsby, N., Huszár, F., Ghahramani, Z., & Lengyel, M. (2011). Bayesian Active Learning for Classification and Preference Learning. ArXiv, abs/1112.5745.
-:::
+[@houlsby2011bayesian]{.citation}
 
 ---
 
@@ -352,9 +344,7 @@ $$
 \end{aligned}
 $$
 
-::: {style="font-size: 0.4em; text-align: left;"}
-Stuart Geman, Elie Bienenstock, and René Doursat. 1992. "Neural Networks and the Bias/Variance Dilemma." Neural Computation 4: 1–58.
-:::
+[@geman1992neural]{.citation}
 
 ---
 
@@ -393,9 +383,7 @@ $$
 - The second term is the bias of the model. We do not have control over it when selecting data.
 - The third term is the variance of the model prediction given the previous data $\mathcal{D}$, which can be used to quantify the model's uncertainty about the chosen $x$.
 
-::: {style="font-size: 0.4em; text-align: left;"}
-Stuart Geman, Elie Bienenstock, and René Doursat. 1992. "Neural Networks and the Bias/Variance Dilemma." *Neural Computation* 4: 1–58.
-:::
+[@geman1992neural]{.citation}
 
 ## 3.4 Active Preference Learning by 
 ### Variance Reduction
@@ -409,9 +397,7 @@ $$
 \sigma^2_{\hat{y}} (x | \mathcal{D}) =  \mathbb{E}_{\hat{y} \sim p(\hat{y} | \mathcal{D}; x)} [(\hat{y} - \mathbb{E}_{\hat{y} \sim p(\hat{y} | \mathcal{D}; x)}[\hat{y}])^2]
 $$
 
-::: {style="font-size: 0.4em; text-align: left;"}
-David A. Cohn, Zoubin Ghahramani, and Michael I. Jordan. 1996. "Active Learning with Statistical Models." CoRR cs.AI/9603104.
-:::
+[@cohn1996active]{.citation}
 
 ## 3.4 Active Preference Learning by 
 ### Variance Reduction
@@ -429,9 +415,7 @@ $$
 $$
 4. Update the model with newly observed data and repeat.
 
-::: {style="font-size: 0.4em; text-align: left;"}
-David A. Cohn, Zoubin Ghahramani, and Michael I. Jordan. 1996. "Active Learning with Statistical Models." CoRR cs.AI/9603104.
-:::
+[@cohn1996active]{.citation}
 
 ## 3.5. Other Acquisition Functions
 - There are many other acquisition functions that can be used in active learning, including:
@@ -442,11 +426,7 @@ David A. Cohn, Zoubin Ghahramani, and Michael I. Jordan. 1996. "Active Learning 
     - Mismatch-first Farthest-traversal (Zhao et al., 2020)
 
 ::: {style="font-size: 0.4em; text-align: left;"}
-Wenbin Cai, Ya Zhang, and Jun Zhou. 2013. "Maximizing Expected Model Change for Active Learning in Regression." In *2013 IEEE 13th International Conference on Data Mining*, 51–60.<br>
-Stephen Mussmann, Julia Reisler, Daniel Tsai, Ehsan Mousavi, Shayne O'Brien, and Moises Goldszmidt. 2022. "Active Learning with Expected Error Reduction."<br>
-David A. Cohn, Zoubin Ghahramani, and Michael I. Jordan. 1996. "Active Learning with Statistical Models." CoRR cs.AI/9603104.<br>
-Djallel Bouneffouf, Romain Laroche, Tanguy Urvoy, Raphaël Féraud, and Robin Allesiardo. 2014. "Contextual Bandit for Active Learning: Active Thompson Sampling." In *International Conference on Neural Information Processing*.<br>
-Shuyang Zhao, Toni Heittola, and Tuomas Virtanen. 2020. "Active Learning for Sound Event Detection." *IEEE/ACM Transactions on Audio, Speech, and Language Processing* 28: 2895–905.
+[@cai2013maximizing]{.citation}; [@mussmann2022active]{.citation}; [@cohn1996active]{.citation}; [@bouneffouf2014contextual]{.citation}; [@zhao2020active]{.citation}
 :::
 
 ## 4. Case study: Active Preference-based Learning of Reward Functions
@@ -461,9 +441,7 @@ an environment but still have some opinion on what trajectories would be
 better than others?
 ```
 
-::: {style="font-size: 0.4em; text-align: left;"}
-Dorsa Sadigh et al. Active preference-based learning of reward functions. 2017.
-:::
+[@sadigh2017active]{.citation}
 
 ## 4. Case study: Active Preference-based Learning of Reward Functions
 - Let us consider a scenario where a **human** expert provides controls on the **robot**'s behavior by comparing two trajectories.
@@ -475,9 +453,7 @@ r_H(x^t, u^t_R, u^t_H) = \mathbf{w}^{\top} \phi(x_t, u^t_R, u^t_H)
 $$
 where $\mathbf{w}$ is the weight vector, $\phi$ is the feature function.
 
-::: {style="font-size: 0.4em; text-align: left;"}
-Dorsa Sadigh et al. Active preference-based learning of reward functions. 2017.
-:::
+[@sadigh2017active]{.citation}
 
 ## 4. Case study: Active Preference-based Learning of Reward Functions
 - The goal is to learn the expected reward function $R_H$ over horizon $N$ from the human's preferences.
@@ -493,9 +469,7 @@ $$
 R_H(\zeta) = \mathbf{w}^{\top} \Phi(\zeta)
 $$
 
-::: {style="font-size: 0.4em; text-align: left;"}
-Dorsa Sadigh et al. Active preference-based learning of reward functions. 2017.
-:::
+[@sadigh2017active]{.citation}
 
 ## 4. Case study: Active Preference-based Learning of Reward Functions
 
@@ -523,9 +497,7 @@ $$
 p(I=-1 | \mathbf{w}) = \frac{ \exp (R_H(\zeta_B)) }{ \exp (R_H(\zeta_A)) + \exp (R_H(\zeta_B)) }
 $$
 
-::: {style="font-size: 0.4em; text-align: left;"}
-Dorsa Sadigh et al. Active preference-based learning of reward functions. 2017.
-:::
+[@sadigh2017active]{.citation}
 
 ## 4. Case study: Active Preference-based Learning of Reward Functions
 We can rewrite the probability of the human preferring trajectory $\zeta_A$ over $\zeta_B$ with  $\psi = \Phi(\zeta_A) - \Phi(\zeta_B)$, $\Phi(\zeta) = \sum_{0}^N \phi(x^t, u_R^t, u_H^t)$ as 
@@ -538,9 +510,7 @@ $$
 p(\mathbf{w} | I) \propto p(I | \mathbf{w}) p(\mathbf{w})
 $$
 
-::: {style="font-size: 0.4em; text-align: left;"}
-Dorsa Sadigh et al. Active preference-based learning of reward functions. 2017.
-:::
+[@sadigh2017active]{.citation}
 
 ## 4. Case study: Active Preference-based Learning of Reward Functions
 The acquisition function used in this case is the following:
@@ -552,9 +522,7 @@ $$
 \max_{x^0, \mathbf{u}_R, \mathbf{u}_{H}^A, \mathbf{u}_{H}^B} \left\{ \min \{ \mathbb{E}[1-f_{\psi}(\mathbf{w})], \mathbb{E}[1-f_{-\psi}(\mathbf{w})] \} \right\}
 $$
 
-::: {style="font-size: 0.4em; text-align: left;"}
-Dorsa Sadigh et al. Active preference-based learning of reward functions. 2017.
-:::
+[@sadigh2017active]{.citation}
 
 ## 4. Case study: Active Preference-based Learning of Reward Functions
 To solve this optimization problem, in case $p(\mathbf{w})$ is complex, we can approximate this $p(\mathbf{w})$ by the empirical distribution of the weight vector $\mathbf{w}$.
@@ -567,9 +535,7 @@ $$
 $$
 Now, we can use gradient-based optimization methods to solve this optimization problem (e.g. Quasi-Newton methods).
 
-::: {style="font-size: 0.4em; text-align: left;"}
-Dorsa Sadigh et al. Active preference-based learning of reward functions. 2017.
-:::
+[@sadigh2017active]{.citation}
 
 ## Discussion and QA
 **Summary**

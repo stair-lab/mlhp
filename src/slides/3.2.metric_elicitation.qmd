@@ -1,8 +1,7 @@
 ---
-title: "Chapter 3: Metric Elicitation"
-subtitle: "Model-Based Preference Optimization"
-author: "Sanmi Koyejo"
-footer: "CS329H - Chapter 3.2: Metric Elicitation"
+title: "Machine Learning from Human Preferences"
+subtitle: "Chapter 3: Metric Elicitation"
+footer: "Chapter 3.2: Metric Elicitation"
 ---
 
 ## 1. Evaluating Models
@@ -43,7 +42,7 @@ footer: "CS329H - Chapter 3.2: Metric Elicitation"
 ## 1. Evaluating Models
 <ul>
   <li>One must be careful in choosing the appropriate metrics for a given task. Metrics are not exchangeable because different metrics evaluate different areas of model performance.</li>
-  <li>Cremonesi, Koren, Turrin (2010) found that the RMSE metric used for evaluating models submitted to the Netflix Prize competition did not translate well to top-N ranking accuracy which more directly impacts what users see.</li>
+  <li>[@cremonesi2010performance]{.citation} found that the RMSE metric used for evaluating models submitted to the Netflix Prize competition did not translate well to top-N ranking accuracy which more directly impacts what users see.</li>
   <li>In some cases, metrics can even be contradictory. The COMPAS model used to predict rescindivism in criminal cases was calibrated on equal accuracy across demographic groups. However, an analysis by ProPublica found "blacks are almost twice as likely as whites to be labeled a higher risk but not actually re-offend," despite the calibration.</li>
 </ul>
 
@@ -52,21 +51,21 @@ footer: "CS329H - Chapter 3.2: Metric Elicitation"
 <ul>
   <li>Determining metrics by interacting with individual stakeholders</li>
   <ul>
-    <li>Hiranandani et al. "Performance metric elicitation from pairwise classifier comparisons."</li>
-    <li>Hiranandani et. al "Multiclass Performance Metric Elicitation"</li>
-    <li>Hiranandani et. al., "Fair Performance Metric Elicitation"</li>
+    <li>[@hiranandani2019performance]{.citation}</li>
+    <li>[@hiranandani2019multiclass]{.citation}</li>
+    <li>[@hiranandani2020fair]{.citation}</li>
   </ul>
   <li>Metric elicitation from stakeholder groups</li>
   <ul>
-    <li>Robertson et. al., "Probabilistic Performance Metric Elicitation</li>
+    <li>[@robertson2023probabilistic]{.citation}</li>
   </ul>
 </ul>
 
 ## 2. Metric Elicitation through Preferences
 <ul>
-  <li>Preference elicitation is studied in economics and psychology (Samuelson, 1938; Varian, 2005)</li>
-  <li>Elicitation is related to (contextual dueling) bandits, when focused on recovering reward function (Yue et. al. 2012; Dudik et. al. 2015)</li>
-  <li>Inverse reinforcement learning generalizes elicitation when reward is transportable (Amin, 2017)</li>
+  <li>Preference elicitation is studied in economics and psychology [[@samuelson1938note]{.citation}; [@varian2005revealed]{.citation}]</li>
+  <li>Elicitation is related to (contextual dueling) bandits, when focused on recovering reward function [[@yue2012k]{.citation}; [@dudik2015contextual]{.citation}]</li>
+  <li>Inverse reinforcement learning generalizes elicitation when reward is transportable [@amin2017repeated]{.citation}</li>
 </ul>
 
 ## 2. Metric Elicitation through Preferences

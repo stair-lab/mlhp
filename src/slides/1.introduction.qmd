@@ -1,8 +1,7 @@
 ---
-title: "Chapter 1: Introduction"
-subtitle: "Machine Learning from Human Preferences"
-author: "Sanmi Koyejo & Sang Truong"
-footer: "CS329H - Chapter 1: Introduction"
+title: "Machine Learning from Human Preferences"
+subtitle: "Chapter 1: Introduction"
+footer: "Chapter 1: Introduction"
 ---
 
 ## Overview
@@ -13,22 +12,22 @@ footer: "CS329H - Chapter 1: Introduction"
 
 We focus on **statistical and conceptual foundations** and **strategies for interactively querying humans** to elicit information that improves learning and applications.
 
-![](figures/foundation_strategies.png)
+![](figures/foundation_strategies.png){fig-align="center" width="80%"}
 
 ## Overview
 
 This class is not exhaustive!
 
-![](figures/class_introduction.png)
+![](figures/class_introduction.png){fig-align="center" width="85%"}
 
 ## Overview
 
 Feedback can be included at any step of training
 
-![](figures/human_in_nlp_loop.png)
+![](figures/human_in_nlp_loop.png){fig-align="center" width="75%"}
 
-::: {.citation}
-Z. J. Wang, *et al.* "Putting humans in the natural language processing loop: A survey." *HCI+NLP Workshop* (2021). Slides modified from Diyi Yang
+::: {.attribution}
+@wang2021putting. Slides modified from Diyi Yang.
 :::
 
 ## Overview
@@ -42,23 +41,21 @@ Feedback-Update Taxonomy
 | **Observation** | Active data collection, Add data, Relabel data, Reweighting data, collecting expert labels, Passive observation | Constraint elicitation, Metric learning, Human representations, Collecting contextual information, Generative factors, concept representations, Feature attributions | Feature modification, Add/remove features, Engineering features |
 :::
 
-::: {.citation}
-C. Chen, *et al.* "Perspectives on Incorporating Expert Feedback into Model Updates." *ArXiv* (2022). Slides modified from Diyi Yang
+::: {.attribution}
+@Chen2023Perspectives. Slides modified from Diyi Yang.
 :::
 
 ## Examples: Natural Languages
 
-![](figures/chatgpt.png)
+![](figures/chatgpt.png){fig-align="center" width="70%"}
 
 ## Examples: Natural Languages
 
 Builds on research studying human feedback in language
 
-![](figures/document_classification.png)
+![](figures/document_classification.png){fig-align="center" width="75%"}
 
-::: {.citation}
-Harpale, Sunita Sarawagi, and Soumen Chakrabarti. "Document classification through interactive supervision of document and term labels." In *European Conference on Principles of Data Mining and Knowledge Discovery*, pp. 185-196. Springer, Berlin, Heidelberg, 2004.
-:::
+[@harpale2004document]{.citation}
 
 ## Examples: Natural Languages
 
@@ -71,17 +68,13 @@ Harpale, Sunita Sarawagi, and Soumen Chakrabarti. "Document classification throu
 :::
 ::::
 
-::: {.citation}
-Luheng He, Julian Michael, Mike Lewis, and Luke Zettlemoyer. "Human-in-the-loop parsing." In *Proceedings of the 2016 Conference on Empirical Methods in Natural Language Processing*, pp. 2337-2342. 2016.
-:::
+[@he2016human]{.citation}
 
 ## Examples: Natural Languages
 
-![](figures/training_rlhf.png)
+![](figures/training_rlhf.png){fig-align="center" width="85%"}
 
-::: {.citation}
-Ouyang *et al.*, "Training language models to follow instructions with human feedback"
-:::
+[@ouyang2022training]{.citation}
 
 ## Examples: Natural Languages
 
@@ -96,9 +89,7 @@ OpenAI Experiments with RLHF
 :::
 ::::
 
-::: {.citation}
-Nisan Stiennon, "Learning to Summarize with Human Feedback." Advances in Neural Information Processing Systems, 33 (2020): 3008-3021.
-:::
+[@stiennon2020learning]{.citation}
 
 ## Motivation
 
@@ -135,9 +126,7 @@ We have not figured out how to do it quite right, or we need new approaches
 
 ![](figures/opinion_lm.png)
 
-::: {.citation}
-Santurkar, *et al.*, "Whose Opinions Do Language Models Reflect?"
-:::
+[@santurkar_whose_2023]{.citation}
 
 ## Examples: Dueling Bandits
 
@@ -154,18 +143,10 @@ Personalize therapy
 
 ## Examples: Metric Elicitation
 
-- Determine the fairness and performance metric by interacting with individual stakeholders [1,2]
-- Metric elicitation from stakeholder groups [3]
+- Determine the fairness and performance metric by interacting with individual stakeholders [@NEURIPS2019_1fd09c5f; @pmlr-v89-hiranandani19a]
+- Metric elicitation from stakeholder groups [@robertson2023probabilistic]
 
 ![](figures/metric_elicitation.png){fig-align="center" width="25%"}
-
-::: {.citation}
-[1] Hiranandani et al., Fair Performance Metric Elicitation
-
-[2] Hiranandani et al., Metric Elicitation; Moving from Theory to Practice
-
-[3] Robertson et al., Probabilistic Performance Metric Elicitation
-:::
 
 ## Examples: Metric Elicitation
 
@@ -177,9 +158,7 @@ Why elicit metric preferences?
 
 ![](figures/cidt.png)
 
-::: {.citation}
-Robertson *et al.* "Cooperative inverse decision theory for uncertain preferences," 2023.
-:::
+[@robertson2023cooperative]{.citation}
 
 ## Examples: Recommender Systems
 
@@ -191,16 +170,12 @@ Robertson *et al.* "Cooperative inverse decision theory for uncertain preference
 ::: {.column width="50%"}
 ![](figures/rlhf1.jpg)
 
-::: {.citation}
-W. Bradley Knox, and Peter Stone. "Tamer: Training an agent manually via evaluative reinforcement." In *2008 7th IEEE international conference on development and learning*, pp. 292-297. IEEE, 2008.
-:::
+[@Tamer]{.citation}
 :::
 ::: {.column width="50%"}
 ![](figures/rlhf2.jpg)
 
-::: {.citation}
-Paul F. Christiano, Jan Leike, Tom Brown, Miljan Martic, Shane Legg, and Dario Amodei. "Deep reinforcement learning from human preferences." *Advances in neural information processing systems*, 30 (2017).
-:::
+[@christiano2017deep]{.citation}
 :::
 ::::
 
@@ -210,9 +185,7 @@ Flying helicopters using imitation learning and inverse reinforcement learning (
 
 {{< video https://www.youtube.com/embed/0JL04JJjocc width="80%" height="400" >}}
 
-::: {.citation}
-Adam Coates, Pieter Abbeel, and Andrew Y. Ng. 2008. Learning for control from multiple demonstrations. In *Proceedings of the 25th International Conference on Machine learning* (ICML '08). Association for Computing Machinery, New York, NY, USA, 144-151.
-:::
+[@coates2008learning]{.citation}
 
 ## Examples: Inverse RL
 
@@ -225,17 +198,13 @@ Adam Coates, Pieter Abbeel, and Andrew Y. Ng. 2008. Learning for control from mu
 :::
 ::::
 
-::: {.citation}
-E Biyik, D Sadigh, "Batch Active Preference-Based Learning of Reward Functions," *2nd Conference on Robot Learning* (CoRL), Zurich, Switzerland, Oct. 2018.
-:::
+[@pmlr-v87-biyik18a]{.citation}
 
 ## Examples: Inverse RL
 
 {{< video https://www.youtube.com/embed/HExrlibCxdI?start=142 width="100%" height="450" >}}
 
-::: {.citation}
-Erdem Biyik, Aditi Talati, and Dorsa Sadigh. 2022. APReL: A Library for Active Preference-based Reward Learning Algorithms. In *Proceedings of the 2022 ACM/IEEE International Conference on Human-Robot Interaction* (HRI '22). IEEE Press, 613-617.
-:::
+[@biyik2022aprel]{.citation}
 
 ## Examples: Inverse RL
 

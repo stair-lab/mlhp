@@ -61,6 +61,18 @@ rm /tmp/mlhp_pdf_$$
 
 # Deploy book + slides + PDF to www
 echo "Deploying to www..."
-rsync -av --delete _book/ /afs/cs/group/koyejolab/mlhp/www/
+# rsync returns exit code 23 when it can't set permissions on AFS - ignore that specific error
+set +e
+rsync -av --delete --chmod=Du=rwx,Dgo=rx,Fu=rw,Fgo=r _book/ /afs/cs/group/koyejolab/mlhp/www/
+rsync_exit=$?
+set -e
+if [ $rsync_exit -ne 0 ] && [ $rsync_exit -ne 23 ]; then
+    echo "rsync failed with exit code $rsync_exit"
+    exit $rsync_exit
+fi
+
+# Ensure web-readable permissions on all deployed files (fixes AFS permission issues)
+echo "Setting permissions..."
+chmod -R a+rX /afs/cs/group/koyejolab/mlhp/www/
 
 echo "Deployed successfully!"

@@ -3,10 +3,10 @@
 ::: {.content-visible when-format="html"}
 
 <iframe
-  src="https://web.stanford.edu/class/cs329h/slides/1.introduction/#/"
+  src="slides/1.introduction.html"
   style="width:50%; height:250px;"
 ></iframe>
-[Fullscreen Slide](https://web.stanford.edu/class/cs329h/slides/1.introduction/#/){.btn .btn-outline-primary .btn role="button"}
+[Fullscreen Slide](slides/1.introduction.html){.btn .btn-outline-primary .btn role="button"}
 
 :::
 

@@ -117,7 +117,16 @@ import numpy as np
 from sklearn.gaussian_process import GaussianProcessClassifier
 from sklearn.gaussian_process.kernels import RBF, ConstantKernel as C
 import matplotlib.pyplot as plt
+from tueplots import bundles
 from tqdm import tqdm
+
+# Use tueplots icml2022 bundle for publication-quality figures
+plt.rcParams.update(bundles.icml2022())
+plt.rcParams.update({
+    "figure.figsize": (5, 3.5),
+    "figure.dpi": 150,
+    "figure.autolayout": True,
+})
 
 # Define the Forrester function
 def forrester_function(x):
@@ -268,7 +277,7 @@ if __name__ == "__main__":
     gp_predictions = gp.predict_proba(pairs)[:, 1].reshape(X.shape)
 
     # Plot Ground Truth Preference Heatmap
-    plt.figure(figsize=(12, 6))
+    plt.figure(figsize=(9, 3.5))
     plt.subplot(1, 2, 1)
     plt.contourf(X, X_prime, gt_preferences, levels=50, cmap='jet')
     plt.colorbar(label="Ground Truth Preference Probability")
@@ -1303,7 +1312,7 @@ if __name__ == "__main__":
     ground_truth_utilities = ground_truth_utility(X_test.numpy())
 
     # Plot results
-    plt.figure(figsize=(10, 6))
+    plt.figure(figsize=(5, 3.5))
     plt.title("GP Posterior Predictive Mean (Utility Approximation)")
     plt.plot(X_test.numpy(), posterior_means,
              label="Posterior Predictive Mean", color="red")
