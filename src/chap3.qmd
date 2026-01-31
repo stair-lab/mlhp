@@ -99,25 +99,10 @@ Below, the code simulates many users, a bank of calibrated items, and compares a
 
 First, we set up the simulation with $N$ users, $M$ calibrated items, and define helper functions for Bayesian updating:
 
+{{< include _plt_setup.qmd >}}
+
 ```{pyodide-python}
 #| autorun: true
-import numpy as np
-import matplotlib.pyplot as plt
-
-# ICML-style figure settings
-plt.rcParams.update({
-    "figure.figsize": (5, 3.5),
-    "figure.dpi": 150,
-    "figure.autolayout": True,
-    "font.size": 8,
-    "axes.labelsize": 8,
-    "axes.titlesize": 9,
-    "xtick.labelsize": 7,
-    "ytick.labelsize": 7,
-    "legend.fontsize": 7,
-    "lines.linewidth": 1.0,
-})
-
 sigmoid = lambda x: 1.0 / (1.0 + np.exp(-x))
 rng = np.random.default_rng(42)
 

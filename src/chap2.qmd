@@ -109,25 +109,11 @@ This chapter focuses on *learning* the parameters of these models from observed 
 
 We begin by discussing how to split preference data into training and test sets, then develop estimation procedures for each approach.
 
+{{< include _plt_setup.qmd >}}
+
 ```{pyodide-python}
 #| autorun: true
 #| echo: false
-import numpy as np
-import matplotlib.pyplot as plt
-
-# ICML-style figure settings
-plt.rcParams.update({
-    "figure.figsize": (5, 3.5),
-    "figure.dpi": 150,
-    "figure.autolayout": True,
-    "font.size": 8,
-    "axes.labelsize": 8,
-    "axes.titlesize": 9,
-    "xtick.labelsize": 7,
-    "ytick.labelsize": 7,
-    "legend.fontsize": 7,
-    "lines.linewidth": 1.0,
-})
 rng = np.random.default_rng(2601)
 
 N = 50 # users

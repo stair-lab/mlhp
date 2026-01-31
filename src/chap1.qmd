@@ -260,24 +260,10 @@ Here:
 
 The probability of acceptance depends only on the sum $U_i + V_j$: enthusiastic users accept more items, and popular items are accepted by more users.
 
+{{< include _plt_setup.qmd >}}
+
 ```{pyodide-python}
 #| autorun: true
-import numpy as np
-import matplotlib.pyplot as plt
-plt.rcParams.update({
-    "figure.figsize": (3.5, 3),
-    "figure.dpi": 150,
-    "figure.autolayout": True,
-    "font.size": 8,
-    "font.family": "serif",
-    "mathtext.fontset": "cm",
-    "axes.labelsize": 8,
-    "axes.titlesize": 9,
-    "xtick.labelsize": 7,
-    "ytick.labelsize": 7,
-    "legend.fontsize": 7,
-    "lines.linewidth": 1.0,
-})
 rng = np.random.default_rng(2601)
 
 N, M = 50, 30  # 50 users, 30 items
