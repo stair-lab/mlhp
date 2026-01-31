@@ -1,26 +1,51 @@
 ---
 title: Decisions
-format: html
+format:
+  html:
+    include-after-body:
+      text: |
+        <script>
+        // Auto-execute all pyodide cells after initialization
+        document.addEventListener('DOMContentLoaded', function() {
+          // Wait for pyodide to be fully ready (mainPyodide is set after loading)
+          function waitForPyodide() {
+            if (typeof globalThis.mainPyodide !== 'undefined' && globalThis.mainPyodide) {
+              // Pyodide is ready, execute all cells with autorun=true
+              if (typeof globalThis.qpyodideCellDetails !== 'undefined') {
+                globalThis.qpyodideCellDetails.forEach((cell, index) => {
+                  if (cell.options && cell.options.autorun === 'true') {
+                    setTimeout(() => {
+                      const runButton = document.querySelector(`#qpyodide-button-run-${cell.id}`);
+                      if (runButton && !runButton.disabled) {
+                        runButton.click();
+                      }
+                    }, index * 1000); // Stagger execution by 1 second each
+                  }
+                });
+              }
+            } else {
+              setTimeout(waitForPyodide, 500);
+            }
+          }
+          setTimeout(waitForPyodide, 2000); // Start checking after 2 seconds
+        });
+        </script>
 filters:
   - pyodide
-execute:
-  engine: pyodide
-  pyodide:
-    auto: true
 ---
 
 ::: {.content-visible when-format="html"}
 
 <iframe
-  src="https://web.stanford.edu/class/cs329h/slides/4.1.dueling_bandit/#/"
+  src="../slides/4.1.dueling_bandit.html"
   style="width:45%; height:225px;"
 ></iframe>
 <iframe
-  src="https://web.stanford.edu/class/cs329h/slides/4.2.preferential_baysian_optimization/#/"
+  src="../slides/4.2.preferential_baysian_optimization.html"
   style="width:45%; height:225px;"
 ></iframe>
-[Fullscreen Part 1](https://web.stanford.edu/class/cs329h/slides/4.1.dueling_bandit/#/){.btn .btn-outline-primary .btn role="button"}
-[Fullscreen Part 2](https://web.stanford.edu/class/cs329h/slides/4.2.preferential_baysian_optimization/#/){.btn .btn-outline-primary .btn role="button"}
+[Fullscreen Part 1](../slides/4.1.dueling_bandit.html){.btn .btn-outline-primary .btn role="button"}
+[Fullscreen Part 2](../slides/4.2.preferential_baysian_optimization.html){.btn .btn-outline-primary .btn role="button"}
 
 :::
 

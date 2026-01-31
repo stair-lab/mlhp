@@ -7,16 +7,16 @@ format:
         <script>
         // Auto-execute all pyodide cells after initialization
         document.addEventListener('DOMContentLoaded', function() {
-          // Wait for pyodide to be ready
+          // Wait for pyodide to be fully ready (mainPyodide is set after loading)
           function waitForPyodide() {
-            if (typeof qpyodideInstance !== 'undefined' && qpyodideInstance) {
-              // Execute all cells with autorun=true
+            if (typeof globalThis.mainPyodide !== 'undefined' && globalThis.mainPyodide) {
+              // Pyodide is ready, execute all cells with autorun=true
               if (typeof globalThis.qpyodideCellDetails !== 'undefined') {
                 globalThis.qpyodideCellDetails.forEach((cell, index) => {
                   if (cell.options && cell.options.autorun === 'true') {
                     setTimeout(() => {
                       const runButton = document.querySelector(`#qpyodide-button-run-${cell.id}`);
-                      if (runButton) {
+                      if (runButton && !runButton.disabled) {
                         runButton.click();
                       }
                     }, index * 1000); // Stagger execution by 1 second each
@@ -32,21 +32,20 @@ format:
         </script>
 filters:
   - pyodide
-
 ---
 
 ::: {.content-visible when-format="html"}
 
 <iframe
-  src="../slides/2.1.choice_models/"
+  src="../slides/2.1.choice_models.html"
   style="width:45%; height:225px;"
 ></iframe>
 <iframe
-  src="../slides/2.2.choice_models/"
+  src="../slides/2.2.choice_models.html"
   style="width:45%; height:225px;"
 ></iframe>
-[Fullscreen Part 1](../slides/2.1.choice_models/){.btn .btn-outline-primary .btn role="button"}
-[Fullscreen Part 2](../slides/2.2.choice_models/){.btn .btn-outline-primary .btn role="button"}
+[Fullscreen Part 1](../slides/2.1.choice_models.html){.btn .btn-outline-primary .btn role="button"}
+[Fullscreen Part 2](../slides/2.2.choice_models.html){.btn .btn-outline-primary .btn role="button"}
 
 :::
 
@@ -266,6 +265,20 @@ The probability of acceptance depends only on the sum $U_i + V_j$: enthusiastic 
 import numpy as np
 import matplotlib.pyplot as plt
 
+# ICML-style figure settings
+plt.rcParams.update({
+    "figure.figsize": (5, 3.5),
+    "figure.dpi": 150,
+    "figure.autolayout": True,
+    "font.size": 8,
+    "axes.labelsize": 8,
+    "axes.titlesize": 9,
+    "xtick.labelsize": 7,
+    "ytick.labelsize": 7,
+    "legend.fontsize": 7,
+    "lines.linewidth": 1.0,
+})
+
 rng = np.random.default_rng(2601)
 N, M = 50, 30  # 50 users, 30 items
 
@@ -284,7 +297,7 @@ row_order = np.argsort(Y.mean(axis=1))
 col_order = np.argsort(Y.mean(axis=0))
 Y_sorted = Y[row_order][:, col_order]
 
-plt.figure(figsize=(8, 6))
+plt.figure(figsize=(5, 3.5))
 plt.imshow(Y_sorted, cmap='coolwarm', aspect='auto')
 plt.colorbar(label='Response (0=reject, 1=accept)')
 plt.xlabel("Items (sorted by popularity)")
@@ -530,22 +543,15 @@ We can think of the rows of $X$ as features of different alternatives. We can vi
 import matplotlib.pyplot as plt
 from matplotlib.colors import LinearSegmentedColormap
 ccmap = LinearSegmentedColormap.from_list("ackley", ["#f76a05", "#FFF2C9"])
-plt.rcParams.update({
-    "font.size": 14,
-    "axes.labelsize": 16,
-    "xtick.labelsize": 14,
-    "ytick.labelsize": 14,
-    "legend.fontsize": 14,
-    "axes.titlesize": 16,
-})
 
-def draw_surface():
+def draw_surface(show=True):
+    """Draw the Ackley function surface. If show=False, don't call plt.show()."""
     inps = np.linspace(-2, 2, 100)
     X, Y = np.meshgrid(inps, inps)
     grid = np.column_stack([X.ravel(), Y.ravel()])
     Z = ackley(grid).reshape(X.shape)
-    
-    plt.figure(figsize=(6, 5))
+
+    plt.figure(figsize=(5, 3.5))
     contour = plt.contourf(X, Y, Z, 50, cmap=ccmap)
     plt.contour(X, Y, Z, levels=15, colors='black', linewidths=0.5, alpha=0.6)
     plt.colorbar(contour, label=r'$f(x)$', ticks=[0, 3, 6])
@@ -555,6 +561,8 @@ def draw_surface():
     plt.yticks([-2, 0, 2])
     plt.xlabel(r'$x_1$')
     plt.ylabel(r'$x_2$')
+    if show:
+        plt.show()
 ```
 
 In this model, we can sample choice data when assuming a random generating model of, e.g., `np.random.randn(n, d)*0.5 + np.ones((n, d))*0.5`.
@@ -570,7 +578,7 @@ n = 800
 items = np.random.randn(n, d)*0.5 + np.ones((n, d))*0.5
 utilities = ackley(items)
 y = (utilities > utilities.mean())
-draw_surface()
+draw_surface(show=False)  # Don't show yet - will add scatter overlay
 plt.scatter(items[:, 0], items[:, 1], c=y, cmap='coolwarm', alpha=0.5)
 plt.show()
 ```
@@ -613,7 +621,7 @@ np.add.at(scores, pair_indices[~wins, 1], 1)
 preferred = scores > 0
 non_preferred = scores < 0
 
-draw_surface()
+draw_surface(show=False)  # Don't show yet - will add scatter overlay
 plt.scatter(items[preferred, 0], items[preferred, 1], c='blue', label='Preferred', alpha=0.5)
 plt.scatter(items[non_preferred, 0], items[non_preferred, 1], c='purple', label='Non-preferred', alpha=0.5)
 plt.legend()
@@ -1103,7 +1111,7 @@ K += 1e-6 * np.eye(len(K))  # numerical stability
 # Draw samples from GP prior
 samples = np.random.multivariate_normal(np.zeros(len(X_grid)), K, size=5)
 
-fig, axes = plt.subplots(1, 2, figsize=(12, 4))
+fig, axes = plt.subplots(1, 2, figsize=(9, 3.5))
 
 # Left: Sample functions from GP prior
 for i, sample in enumerate(samples):

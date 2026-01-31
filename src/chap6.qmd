@@ -1,12 +1,37 @@
 ---
 title: "Whose Preferences Matter?"
-format: html
+format:
+  html:
+    include-after-body:
+      text: |
+        <script>
+        // Auto-execute all pyodide cells after initialization
+        document.addEventListener('DOMContentLoaded', function() {
+          // Wait for pyodide to be fully ready (mainPyodide is set after loading)
+          function waitForPyodide() {
+            if (typeof globalThis.mainPyodide !== 'undefined' && globalThis.mainPyodide) {
+              // Pyodide is ready, execute all cells with autorun=true
+              if (typeof globalThis.qpyodideCellDetails !== 'undefined') {
+                globalThis.qpyodideCellDetails.forEach((cell, index) => {
+                  if (cell.options && cell.options.autorun === 'true') {
+                    setTimeout(() => {
+                      const runButton = document.querySelector(`#qpyodide-button-run-${cell.id}`);
+                      if (runButton && !runButton.disabled) {
+                        runButton.click();
+                      }
+                    }, index * 1000); // Stagger execution by 1 second each
+                  }
+                });
+              }
+            } else {
+              setTimeout(waitForPyodide, 500);
+            }
+          }
+          setTimeout(waitForPyodide, 2000); // Start checking after 2 seconds
+        });
+        </script>
 filters:
   - pyodide
-execute:
-  engine: pyodide
-  pyodide:
-    auto: true
 ---
 
 ::: {.callout-note}
@@ -270,9 +295,24 @@ There is no "right" answer. But you must choose consciously and transparently.
 Let's simulate this tradeoff concretely. We'll create a population of reviewers with varying expertise and context, then compare three elicitation strategies:
 
 ```{pyodide-python}
+#| autorun: true
 #| echo: true
 import numpy as np
 import matplotlib.pyplot as plt
+
+# ICML-style figure settings
+plt.rcParams.update({
+    "figure.figsize": (5, 3.5),
+    "figure.dpi": 150,
+    "figure.autolayout": True,
+    "font.size": 8,
+    "axes.labelsize": 8,
+    "axes.titlesize": 9,
+    "xtick.labelsize": 7,
+    "ytick.labelsize": 7,
+    "legend.fontsize": 7,
+    "lines.linewidth": 1.0,
+})
 
 # Set random seed for reproducibility
 rng = np.random.default_rng(42)
@@ -381,7 +421,7 @@ errors = {
 }
 
 # Visualize results
-fig, axes = plt.subplots(1, 3, figsize=(15, 4))
+fig, axes = plt.subplots(1, 3, figsize=(12, 3.5))
 
 strategies = ['Uniform', 'Productive', 'Stratified']
 queries_list = [queries_uniform, queries_productive, queries_stratified]
@@ -707,7 +747,7 @@ low_acc_std, high_acc_std = evaluate_model_by_group(U_standard, V_standard, comp
 low_acc_ctx, high_acc_ctx = evaluate_model_by_group(U_contextual, V_contextual, comparisons, load_all, lambda_param=lambda_fit)
 
 # Visualize results
-fig, ax = plt.subplots(1, 1, figsize=(8, 5))
+fig, ax = plt.subplots(1, 1, figsize=(5, 3.5))
 
 models = ['Standard BT\n(no context)', 'Contextual BT\n(with load)']
 low_accs = [low_acc_std, low_acc_ctx]
@@ -914,7 +954,7 @@ quality_stratified_senior = np.mean([assistant_quality(s, agg_stratified) for s 
 quality_stratified_junior = np.mean([assistant_quality(s, agg_stratified) for s in style_junior])
 
 # Visualize
-fig, ax = plt.subplots(1, 1, figsize=(10, 5))
+fig, ax = plt.subplots(1, 1, figsize=(5, 3.5))
 
 strategies = ['Volume-weighted\n(DPO default)', 'Equal-weighted', 'Group-stratified']
 senior_quality = [quality_volume_senior, quality_equal_senior, quality_stratified_senior]
@@ -1111,7 +1151,7 @@ illiberal_biased = group_mean_over_time(history_illiberal, biased_idx)
 illiberal_unbiased = group_mean_over_time(history_illiberal, unbiased_idx)
 
 # Visualize
-fig, axes = plt.subplots(1, 2, figsize=(14, 5))
+fig, axes = plt.subplots(1, 2, figsize=(9, 3.5))
 
 # Liberal assistance
 ax1 = axes[0]
@@ -1287,7 +1327,7 @@ for round_num in range(n_rounds):
         history[group]['queries'].append(queries)
 
 # Visualize compounding unfairness
-fig, axes = plt.subplots(1, 2, figsize=(14, 5))
+fig, axes = plt.subplots(1, 2, figsize=(9, 3.5))
 
 rounds = np.arange(n_rounds + 1)
 
@@ -1535,7 +1575,7 @@ quality_fair_A = np.array([expertise_A[i, assignments_fair_A[i]] for i in range(
 quality_fair_B = np.array([expertise_B[i, assignments_fair_B[i]] for i in range(n_papers_B)])
 
 # Visualize
-fig, axes = plt.subplots(1, 2, figsize=(14, 5))
+fig, axes = plt.subplots(1, 2, figsize=(9, 3.5))
 
 # Greedy matching (prioritizes individual fairness)
 ax1 = axes[0]
@@ -1759,7 +1799,7 @@ senior_process, junior_process = avg_quality_by_group(assignments_process, paper
 senior_outcome, junior_outcome = avg_quality_by_group(assignments_outcome, papers_quality, n_reviewers_senior)
 
 # Visualize
-fig, axes = plt.subplots(1, 2, figsize=(14, 5))
+fig, axes = plt.subplots(1, 2, figsize=(9, 3.5))
 
 # Process fairness
 ax1 = axes[0]

@@ -1,12 +1,37 @@
 ---
 title: Learning
-format: html
+format:
+  html:
+    include-after-body:
+      text: |
+        <script>
+        // Auto-execute all pyodide cells after initialization
+        document.addEventListener('DOMContentLoaded', function() {
+          // Wait for pyodide to be fully ready (mainPyodide is set after loading)
+          function waitForPyodide() {
+            if (typeof globalThis.mainPyodide !== 'undefined' && globalThis.mainPyodide) {
+              // Pyodide is ready, execute all cells with autorun=true
+              if (typeof globalThis.qpyodideCellDetails !== 'undefined') {
+                globalThis.qpyodideCellDetails.forEach((cell, index) => {
+                  if (cell.options && cell.options.autorun === 'true') {
+                    setTimeout(() => {
+                      const runButton = document.querySelector(`#qpyodide-button-run-${cell.id}`);
+                      if (runButton && !runButton.disabled) {
+                        runButton.click();
+                      }
+                    }, index * 1000); // Stagger execution by 1 second each
+                  }
+                });
+              }
+            } else {
+              setTimeout(waitForPyodide, 500);
+            }
+          }
+          setTimeout(waitForPyodide, 2000); // Start checking after 2 seconds
+        });
+        </script>
 filters:
   - pyodide
-execute:
-  engine: pyodide
-  pyodide:
-    auto: true
 ---
 
 ::: {.callout-note}
@@ -90,15 +115,18 @@ We begin by discussing how to split preference data into training and test sets,
 import numpy as np
 import matplotlib.pyplot as plt
 
+# ICML-style figure settings
 plt.rcParams.update({
-    "font.size": 14,
-    "axes.labelsize": 16,
-    "xtick.labelsize": 14,
-    "ytick.labelsize": 14,
-    "legend.fontsize": 14,
-    "axes.titlesize": 16,
-    "figure.figsize": (6, 6),
+    "figure.figsize": (5, 3.5),
+    "figure.dpi": 150,
     "figure.autolayout": True,
+    "font.size": 8,
+    "axes.labelsize": 8,
+    "axes.titlesize": 9,
+    "xtick.labelsize": 7,
+    "ytick.labelsize": 7,
+    "legend.fontsize": 7,
+    "lines.linewidth": 1.0,
 })
 rng = np.random.default_rng(2601)
 
@@ -379,7 +407,7 @@ acc_rate = acc / steps
 print(f"[MH] Acceptance rate: {acc_rate:.3f} with prop_scale={prop_scale}")
 
 # Show trace for a few items
-fig, axes = plt.subplots(1, 2, figsize=(12, 4))
+fig, axes = plt.subplots(1, 2, figsize=(9, 3.5))
 axes[0].plot(trace[:, 0], lw=0.8)
 axes[0].set_title("Trace of v[0]")
 axes[0].set_xlabel("Iteration / 5")
@@ -514,7 +542,7 @@ var_pred = np.diag(K_star_star - K_star @ (K_inv - K_inv @ Sigma_post @ K_inv) @
 std_pred = np.sqrt(np.maximum(var_pred, 0))
 
 # Plot
-fig, ax = plt.subplots(figsize=(10, 5))
+fig, ax = plt.subplots(figsize=(5, 3.5))
 ax.fill_between(X_grid.flatten(), mu_pred - 2*std_pred, mu_pred + 2*std_pred,
                 alpha=0.3, color='blue', label='95% CI')
 ax.plot(X_grid, mu_pred, 'b-', lw=2, label='GP posterior mean')
@@ -697,7 +725,7 @@ for lam in lambdas:
     test_aucs.append(auc_from_scores(s_te, y_te_s))
 
 # Plot validation curve
-plt.figure(figsize=(8, 5))
+plt.figure(figsize=(5, 3.5))
 plt.semilogx(lambdas, train_aucs, 'o-', label='Train AUC', markersize=8)
 plt.semilogx(lambdas, test_aucs, 's-', label='Test AUC', markersize=8)
 plt.xlabel(r'Regularization strength $\lambda$')
@@ -754,7 +782,7 @@ V_es, tr_hist, val_hist = fit_bt_with_validation(
 # Find early stopping point (best validation performance)
 best_epoch = np.argmax(val_hist)
 
-plt.figure(figsize=(8, 5))
+plt.figure(figsize=(5, 3.5))
 plt.plot(tr_hist, label='Train AUC', alpha=0.7)
 plt.plot(val_hist, label='Validation AUC', alpha=0.7)
 plt.axvline(best_epoch, color='red', linestyle='--', label=f'Best epoch: {best_epoch}')
@@ -866,7 +894,7 @@ cv_means = np.array(cv_means)
 cv_stds = np.array(cv_stds)
 
 # Plot CV performance vs hyperparameter
-plt.figure(figsize=(8, 5))
+plt.figure(figsize=(5, 3.5))
 plt.errorbar(lambda_grid, cv_means, yerr=cv_stds, fmt='o-', capsize=5, markersize=8)
 plt.xscale('log')
 plt.xlabel(r'Regularization strength $\lambda$')
@@ -1038,7 +1066,7 @@ for epoch in range(150):
 loss_gd = np.array(loss_gd)
 
 # Plot convergence comparison
-plt.figure(figsize=(8, 5))
+plt.figure(figsize=(5, 3.5))
 plt.plot(loss_gd, label='Gradient Descent (lr=0.05)', alpha=0.8)
 plt.plot(loss_adam, label='Adam (lr=0.1)', alpha=0.8)
 plt.xlabel('Epoch')
@@ -1218,7 +1246,7 @@ print(f"{'Bayesian (λ=0.1)':<20} {auc_bayes:<12.4f} {ll_bayes:<12.2f} {corr_bay
 print(f"{'Online (Elo K=0.1)':<20} {auc_elo:<12.4f} {ll_elo:<12.2f} {corr_elo:<15.4f}")
 
 # Visualize learned vs true utilities
-fig, axes = plt.subplots(1, 3, figsize=(14, 4))
+fig, axes = plt.subplots(1, 3, figsize=(12, 3.5))
 
 for ax, V_learned, method, corr in zip(axes, 
                                          [V_mle_aligned, V_bayes_aligned, V_elo_aligned],
