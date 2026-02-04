@@ -1,5 +1,5 @@
 ---
-title: "Whose Preferences Matter?"
+title: "Whose?"
 format:
   html:
     include-after-body:

@@ -1,5 +1,5 @@
 ---
-title: "Foundations of Preference Modeling"
+title: "Foundations"
 format:
   html:
     include-after-body:

@@ -190,7 +190,7 @@ Finally, we visualize the results comparing Fisher-active vs random item selecti
 
 ```{pyodide-python}
 #| autorun: true
-fig, axes = plt.subplots(1, 2, figsize=(9, 3.5))
+fig, axes = plt.subplots(1, 2)
 
 axes[0].plot(np.arange(1, T+1), mse_rnd, 'o-', label="Random", alpha=0.7)
 axes[0].plot(np.arange(1, T+1), mse_act, 's-', label="Fisher-active", alpha=0.7)
@@ -300,7 +300,7 @@ Visualize results:
 
 ```{pyodide-python}
 #| autorun: true
-fig, axes = plt.subplots(1, 2, figsize=(9, 3.5))
+fig, axes = plt.subplots(1, 2)
 xs = np.arange(1, T + 1)
 
 axes[0].plot(xs, mse_rand, 'o-', label="Random", alpha=0.7)
@@ -421,7 +421,7 @@ Visualize the results:
 
 ```{pyodide-python}
 #| autorun: true
-fig, axes = plt.subplots(1, 2, figsize=(9, 3.5))
+fig, axes = plt.subplots(1, 2)
 xs = np.arange(1, T + 1)
 
 axes[0].plot(xs, mse_r, 'o-', label="Random", alpha=0.7)
@@ -537,7 +537,7 @@ Visualize the results:
 ::: {.callout-note title="Code"}
 ```{pyodide-python}
 #| autorun: true
-fig, axes = plt.subplots(1, 2, figsize=(9, 3.5))
+fig, axes = plt.subplots(1, 2)
 
 axes[0].plot(mse_rnd, label="Random", alpha=0.7)
 axes[0].plot(mse_act, label="D-optimal", alpha=0.7)
@@ -685,7 +685,7 @@ Visualize results:
 
 ```{pyodide-python}
 #| autorun: true
-fig, axes = plt.subplots(1, 2, figsize=(9, 3.5))
+fig, axes = plt.subplots(1, 2)
 x = np.arange(1, T+1)
 
 axes[0].plot(x, mse_rnd, 'o-', label="Random", alpha=0.7, markevery=10)
@@ -760,7 +760,7 @@ def true_reward(x):
 
 # Visualize the true reward
 X_grid = np.linspace(-3, 3, 100).reshape(-1, 1)
-plt.figure(figsize=(5, 3.5))
+plt.figure()
 plt.plot(X_grid, true_reward(X_grid), 'k-', lw=2)
 plt.xlabel('x'); plt.ylabel('r(x)')
 plt.title('True Reward Function (Unknown to Learner)')
@@ -868,7 +868,7 @@ Finally, we visualize the results. The left panel shows how estimation error dec
 
 ```{pyodide-python}
 #| autorun: true
-fig, axes = plt.subplots(1, 2, figsize=(9, 3.5))
+fig, axes = plt.subplots(1, 2)
 
 # Learning curves
 axes[0].plot(range(1, n_queries+1), mse_random, 'o-', label='Random', alpha=0.7)

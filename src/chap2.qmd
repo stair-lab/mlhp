@@ -172,18 +172,30 @@ Y_test[c_te, r_te] = 1.0 - Y_BT[r_te, c_te]
 np.fill_diagonal(Y_train, np.nan)
 np.fill_diagonal(Y_test, np.nan)
 
-cmap = plt.cm.get_cmap('coolwarm').copy()
+# Combined matrix: train (blue/red) and test (green/orange)
+# Encode: 0=train-0, 1=train-1, 2=test-0, 3=test-1
+Y_combined = np.full((M, M), np.nan)
+Y_combined[~np.isnan(Y_train)] = Y_train[~np.isnan(Y_train)]  # 0 or 1 for train
+Y_combined[~np.isnan(Y_test)] = Y_test[~np.isnan(Y_test)] + 2  # 2 or 3 for test
+
+from matplotlib.colors import ListedColormap
+colors = ['#4575b4', '#d73027', '#1a9850', '#fdae61']  # blue, red, green, orange
+cmap = ListedColormap(colors)
 cmap.set_bad(color='white')
-plt.subplot(1, 2, 1)
-im1 = plt.imshow(np.ma.masked_invalid(Y_train), vmin=0, vmax=1, cmap=cmap)
-plt.title("Train")
+
+plt.figure()
+plt.imshow(np.ma.masked_invalid(Y_combined), vmin=0, vmax=3, cmap=cmap)
+plt.title("Train/Test Split")
 plt.xlabel("Items")
 plt.ylabel("Items")
-plt.subplot(1, 2, 2)
-im2 = plt.imshow(np.ma.masked_invalid(Y_test), vmin=0, vmax=1, cmap=cmap)
-plt.title("Test")
-plt.xlabel("Items")
-plt.colorbar(im2, fraction=0.046, pad=0.04)
+import matplotlib.patches as mpatches
+legend_patches = [
+    mpatches.Patch(color='#4575b4', label='Train: 0'),
+    mpatches.Patch(color='#d73027', label='Train: 1'),
+    mpatches.Patch(color='#1a9850', label='Test: 0'),
+    mpatches.Patch(color='#fdae61', label='Test: 1'),
+]
+plt.legend(handles=legend_patches, loc='upper left', bbox_to_anchor=(1, 1))
 plt.show()
 ```
 
@@ -252,6 +264,7 @@ s_te = V_hat[r_te_fit] - V_hat[c_te_fit]
 test_auc = auc_from_scores(s_te, y_te_fit)
 
 # Plot
+plt.figure()
 plt.plot(np.arange(1, epochs + 1), train_auc_hist, label="Train")
 plt.hlines(test_auc, xmin=0, xmax=epochs, linestyle="--", label="Test")
 plt.xlabel("Epoch")
@@ -309,6 +322,7 @@ a, b = np.linalg.lstsq(A, V, rcond=None)[0]
 V_hat_aligned = a * V_hat_norm + b
 
 # After alignment, points should cluster near the diagonal
+plt.figure()
 plt.scatter(V, V_hat, s=12, c="red")
 plt.scatter(V, V_hat_aligned, s=12, c="blue")
 lims = [-3, 3]
@@ -392,15 +406,25 @@ trace = np.array(trace)  # shape (steps/trace_every, M)
 acc_rate = acc / steps
 print(f"[MH] Acceptance rate: {acc_rate:.3f} with prop_scale={prop_scale}")
 
-# Show trace for a few items
-fig, axes = plt.subplots(1, 2, figsize=(9, 3.5))
-axes[0].plot(trace[:, 0], lw=0.8)
-axes[0].set_title("Trace of v[0]")
-axes[0].set_xlabel("Iteration / 5")
-axes[0].set_ylabel("Value")
+# Show trace with posterior marginal
+plt.figure()
+fig, (ax_trace, ax_hist) = plt.subplots(1, 2, width_ratios=[4, 1],
+                                         sharey=True, layout='constrained')
+fig.get_layout_engine().set(wspace=0.05)
 
-axes[1].hist(trace[:, 0], bins=100, density=True)
-axes[1].set_title("Posterior of v[0]")
+# Trace plot
+ax_trace.plot(trace[:, 0], lw=0.8, color='steelblue')
+ax_trace.set_xlabel("Iteration / 5")
+ax_trace.set_ylabel(r"$v_0$")
+ax_trace.set_title("Trace of $v_0$")
+
+# Posterior marginal (horizontal histogram)
+ax_hist.hist(trace[:, 0], bins=50, density=True, orientation='horizontal',
+             color='steelblue', alpha=0.7, edgecolor='white', linewidth=0.5)
+ax_hist.set_xlabel("Density")
+ax_hist.tick_params(labelleft=False)
+ax_hist.set_title("Posterior")
+
 plt.show()
 ```
 
@@ -453,10 +477,6 @@ This is structurally similar to standard GP regression, but with the data-depend
 
 ```{pyodide-python}
 #| autorun: true
-import numpy as np
-import matplotlib.pyplot as plt
-np.random.seed(42)
-
 def rbf_kernel(X1, X2, sigma_f=1.0, length_scale=0.5):
     """RBF kernel matrix."""
     sq_dist = np.sum(X1**2, axis=1, keepdims=True) + np.sum(X2**2, axis=1) - 2 * X1 @ X2.T
@@ -528,18 +548,18 @@ var_pred = np.diag(K_star_star - K_star @ (K_inv - K_inv @ Sigma_post @ K_inv) @
 std_pred = np.sqrt(np.maximum(var_pred, 0))
 
 # Plot
-fig, ax = plt.subplots(figsize=(5, 3.5))
-ax.fill_between(X_grid.flatten(), mu_pred - 2*std_pred, mu_pred + 2*std_pred,
-                alpha=0.3, color='blue', label='95% CI')
-ax.plot(X_grid, mu_pred, 'b-', lw=2, label='GP posterior mean')
-ax.plot(X_grid, true_reward(X_grid), 'k--', lw=2, label='True reward')
-ax.scatter(X_A[y==1], np.zeros(int(y.sum())) - 2.5, c='green', marker='^', s=50, label='Preferred A')
-ax.scatter(X_B[y==0], np.zeros(int((1-y).sum())) - 2.5, c='red', marker='v', s=50, label='Preferred B')
-ax.set_xlabel('x')
-ax.set_ylabel('r(x)')
-ax.set_title(f'GP Preference Learning via Laplace Approximation ({n_comparisons} comparisons)')
-ax.legend(loc='upper left')
-ax.grid(True, alpha=0.3)
+plt.figure()
+plt.fill_between(X_grid.flatten(), mu_pred - 2*std_pred, mu_pred + 2*std_pred,
+                 alpha=0.3, color='blue', label='95% CI')
+plt.plot(X_grid, mu_pred, 'b-', lw=2, label='GP posterior mean')
+plt.plot(X_grid, true_reward(X_grid), 'k--', lw=2, label='True reward')
+plt.scatter(X_A[y==1], np.zeros(int(y.sum())) - 2.5, c='green', marker='^', s=50, label='Preferred A')
+plt.scatter(X_B[y==0], np.zeros(int((1-y).sum())) - 2.5, c='red', marker='v', s=50, label='Preferred B')
+plt.xlabel('x')
+plt.ylabel('r(x)')
+plt.title(f'GP Preference Learning via Laplace Approximation ({n_comparisons} comparisons)')
+plt.legend(loc='upper left')
+plt.grid(True, alpha=0.3)
 plt.tight_layout()
 plt.show()
 
@@ -711,15 +731,14 @@ for lam in lambdas:
     test_aucs.append(auc_from_scores(s_te, y_te_s))
 
 # Plot validation curve
-plt.figure(figsize=(5, 3.5))
+plt.figure()
 plt.semilogx(lambdas, train_aucs, 'o-', label='Train AUC', markersize=8)
 plt.semilogx(lambdas, test_aucs, 's-', label='Test AUC', markersize=8)
-plt.xlabel(r'Regularization strength $\lambda$')
+plt.xlabel(r'$\lambda$')
 plt.ylabel('AUC')
-plt.title('Validation Curve: Regularization vs Performance')
+plt.title('Validation Curve')
 plt.legend()
 plt.grid(True, alpha=0.3)
-plt.tight_layout()
 plt.show()
 
 # Report optimal lambda
@@ -768,7 +787,7 @@ V_es, tr_hist, val_hist = fit_bt_with_validation(
 # Find early stopping point (best validation performance)
 best_epoch = np.argmax(val_hist)
 
-plt.figure(figsize=(5, 3.5))
+plt.figure()
 plt.plot(tr_hist, label='Train AUC', alpha=0.7)
 plt.plot(val_hist, label='Validation AUC', alpha=0.7)
 plt.axvline(best_epoch, color='red', linestyle='--', label=f'Best epoch: {best_epoch}')
@@ -814,6 +833,7 @@ The final CV score is the average across all $k$ folds: $\text{CV}_k = \frac{1}{
 For preference data, we partition the set of observed pairwise comparisons (not items) into folds, ensuring each fold contains a representative sample of comparisons.
 
 ```{pyodide-python}
+#| autorun: true
 def kfold_split_pairs(r_idx, c_idx, y_obs, k=5, rng=None):
     """Split pairwise comparison data into k folds."""
     if rng is None:
@@ -866,6 +886,7 @@ The CV estimate of {cv_scores.mean():.4f} ± {cv_scores.std():.4f} is more relia
 Cross-validation enables principled hyperparameter selection: evaluate each candidate hyperparameter on CV performance and select the best. For Bradley-Terry, key hyperparameters include regularization strength $\lambda$ and learning rate.
 
 ```{pyodide-python}
+#| autorun: true
 # Grid search over regularization strengths using cross-validation
 lambda_grid = [0.0, 0.01, 0.05, 0.1, 0.5, 1.0]
 cv_means = []
@@ -880,14 +901,13 @@ cv_means = np.array(cv_means)
 cv_stds = np.array(cv_stds)
 
 # Plot CV performance vs hyperparameter
-plt.figure(figsize=(5, 3.5))
+plt.figure()
 plt.errorbar(lambda_grid, cv_means, yerr=cv_stds, fmt='o-', capsize=5, markersize=8)
 plt.xscale('log')
 plt.xlabel(r'Regularization strength $\lambda$')
 plt.ylabel('Cross-Validation AUC')
-plt.title('Hyperparameter Tuning via 5-Fold Cross-Validation')
+plt.title('Hyperparameter Tuning')
 plt.grid(True, alpha=0.3)
-plt.tight_layout()
 plt.show()
 
 best_lam_idx = np.argmax(cv_means)
@@ -908,6 +928,7 @@ $$ {#eq-log-likelihood-metric}
 **Calibration Error**: Measures whether predicted probabilities match empirical frequencies. Bin predictions into intervals (e.g., [0.0, 0.1), [0.1, 0.2), ...) and compare average predicted probability to observed frequency in each bin.
 
 ```{pyodide-python}
+#| autorun: true
 def compute_log_likelihood(V, r_idx, c_idx, y_obs):
     """Compute log-likelihood on test data."""
     s = V[r_idx] - V[c_idx]
@@ -988,16 +1009,19 @@ Modern optimizers address these issues through adaptive learning rates and momen
 
 **Adam** (Adaptive Moment Estimation) maintains running averages of both gradients and squared gradients, adapting the learning rate per parameter. The update rule is:
 
-\begin{align}
-m_t &\leftarrow \beta_1 m_{t-1} + (1 - \beta_1) g_t && \text{(momentum)} \\
-v_t &\leftarrow \beta_2 v_{t-1} + (1 - \beta_2) g_t^2 && \text{(variance)} \\
-\hat{m}_t &\leftarrow m_t / (1 - \beta_1^t), \quad \hat{v}_t \leftarrow v_t / (1 - \beta_2^t) && \text{(bias correction)} \\
-V &\leftarrow V + \alpha \frac{\hat{m}_t}{\sqrt{\hat{v}_t} + \epsilon} && \text{(parameter update)}
-\end{align} {#eq-adam-update}
+$$
+\begin{aligned}
+m_t &\leftarrow \beta_1 m_{t-1} + (1 - \beta_1) g_t \quad &\text{(momentum)} \\
+v_t &\leftarrow \beta_2 v_{t-1} + (1 - \beta_2) g_t^2 \quad &\text{(variance)} \\
+\hat{m}_t &\leftarrow m_t / (1 - \beta_1^t), \quad \hat{v}_t \leftarrow v_t / (1 - \beta_2^t) \quad &\text{(bias correction)} \\
+V &\leftarrow V + \alpha \frac{\hat{m}_t}{\sqrt{\hat{v}_t} + \epsilon} \quad &\text{(parameter update)}
+\end{aligned}
+$$ {#eq-adam-update}
 
 where $g_t$ is the gradient at step $t$, $\beta_1 = 0.9$ and $\beta_2 = 0.999$ are typical, and $\epsilon = 10^{-8}$ prevents division by zero.
 
 ```{pyodide-python}
+#| autorun: true
 def fit_bt_adam(r_idx, c_idx, y_obs, M, lr=0.1, epochs=200, beta1=0.9, beta2=0.999, eps=1e-8):
     """Fit Bradley-Terry using Adam optimizer."""
     V = np.zeros(M)
@@ -1052,7 +1076,7 @@ for epoch in range(150):
 loss_gd = np.array(loss_gd)
 
 # Plot convergence comparison
-plt.figure(figsize=(5, 3.5))
+plt.figure()
 plt.plot(loss_gd, label='Gradient Descent (lr=0.05)', alpha=0.8)
 plt.plot(loss_adam, label='Adam (lr=0.1)', alpha=0.8)
 plt.xlabel('Epoch')
@@ -1061,7 +1085,6 @@ plt.title('Optimization Comparison: GD vs Adam')
 plt.legend()
 plt.grid(True, alpha=0.3)
 plt.yscale('log')
-plt.tight_layout()
 plt.show()
 
 print(f"Final loss - GD: {loss_gd[-1]:.4f}, Adam: {loss_adam[-1]:.4f}")
@@ -1102,6 +1125,7 @@ We now apply all three parameter learning methods to a realistic preference lear
 We simulate a setting where a language model generates multiple responses to prompts, and human annotators provide pairwise preferences. Each response is represented by a learned embedding (e.g., from a pretrained model), and the true utility is a linear function of this embedding plus noise.
 
 ```{pyodide-python}
+#| autorun: true
 # Simulate LLM response preference data
 rng_llm = np.random.default_rng(2024)
 
@@ -1160,6 +1184,7 @@ This synthetic dataset mimics real LLM preference data: responses have embedding
 We apply MLE, Bayesian inference, and online learning (Elo) to the same data and compare results.
 
 ```{pyodide-python}
+#| autorun: true
 # Split into train/test (80/20)
 n_train = int(0.8 * n_comparisons)
 train_idx = rng_llm.choice(n_comparisons, n_train, replace=False)
@@ -1176,9 +1201,43 @@ y_test = comparison_labels[test_idx]
 # Method 1: Maximum Likelihood with L2 Regularization
 V_mle = fit_regularized_bt(r_train, c_train, y_train, n_responses, lam=0.05, lr=0.1, epochs=300)
 
-# Method 2: Bayesian Inference (simplified - just get point estimate from posterior mean)
-# Full MCMC would be expensive; here we use MAP estimate (equivalent to regularized MLE)
-V_bayes = fit_regularized_bt(r_train, c_train, y_train, n_responses, lam=0.1, lr=0.1, epochs=300)
+# Method 2: Bayesian Inference via MCMC (Metropolis-Hastings)
+def mcmc_bradley_terry(r, c, y, n_items, prior_std=1.0, n_samples=2000, burnin=500, step_size=0.15):
+    """Sample from posterior of Bradley-Terry utilities using Metropolis-Hastings."""
+    def log_posterior(V):
+        diff = V[r] - V[c]
+        ll = np.sum(y * diff - np.log(1 + np.exp(diff)))  # log-likelihood
+        lp = -0.5 * np.sum(V**2) / prior_std**2  # log-prior: N(0, prior_std^2)
+        return ll + lp
+
+    # Initialize at MAP estimate for faster convergence
+    V_current = fit_regularized_bt(r, c, y, n_items, lam=1.0/prior_std**2, lr=0.1, epochs=200)
+    V_current = V_current - V_current.mean()
+    log_p_current = log_posterior(V_current)
+    samples = []
+
+    for t in range(n_samples + burnin):
+        # Propose: random walk on one randomly chosen utility
+        V_proposed = V_current.copy()
+        idx = np.random.randint(n_items)
+        V_proposed[idx] += np.random.randn() * step_size
+        V_proposed = V_proposed - V_proposed.mean()  # maintain centering
+
+        # Accept/reject
+        log_p_proposed = log_posterior(V_proposed)
+        if np.log(np.random.rand()) < log_p_proposed - log_p_current:
+            V_current, log_p_current = V_proposed, log_p_proposed
+
+        if t >= burnin:
+            samples.append(V_current.copy())
+
+    return np.array(samples)
+
+np.random.seed(42)
+V_samples = mcmc_bradley_terry(r_train, c_train, y_train, n_responses,
+                                prior_std=1.0, n_samples=1500, burnin=500)
+V_bayes = V_samples.mean(axis=0)  # Posterior mean
+V_bayes_std = V_samples.std(axis=0)  # Posterior uncertainty
 
 # Method 3: Online Learning (Elo) - process comparisons sequentially
 V_elo = np.zeros(n_responses)
@@ -1228,26 +1287,65 @@ print("\n=== Method Comparison ===")
 print(f"{'Method':<20} {'Test AUC':<12} {'Test LL':<12} {'Corr w/ True':<15}")
 print("-" * 60)
 print(f"{'MLE (λ=0.05)':<20} {auc_mle:<12.4f} {ll_mle:<12.2f} {corr_mle:<15.4f}")
-print(f"{'Bayesian (λ=0.1)':<20} {auc_bayes:<12.4f} {ll_bayes:<12.2f} {corr_bayes:<15.4f}")
+print(f"{'Bayesian (MCMC)':<20} {auc_bayes:<12.4f} {ll_bayes:<12.2f} {corr_bayes:<15.4f}")
 print(f"{'Online (Elo K=0.1)':<20} {auc_elo:<12.4f} {ll_elo:<12.2f} {corr_elo:<15.4f}")
 
-# Visualize learned vs true utilities
-fig, axes = plt.subplots(1, 3, figsize=(12, 3.5))
+# Visualize learned vs true utilities (MLE and Elo)
+plt.figure()
+fig, axes = plt.subplots(1, 2)
 
-for ax, V_learned, method, corr in zip(axes, 
-                                         [V_mle_aligned, V_bayes_aligned, V_elo_aligned],
-                                         ['MLE', 'Bayesian', 'Elo'],
-                                         [corr_mle, corr_bayes, corr_elo]):
+for ax, V_learned, method, corr in zip(axes,
+                                         [V_mle_aligned, V_elo_aligned],
+                                         ['MLE', 'Elo'],
+                                         [corr_mle, corr_elo]):
     ax.scatter(true_utilities, V_learned, alpha=0.6, s=30)
-    ax.plot([true_utilities.min(), true_utilities.max()], 
-            [true_utilities.min(), true_utilities.max()], 
+    ax.plot([true_utilities.min(), true_utilities.max()],
+            [true_utilities.min(), true_utilities.max()],
             'r--', alpha=0.5)
     ax.set_xlabel('True Utility')
     ax.set_ylabel('Learned Utility')
     ax.set_title(f'{method} (r={corr:.3f})')
     ax.grid(True, alpha=0.3)
 
-plt.tight_layout()
+plt.show()
+
+# Bayesian visualization with posterior uncertainty and marginal distributions
+fig = plt.figure(layout='constrained')
+gs = fig.add_gridspec(2, 2, width_ratios=[4, 1], height_ratios=[1, 4],
+                      hspace=0.05, wspace=0.05)
+
+ax_main = fig.add_subplot(gs[1, 0])
+ax_top = fig.add_subplot(gs[0, 0], sharex=ax_main)
+ax_right = fig.add_subplot(gs[1, 1], sharey=ax_main)
+
+# Main scatter with error bars showing posterior std
+ax_main.errorbar(true_utilities, V_bayes_aligned, yerr=V_bayes_std * 1.96,
+                 fmt='o', alpha=0.5, markersize=4, capsize=2, elinewidth=0.5,
+                 label='Posterior mean ± 95% CI')
+ax_main.plot([true_utilities.min(), true_utilities.max()],
+             [true_utilities.min(), true_utilities.max()], 'r--', alpha=0.5)
+ax_main.set_xlabel('True Utility')
+ax_main.set_ylabel('Learned Utility (Posterior Mean)')
+ax_main.grid(True, alpha=0.3)
+ax_main.legend(loc='upper left', fontsize=8)
+
+# Marginal histogram/KDE for true utilities (top)
+ax_top.hist(true_utilities, bins=20, density=True, alpha=0.7, color='steelblue')
+ax_top.set_ylabel('Density')
+ax_top.tick_params(labelbottom=False)
+
+# Marginal showing posterior samples distribution (right)
+# Sample a few posterior draws to show uncertainty
+for sample in V_samples[::100]:  # every 100th sample
+    sample_aligned = align_utilities(sample, true_utilities)
+    ax_right.hist(sample_aligned, bins=20, density=True, alpha=0.1,
+                  color='orange', orientation='horizontal')
+ax_right.hist(V_bayes_aligned, bins=20, density=True, alpha=0.7,
+              color='darkorange', orientation='horizontal', label='Posterior mean')
+ax_right.set_xlabel('Density')
+ax_right.tick_params(labelleft=False)
+
+fig.suptitle(f'Bayesian Inference (r={corr_bayes:.3f})', y=0.98)
 plt.show()
 ```
 
@@ -1256,7 +1354,7 @@ plt.show()
 The three methods yield similar performance on this synthetic LLM preference task:
 
 1. **MLE** is fastest and most scalable, suitable for large-scale applications
-2. **Bayesian** inference (here approximated via MAP) provides similar point estimates but can quantify uncertainty (full MCMC omitted for brevity)
+2. **Bayesian** inference via MCMC provides posterior distributions over utilities, enabling uncertainty quantification—the marginal plot shows how posterior samples vary, and error bars show 95% credible intervals
 3. **Online (Elo)** learns incrementally, ideal for streaming data but may be less data-efficient than batch methods
 
 All methods successfully recover utilities correlated with the ground truth despite 10% label noise, demonstrating robustness. In production LLM alignment:
