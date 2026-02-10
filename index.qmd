@@ -3,10 +3,10 @@
 ::: {.content-visible when-format="html"}
 
 <iframe
-  src="slides/1.introduction.html"
+  src="slides/chap0.html"
   style="width:50%; height:250px;"
 ></iframe>
-[Fullscreen Slide](slides/1.introduction.html){.btn .btn-outline-primary .btn role="button"}
+[Fullscreen Slide](slides/chap0.html){.btn .btn-outline-primary .btn role="button"}
 
 :::
 
@@ -19,39 +19,39 @@ We hope with the present book to both allow more use of human preferences in mac
 Stanford, May 2025, THK
 
 ## Structure of this book
-The book has three parts which introduce fundamental models, present learning paradigms, and discuss assumptions.
+The book has three parts which introduce foundational models, present learning paradigms, and discuss societal considerations.
 
-### Part 1: Background
-We provide background on axioms underlying comparisons in **Chapter 1**. We discover key modeling assumptions. It covers random preference models, the Independence of Irrelevant Alternatives (IIA), and types of comparison data (binary rankings, accept-reject, lists). The chapter also discusses the main limitations of IIA based on heterogeneity.
+### Part 1: Foundations
+**Chapter 1** lays the mathematical groundwork for the rest of the book. It covers random preference models, types of comparison data (binary rankings, accept-reject, lists), and deterministic and stochastic utility models including the Rasch model, Bradley-Terry, and Gaussian Processes. A central theme is the Independence of Irrelevant Alternatives (IIA) axiom: how it simplifies modeling, its connection to modern methods like DPO and Elo, and its key limitations due to population heterogeneity.
 
 ### Part 2: Learning
-The second part introduces several approaches to learning from comparisons.
+The second part introduces approaches to learning from and acting on comparisons.
 
--   **Chapter 2** considers a setting where comparison data is given and studies both maximum likelihood and posterior-based learning of comparison models. It uses case studies from language modeling and robotics. We discuss the challenges in learning multimodal/heterogenous rewards that fail to satisfy IIA.
+-   **Chapter 2** studies how to infer utility from preference data. It covers maximum likelihood estimation, Bayesian inference via MCMC and Laplace approximation, and online learning through Elo ratings as stochastic gradient descent. The chapter also addresses regularization, model selection via cross-validation, and modern optimization methods, with a case study on LLM preference learning.
 
--   **Chapter 3** considers active data collection of comparisons with the goal of optimal inference on comparison models. Various strategies are explored, including reducing the learner's variance, exploiting ambiguity and domain knowledge in ranking, with a case study from robotics.
+-   **Chapter 3** considers active data collection with the goal of efficient preference elicitation. Fisher information quantifies how much each comparison teaches us, enabling optimal query selection via A-optimal, D-optimal, and E-optimal design criteria. The chapter includes applications to robotic trajectory learning and active DPO for language model alignment.
 
--   **Chapter 4** studies processes where comparisons are used to guide decisions. We first set up the bandit approach to recommending maximal objects with respect to comparisons, and discuss dueling bandits. We then consider reinforcement learning from human feedback (RLHF) to align language models that decide on which text to generate. We highlight the role of uncertainty quantification and exploration for decision-making.
+-   **Chapter 4** studies how learned preferences guide sequential decisions under uncertainty. It introduces Thompson Sampling for both linear and nonlinear objectives, dueling bandits with distinct winner concepts (Condorcet, Borda, von Neumann), preferential Bayesian optimization, and human-agent cooperation through CIRL.
 
--   **Chapter 5** considers decision-making in the presence of heterogeneity. We first focus on dealing with heterogeneity to maximize average utility using **personalization**. We then discuss aggregation mechanisms that are voting-based and decisions that are independent of some features of the outcome.
+### Part 3: Society
+The final part of the book addresses the societal dimensions of preference learning: how to aggregate diverse preferences and whose preferences should count.
 
-### Part 3: Reflection
-The final part of the book discusses limitations of comparison data, and opportunities resulting from stated preference data.
+-   **Chapter 5** examines preference aggregation when multiple stakeholders disagree. It introduces social choice theory, Arrow's and Gibbard-Satterthwaite's impossibility theorems, and ways to escape these impossibilities through domain restrictions and scoring rules. It connects the Borda count to DPO, discusses nosy preferences and the liberal paradox, analyzes Community Notes as a case study, and covers mechanism design for incentive-compatible preference elicitation.
 
--   **Chapter 6** critiques machine learning from comparisons. It takes different disciplinary lenses, from social psychology, philosophy, and critical studies, to highlight where comparisons are limited in the expression of human preferences, and what are alternatives.
+-   **Chapter 6** asks a normative question: *whose preferences matter?* It shows how technical design choices at each stage of the preference learning pipeline embed value judgments. The chapter covers individual and group fairness, how unfairness compounds across pipeline stages, and design principles for responsible preference learning systems, including human values, AI alignment, and human-centered design.
 
--   **Chapter 7** considers models that are broader than comparisons in our model, many of which we can think of as **stated preferences**. These are models in which value judgments are given in terms of Likert scales or textual descriptions. We propose ways in how such feedback can be merged with comparison data to better express preferences.
+**Chapter 7** concludes the book by reflecting on its interdisciplinary approach and discussing open challenges, including moving beyond pairwise comparisons, scalable oversight, heterogeneity and personalization, fairness, and foundation model alignment.
 
 ## How to engage with this book
-There are three models of reading, and teaching with, this book. Chapter 1 is underlying all of the book, so is part of all of these pathways. 
+There are four models of reading, and teaching with, this book. Chapter 1 is foundational to all of the book, so is part of all of these pathways.
 
- - For practitioners and those teaching applied AI content, we recommend a reading of Chapters 1, 2, 4, and 7, which can be used as a sequence in an early graduate course on Machine Learning. This sequence allows highlighting human data sources in an introductory machine learning course.
+ - For practitioners and those teaching applied AI content, we recommend Chapters 1, 2, and 4, which can be used as a sequence in an early graduate course on Machine Learning. This sequence covers foundations, learning methods, and decision-making with human preferences.
 
  - For people with background in discrete choice, we propose to skim Chapter 1, and study Chapters 2 and 4. These studies allow readers to integrate machine learning in their studies of discrete choice, demand models, and Industrial Organization.
 
- - For those with deep background in machine learning, we propose to study Chapters 2-4 and 7. These chapters maximize the amount of machine learning covered, and are suitable for a deep learning-based course on machine learning.
+ - For those with deep background in machine learning, we propose to study Chapters 2-4. These chapters maximize the amount of machine learning covered, and are suitable for a deep learning-based course on machine learning.
 
- - For those interested in the methodological and theoretical foundations of machine learning from comparisons, we recommend a reading of Chapters 1, 5, 6, and 7. Chapters 1 and 5 study the underpinnings of revealed preferences and aggregation, Chapter 6 critiques these assumptions, and Chapter 7 looks at broader ways of eliciting preferences. It is suitable for critical study in a course on Computation and Society. 
+ - For those interested in the societal and theoretical foundations of machine learning from comparisons, we recommend Chapters 1, 5, and 6. Chapter 1 establishes the modeling foundations, Chapter 5 studies aggregation and mechanism design, and Chapter 6 examines fairness and value alignment. This pathway is suitable for a course on Computation and Society.
 
 ## Prior knowledge
 The book assumes knowledge of the fundamentals of statistics, linear algebra and machine learning. Many example code excerpts are written in `python`, and make experience in the `python` programming language valuable for readers.

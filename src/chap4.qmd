@@ -37,15 +37,10 @@ filters:
 ::: {.content-visible when-format="html"}
 
 <iframe
-  src="../slides/4.1.dueling_bandit.html"
-  style="width:45%; height:225px;"
+  src="../slides/chap4.html"
+  style="width:80%; height:225px;"
 ></iframe>
-<iframe
-  src="../slides/4.2.preferential_baysian_optimization.html"
-  style="width:45%; height:225px;"
-></iframe>
-[Fullscreen Part 1](../slides/4.1.dueling_bandit.html){.btn .btn-outline-primary .btn role="button"}
-[Fullscreen Part 2](../slides/4.2.preferential_baysian_optimization.html){.btn .btn-outline-primary .btn role="button"}
+[Fullscreen Slides](../slides/chap4.html){.btn .btn-outline-primary .btn role="button"}
 
 :::
 
@@ -86,14 +81,171 @@ New notation for this chapter:
 - Preference function: $\pi_f([\mathbf{x}, \mathbf{x}'])$ — probability that $\mathbf{x}$ is preferred to $\mathbf{x}'$
 :::
 
+::: {.callout-tip title="Suggested Lecture Plan" collapse="true"}
+This chapter can be covered in four 50-minute lectures:
+
+**Lecture 1** (Sections 4.1–4.2): Thompson Sampling
+
+- Motivation: From measurement to decision-making (10 min)
+- Exploration-exploitation tradeoff (10 min)
+- Thompson Sampling with Laplace approximation (linear case) (15 min)
+- Code demo: Linear Thompson Sampling simulation (15 min)
+
+**Lecture 2** (Sections 4.2–4.3): GP Thompson Sampling and Dueling Bandits
+
+- Gaussian Process Thompson Sampling (nonlinear case) (20 min)
+- From multi-armed bandits to dueling bandits (15 min)
+- Regret definitions and winner concepts (15 min)
+
+**Lecture 3** (Sections 4.3–4.4): Dueling Bandit Algorithms and Applications
+
+- Acquisition functions: Uniform, ε-Greedy, UCB (10 min)
+- Interleaved Filter algorithm (15 min)
+- DBGD, Sparring EXP4, Feel-good Thompson Sampling (10 min)
+- Case studies: LLM response selection and clinical trials (15 min)
+
+**Lecture 4** (Sections 4.5–4.6): Preferential Bayesian Optimization and CIRL
+
+- PBO problem formulation and Copeland scores (15 min)
+- Acquisition functions: qEUBO, Pure Exploration, POP-BO (15 min)
+- CIRL: From passive oracles to active human agents (15 min)
+- Discussion: Choice architecture and responsible deployment (5 min)
+:::
+
+## Chapter Overview
+
+Chapter 1 developed models for how preferences arise from latent utilities. Chapter 2 showed how to estimate these utilities from observed data. Chapter 3 addressed how to *collect* data efficiently through active query selection. This chapter tackles the complementary question: **given uncertainty about user preferences, how should we choose actions to maximize reward?**
+
+The shift is subtle but important. Chapter 3's measurement perspective treats uncertainty as something to be *reduced*---the goal is to learn the preference function as accurately as possible. This chapter's reward maximization perspective treats uncertainty as something to be *managed*---the goal is to make good decisions *now*, even with incomplete knowledge. Consider an LLM serving system: it must decide which response to show each user, balancing exploitation (showing responses it believes are good) against exploration (trying novel responses to learn what users prefer).
+
+**Chapter Structure.** We build from simple to complex settings:
+
+1. **Thompson Sampling** (@sec-thompson-sampling): Linear and nonlinear (GP) approaches to sequential decision-making with preference feedback
+2. **Dueling Bandits** (@sec-borda): When actions can only be compared pairwise, introducing regret notions and winner concepts (Condorcet, Borda, von Neumann)
+3. **Applications**: Case studies connecting these methods to LLM alignment and clinical trials
+4. **Preferential Bayesian Optimization**: Advanced acquisition functions (qEUBO, POP-BO) with convergence guarantees
+5. **Human-Agent Cooperation (CIRL)**: Moving beyond passive oracles to model humans as strategic agents
+
+**Connections to Prior Chapters:**
+
+| Concept | Chapters 1–3 | This Chapter |
+|---------|-------------|--------------|
+| Bradley-Terry model | Likelihood, MLE, Fisher info | Dueling bandit preference model, LLM selection |
+| Laplace approximation | GP posterior inference | Thompson Sampling posterior |
+| Acquisition functions | D-optimal, info gain (Ch. 3) | UCB, qEUBO, Pure Exploration |
+| DPO / reward learning | Objective function, ADPO (Ch. 3) | Reward maximization under uncertainty |
+| Winner concepts | — | Condorcet, Borda, von Neumann → reappear in Ch. 5 |
+
 ## The Reward Maximization under Uncertainty Problem
-Up to this point, we have considered the measurement problem: the goal was to learn about the user’s latent construct $h_i$ (or its low-dimensional embedding $U_i$) by choosing items that are most informative about it. In this view, uncertainty is something to be reduced. In contrast, the reward maximization perspective treats uncertainty as something to be managed. Here, the system must choose actions (items) that yield the highest expected reward, even though the latent function $h_i$ governing user preferences is unknown. This is the domain of Bayesian optimization formulations.
 
-Each user $i$ interacts with a set of available items indexed by $j$, each characterized by a known parameter vector $V_j \in \mathbb{R}^K$. The user’s utility function is $H_{ij} = h_i(V_j),$ where $h_i: \mathbb{R}^K \rightarrow \mathbb{R}$ maps item features to latent utility. We only observe noisy or partial feedback, such as item-wise or pairwise responses. The agent’s objective is to select items sequentially to maximize reward. 
+::: {.callout-tip title="Historical Note: Thompson Sampling"}
+Thompson Sampling dates back to 1933, when William Thompson proposed it for clinical trials. For decades it was largely forgotten, overshadowed by frequentist methods like UCB (Upper Confidence Bound). Its rediscovery in the 2010s, particularly for online advertising and recommendation systems, revealed that this simple Bayesian algorithm often outperforms more complex alternatives. The key insight: **sample a plausible world from your beliefs, then act optimally within it**.
+:::
 
-In the linear case, we assume $h_i(V_j) = U_i^\top V_j$, with $U_i \in \mathbb{R}^K$ representing the user’s latent vector. This recovers the logistic or Rasch model when observations are binary: $p(Y_{ij}=1) = \sigma(U_i^\top V_j).$ In this setting, the uncertainty about $U_i$ defines a posterior distribution (p(U_i \mid \text{data})), and the system’s exploration–exploitation tradeoff can be quantified by the expected utility and posterior variance. Algorithms such as Thompson Sampling operate directly on this posterior, balancing exploration (reducing uncertainty about $U_i$) and exploitation (recommending high-utility $V_j$).
+The fundamental tension in sequential decision-making is the **exploration-exploitation tradeoff**:
 
-In the nonlinear case, a common choice is to place a Gaussian process prior over $h_i$: $h_i \sim \mathcal{GP}(m(\cdot), k(\cdot,\cdot)),$ where the kernel $k(V, V')$ encodes similarity between items. This yields the Bayesian optimization formulation. The system uses acquisition functions (e.g., Thompson Sampling or expected improvement) to trade off exploitation and exploration.
+- **Exploitation**: Choose actions believed to be good based on current knowledge
+- **Exploration**: Try uncertain actions to gain information for better future decisions
+
+A purely exploitative strategy may miss superior options it never tried. A purely explorative strategy wastes resources on suboptimal choices. Effective algorithms balance both.
+
+Each user $i$ interacts with a set of available items indexed by $j$, each characterized by a known parameter vector $V_j \in \mathbb{R}^K$. The user's utility function is $H_{ij} = h_i(V_j),$ where $h_i: \mathbb{R}^K \rightarrow \mathbb{R}$ maps item features to latent utility. We only observe noisy or partial feedback, such as item-wise or pairwise responses. The agent's objective is to select items sequentially to maximize reward.
+
+In the **linear case**, we assume $h_i(V_j) = U_i^\top V_j$, with $U_i \in \mathbb{R}^K$ representing the user's latent vector. This recovers the logistic or Rasch model when observations are binary: $p(Y_{ij}=1) = \sigma(U_i^\top V_j).$ In this setting, the uncertainty about $U_i$ defines a posterior distribution $p(U_i \mid \text{data})$, and the system's exploration–exploitation tradeoff can be quantified by the expected utility and posterior variance. Algorithms such as Thompson Sampling operate directly on this posterior, balancing exploration (reducing uncertainty about $U_i$) and exploitation (recommending high-utility $V_j$).
+
+In the **nonlinear case**, a common choice is to place a Gaussian process prior over $h_i$: $h_i \sim \mathcal{GP}(m(\cdot), k(\cdot,\cdot)),$ where the kernel $k(V, V')$ encodes similarity between items. This yields the Bayesian optimization formulation. The system uses acquisition functions (e.g., Thompson Sampling or expected improvement) to trade off exploitation and exploration.
+
+{{< include _plt_setup.qmd >}}
+
+::: {.callout-note title="Code: Exploration vs Exploitation Visualization" collapse="false"}
+
+```{pyodide-python}
+#| autorun: true
+# Visualize the exploration-exploitation tradeoff
+np.random.seed(42)
+
+# True reward function (unknown to agent)
+n_arms = 10
+true_means = np.random.beta(2, 5, n_arms) * 0.8 + 0.1  # Random rewards in [0.1, 0.9]
+best_arm = np.argmax(true_means)
+
+def simulate_policy(policy_fn, T=200):
+    """Simulate a policy and track cumulative reward."""
+    rewards = []
+    arm_counts = np.zeros(n_arms)
+    arm_rewards = np.zeros(n_arms)
+
+    for t in range(T):
+        arm = policy_fn(t, arm_counts, arm_rewards)
+        reward = np.random.binomial(1, true_means[arm])
+        arm_counts[arm] += 1
+        arm_rewards[arm] += reward
+        rewards.append(reward)
+
+    return np.cumsum(rewards), arm_counts
+
+# Greedy (pure exploitation after initial exploration)
+def greedy(t, counts, rewards):
+    if t < n_arms:
+        return t
+    means = np.where(counts > 0, rewards / counts, 0)
+    return np.argmax(means)
+
+# Random (pure exploration)
+def random_policy(t, counts, rewards):
+    return np.random.randint(n_arms)
+
+# Epsilon-greedy (balanced)
+def eps_greedy(t, counts, rewards, eps=0.1):
+    if np.random.rand() < eps or t < n_arms:
+        return np.random.randint(n_arms)
+    means = np.where(counts > 0, rewards / counts, 0)
+    return np.argmax(means)
+
+# Thompson Sampling (Bayesian)
+def thompson(t, counts, rewards):
+    samples = np.random.beta(rewards + 1, counts - rewards + 1)
+    return np.argmax(samples)
+
+# Run simulations
+T = 200
+cum_greedy, _ = simulate_policy(greedy, T)
+cum_random, _ = simulate_policy(random_policy, T)
+cum_eps, _ = simulate_policy(lambda t, c, r: eps_greedy(t, c, r, 0.1), T)
+cum_ts, counts_ts = simulate_policy(thompson, T)
+
+# Optimal cumulative reward
+optimal = np.arange(1, T+1) * true_means[best_arm]
+
+fig, axes = plt.subplots(1, 2, figsize=(8, 3))
+
+# Left: Cumulative reward
+axes[0].plot(range(1, T+1), optimal, 'k--', linewidth=1, label='Optimal', alpha=0.7)
+axes[0].plot(range(1, T+1), cum_ts, 'b-', linewidth=1.5, label='Thompson Sampling')
+axes[0].plot(range(1, T+1), cum_eps, 'g-', linewidth=1, label='ε-greedy (ε=0.1)', alpha=0.8)
+axes[0].plot(range(1, T+1), cum_greedy, 'r-', linewidth=1, label='Greedy', alpha=0.8)
+axes[0].plot(range(1, T+1), cum_random, 'gray', linewidth=1, label='Random', alpha=0.6)
+axes[0].set_xlabel('Round $t$')
+axes[0].set_ylabel('Cumulative Reward')
+axes[0].set_title('Exploration-Exploitation Tradeoff')
+axes[0].legend(fontsize=6, loc='upper left')
+axes[0].grid(True, alpha=0.3)
+
+# Right: Arm selection frequency for Thompson Sampling
+colors = ['green' if i == best_arm else 'steelblue' for i in range(n_arms)]
+axes[1].bar(range(n_arms), counts_ts, color=colors, alpha=0.7)
+axes[1].set_xlabel('Arm')
+axes[1].set_ylabel('Times Selected')
+axes[1].set_title('Thompson Sampling Arm Selection')
+axes[1].set_xticks(range(n_arms))
+
+plt.tight_layout()
+plt.show()
+print(f"Best arm: {best_arm} (mean reward: {true_means[best_arm]:.3f})")
+print(f"Thompson Sampling selected best arm {int(counts_ts[best_arm])}/{T} times ({100*counts_ts[best_arm]/T:.0f}%)")
+```
+
+:::
 
 ## Thompson Sampling under Linear Objective {#sec-thompson-sampling}
 
@@ -238,6 +390,137 @@ j_star = scores.argmax().item()
 print(f"Next item to recommend: {j_star}")
 ```
 
+::: {.callout-note title="Code: Linear Thompson Sampling Simulation" collapse="false"}
+
+This simulation runs Thompson Sampling with linear utility over multiple rounds, tracking how the posterior concentrates and regret accumulates.
+
+```{pyodide-python}
+#| autorun: true
+# Linear Thompson Sampling simulation
+np.random.seed(42)
+
+# Setup: 2D user embedding, 30 items
+K = 2  # Embedding dimension
+n_items = 30
+T = 50  # Number of rounds
+
+# True user embedding (unknown to algorithm)
+U_true = np.array([1.0, -0.5])
+
+# Item features
+V = np.random.randn(n_items, K)
+true_probs = 1 / (1 + np.exp(-V @ U_true))
+best_item = np.argmax(V @ U_true)
+
+def sigmoid(x):
+    return 1 / (1 + np.exp(-np.clip(x, -500, 500)))
+
+def linear_ts_step(U_hat, U_cov, V_available):
+    """Thompson Sampling: sample from posterior, select best item."""
+    # Sample from approximate posterior
+    U_sample = np.random.multivariate_normal(U_hat, U_cov)
+    # Select item with highest sampled utility
+    scores = V_available @ U_sample
+    return np.argmax(scores), U_sample
+
+def update_posterior(U_hat, U_cov, V_obs, Y_obs):
+    """Update posterior via Laplace approximation (Newton step)."""
+    n_obs = len(Y_obs)
+    if n_obs == 0:
+        return U_hat, U_cov
+
+    # Newton-Raphson for MAP
+    for _ in range(10):
+        p = sigmoid(V_obs @ U_hat)
+        grad = V_obs.T @ (Y_obs - p) - U_hat  # Gradient (with N(0,I) prior)
+        W = np.diag(p * (1 - p))
+        H = V_obs.T @ W @ V_obs + np.eye(K)  # Hessian
+        U_hat = U_hat + np.linalg.solve(H, grad)
+
+    # Posterior covariance
+    p = sigmoid(V_obs @ U_hat)
+    W = np.diag(p * (1 - p))
+    U_cov = np.linalg.inv(V_obs.T @ W @ V_obs + np.eye(K))
+    return U_hat, U_cov
+
+# Run simulation
+U_hat = np.zeros(K)
+U_cov = np.eye(K)
+V_obs, Y_obs = [], []
+regret = []
+cumulative_regret = 0
+posterior_history = [(U_hat.copy(), U_cov.copy())]
+
+for t in range(T):
+    # Thompson Sampling step
+    j, U_sample = linear_ts_step(U_hat, U_cov, V)
+
+    # Observe response
+    p = sigmoid(V[j] @ U_true)
+    y = 1 if np.random.rand() < p else 0
+
+    V_obs.append(V[j])
+    Y_obs.append(y)
+
+    # Update posterior
+    U_hat, U_cov = update_posterior(np.zeros(K), np.eye(K),
+                                     np.array(V_obs), np.array(Y_obs))
+    posterior_history.append((U_hat.copy(), U_cov.copy()))
+
+    # Track regret
+    instant_regret = (V[best_item] - V[j]) @ U_true
+    cumulative_regret += max(0, instant_regret)
+    regret.append(cumulative_regret)
+
+# Visualize
+fig, axes = plt.subplots(1, 3, figsize=(9, 3))
+
+# Left: Posterior evolution (2D)
+from matplotlib.patches import Ellipse
+ax = axes[0]
+for i, (mu, cov) in enumerate(posterior_history[::10]):
+    alpha = 0.3 + 0.7 * (i / (len(posterior_history) // 10))
+    eigenvalues, eigenvectors = np.linalg.eig(cov)
+    angle = np.degrees(np.arctan2(eigenvectors[1, 0], eigenvectors[0, 0]))
+    width, height = 2 * np.sqrt(eigenvalues)
+    ellipse = Ellipse(mu, width, height, angle=angle, alpha=alpha * 0.3,
+                      facecolor='blue', edgecolor='blue', linewidth=1)
+    ax.add_patch(ellipse)
+ax.scatter([U_true[0]], [U_true[1]], c='red', s=100, marker='*', zorder=5, label='True $U$')
+ax.scatter([U_hat[0]], [U_hat[1]], c='blue', s=50, marker='o', zorder=5, label='Estimated $\\hat{U}$')
+ax.set_xlabel('$U_1$')
+ax.set_ylabel('$U_2$')
+ax.set_title('Posterior Concentration')
+ax.set_xlim(-2, 2)
+ax.set_ylim(-2, 2)
+ax.legend(fontsize=7)
+ax.set_aspect('equal')
+ax.grid(True, alpha=0.3)
+
+# Middle: Estimation error over time
+errors = [np.linalg.norm(ph[0] - U_true) for ph in posterior_history]
+axes[1].plot(range(len(errors)), errors, 'b-', linewidth=1.5)
+axes[1].set_xlabel('Round')
+axes[1].set_ylabel('$\\|\\hat{U} - U^*\\|$')
+axes[1].set_title('Estimation Error')
+axes[1].grid(True, alpha=0.3)
+
+# Right: Cumulative regret
+axes[2].plot(range(1, T+1), regret, 'r-', linewidth=1.5)
+axes[2].set_xlabel('Round')
+axes[2].set_ylabel('Cumulative Regret')
+axes[2].set_title('Regret Growth')
+axes[2].grid(True, alpha=0.3)
+
+plt.tight_layout()
+plt.show()
+print(f"True U: {U_true}")
+print(f"Estimated U: {U_hat.round(3)}")
+print(f"Final cumulative regret: {regret[-1]:.2f}")
+```
+
+:::
+
 ## Thompson Sampling under Nonlinear Objective
 
 The linear formulation assumes that a user’s latent utility varies linearly with item features. In practice, preference landscapes are often **highly nonlinear**: users may favor intermediate difficulty, exhibit saturation, or respond differently to combinations of attributes. To capture such complex relations, we move from a **parametric vector representation** $(U_i)$ to a **nonparametric function representation** $(h_i)$.
@@ -280,6 +563,63 @@ This nonparametric formulation is advantageous because:
 * It **automatically adapts model complexity** to the data through the kernel.
 * It **provides closed-form posterior updates** under Gaussian noise.
 * It **generalizes across items** by exploiting smoothness in feature space.
+
+The **RBF (Radial Basis Function) kernel** is particularly common:
+$$
+k(V, V') = \sigma^2 \exp\left(-\frac{\|V - V'\|^2}{2\ell^2}\right),
+$$ {#eq-rbf-kernel}
+where $\ell$ is the **lengthscale** (controlling smoothness) and $\sigma^2$ is the **variance** (controlling amplitude). Small lengthscales produce wiggly functions; large lengthscales produce smooth functions.
+
+{{< include _plt_setup.qmd >}}
+
+::: {.callout-note title="Code: Kernel Comparison and GP Prior Samples" collapse="false"}
+
+```{pyodide-python}
+#| autorun: true
+# Visualize RBF kernels with different lengthscales
+def rbf_kernel(X1, X2, lengthscale=1.0, variance=1.0):
+    """RBF kernel between two sets of points."""
+    diff = X1[:, None] - X2[None, :]
+    return variance * np.exp(-0.5 * diff**2 / lengthscale**2)
+
+# Create a grid of points
+X = np.linspace(-3, 3, 100)
+
+# Compare kernels with different lengthscales
+lengthscales = [0.3, 1.0, 3.0]
+fig, axes = plt.subplots(2, 3, figsize=(7, 4))
+
+np.random.seed(42)
+for i, ls in enumerate(lengthscales):
+    # Top row: kernel covariance from center point
+    K_center = rbf_kernel(X, np.array([0.0]), lengthscale=ls).flatten()
+    axes[0, i].plot(X, K_center, 'b-', linewidth=1.5)
+    axes[0, i].set_title(f'$\\ell = {ls}$')
+    axes[0, i].set_ylabel('$k(x, 0)$' if i == 0 else '')
+    axes[0, i].set_xlabel('$x$')
+    axes[0, i].grid(True, alpha=0.3)
+
+    # Bottom row: sample functions from GP prior
+    K = rbf_kernel(X, X, lengthscale=ls) + 1e-6 * np.eye(len(X))
+    L = np.linalg.cholesky(K)
+    for _ in range(5):
+        f_sample = L @ np.random.randn(len(X))
+        axes[1, i].plot(X, f_sample, alpha=0.6, linewidth=0.8)
+    axes[1, i].set_ylabel('$h(x)$' if i == 0 else '')
+    axes[1, i].set_xlabel('$x$')
+    axes[1, i].set_ylim(-3, 3)
+    axes[1, i].grid(True, alpha=0.3)
+
+axes[0, 0].set_title(f'Kernel ($\\ell = 0.3$, wiggly)')
+axes[0, 1].set_title(f'Kernel ($\\ell = 1.0$, medium)')
+axes[0, 2].set_title(f'Kernel ($\\ell = 3.0$, smooth)')
+plt.tight_layout()
+plt.show()
+print("Top: Kernel covariance from center. Bottom: Random function samples from GP prior.")
+print("Smaller lengthscale → more variation; larger lengthscale → smoother functions.")
+```
+
+:::
 
 For **binary observations**,
 $$
@@ -468,8 +808,208 @@ j_star = f_sample.argmax().item()
 print(f"Next item index: {j_star}")
 ```
 
+::: {.callout-note title="Code: GP Posterior Visualization" collapse="false"}
 
-<!-- TODO: Briefly introduce expected improvement as another acquisition function -->
+The following code visualizes how the GP posterior updates after observing binary responses. The shaded region shows the 95% credible interval.
+
+```{pyodide-python}
+#| autorun: true
+# GP posterior visualization with binary observations
+def rbf_kernel_np(X1, X2, lengthscale=1.0, variance=1.0):
+    diff = X1[:, None] - X2[None, :]
+    return variance * np.exp(-0.5 * diff**2 / lengthscale**2)
+
+def gp_laplace_binary_np(X_obs, Y_obs, X_pred, lengthscale=1.0, variance=1.0, max_iter=10):
+    """GP classification with Laplace approximation (numpy version)."""
+    N = len(Y_obs)
+    K = rbf_kernel_np(X_obs, X_obs, lengthscale, variance) + 1e-6 * np.eye(N)
+    K_star = rbf_kernel_np(X_pred, X_obs, lengthscale, variance)
+    K_ss = rbf_kernel_np(X_pred, X_pred, lengthscale, variance)
+
+    # Newton iteration for MAP
+    f = np.zeros(N)
+    for _ in range(max_iter):
+        p = 1 / (1 + np.exp(-f))
+        W = np.diag(p * (1 - p) + 1e-8)
+        grad = Y_obs - p
+        H = W + np.linalg.inv(K)
+        f = f + np.linalg.solve(H, grad)
+
+    # Posterior mean and variance at prediction points
+    p = 1 / (1 + np.exp(-f))
+    W = np.diag(p * (1 - p) + 1e-8)
+    K_inv = np.linalg.inv(K)
+    mu_pred = K_star @ K_inv @ f
+    cov_pred = K_ss - K_star @ np.linalg.inv(K + np.linalg.inv(W)) @ K_star.T
+    return mu_pred, np.sqrt(np.diag(cov_pred) + 1e-8)
+
+# Generate data
+np.random.seed(42)
+X_grid = np.linspace(-3, 3, 100)
+true_f = np.sin(1.5 * X_grid)  # True latent function
+
+# Observe at sparse locations
+X_obs = np.array([-2.5, -1.5, -0.5, 0.5, 1.5, 2.5])
+f_obs = np.sin(1.5 * X_obs)
+Y_obs = (np.random.rand(len(X_obs)) < 1/(1 + np.exp(-f_obs))).astype(float)
+
+# Fit GP
+mu, sigma = gp_laplace_binary_np(X_obs, Y_obs, X_grid, lengthscale=1.0)
+
+# Plot
+fig, axes = plt.subplots(1, 2, figsize=(7, 3))
+
+# Left: latent function posterior
+axes[0].plot(X_grid, true_f, 'k--', label='True $h(x)$', linewidth=1)
+axes[0].plot(X_grid, mu, 'b-', label='Posterior mean', linewidth=1.5)
+axes[0].fill_between(X_grid, mu - 2*sigma, mu + 2*sigma, alpha=0.3, color='blue', label='95% CI')
+axes[0].scatter(X_obs, f_obs, c=['green' if y else 'red' for y in Y_obs],
+                s=50, zorder=5, edgecolors='black', linewidths=0.5)
+axes[0].set_xlabel('Item feature $V$')
+axes[0].set_ylabel('Latent utility $h(V)$')
+axes[0].set_title('GP Posterior over Utility')
+axes[0].legend(fontsize=6, loc='upper right')
+axes[0].grid(True, alpha=0.3)
+
+# Right: predicted probability
+prob_pred = 1 / (1 + np.exp(-mu))
+prob_true = 1 / (1 + np.exp(-true_f))
+axes[1].plot(X_grid, prob_true, 'k--', label='True $P(Y=1)$', linewidth=1)
+axes[1].plot(X_grid, prob_pred, 'b-', label='Predicted', linewidth=1.5)
+axes[1].scatter(X_obs, Y_obs, c=['green' if y else 'red' for y in Y_obs],
+                s=50, zorder=5, edgecolors='black', linewidths=0.5)
+axes[1].set_xlabel('Item feature $V$')
+axes[1].set_ylabel('$P(Y=1|V)$')
+axes[1].set_title('Predicted Response Probability')
+axes[1].legend(fontsize=6, loc='upper right')
+axes[1].grid(True, alpha=0.3)
+
+plt.tight_layout()
+plt.show()
+print("Green dots: Y=1 (positive response), Red dots: Y=0 (negative response)")
+```
+
+:::
+
+::: {.callout-note title="Code: Thompson Sampling Simulation" collapse="false"}
+
+This simulation shows Thompson Sampling in action, demonstrating how the algorithm balances exploration and exploitation over time.
+
+```{pyodide-python}
+#| autorun: true
+# Thompson Sampling simulation with GP
+np.random.seed(123)
+
+# True utility function (unknown to algorithm)
+def true_utility(x):
+    return np.sin(2 * x) + 0.5 * np.cos(x)
+
+# Available items (discrete set)
+n_items = 20
+items = np.linspace(-2.5, 2.5, n_items)
+true_utils = true_utility(items)
+best_item = np.argmax(true_utils)
+
+# Thompson Sampling loop
+T = 30  # number of rounds
+observations_x = []
+observations_y = []
+chosen_items = []
+regret = []
+cumulative_regret = 0
+
+for t in range(T):
+    if t < 3:
+        # Initial random exploration
+        j = np.random.randint(n_items)
+    else:
+        # Fit GP on observations
+        X_obs = np.array(observations_x)
+        Y_obs = np.array(observations_y)
+
+        # GP posterior
+        K = rbf_kernel_np(X_obs, X_obs, lengthscale=0.8) + 1e-4 * np.eye(len(X_obs))
+        K_star = rbf_kernel_np(items, X_obs, lengthscale=0.8)
+        K_ss = rbf_kernel_np(items, items, lengthscale=0.8)
+
+        # Laplace approximation (simplified)
+        f = np.zeros(len(X_obs))
+        for _ in range(5):
+            p = 1 / (1 + np.exp(-f))
+            W = np.diag(p * (1 - p) + 1e-6)
+            grad = Y_obs - p
+            H = W + np.linalg.inv(K)
+            f = f + np.linalg.solve(H, grad)
+
+        p = 1 / (1 + np.exp(-f))
+        W = np.diag(p * (1 - p) + 1e-6)
+        K_inv = np.linalg.inv(K)
+        mu = K_star @ K_inv @ f
+        cov = K_ss - K_star @ np.linalg.inv(K + np.linalg.inv(W)) @ K_star.T
+        cov = 0.5 * (cov + cov.T) + 1e-4 * np.eye(n_items)  # ensure symmetry
+
+        # Sample from posterior (Thompson Sampling)
+        L = np.linalg.cholesky(cov)
+        f_sample = mu + L @ np.random.randn(n_items)
+
+        # Choose item with highest sampled utility
+        j = np.argmax(f_sample)
+
+    # Observe response (binary)
+    prob = 1 / (1 + np.exp(-true_utils[j]))
+    y = 1 if np.random.rand() < prob else 0
+
+    observations_x.append(items[j])
+    observations_y.append(y)
+    chosen_items.append(j)
+
+    # Track regret
+    instant_regret = true_utils[best_item] - true_utils[j]
+    cumulative_regret += instant_regret
+    regret.append(cumulative_regret)
+
+# Visualize results
+fig, axes = plt.subplots(1, 3, figsize=(8, 2.5))
+
+# Left: True utility and selected items
+axes[0].plot(items, true_utils, 'k-', linewidth=1.5, label='True utility')
+axes[0].axvline(items[best_item], color='green', linestyle='--', alpha=0.7, label='Optimal')
+for i, j in enumerate(chosen_items):
+    alpha = 0.3 + 0.7 * (i / T)  # Later selections are more visible
+    axes[0].scatter(items[j], true_utils[j], c='blue', s=20, alpha=alpha)
+axes[0].set_xlabel('Item')
+axes[0].set_ylabel('Utility')
+axes[0].set_title('Item Selection Over Time')
+axes[0].legend(fontsize=6)
+axes[0].grid(True, alpha=0.3)
+
+# Middle: Selection frequency
+selection_counts = np.bincount(chosen_items, minlength=n_items)
+axes[1].bar(range(n_items), selection_counts, color='steelblue', alpha=0.7)
+axes[1].axvline(best_item, color='green', linestyle='--', linewidth=2, label='Optimal')
+axes[1].set_xlabel('Item index')
+axes[1].set_ylabel('Times selected')
+axes[1].set_title('Selection Frequency')
+axes[1].legend(fontsize=6)
+
+# Right: Cumulative regret
+axes[2].plot(range(1, T+1), regret, 'b-', linewidth=1.5)
+axes[2].set_xlabel('Round')
+axes[2].set_ylabel('Cumulative regret')
+axes[2].set_title('Regret Over Time')
+axes[2].grid(True, alpha=0.3)
+
+plt.tight_layout()
+plt.show()
+print(f"Best item: {best_item}, Most selected: {np.argmax(selection_counts)}")
+print(f"Final cumulative regret: {regret[-1]:.2f}")
+```
+
+:::
+
+::: {.callout-tip title="Key Takeaway: Thompson Sampling"}
+Thompson Sampling provides a remarkably simple and effective solution to the exploration-exploitation tradeoff: **sample a plausible world from your posterior beliefs, then act optimally within it**. This naturally concentrates exploration where uncertainty is highest, without requiring explicit exploration bonuses. Combined with Laplace approximation (for tractable posteriors) and Gaussian Processes (for flexible reward functions), Thompson Sampling provides a complete framework for sequential decision-making under preference uncertainty---connecting directly to the Bayesian inference tools developed in Chapter 2.
+:::
 
 ## Dueling Bandit
 
@@ -566,10 +1106,77 @@ impose two constraints to properly model comparisons:
     to the competing bandit:
     $$b_i \succ b_j \succ b_k \Rightarrow \epsilon(b_i, b_k) \le \epsilon(b_i, b_j) + \epsilon(b_j, b_k).$$ {#eq-triangle-inequality}
 
-These assumptions may initially seem limiting; however, common models for comparisons satisfy these constraints. 
-For example, the Bradley-Terry Model follows $P(b_i > b_j) = \frac{\mu_i}{\mu_i + \mu_j}$. 
-The Gaussian model with unit variance also satisfies these constraints: $P(b_i > b_j) = P(X_i - X_j > 0)$, 
+These assumptions may initially seem limiting; however, common models for comparisons satisfy these constraints.
+For example, the Bradley-Terry Model follows $P(b_i > b_j) = \frac{\mu_i}{\mu_i + \mu_j}$.
+The Gaussian model with unit variance also satisfies these constraints: $P(b_i > b_j) = P(X_i - X_j > 0)$,
 where $X_i - X_j \sim N(\mu_i - \mu_j, 2)$.
+
+::: {.callout-note title="Code: Preference Matrix Visualization" collapse="false"}
+
+```{pyodide-python}
+#| autorun: true
+# Generate and visualize a preference matrix from Bradley-Terry model
+def bradley_terry_matrix(strengths):
+    """Generate preference matrix from Bradley-Terry strengths."""
+    n = len(strengths)
+    P = np.zeros((n, n))
+    for i in range(n):
+        for j in range(n):
+            if i != j:
+                P[i, j] = strengths[i] / (strengths[i] + strengths[j])
+            else:
+                P[i, j] = 0.5
+    return P
+
+# Example: 5 bandits with different strengths
+np.random.seed(42)
+strengths = np.array([3.0, 2.5, 2.0, 1.5, 1.0])
+labels = ['A', 'B', 'C', 'D', 'E']
+P = bradley_terry_matrix(strengths)
+
+fig, axes = plt.subplots(1, 2, figsize=(7, 3))
+
+# Preference matrix heatmap
+im = axes[0].imshow(P, cmap='RdYlGn', vmin=0, vmax=1)
+axes[0].set_xticks(range(len(labels)))
+axes[0].set_yticks(range(len(labels)))
+axes[0].set_xticklabels(labels)
+axes[0].set_yticklabels(labels)
+axes[0].set_xlabel('Opponent $j$')
+axes[0].set_ylabel('Bandit $i$')
+axes[0].set_title('Preference Matrix $P_{ij}$')
+for i in range(len(labels)):
+    for j in range(len(labels)):
+        axes[0].text(j, i, f'{P[i,j]:.2f}', ha='center', va='center', fontsize=7)
+plt.colorbar(im, ax=axes[0], shrink=0.8)
+
+# Epsilon matrix (Delta = P - 0.5)
+Delta = P - 0.5
+im2 = axes[1].imshow(Delta, cmap='RdBu', vmin=-0.5, vmax=0.5)
+axes[1].set_xticks(range(len(labels)))
+axes[1].set_yticks(range(len(labels)))
+axes[1].set_xticklabels(labels)
+axes[1].set_yticklabels(labels)
+axes[1].set_xlabel('Opponent $j$')
+axes[1].set_ylabel('Bandit $i$')
+axes[1].set_title('$\\epsilon_{ij} = P_{ij} - 0.5$')
+for i in range(len(labels)):
+    for j in range(len(labels)):
+        axes[1].text(j, i, f'{Delta[i,j]:.2f}', ha='center', va='center', fontsize=7)
+plt.colorbar(im2, ax=axes[1], shrink=0.8)
+
+plt.tight_layout()
+plt.show()
+
+# Check for Condorcet winner
+for i, label in enumerate(labels):
+    wins_all = all(P[i, j] > 0.5 for j in range(len(labels)) if j != i)
+    if wins_all:
+        print(f"Condorcet winner: {label} (beats all others with P > 0.5)")
+        break
+```
+
+:::
 
 To accurately model the preferences between bandits in our framework of pairwise bandit comparisons and regret, 
 we must track certain parameters in our algorithm. First, we will maintain a running empirical estimate of the probability 
@@ -693,6 +1300,162 @@ Borda winners, just as different parties may vote for different pizzas.
   : Violation of Condorcet Winner. Highlighted entries are different
   from Table 1. No Condorcet winner exists as no arm could beat every
   other arm.
+:::
+
+::: {.callout-note title="Code: Pizza Voting Example - When Winners Diverge" collapse="false"}
+
+This example demonstrates a scenario where three groups have different pizza preferences, resulting in no Condorcet winner. The Borda winner and Von Neumann winner provide alternative solutions.
+
+```{pyodide-python}
+#| autorun: true
+# Pizza voting example: 3 pizzas, 3 voter groups with cyclic preferences
+# Group 1 (40%): Pepperoni > Cheese > Veggie
+# Group 2 (35%): Cheese > Veggie > Pepperoni
+# Group 3 (25%): Veggie > Pepperoni > Cheese
+
+pizzas = ['Pepperoni', 'Cheese', 'Veggie']
+n = len(pizzas)
+
+# Construct preference matrix from group preferences
+# P[i,j] = probability that pizza i beats pizza j
+group_prefs = [
+    [0, 1, 2],  # Group 1: Pepperoni(0) > Cheese(1) > Veggie(2)
+    [1, 2, 0],  # Group 2: Cheese > Veggie > Pepperoni
+    [2, 0, 1],  # Group 3: Veggie > Pepperoni > Cheese
+]
+group_weights = [0.40, 0.35, 0.25]
+
+P = np.zeros((n, n))
+for g, (pref, w) in enumerate(zip(group_prefs, group_weights)):
+    for rank_i, i in enumerate(pref):
+        for rank_j, j in enumerate(pref):
+            if rank_i < rank_j:  # i is ranked higher than j
+                P[i, j] += w
+
+# Fill diagonal with 0.5
+for i in range(n):
+    P[i, i] = 0.5
+
+print("Preference Matrix P[i,j] = P(pizza i beats pizza j):")
+print(f"           {pizzas[0]:>10} {pizzas[1]:>10} {pizzas[2]:>10}")
+for i, name in enumerate(pizzas):
+    print(f"{name:>10}", end="")
+    for j in range(n):
+        print(f" {P[i,j]:>10.2f}", end="")
+    print()
+
+# Check for Condorcet winner
+print("\n--- Winner Analysis ---")
+condorcet = None
+for i in range(n):
+    if all(P[i, j] > 0.5 for j in range(n) if j != i):
+        condorcet = pizzas[i]
+        break
+print(f"Condorcet winner: {condorcet if condorcet else 'NONE (no pizza beats all others!)'}")
+
+# Borda scores (sum of win probabilities)
+borda_scores = [sum(P[i, j] for j in range(n) if j != i) for i in range(n)]
+borda_winner = pizzas[np.argmax(borda_scores)]
+print(f"Borda scores: {dict(zip(pizzas, [f'{s:.2f}' for s in borda_scores]))}")
+print(f"Borda winner: {borda_winner}")
+
+# Visualize
+fig, axes = plt.subplots(1, 2, figsize=(7, 3))
+
+# Preference matrix
+im = axes[0].imshow(P, cmap='RdYlGn', vmin=0, vmax=1)
+axes[0].set_xticks(range(n))
+axes[0].set_yticks(range(n))
+axes[0].set_xticklabels([p[:4] for p in pizzas])
+axes[0].set_yticklabels([p[:4] for p in pizzas])
+axes[0].set_title('Preference Matrix')
+for i in range(n):
+    for j in range(n):
+        color = 'white' if abs(P[i,j] - 0.5) > 0.2 else 'black'
+        axes[0].text(j, i, f'{P[i,j]:.2f}', ha='center', va='center', fontsize=9, color=color)
+plt.colorbar(im, ax=axes[0], shrink=0.8)
+
+# Borda scores
+colors = ['#ff6b6b' if s == max(borda_scores) else 'steelblue' for s in borda_scores]
+axes[1].bar(range(n), borda_scores, color=colors)
+axes[1].set_xticks(range(n))
+axes[1].set_xticklabels(pizzas)
+axes[1].set_ylabel('Borda Score')
+axes[1].set_title('Borda Scores (Winner in red)')
+axes[1].grid(True, alpha=0.3, axis='y')
+
+plt.tight_layout()
+plt.show()
+print("\nNo Condorcet winner exists due to cyclic preferences between groups!")
+```
+
+:::
+
+::: {.callout-note title="Code: Computing Different Winner Types" collapse="false"}
+
+```{pyodide-python}
+#| autorun: true
+def condorcet_winner(P):
+    """Return Condorcet winner index, or None if doesn't exist."""
+    n = P.shape[0]
+    for i in range(n):
+        if all(P[i, j] > 0.5 for j in range(n) if j != i):
+            return i
+    return None
+
+def borda_winner(P):
+    """Return Borda winner index (highest sum of pairwise win probs)."""
+    n = P.shape[0]
+    scores = [sum(P[i, j] for j in range(n) if j != i) for i in range(n)]
+    return np.argmax(scores)
+
+def von_neumann_winner(P, max_iter=1000):
+    """Compute Von Neumann (minimax) winner distribution via fictitious play."""
+    n = P.shape[0]
+    # Payoff matrix: A[i,j] = P[i,j] - 0.5 (zero-sum game)
+    A = P - 0.5
+    # Fictitious play to find equilibrium
+    counts = np.ones(n)
+    for _ in range(max_iter):
+        # Best response to current empirical distribution
+        dist = counts / counts.sum()
+        payoffs = A @ dist
+        best = np.argmax(payoffs)
+        counts[best] += 1
+    return counts / counts.sum()
+
+# Test on various preference matrices
+print("Example 1: Clear Condorcet winner")
+P1 = np.array([[0.5, 0.7, 0.8],
+               [0.3, 0.5, 0.6],
+               [0.2, 0.4, 0.5]])
+c1 = condorcet_winner(P1)
+b1 = borda_winner(P1)
+v1 = von_neumann_winner(P1)
+print(f"  Condorcet: Arm {c1}, Borda: Arm {b1}, VN dist: {v1.round(2)}")
+
+print("\nExample 2: No Condorcet winner (cyclic)")
+P2 = np.array([[0.5, 0.6, 0.4],
+               [0.4, 0.5, 0.7],
+               [0.6, 0.3, 0.5]])
+c2 = condorcet_winner(P2)
+b2 = borda_winner(P2)
+v2 = von_neumann_winner(P2)
+print(f"  Condorcet: {'None' if c2 is None else f'Arm {c2}'}, Borda: Arm {b2}, VN dist: {v2.round(2)}")
+
+print("\nExample 3: Condorcet and Borda differ")
+P3 = np.array([[0.5, 0.51, 0.51, 0.51],
+               [0.49, 0.5, 0.9, 0.9],
+               [0.49, 0.1, 0.5, 0.6],
+               [0.49, 0.1, 0.4, 0.5]])
+c3 = condorcet_winner(P3)
+b3 = borda_winner(P3)
+borda_scores3 = [sum(P3[i, j] for j in range(4) if j != i) for i in range(4)]
+print(f"  Borda scores: {[f'{s:.2f}' for s in borda_scores3]}")
+print(f"  Condorcet: Arm {c3}, Borda: Arm {b3}")
+print("  → Arm 0 barely beats everyone, but Arm 1 dominates Arm 2,3 strongly!")
+```
+
 :::
 
 Next, we introduce two performance measures for the planner. The
@@ -886,20 +1649,179 @@ method for k-armed dueling bandits to identify the best strategy to
 solve human-centric challenges, from video recommendation to meal
 selection and exoskeleton-assisted walking.
 
+::: {.callout-note title="Code: Interleaved Filter Implementation" collapse="false"}
+
+```{pyodide-python}
+#| autorun: true
+class InterleavedFilter:
+    """Interleaved Filter algorithm for finding Condorcet winner."""
+
+    def __init__(self, n_arms, delta=0.1):
+        self.n_arms = n_arms
+        self.delta = delta
+        self.reset()
+
+    def reset(self):
+        self.best = np.random.randint(self.n_arms)
+        self.candidates = set(range(self.n_arms)) - {self.best}
+        self.wins = {j: 0 for j in self.candidates}
+        self.counts = {j: 0 for j in self.candidates}
+        self.comparisons = 0
+
+    def get_confidence(self, t):
+        if t == 0:
+            return 1.0
+        return np.sqrt(4 * np.log(1 / self.delta) / t)
+
+    def step(self, oracle_fn):
+        """Perform one step: compare best against a candidate."""
+        if not self.candidates:
+            return True  # Done
+
+        # Pick a candidate to compare
+        candidate = list(self.candidates)[self.comparisons % len(self.candidates)]
+
+        # Query oracle (returns 1 if best wins, 0 if candidate wins)
+        result = oracle_fn(self.best, candidate)
+        self.comparisons += 1
+        self.counts[candidate] += 1
+        if result == 1:
+            self.wins[candidate] += 1
+
+        # Update estimates and prune
+        to_remove = []
+        for j in list(self.candidates):
+            if self.counts[j] > 0:
+                p_hat = self.wins[j] / self.counts[j]
+                c = self.get_confidence(self.counts[j])
+
+                # If best confidently beats j, remove j
+                if p_hat - c > 0.5:
+                    to_remove.append(j)
+                # If j confidently beats best, j becomes new best
+                elif p_hat + c < 0.5:
+                    self.candidates.discard(j)
+                    self.candidates.add(self.best)
+                    self.best = j
+                    # Reset counts for new comparisons
+                    self.wins = {k: 0 for k in self.candidates}
+                    self.counts = {k: 0 for k in self.candidates}
+                    break
+
+        for j in to_remove:
+            self.candidates.discard(j)
+            del self.wins[j]
+            del self.counts[j]
+
+        return len(self.candidates) == 0
+
+# Test the algorithm
+np.random.seed(42)
+n_arms = 5
+true_strengths = np.array([5.0, 4.0, 3.0, 2.0, 1.0])  # Arm 0 is best
+
+def oracle(i, j):
+    """Noisy comparison: returns 1 if arm i beats arm j."""
+    p = true_strengths[i] / (true_strengths[i] + true_strengths[j])
+    return 1 if np.random.rand() < p else 0
+
+# Run algorithm
+algo = InterleavedFilter(n_arms, delta=0.05)
+max_steps = 500
+for step in range(max_steps):
+    done = algo.step(oracle)
+    if done:
+        break
+
+print(f"Interleaved Filter Results:")
+print(f"  True best arm: 0 (strength = {true_strengths[0]})")
+print(f"  Found best arm: {algo.best}")
+print(f"  Comparisons needed: {algo.comparisons}")
+print(f"  Correct: {'Yes!' if algo.best == 0 else 'No'}")
+```
+
+:::
+
+::: {.callout-note title="Code: Comparing Dueling Bandit Algorithms" collapse="false"}
+
+```{pyodide-python}
+#| autorun: true
+# Compare Interleaved Filter vs Random exploration
+np.random.seed(123)
+
+def run_experiment(n_arms, true_best, n_trials=20, max_comparisons=200):
+    """Run multiple trials and measure sample complexity."""
+    # Interleaved Filter
+    if_results = []
+    for _ in range(n_trials):
+        algo = InterleavedFilter(n_arms, delta=0.1)
+        for step in range(max_comparisons):
+            done = algo.step(oracle)
+            if done:
+                break
+        if_results.append((algo.best == true_best, algo.comparisons))
+
+    # Random exploration baseline
+    rand_results = []
+    for _ in range(n_trials):
+        pair_counts = np.zeros((n_arms, n_arms))
+        pair_wins = np.zeros((n_arms, n_arms))
+        for comp in range(max_comparisons):
+            i, j = np.random.choice(n_arms, 2, replace=False)
+            result = oracle(i, j)
+            pair_counts[i, j] += 1
+            pair_counts[j, i] += 1
+            if result == 1:
+                pair_wins[i, j] += 1
+            else:
+                pair_wins[j, i] += 1
+
+        # Estimate Condorcet winner
+        P_hat = np.where(pair_counts > 0, pair_wins / pair_counts, 0.5)
+        best_guess = None
+        for i in range(n_arms):
+            if all(P_hat[i, j] > 0.5 for j in range(n_arms) if j != i):
+                best_guess = i
+                break
+        if best_guess is None:
+            best_guess = np.argmax([sum(P_hat[i, :]) for i in range(n_arms)])
+        rand_results.append((best_guess == true_best, max_comparisons))
+
+    return if_results, rand_results
+
+if_res, rand_res = run_experiment(5, 0)
+
+# Summarize
+if_acc = np.mean([r[0] for r in if_res])
+if_comps = np.mean([r[1] for r in if_res])
+rand_acc = np.mean([r[0] for r in rand_res])
+rand_comps = np.mean([r[1] for r in rand_res])
+
+print("Algorithm Comparison (20 trials, 5 arms):")
+print(f"  Interleaved Filter: {if_acc*100:.0f}% accuracy, {if_comps:.0f} avg comparisons")
+print(f"  Random Exploration:  {rand_acc*100:.0f}% accuracy, {rand_comps:.0f} comparisons")
+
+# Visualization
+fig, ax = plt.subplots(1, 1, figsize=(5, 3))
+x = ['Interleaved\nFilter', 'Random\nExploration']
+ax.bar(x, [if_acc * 100, rand_acc * 100], color=['steelblue', 'coral'], alpha=0.8)
+ax.set_ylabel('Accuracy (%)')
+ax.set_title('Finding Condorcet Winner')
+ax.set_ylim(0, 105)
+for i, v in enumerate([if_acc, rand_acc]):
+    ax.text(i, v*100 + 2, f'{v*100:.0f}%', ha='center', fontsize=10)
+ax.axhline(100, color='green', linestyle='--', alpha=0.5, label='Perfect')
+plt.tight_layout()
+plt.show()
+```
+
+:::
+
 #### Dueling Bandit Gradient Descent
 
-This algorithm tries to find the best bandit in a continuous
-bandit-space. Here, the set of all bandits is regarded as an
-Information-Retrieval (IR) system with infinite bandits uniquely defined
-by $w$. We will cover the *Dueling Bandit Gradient Descent* algorithm
-from Yue and Joachims 2009 [@IR]. Yue and Joachims use the dueling
-bandits formulation for online IR optimization. They propose a retrieval
-system parameterized by a set of continuous variables lying in $W$, a
-$d$-dimensional unit-sphere. The DBGD algorithm adapts the current
-parameters $w_t$ of IR system by comparison with slightly altered
-parameters $w_t'$ both querying query $q_t$. Only if the IR outcome
-using $w_t'$ is preferred, the parameters are changed in their
-direction. We will now discuss the algorithm more detailed.
+The Interleaved Filter works well when the action space is finite, but many practical settings involve **continuous** parameter spaces. For example, a search engine may be parameterized by a weight vector $w \in \mathbb{R}^d$ controlling how different ranking signals are combined, and the goal is to find the $w$ that produces the most preferred results. Dueling Bandit Gradient Descent (DBGD) [@IR] extends the dueling bandit framework to this continuous setting by performing *gradient-free optimization* using only preference feedback.
+
+The idea is intuitive: at each step, compare the current parameters $w_t$ against a random perturbation $w_t' = w_t + \delta u_t$. If users prefer the perturbed system, take a step in that direction. This is analogous to stochastic gradient descent, but using preference comparisons instead of gradient evaluations.
 
 :::: algorithm
 ::: algorithmic
@@ -954,35 +1876,13 @@ point $w_{\text{best}}$ gradually.
 
 #### Sparring EXP4 {#sparring-exp4 .unnumbered}
 
-Zoghi et al. 2015 propose one algorithm for this problem --- sparring
-EXP4, which duels two traditional EXP4 - algorithms. The (traditional)
-EXP4 algorithm solves the traditional contextual bandits --- the case
-where we can directly observe a reward for a choice of bandit given a
-context. The EXP4 algorithm embeds each bandit as a vector. When the
-algorithm sees the context (called 'advice' in this formulation), it
-produces a probability distribution over the choices based on an
-adjusted softmax function on the inner product between the context and
-the bandit vectors. The probability function is different from a softmax
-as we assign some minimum probability that any action gets chosen to
-enforce exploration. A reward is then observed for the choice and
-propagated back through the embedding of the chosen bandit.
+While DBGD handles continuous action spaces, many real-world dueling problems also involve **context**---the best action depends on the situation. For example, the best search ranking for a query about "python" differs depending on whether the user is a programmer or a pet owner. Sparring EXP4 [@zoghi2015copeland] addresses this *contextual dueling bandit* setting by adapting the EXP4 algorithm (originally designed for contextual bandits with scalar rewards) to preference feedback.
 
-Sparring EXP4 runs two instances of the EXP4 algorithm against each
-other. Each EXP4 instance samples an action given a context, and then
-these choices are 'dueled' against each other. Instead of directly
-observing a reward, as for traditional EXP4, we instead observe two
-converse reward --- a positive reward for the choice that won the duel
-and a negative reward to the choice that lost. The reward is
-proportional to the degree to which the bandit wins the duel, i.e. how
-likely the bandit is to be preferred over the other when users are
-queried for binary preferences. Like in traditional EXP4, the reward or
-negative reward is then propagated back through the representations of
-the bandits.
+The key idea is to run **two instances** of the EXP4 algorithm against each other. Each instance maintains embeddings for the actions and produces a probability distribution over choices given the current context. When a context arrives, each instance samples an action, the two actions are dueled, and the winner receives a positive reward while the loser receives a negative reward proportional to the preference strength. This "sparring" approach elegantly converts pairwise preference feedback into the scalar reward signals that EXP4 requires.
 
-#### Feel-good Thompson sampling
+#### Feel-good Thompson Sampling
 
-This algorithm is a solution for the contextual dueling bandit setting,
-and aims to find a Von Neumann winner by minimizing cumulative average regret:
+Feel-good Thompson Sampling [@fgts_cdb] offers an alternative approach to the contextual dueling bandit setting, connecting back to the Thompson Sampling framework developed earlier in this chapter. Like Sparring EXP4, it handles context-dependent preferences, but it uses posterior sampling rather than adversarial learning. The algorithm aims to find a Von Neumann winner by minimizing cumulative average regret:
 $$\text{Regret}(T) := \sum_{t=1}^{T} \left[ r_{*}(x_t, a_{t}^{*}) - \frac{r_{*}(x_t, a_{t}^{1}) + r_{*}(x_t, a_{t}^{2})}{2} \right],$$ {#eq-fgts-regret}
 where $r_{*}(x_t, a_{t})$ is the true, hidden reward function of a
 context $x_t$ and action $a_t$. Thompson sampling is an iterative
@@ -1015,222 +1915,144 @@ $S_t \leftarrow S_{t-1} \cup \{(x_t, a_t^1, a_t^2, y_t)\}$.
 :::
 ::::
 
+::: {.callout-tip title="Key Takeaway: Choosing an Algorithm"}
+The dueling bandit algorithms covered above address different problem settings:
+
+| Algorithm | Action Space | Context? | Winner Concept | Key Strength |
+|-----------|-------------|----------|----------------|--------------|
+| Interleaved Filter | Finite | No | Condorcet | Simple, provable |
+| DBGD | Continuous | No | Reward maximizer | Gradient-free optimization |
+| Sparring EXP4 | Finite | Yes | Copeland | Adversarial robustness |
+| Feel-good TS | Finite | Yes | Von Neumann | Bayesian, posterior sampling |
+
+When choosing an algorithm, consider: (1) Is the action space discrete or continuous? (2) Does the optimal action depend on context? (3) What computational resources are available? Thompson Sampling-based methods are generally preferred when a good posterior approximation is available, while adversarial methods like Sparring EXP4 are more robust when the preference model is misspecified.
+:::
+
 ### Applications
 
-There are many applications where contextual bandits are used. Many of
-these applications can utilize human preferences. One particular
-application illustrates the benefits a contextual bandit would have over
-a multi-armed bandit: a website deciding which app to show someone
-visiting the website. A multi-armed bandit might decide to show someone
-an ad for a swimsuit because the swimsuit ads have gotten the most user
-clicks (which indicates human preference). A contextual bandit might
-choose differently, however. A contextual bandit will also take into
-account the context, which in this case might mean information about the
-user (location, previously visited pages, and device information). If it
-discovers the user lives in a cold environment, for example, it might
-suggest a sweater ad for the user instead and get a better chance of a
-click. There are many more examples of where contextual bandits can be
-applied. They can be applied in other web applications, such as to
-optimize search results, medical applications, such as how much of a
-medication to prescribe based on a patient's history, and gaming
-applications, such as basing moves off of the state of a chess board to
-try to win. In each of the above examples, human feedback could have
-been introduced during training and leveraged to learn a reward
-function.
+The dueling bandit and Thompson Sampling frameworks developed above have broad applicability whenever systems must learn from preference feedback rather than scalar rewards. We highlight two case studies that illustrate how these methods connect to the book's central themes.
 
-We explored different versions of bandits that address the
-exploration-exploitation trade-off in various real-world scenarios.
-These models have been employed across various fields, including but not
-limited to healthcare, finance, dynamic pricing, and anomaly detection.
-This section provides a deep dive into some real-world applications,
-emphasizing the value and advancements achieved by incorporating bandit
-methodologies. The content of this section draws upon the findings from
-the survey cited in reference [@bouneffouf2020survey].
+#### Case Study 1: LLM Response Selection as a Dueling Bandit
 
-In healthcare, researchers have been applying bandits to address
-challenges in clinical trials and behavioral
-modeling [@bouneffouf2017bandit; @bastani2020online]. One of the
-examples is drug dosing. Warfarin, an oral anticoagulant, has
-traditionally been administered using fixed dosing protocols. Physicians
-would then make subsequent adjustments based on the patient's emerging
-symptoms. Nonetheless, inaccuracies in the initial dosage---whether too
-low or too high---can lead to serious complications like strokes and
-internal bleeding. In a pivotal study, researchers
-in [@bastani2020online] modeled the Warfarin initial dosing as a
-contextual bandit problem to assign dosages to individual patients
-appropriately based on their medication history. Their contributions
-include the adaptation of the LASSO estimator to the bandit setting,
-achieving a theoretical regret bound of $O({s_0}^2 \log^2(dT)$, where
-$d$ represents the number of covariates, $s_0 << d$ signifies the number
-of pertinent covariates, and $T$ indicates the total number of users.
-Additionally, they conducted empirical experiments to validate the
-robustness of their methodology.
+Consider an LLM serving system that generates $K$ candidate responses to each user prompt and must select which to display. This is exactly a contextual dueling bandit problem:
 
-Within the finance sector, bandits have been instrumental in reshaping
-the landscape of portfolio optimization. Portfolio optimization is an
-approach to designing a portfolio based on the investor's return and
-risk criteria, which fits the exploration-exploitation nature of the
-bandit problems. [@shen2015portfolio] utilized multi-armed bandits to
-exploit correlations between the instruments. They constructed
-orthogonal portfolios and integrated them with the UCB policy to achieve
-a cumulative regret bound of $\frac{8n}{\Delta*} \ln(m) + 5n$, where
-$n$, $m$, and $\Delta*$ denotes the number of available assets, total
-time steps, and the gap between the best-expected reward and the
-expected reward. On the other hand, [@huo2017risk] focused on
-risk-awareness online portfolio optimization by incorporating a compute
-of the minimum spanning tree in the bipartite graph, which encodes a
-combination of financial institutions and assets that helps diversify
-and reduce exposure to systematic risk during the financial crisis.
+- **Context**: The user prompt $x_t$ and its embedding
+- **Actions**: The $K$ candidate responses $\{y_1, \ldots, y_K\}$
+- **Preference feedback**: The user indicates which response they prefer (via explicit rating, continued engagement, or regeneration requests)
+- **Objective**: Maximize user satisfaction while learning which response characteristics users value
 
-Dynamic pricing, also known as demand-based pricing, refers to the
-strategy of setting flexible prices for products or services based on
-current market demands. The application of bandits in dynamic pricing
-offers a systematic approach to making real-time pricing decisions while
-balancing the trade-off between exploring new price points and
-exploiting known optimal prices. [@misra2019dynamic] proposed a policy
-where the company has only incomplete demand information. They derived
-an algorithm that balances immediate and future profits by combining
-multi-armed bandits with partial identification of consumer demand from
-economic theory.
+The preference model is Bradley-Terry over response embeddings: $p(y_j \succ y_k \mid x) = \sigma(\beta \log \frac{\pi_\theta(y_j \mid x)}{\pi_{\text{ref}}(y_j \mid x)} - \beta \log \frac{\pi_\theta(y_k \mid x)}{\pi_{\text{ref}}(y_k \mid x)})$, exactly the DPO formulation from Chapter 2. Thompson Sampling provides a principled way to select which pair of responses to show: sample a reward function from the posterior and present the pair with the highest expected information gain.
 
-**Recommendation systems** are essential components of numerous online platforms, guiding users
-through vast content landscapes to deliver tailored suggestions. These
-systems are instrumental in platforms like e-commerce sites, streaming
-platforms, and social media networks. However, the challenge of
-effectively recommending items to users is non-trivial, given the
-dynamic nature of user preferences and the vast amount of content
-available.
+This connects the bandit framework to the RLHF pipeline: **online DPO is essentially Thompson Sampling on the Bradley-Terry preference model**. The exploration-exploitation tradeoff determines whether the system shows responses it is confident about (exploitation) or tries novel response styles to learn user preferences (exploration).
 
-One of the most significant challenges in recommendation systems is the
-\"cold start\" problem. This issue arises when a new user joins a
-platform, and the system has limited or no information about the user's
-preferences. Traditional recommendation algorithms struggle in such
-scenarios since they rely on historical user-item interactions. As
-discussed in [@zhou2017large], the bandit setting is particularly
-suitable for large-scale recommender systems with a vast number of
-items. By continuously exploring user preferences and exploiting known
-interactions, bandit-based recommender systems can quickly adapt to new
-users, ensuring relevant recommendations in a few interactions. The
-continuous exploration inherent in bandit approaches also means that as
-a user's preferences evolve, the system can adapt, ensuring that
-recommendations remain relevant. Recommending content that is up to date
-is also another important aspect of a recommendation system.
-In [@bouneffouf2012a], the concept of \"freshness\" in content is
-explored through the lens of the bandit problem. The Freshness-Aware
-Thompson Sampling algorithm introduced in this study aims to manage the
-recommendation of fresh documents according to the user's risk of the
-situation.
+```{pyodide-python}
+#| autorun: true
+# Simulating LLM response selection as a dueling bandit
+rng = np.random.default_rng(42)
 
-Dialogue systems, often termed conversational agents or chatbots, aim to
-simulate human-like conversations with users. These systems are deployed
-across various platforms, including customer support, virtual
-assistants, and entertainment applications, and they are crucial for
-enhancing user experience and engagement. Response selection is
-fundamental to creating a natural and coherent dialogue flow.
-Traditional dialogue systems rely on a predefined set of responses or
-rules, which can make interactions feel scripted and inauthentic.
-In [@liu2018customized], the authors proposed a contextual multi-armed
-bandit model for online learning of response selection. Specifically,
-they utilized bidirectional LSTM to produce the distributed
-representations of a dialogue context and responses and customized the
-Thompson sampling method.
+# Simulate K=8 response "styles" with true quality scores
+K = 8
+true_quality = rng.standard_normal(K)
+true_quality = np.sort(true_quality)[::-1]  # Best response first
 
-To create a more engaging and dynamic interaction, there's a growing
-interest in developing pro-active dialogue systems that can initiate
-conversations without user initiation. [@perez2018contextual] proposed a
-novel approach to this challenge with contextual bandits. By introducing
-memory models into the bandit framework, the system can recall past
-interactions, making its proactive responses more contextually relevant.
-Their contributions include the Contextual Attentive Memory Network,
-which implements a differentiable attention mechanism over past
-interactions.
+# Bradley-Terry preference probabilities
+def bt_prob(q_i, q_j):
+    return 1 / (1 + np.exp(-(q_i - q_j)))
 
-[@upadhyay2019a] addressed the challenge of orchestrating multiple
-independently trained dialogue agents or skills in a unified system.
-They attempted online posterior dialogue orchestration, defining it as
-selecting the most suitable subset of skills in response to a user's
-input, which studying a context-attentive bandit model that operates
-under a skill execution budget, ensuring efficient and accurate response
-selection.
+# Thompson Sampling with Beta posteriors (simplified)
+def run_ts_dueling(n_rounds, true_quality, rng):
+    K = len(true_quality)
+    wins = np.ones(K)  # Beta prior: alpha=1
+    losses = np.ones(K)  # Beta prior: beta=1
+    cumulative_regret = []
+    total_regret = 0
 
-Anomaly detection refers to the task of identifying samples that behave
-differently from the majority. In [@ding2019interactive], the authors
-delve into anomaly detection in an interactive setting, allowing the
-system to actively engage with human experts through a limited number of
-queries about genuine anomalies. The goal is to present as many true
-anomalies to the human expert as possible after a fixed query budget is
-used up. They applied the multi-armed contextual bandit framework to
-address this issue. This algorithm adeptly integrates both nodal
-attributes and node dependencies into a unified model, efficiently
-managing the exploration-exploitation trade-off during anomaly queries.
+    for t in range(n_rounds):
+        # Sample from posterior (Beta distribution as proxy for quality)
+        samples = rng.beta(wins, losses)
+        # Select top-2 arms by sampled quality
+        top2 = np.argsort(samples)[-2:]
+        i, j = top2[0], top2[1]
+        # Observe preference (Bradley-Terry)
+        p_ij = bt_prob(true_quality[i], true_quality[j])
+        if rng.random() < p_ij:
+            wins[i] += 1; losses[j] += 1
+        else:
+            wins[j] += 1; losses[i] += 1
+        # Regret: not showing the best response
+        best = np.argmax(true_quality)
+        regret = true_quality[best] - max(true_quality[i], true_quality[j])
+        total_regret += regret
+        cumulative_regret.append(total_regret)
+    return cumulative_regret, wins, losses
 
-There are many challenges associated with contextual bandits. The first
-challenge is that each action only reveals the reward for that
-particular action. Therefore, the algorithm has to work with incomplete
-information. This leads to the dilemma of exploitation versus
-exploration: when should the algorithm choose the best-known option
-versus trying new options for potentially better outcomes? Another
-significant challenge for contextual bandits is using context
-effectively. The context the environment gives needs to be explored to
-figure out which action is best for each context.
+# Epsilon-greedy baseline
+def run_eps_greedy(n_rounds, true_quality, rng, eps=0.1):
+    K = len(true_quality)
+    wins = np.ones(K); losses = np.ones(K)
+    cumulative_regret = []; total_regret = 0
 
-The overarching goal in systems designed for recommending options of
-high value to users is to achieve an optimal balance between exploration
-and exploitation. This dual approach is crucial in environments where
-user preferences and needs are dynamic and diverse. Exploration refers
-to the process of seeking out new options, learning about untried
-possibilities, and gathering fresh information that could lead to
-high-value recommendations. In contrast, exploitation involves utilizing
-existing knowledge and past experiences to recommend the best options
-currently known. This balance is key to maintaining a system that
-continuously adapts to changing user preferences while ensuring the
-reliability of its recommendations.
+    for t in range(n_rounds):
+        if rng.random() < eps:
+            pair = rng.choice(K, 2, replace=False)
+        else:
+            est_quality = wins / (wins + losses)
+            pair = np.argsort(est_quality)[-2:]
+        i, j = pair[0], pair[1]
+        p_ij = bt_prob(true_quality[i], true_quality[j])
+        if rng.random() < p_ij:
+            wins[i] += 1; losses[j] += 1
+        else:
+            wins[j] += 1; losses[i] += 1
+        best = np.argmax(true_quality)
+        regret = true_quality[best] - max(true_quality[i], true_quality[j])
+        total_regret += regret
+        cumulative_regret.append(total_regret)
+    return cumulative_regret, wins, losses
 
-A key observation in such systems is the dual role of users as both
-producers and consumers of information. Each user's experience
-contributes valuable data that informs future recommendations for
-others. For instance, platforms like Waze, Netflix, and Trip Advisor
-rely heavily on user input and feedback. Waze uses real-time traffic
-data from drivers to recommend optimal routes; Netflix suggests movies
-and shows based on viewing histories and ratings; Trip Advisor relies on
-traveler reviews to guide future tourists. In these examples, the
-balance between gathering new information (exploration) and recommending
-the best-known options (exploitation) is dynamically managed to enhance
-user experience and satisfaction. This approach underscores the
-importance of user engagement in systems where monetary incentives are
-not (or can not be) the primary driver.
+n_rounds = 500
+regret_ts, wins_ts, losses_ts = run_ts_dueling(n_rounds, true_quality, np.random.default_rng(0))
+regret_eg, wins_eg, losses_eg = run_eps_greedy(n_rounds, true_quality, np.random.default_rng(0))
 
-Recommendation systems often face the challenge of overcoming user
-biases that can lead to a narrow exploration of options. Users come with
-preconceived notions and preferences, which can cause them to overlook
-potentially valuable options that initially appear inferior or unaligned
-with their interests. This predisposition can significantly limit the
-effectiveness of recommendation systems, as users might miss out on
-high-value choices simply due to their existing biases.
+fig, axes = plt.subplots(1, 2, figsize=(7, 3))
+axes[0].plot(regret_ts, label='Thompson Sampling', lw=2)
+axes[0].plot(regret_eg, label='ε-Greedy (ε=0.1)', lw=2, ls='--')
+axes[0].set_xlabel('Round'); axes[0].set_ylabel('Cumulative Regret')
+axes[0].set_title('LLM Response Selection'); axes[0].legend(); axes[0].grid(True, alpha=0.3)
 
-To counteract this, it is crucial for recommendation systems to actively
-incentivize exploration among users. One innovative approach to achieve
-this is through the strategic use of **information asymmetry**. By
-controlling and selectively presenting information, these systems can
-guide users to explore options they might not typically consider. This
-method aims to reveal the true potential of various options by nudging
-users out of their comfort zones and encouraging a broader exploration
-of available choices. An important note here is that the system is not
-lying to users - it only selectively reveals information it has.
+# Show learned quality estimates
+est_ts = wins_ts / (wins_ts + losses_ts)
+est_eg = wins_eg / (wins_eg + losses_eg)
+x = np.arange(K)
+axes[1].bar(x - 0.15, est_ts, 0.3, label='TS estimates', alpha=0.7)
+axes[1].bar(x + 0.15, est_eg, 0.3, label='ε-Greedy estimates', alpha=0.7)
+norm_quality = (true_quality - true_quality.min()) / (true_quality.max() - true_quality.min())
+axes[1].scatter(x, norm_quality, color='red', zorder=5, label='True (normalized)', s=50)
+axes[1].set_xlabel('Response Style'); axes[1].set_ylabel('Win Rate / Quality')
+axes[1].set_title('Learned Preferences'); axes[1].legend(fontsize=8); axes[1].grid(True, alpha=0.3)
 
-The concept of incentivizing exploration becomes even more complex when
-considering different types of users. For instance, systems often
-encounter short-lived users who have little to gain from contributing to
-the system's learning process, as their interactions are infrequent or
-based on immediate needs. Similarly, some users may operate under a
-'greedy' principle, primarily seeking immediate gratification rather
-than contributing to the long-term accuracy and effectiveness of the
-system. In such scenarios, managing information asymmetry can be a
-powerful tool. By selectively revealing information, recommendation
-systems can create a sense of novelty and interest, prompting even the
-most transient or self-interested users to engage in exploration,
-thereby enhancing the system's overall knowledge base and recommendation
-quality.
+plt.tight_layout()
+plt.show()
+print(f"Final regret — TS: {regret_ts[-1]:.1f}, ε-Greedy: {regret_eg[-1]:.1f}")
+```
+
+#### Case Study 2: Clinical Trial Dosing
+
+In personalized medicine, the dueling bandit framework addresses a critical challenge: how to assign drug dosages when the optimal dose depends on individual patient characteristics and can only be evaluated through patient preferences or outcomes.
+
+Consider Warfarin dosing [@bastani2020online], where the standard practice is to start with a fixed dose and adjust based on symptoms. This is suboptimal because patients vary significantly in their metabolism. The contextual bandit formulation models this as:
+
+- **Context**: Patient features $x_t$ (age, weight, genetic markers, medication history)
+- **Actions**: Dosage levels $a_t \in \{$low, medium, high$\}$
+- **Reward**: Whether the patient's INR (blood clotting measure) falls in the therapeutic range
+
+Using the linear Thompson Sampling framework from earlier in this chapter, we model the reward as $r(x_t, a_t) = x_t^\top \theta_{a_t}$, where $\theta_{a_t}$ captures the relationship between patient features and outcomes for each dosage level. The key insight is that while each patient's outcome reveals information about only one dosage level (we cannot simultaneously try all doses), the *contextual* structure allows information to transfer across similar patients.
+
+This application highlights a tension central to this book: the system must balance **exploration** (trying dosages it is uncertain about to learn their effects) against **exploitation** (prescribing the dosage believed to be best for the current patient). In clinical settings, the cost of exploration is high---a suboptimal dose can cause serious harm---making efficient algorithms like Thompson Sampling especially valuable, since they concentrate exploration where uncertainty is highest rather than exploring uniformly.
+
+#### Broader Applications
+
+Beyond these case studies, bandit methods with preference feedback have been applied to recommendation systems [@zhou2017large; @bouneffouf2012a], where the cold-start problem for new users is naturally handled by Thompson Sampling's uncertainty-driven exploration; to dialogue systems [@liu2018customized], where response selection is modeled as a contextual bandit; and to search engine optimization [@IR], where DBGD tunes ranking parameters from user click preferences. For a comprehensive survey, see @bouneffouf2020survey.
 
 ## Preferential Bayesian Optimization
 
@@ -1329,6 +2151,175 @@ $f$. Therefore, if the preference function $\pi_f$ can be learned by
 observing the results of duels then our optimization problem of finding
 the minimum of $f$ can be solved by finding the Condorcet winner of the
 Copeland score.
+
+::: {.callout-note title="Code: Copeland Score Visualization" collapse="false"}
+
+```{pyodide-python}
+#| autorun: true
+# Visualize Copeland score for a 1D latent function
+def sigmoid(x):
+    return 1 / (1 + np.exp(-np.clip(x, -500, 500)))
+
+# True latent function (to minimize)
+def g(x):
+    return (x - 0.3)**2 + 0.5 * np.sin(4 * x)
+
+# Preference function: P(x beats x') = sigmoid(g(x') - g(x))
+def preference_prob(x, xp):
+    return sigmoid(g(xp) - g(x))
+
+# Compute soft-Copeland score at each point
+X = np.linspace(-1, 1, 100)
+X_sample = np.linspace(-1, 1, 50)  # Points to compare against
+
+copeland_scores = []
+for x in X:
+    # Monte Carlo estimate of soft-Copeland
+    probs = [preference_prob(x, xp) for xp in X_sample]
+    copeland_scores.append(np.mean(probs))
+copeland_scores = np.array(copeland_scores)
+
+# Find Condorcet winner (maximizer of Copeland score)
+condorcet_idx = np.argmax(copeland_scores)
+condorcet_x = X[condorcet_idx]
+
+# Also find true minimizer of g
+true_min_idx = np.argmin(g(X))
+true_min_x = X[true_min_idx]
+
+fig, axes = plt.subplots(1, 2, figsize=(7, 3))
+
+# Left: Latent function g(x)
+axes[0].plot(X, g(X), 'b-', linewidth=1.5, label='$g(x)$')
+axes[0].axvline(true_min_x, color='green', linestyle='--', alpha=0.7, label=f'True min: {true_min_x:.2f}')
+axes[0].scatter([true_min_x], [g(true_min_x)], color='green', s=80, zorder=5)
+axes[0].set_xlabel('$x$')
+axes[0].set_ylabel('$g(x)$')
+axes[0].set_title('Latent Function (to minimize)')
+axes[0].legend(fontsize=7)
+axes[0].grid(True, alpha=0.3)
+
+# Right: Soft-Copeland score
+axes[1].plot(X, copeland_scores, 'r-', linewidth=1.5, label='Soft-Copeland $C(x)$')
+axes[1].axvline(condorcet_x, color='purple', linestyle='--', alpha=0.7, label=f'Condorcet winner: {condorcet_x:.2f}')
+axes[1].scatter([condorcet_x], [copeland_scores[condorcet_idx]], color='purple', s=80, zorder=5)
+axes[1].set_xlabel('$x$')
+axes[1].set_ylabel('$C(x)$')
+axes[1].set_title('Soft-Copeland Score (to maximize)')
+axes[1].legend(fontsize=7)
+axes[1].grid(True, alpha=0.3)
+
+plt.tight_layout()
+plt.show()
+print(f"True minimizer of g: x = {true_min_x:.3f}")
+print(f"Condorcet winner (max Copeland): x = {condorcet_x:.3f}")
+print(f"These should be close when the preference model is well-specified!")
+```
+
+:::
+
+::: {.callout-note title="Code: GP Preference Model for PBO" collapse="false"}
+
+```{pyodide-python}
+#| autorun: true
+class GPPreferenceModel:
+    """GP-based preference model for Preferential Bayesian Optimization."""
+
+    def __init__(self, lengthscale=0.3, variance=1.0):
+        self.lengthscale = lengthscale
+        self.variance = variance
+        self.X_duels = []  # [(x, x'), ...]
+        self.y_duels = []  # [1 if x wins, 0 if x' wins]
+
+    def kernel(self, X1, X2):
+        """RBF kernel on duel space."""
+        diff = X1[:, None] - X2[None, :]
+        return self.variance * np.exp(-0.5 * diff**2 / self.lengthscale**2)
+
+    def add_duel(self, x, xp, winner):
+        """Add a duel observation. winner=1 means x wins."""
+        self.X_duels.append((x, xp))
+        self.y_duels.append(winner)
+
+    def predict(self, x_test, xp_test):
+        """Predict P(x beats x') using GP classification."""
+        if len(self.X_duels) == 0:
+            return 0.5, 0.5  # Prior: uniform
+
+        # Represent duels as difference in 1D
+        X_train = np.array([d[0] - d[1] for d in self.X_duels])
+        y_train = np.array(self.y_duels)
+        x_diff = x_test - xp_test
+
+        # GP posterior (simplified Laplace)
+        K = self.kernel(X_train, X_train) + 1e-4 * np.eye(len(X_train))
+        k_star = self.kernel(np.array([x_diff]), X_train).flatten()
+        k_ss = self.kernel(np.array([x_diff]), np.array([x_diff]))[0, 0]
+
+        # Laplace approximation
+        f = np.zeros(len(y_train))
+        for _ in range(5):
+            p = sigmoid(f)
+            W = np.diag(p * (1 - p) + 1e-6)
+            grad = y_train - p
+            H = W + np.linalg.inv(K)
+            f = f + np.linalg.solve(H, grad)
+
+        # Posterior mean and variance
+        K_inv = np.linalg.inv(K)
+        mu = k_star @ K_inv @ f
+        p = sigmoid(f)
+        W = np.diag(p * (1 - p) + 1e-6)
+        var = k_ss - k_star @ np.linalg.inv(K + np.linalg.inv(W)) @ k_star
+        var = max(var, 1e-6)
+
+        return sigmoid(mu), np.sqrt(var)
+
+# Test the model
+np.random.seed(42)
+model = GPPreferenceModel(lengthscale=0.3)
+
+# Generate some training duels
+for _ in range(10):
+    x, xp = np.random.uniform(-1, 1, 2)
+    true_pref = preference_prob(x, xp)
+    winner = 1 if np.random.rand() < true_pref else 0
+    model.add_duel(x, xp, winner)
+
+# Predict on a grid
+X_grid = np.linspace(-1, 1, 30)
+pred_matrix = np.zeros((len(X_grid), len(X_grid)))
+for i, x in enumerate(X_grid):
+    for j, xp in enumerate(X_grid):
+        pred_matrix[i, j], _ = model.predict(x, xp)
+
+# Compute estimated Copeland scores
+est_copeland = pred_matrix.mean(axis=1)
+
+fig, axes = plt.subplots(1, 2, figsize=(7, 3))
+
+# Predicted preference matrix
+im = axes[0].imshow(pred_matrix, extent=[-1, 1, -1, 1], origin='lower', cmap='RdYlGn', vmin=0, vmax=1)
+axes[0].set_xlabel("$x'$")
+axes[0].set_ylabel("$x$")
+axes[0].set_title('Predicted $P(x > x\')$')
+plt.colorbar(im, ax=axes[0], shrink=0.8)
+
+# Estimated vs true Copeland
+axes[1].plot(X, copeland_scores, 'k--', label='True Copeland', linewidth=1.5)
+axes[1].plot(X_grid, est_copeland, 'b-', label='Estimated (10 duels)', linewidth=1.5)
+axes[1].set_xlabel('$x$')
+axes[1].set_ylabel('Copeland score')
+axes[1].set_title('Copeland Score Estimation')
+axes[1].legend(fontsize=7)
+axes[1].grid(True, alpha=0.3)
+
+plt.tight_layout()
+plt.show()
+print(f"Estimated Condorcet winner: x = {X_grid[np.argmax(est_copeland)]:.2f}")
+```
+
+:::
 
 ### Acquisition Functions
 
@@ -1469,44 +2460,7 @@ use qEUBO as a sufficient policy due to the following theorem:
 $$\underset{X \in \mathbb{X}^q}{\operatorname{argmax}} \mathrm{qEUBO}_n(X) \subseteq \underset{X \in \mathbb{X}^q}{\operatorname{argmax}} V_n(X) .$$ {#eq-qeubo-optimality}
 :::
 
-::: proof
-*Proof.* For a query $X \in \mathcal{X}^q$, let
-$x^{+}(X, i) \in \operatorname{argmax}_{x \in \mathbb{X}} \mathbb{E}_n[g(x) \mid(X, i)]$
-and define $X^{+}(X)=$ $\left(x^{+}(X, 1), \ldots, x^{+}(X, q)\right)$.
-
-**Claim 1** $V_n(X) \leq \mathrm{qEUBO}_n\left(X^{+}(X)\right) .$ We see
-that $$\begin{aligned}
-V_n(X) & =\sum_{i=1}^q \mathbf{P}_n(r(X)=i) \mathbb{E}_n[g\left(x^{+}(X, i)\right) ] \\
-& \leq \sum_{i=1}^q \mathbf{P}_n(r(X)=i) \mathbb{E}_n[\max _{i=1, \ldots, q} g(x^{+}(X, i))] \\
-& =\mathbb{E}_n\left[\max _{i=1, \ldots, q} g\left(x^{+}(X, i)\right)\right] \\
-& =\mathrm{qEUBO}_n\left(X^{+}(X)\right),
-\end{aligned}$$ {#eq-claim1-proof} as claimed.
-
-**Claim 2** $\mathrm{qEUBO}_n(X) \leq V_n(X) .$ For any given
-$X \in \mathbb{X}^q$ we have
-$$\mathbb{E}_n\left[f\left(x_{r(X)}\right) \mid(X, r(X))\right] \leq \max _{x \in \mathbb{X}} \mathbb{E}_n[f(x) \mid(X, r(X))] .$$ {#eq-claim2-inequality}
-Since $f\left(x_{r(X)}\right)=\max _{i=1, \ldots, q} f\left(x_i\right)$,
-taking expectations over $r(X)$ on both sides obtains the required
-result.
-
-Now building on the arguments above, let
-$X^* \in \operatorname{argmax}_{X \in \mathbb{X}^q} \mathrm{qEUBO}_n(X)$
-and suppose for contradiction that
-$X^* \notin \operatorname{argmax}_{X \in \mathbb{X}^q} V_n(X)$. Then,
-there exists $\widetilde{X} \in \mathbb{X}^q$ such that
-$V_n(\widetilde{X})>V_n\left(X^*\right)$. We have $$\begin{aligned}
-\operatorname{qEUBO}_n\left(X^{+}(\tilde{X})\right) & \geq V_n(\tilde{X}) \\
-& >V_n\left(X^*\right) \\
-& \geq \operatorname{qEUBO}_n\left(X^*\right) \\
-& \geq \operatorname{qEUBO}_n\left(X^{+}(\tilde{X})\right) .
-\end{aligned}$$ {#eq-contradiction-chain}
-
-The first inequality follows from (1). The second inequality is due to
-our supposition for contradiction. The third inequality is due to (2).
-Finally, the fourth inequality holds since
-$X^* \in \operatorname{argmax}_{X \in \mathbb{X}^q} \mathrm{qEUBO}_n(X)$.
-This contradiction concludes the proof. ◻
-:::
+*Proof sketch.* The proof establishes two key inequalities. First, the one-step value $V_n(X)$ is bounded above by $\text{qEUBO}_n(X^+(X))$, where $X^+(X)$ contains the best post-observation recommendations---because selecting the best option from a query can only be as good as already knowing the best option in the pool. Second, $\text{qEUBO}_n(X) \leq V_n(X)$ because the user-selected option from the query may not be the global optimum. Combining these via a proof by contradiction shows that any maximizer of qEUBO is also a maximizer of the one-step Bayes-optimal value function $V_n$. See @astudillo2023qeubodecisiontheoreticacquisitionfunction for the full proof. $\square$
 
 Therefore a sufficient condition for following one-step Bayes optimality
 is by maximizing $\text{qEUBO}_n$.
@@ -1607,182 +2561,328 @@ $\left.f\left(\widehat{x}_n^*\right)\right] \geq R$ for all $n$, for a
 constant $R>0$.
 :::
 
-::: proof
-*Proof.* Let $X = \{1, 2, 3, 4\}$ and consider the functions
-$f_i:X \rightarrow R$, for $i=1,2,3,4$, given by $f_i(1) = -1$ and
-$f_i(2) = 0$ for all $i$, and $$\begin{aligned}
-    f_1(x) = \begin{cases}
-    1, &\ x=3\\
-    \frac{1}{2}, &\ x=4
-    \end{cases},
-\hspace{0.5cm}
-f_2(x) = \begin{cases}
-    \frac{1}{2}, &\ x=3\\
-    1, &\ x=4
-    \end{cases},
-\hspace{0.5cm}
-f_3(x) = \begin{cases}
-    -\frac{1}{2}, &\ x=3\\
-    -1, &\ x=4
-    \end{cases},
-\hspace{0.5cm}
-f_4(x) = \begin{cases}
-    -1, &\ x=3\\
-    -\frac{1}{2}, &\ x=4
-    \end{cases}.
-\end{aligned}$$ {#eq-qei-counterexample-functions}
-
-Let $p$ be a number with $0 < p < 1/3$ and set $q=1-p$. We consider a
-prior distribution on $f$ with support $\{f_i\}_{i=1}^4$ such that
-$$\begin{aligned}
-p_i = Pr(f=f_i) =
-    \begin{cases}
-        p/2, i =1,2,\\
-        q/2, i=3,4.
-    \end{cases}
-\end{aligned}$$ {#eq-qei-prior} We also assume the user's response likelihood is given
-by $Pr(r(X)=1\mid f(x_1) > f(x_2)) = a$ for some $a$ such that
-$1/2 < a < 1$,
-
-Let $D^{(n)}$ denote the set of observations up to time $n$ and let
-$p_i^{(n)} = Pr(f=f_i \mid \mathbb{E}^{(n)})$ for $i=1,2,3,4$. We let the
-initial data set be $\mathcal{D}^{(0)} = \{(X^{(0)}, r^{(0)})\}$, where
-$X^{(0)}= (1,2)$. We will prove that the following statements are true
-for all $n\geq 0$.
-
-1.  $p_i^{(n)} > 0$ for $i=1,2,3,4$.
-
-2.  $p_1^{(n)} < \frac{1}{2}p_3^{(n)}$ and
-    $p_2^{(n)} < \frac{1}{2}p_4^{(n)}$.
-
-3.  $\arg \max_{x\in\mathcal{X}}\mathbb{E}^{(n)}[f(x)]=\{2\}$.
-
-4.  $\arg \max_{X\in\mathcal{X}^2}\text{qEI}^{(n)}(X) = \{(3, 4)\}$.
-
-We prove this by induction over $n$. We begin by proving this for $n=0$.
-Since $f_i(1) < f_i(2)$ for all $i$, the posterior distribution on $f$
-given $\mathcal{D}^{(0)}$ remains the same as the prior; i.e., $p_i^{(0)} = p_i$
-for $i=1,2,3,4$. Using this, statements 1 and 2 can be easily verified.
-Now note that $\mathbb{E}^{(0)}[f(1)]=-1$, $\mathbb{E}^{(0)}[f(2)]=0$, and
-$\mathbb{E}^{(0)}[f(3)] = \mathbb{E}^{(0)}[f(4)] = \frac{3}{2}(p - q)$. Since $p < q$,
-it follows that $\arg \max_{x\in\mathcal{X}}\mathbb{E}^{(n)}[f(x)]=\{2\}$; i.e., statement
-3 holds. Finally, since $\max_{x\in\{1,2\}}\mathbb{E}^{(0)}[f(x)] = 0$, the qEI
-acquisition function at time $n=0$ is given by
-$\text{qEI}^{(0)}(X) = \mathbb{E}^{(0)}[\{\max\{f(x_1), f(x_2)\}\}^+]$. A direct
-calculation can now be performed to verify that statement 4 holds. This
-completes the base case.
-
-Now suppose statements 1-4 hold for some $n\geq 0$. Since
-$X^{(n+1)} = (3, 4)$, the posterior distribution on $f$ given
-$D^{(n+1)}$ is given by $$\begin{aligned}
-p_i^{(n+1)} \propto \begin{cases}
-                        p_i^{(n)}\ell, \ i=1,3,\\
-                         p_i^{(n)} (1 - \ell), \ i=2,4,
-                        \end{cases}
-\end{aligned}$$ {#eq-qei-posterior-update} where
-$$\ell = a I\{r^{(n+1)} = 1\} + (1-a)I\{r^{(n+1)} = 2\}.$$ {#eq-ell-definition} Observe that
-$0< \ell < 1$ since $0 < a < 1$. Thus, $\ell > 0$ and $1-\ell > 0$.
-Since $p_i^{(n)} > 0$ by the induction hypothesis, it follows from this
-that $p_i^{(n+1)} > 0$ for $i=1,2,3,4$. Moreover, since
-$p_i^{(n+1)} \propto p_i^{(n)}\ell$ for $i=1,3$ and
-$p_1^{(n)} < \frac{1}{2}p_3^{(n)}$ by the induction hypothesis, it
-follows that $p_1^{(n+1)} < \frac{1}{2}p_3^{(n+1)}$. Similarly,
-$p_2^{(n+1)} < \frac{1}{2}p_4^{(n+1)}$. Thus, statements 1 and 2 hold at
-time $n+1$.
-
-Now observe that $$\begin{aligned}
-    \mathbb{E}^{(n+1)}[f(3)] &= p_1^{(n+1)} + \frac{1}{2}p_2^{(n+1)} - \frac{1}{2}p_3^{(n+1)} - p_4^{(n+1)}\\
-    &= \left(p_1^{(n+1)} - \frac{1}{2}p_3^{(n+1)}\right) + \left(\frac{1}{2}p_2^{(n+1)} - p_4^{(n+1)}\right)\\
-    &\leq \left(p_1^{(n+1)} - \frac{1}{2}p_3^{(n+1)}\right) + \left(p_2^{(n+1)} - \frac{1}{2}p_4^{(n+1)}\right)\\
-    &\leq 0,
-\end{aligned}$$ {#eq-expected-f3} where the last inequality holds since
-$p_1^{(n+1)} < \frac{1}{2}p_3^{(n+1)}$ and
-$p_2^{(n+1)} < \frac{1}{2}p_4^{(n+1)}$. Similarly, we see that
-$\mathbb{E}^{(n+1)}[f(4)] \leq 0$. Since $\mathbb{E}^{(n+1)}[f(1)]=-1$ and
-$\mathbb{E}^{(n+1)}[f(2)]=0$, it follows that
-$\arg \max_{x\in\mathcal{X}}\mathbb{E}^{(n+1)}[f(x)]=\{2\}$; i.e., statement 3 holds at
-time $n+1$.
-
-Since $\max_{x\in\mathcal{X}}\mathbb{E}^{(0)}[f(x)] = 0$, the qEI acquisition function at
-time $n+1$ is given by
-$\text{qEI}^{(n+1)}(X) = \mathbb{E}^{(n+1)}[\{\max\{f(x_1), f(x_2)\}\}^+]$. Since
-$f(1) \leq f(x)$ almost surely under the prior for all $x\in\mathcal{X}$, there
-is always a maximizer of qEI that does not contain $1$. Thus, to find
-the maximizer of qEI, it suffices to analyse its value at the pairs
-$(2, 3)$, $(3,4)$ and $(4,2)$. We have
-$$\text{qEI}^{(n+1)}(2, 3) = p_1^{(n+1)} + 1/2 p_2^{(n+1)},$$ {#eq-qei-23}
-$$\operatorname{qEI}^{(n+1)}(3, 4) = p_1^{(n+1)} + p_2^{(n+1)}$$ {#eq-qei-34} and
-$$\operatorname{qEI}^{(n+1)}(4, 2) = 1/2p_1^{(n+1)} + p_2^{(n+1)}.$$ {#eq-qei-42}
-Since $p_1^{(n+1)} > 0$ and $p_2^{(n+1)} > 0$, it follows that
-$\arg \max_{X \in X^2}\text{qEI}^{(n+1)}(X) = \{(3, 4)\}$, which concludes
-the proof by induction.
-
-Finally, since $\arg \max_{x\in X}\mathbb{E}^{(n)}[f(x)]=\{2\}$ for all $n$, the
-Bayesian simple regret of qEI is given by $$\begin{aligned}
-    \mathbb{E}\left[f(x^*) - f(2)\right] &= \sum_{i=1}p_i\left(\max_{x\in X}f_i(x) - f_i(2)\right)\\
-    &= p
-\end{aligned}$$ {#eq-qei-final-regret} for all $n$. ◻
-:::
+*Proof sketch.* The counterexample constructs four functions on $\mathcal{X} = \{1,2,3,4\}$ with a carefully chosen prior. The key insight is that qEI optimizes improvement over the *current best estimate*, which in this construction is always $x = 2$ (with $f(2) = 0$). Since comparing $x = 3$ vs. $x = 4$ always yields the highest expected improvement over $f(2) = 0$, qEI perpetually selects the query $(3, 4)$---never querying the pairs that would reveal whether the true optimum lies at $x = 3$ or $x = 4$. One can show by induction that this trapping behavior persists for all $n$, yielding constant Bayesian simple regret $R = p > 0$. In contrast, qEUBO avoids this trap because it maximizes the expected utility of the *best option shown*, which naturally encourages diverse queries. See @astudillo2023qeubodecisiontheoreticacquisitionfunction Section B for the full induction argument. $\square$
 
 #### POP-BO Regret {#pop-bo-regret .unnumbered}
 
-Commonly used kernel functions within the RKHS are:
-
-1.  Linear: $$k(x, \bar{x})=x^{\top} \bar{x} .$$ {#eq-kernel-linear}
-
-2.  Squared Exponential (SE):
-    $$k(x, \bar{x})=\sigma_{\mathrm{SE}}^2 \exp \left\{-\frac{\|x-\bar{x}\|^2}{l^2}\right\},$$ {#eq-kernel-se}
-    where $\sigma_{\mathrm{SE}}^2$ is the variance parameter and $l$ is
-    the lengthscale parameter.
-
-3.  Matérn:
-    $$k(x, \bar{x})=\frac{2^{1-\nu}}{\Gamma(\nu)}\left(\sqrt{2 \nu} \frac{\|x-\bar{x}\|}{\rho}\right)^\nu K_\nu\left(\sqrt{2 \nu} \frac{\|x-\bar{x}\|}{\rho}\right),$$ {#eq-kernel-matern}
-    where $\rho$ and $\nu$ are the two positive parameters of the kernel
-    function, $\Gamma$ is the gamma function, and $K_\nu$ is the
-    modified Bessel function of the second kind. $\nu$ captures the
-    smoothness of the kernel function.
-
-With the definition of Bayesian simple regret, we have the following
-theorem defining the regret bound:
+POP-BO achieves provable regret guarantees that depend on the choice of kernel. The cumulative regret bound involves the *maximum information gain* $\gamma_T^{ff'}$, which measures the complexity of the function class defined by the kernel.
 
 ::: theorem
-With probability at least $1-\delta$, the cumulative regret of POP-BO
-satisfies,
+With probability at least $1-\delta$, the cumulative regret of POP-BO satisfies
 $$R_T=\mathcal{O}\left(\sqrt{\beta_T \gamma_T^{f f^{\prime}} T}\right),$$ {#eq-popbo-regret-bound}
-where
-$$\beta_T=\beta(1 / T, \delta, T)=\mathcal{O}\left(\sqrt{T \log \frac{T \mathcal{N}\left(\mathcal{B}_f, 1 / T,\|\cdot\|_{\infty}\right)}{\delta}}\right).$$ {#eq-beta-t}
+and the simple regret of the reported solution converges as
+$$f\left(x^{\star}\right)-f\left(x_{t^{\star}}\right) \leq \mathcal{O}\left(\frac{\sqrt{\beta_T \gamma_T^{f f^{\prime}}}}{\sqrt{T}}\right).$$ {#eq-popbo-convergence}
 :::
 
-The guaranteed convergence rate is characterised as:
+The kernel-specific rates reveal how the smoothness of the preference function affects convergence:
 
 ::: theorem
-[]{#th: popbo_converge label="th: popbo_converge"} Let $t^{\star}$ be
-defined as in Eq. (19). With probability at least $1-\delta$,
-$$f\left(x^{\star}\right)-f\left(x_{t^{\star}}\right) \leq \mathcal{O}\left(\frac{\sqrt{\beta_T \gamma_T^{f f^{\prime}}}}{\sqrt{T}}\right)$$ {#eq-popbo-convergence}
+For POP-BO with $\epsilon=1/T$:
+
+1.  **Linear kernel** $k(x, y)=\langle x, y\rangle$: $R_T=\mathcal{O}\left(T^{3 / 4}(\log T)^{3 / 4}\right)$
+2.  **Squared exponential kernel**: $R_T=\mathcal{O}\left(T^{3 / 4}(\log T)^{3 / 4(d+1)}\right)$
+3.  **Matérn kernel** (smoothness $\nu$): $R_T=\mathcal{O}\left(T^{3 / 4}(\log T)^{3 / 4} T^{\frac{d}{\nu}\left(\frac{1}{4}+\frac{d+1}{4+2(d+1)^d / \nu}\right)}\right)$
 :::
 
-Theorem
-[\[th: popbo_converge\]](#th: popbo_converge){reference-type="ref"
-reference="th: popbo_converge"} highlights that by minimizing the known
-term
-$2\left(2 B+\lambda^{-1 / 2} \sqrt{\beta\left(\epsilon, \frac{\delta}{2}, t\right)}\right) \sigma_t^{f f^{\prime}}\left(\left(x_t, x_t^{\prime}\right)\right)$,
-the reported final solution $x_{t^{\star}}$ has a guaranteed convergence
-rate.
+The rates share a $T^{3/4}$ base rate, with kernel-dependent logarithmic or polynomial corrections. Smoother kernels (larger $\nu$ in Matérn, or SE which corresponds to $\nu \to \infty$) yield tighter bounds, reflecting the intuition that smoother preference functions are easier to optimize from pairwise comparisons. Compared to standard BO (which achieves $T^{1/2}$ rates), the extra $T^{1/4}$ factor is the price of learning from preference feedback rather than direct function evaluations.
 
-Further kernel-specific regret bounds for POP-BO are calculated as
-follows:
+::: {.callout-note title="Code: Full PBO Simulation" collapse="false"}
 
-::: theorem
-Setting $\epsilon=1 / T$ and running our POP-BO algorithm in Alg. 1,
+This simulation demonstrates Preferential Bayesian Optimization finding the optimum of a latent function through pairwise comparisons.
 
-1.  If $k(x, y)=\langle x, y\rangle$, we have,
-    $$R_T=\mathcal{O}\left(T^{3 / 4}(\log T)^{3 / 4}\right) .$$ {#eq-regret-linear-kernel}
+```{pyodide-python}
+#| autorun: true
+# Full PBO simulation
+np.random.seed(42)
 
-2.  If $k(x, y)$ is a squared exponential kernel, we have,
-    $$R_T=\mathcal{O}\left(T^{3 / 4}(\log T)^{3 / 4(d+1)}\right) .$$ {#eq-regret-se-kernel}
+# True latent function (unknown to algorithm)
+def true_g(x):
+    return (x - 0.2)**2 + 0.3 * np.sin(5 * x)
 
-3.  If $k(x, y)$ is a Matérn kernel, we have,
-    $$\left.R_T=\mathcal{O}\left(T^{3 / 4}(\log T)^{3 / 4} T^{\frac{d}{\nu}\left(\frac{1}{4}+\frac{d+1}{4+2(d+1)^d / \nu}\right.}\right)\right).$$ {#eq-regret-matern-kernel}
+# True preference probability
+def true_pref(x, xp):
+    return sigmoid(true_g(xp) - true_g(x))
+
+class PBO:
+    """Preferential Bayesian Optimization with Pure Exploration."""
+
+    def __init__(self, bounds=(-1, 1), n_candidates=20):
+        self.bounds = bounds
+        self.candidates = np.linspace(bounds[0], bounds[1], n_candidates)
+        self.model = GPPreferenceModel(lengthscale=0.2)
+        self.history = []
+
+    def pure_exploration_acquisition(self):
+        """Select duel with highest variance."""
+        best_var = -1
+        best_pair = None
+        for x in self.candidates:
+            for xp in self.candidates:
+                if x != xp:
+                    _, var = self.model.predict(x, xp)
+                    if var > best_var:
+                        best_var = var
+                        best_pair = (x, xp)
+        return best_pair
+
+    def thompson_sampling_acquisition(self):
+        """Thompson Sampling: sample from posterior, optimize."""
+        # Estimate Copeland scores with noise
+        scores = []
+        for x in self.candidates:
+            total = 0
+            for xp in self.candidates:
+                if x != xp:
+                    mu, std = self.model.predict(x, xp)
+                    # Add noise for exploration
+                    sample = mu + np.random.randn() * std * 0.5
+                    total += sample
+            scores.append(total)
+        incumbent = self.candidates[np.argmax(scores)]
+
+        # Choose challenger with high uncertainty
+        variances = []
+        for xp in self.candidates:
+            if xp != incumbent:
+                _, var = self.model.predict(incumbent, xp)
+                variances.append((var, xp))
+        challenger = max(variances)[1]
+        return incumbent, challenger
+
+    def step(self, use_ts=True):
+        """Perform one iteration."""
+        if len(self.history) < 3:
+            # Random exploration initially
+            x, xp = np.random.choice(self.candidates, 2, replace=False)
+        elif use_ts:
+            x, xp = self.thompson_sampling_acquisition()
+        else:
+            x, xp = self.pure_exploration_acquisition()
+
+        # Query oracle
+        winner = 1 if np.random.rand() < true_pref(x, xp) else 0
+        self.model.add_duel(x, xp, winner)
+        self.history.append((x, xp, winner))
+
+    def get_recommendation(self):
+        """Return current best estimate of optimum."""
+        scores = []
+        for x in self.candidates:
+            total = 0
+            for xp in self.candidates:
+                if x != xp:
+                    mu, _ = self.model.predict(x, xp)
+                    total += mu
+            scores.append(total)
+        return self.candidates[np.argmax(scores)]
+
+# Run PBO
+pbo = PBO(bounds=(-1, 1), n_candidates=15)
+n_iterations = 25
+recommendations = []
+
+for t in range(n_iterations):
+    pbo.step(use_ts=True)
+    recommendations.append(pbo.get_recommendation())
+
+# Ground truth
+X_grid = np.linspace(-1, 1, 100)
+true_optimum = X_grid[np.argmin(true_g(X_grid))]
+
+# Visualize results
+fig, axes = plt.subplots(1, 3, figsize=(9, 3))
+
+# Left: True function and recommendations
+axes[0].plot(X_grid, true_g(X_grid), 'k-', linewidth=1.5, label='True $g(x)$')
+axes[0].axvline(true_optimum, color='green', linestyle='--', label=f'True opt: {true_optimum:.2f}')
+axes[0].axvline(recommendations[-1], color='red', linestyle=':', linewidth=2, label=f'PBO: {recommendations[-1]:.2f}')
+axes[0].set_xlabel('$x$')
+axes[0].set_ylabel('$g(x)$')
+axes[0].set_title('Latent Function')
+axes[0].legend(fontsize=6)
+axes[0].grid(True, alpha=0.3)
+
+# Middle: Recommendation over time
+axes[1].plot(range(1, n_iterations+1), recommendations, 'b.-', linewidth=1, markersize=4)
+axes[1].axhline(true_optimum, color='green', linestyle='--', label='True optimum')
+axes[1].set_xlabel('Iteration')
+axes[1].set_ylabel('Recommended $x$')
+axes[1].set_title('Recommendation Convergence')
+axes[1].legend(fontsize=7)
+axes[1].grid(True, alpha=0.3)
+
+# Right: Distance to optimum
+distances = [abs(r - true_optimum) for r in recommendations]
+axes[2].plot(range(1, n_iterations+1), distances, 'r.-', linewidth=1, markersize=4)
+axes[2].set_xlabel('Iteration')
+axes[2].set_ylabel('$|x_{rec} - x^*|$')
+axes[2].set_title('Distance to Optimum')
+axes[2].set_yscale('log')
+axes[2].grid(True, alpha=0.3)
+
+plt.tight_layout()
+plt.show()
+
+print(f"True optimum: x* = {true_optimum:.3f}")
+print(f"PBO recommendation after {n_iterations} duels: x = {recommendations[-1]:.3f}")
+print(f"Final distance to optimum: {distances[-1]:.4f}")
+```
+
+:::
+
+## Human-Agent Cooperation and CIRL
+
+The algorithms discussed so far---Thompson Sampling, dueling bandits, and Preferential Bayesian Optimization---all share a common assumption: the human is a **passive oracle** who responds to queries but does not actively shape the learning process. In practice, this assumption often breaks down. A user choosing between LLM responses may deliberately select the more challenging example to *teach* the system. A patient in a clinical trial may modify their behavior based on what they believe the system is learning. Humans are **active agents** whose feedback depends on their beliefs about how it will be used.
+
+This section introduces **Cooperative Inverse Reinforcement Learning (CIRL)**, a framework that models human and agent as jointly optimizing a shared objective. Where Thompson Sampling optimizes reward under uncertainty about the *reward function*, CIRL optimizes under uncertainty about the *human's preferences*---and crucially, the human knows this and can act to reduce that uncertainty.
+
+### The CIRL Framework
+
+In standard Inverse Reinforcement Learning (IRL), the agent learns a reward function from observing an expert's behavior, then optimizes it. The expert demonstrates; the agent imitates. CIRL extends this to a **two-player cooperative game**:
+
+- **Human H**: Knows the true reward parameters $\theta \in \Theta$
+- **Robot R**: Does not know $\theta$, but must act to maximize reward
+- **Shared payoff**: Both players receive $R(s, a_H, a_R; \theta)$—their interests are aligned
+
+The key insight is that the human's optimal policy is not just demonstrating good behavior, but **teaching** the robot about $\theta$. Sometimes instructive actions (that reveal information) dominate expert demonstrations (that maximize immediate reward).
+
+::: {.callout-note title="CIRL Formal Definition"}
+A CIRL game is defined by:
+
+- State space $\mathcal{S}$
+- Action spaces $\mathcal{A}_H$ (human) and $\mathcal{A}_R$ (robot)
+- Transition function $T(s' | s, a_H, a_R)$
+- Reward function $R(s, a_H, a_R; \theta)$ parameterized by $\theta$
+- Prior $P_0(\theta)$ over reward parameters
+- Discount factor $\gamma \in (0, 1)$
+
+At each time $t$, both observe $(s_t, a_H^{t-1}, a_R^{t-1})$. Only H observes $\theta$. The robot maintains a belief $b_R^t(\theta)$ updated via Bayes' rule.
+:::
+
+### Teaching vs. Demonstrating
+
+A central result in CIRL is that **expert demonstrations can be suboptimal** for joint value. Consider:
+
+- **Demonstration-by-expert**: Human maximizes task reward at each step
+- **Instructive teaching**: Human sometimes sacrifices immediate reward to shape robot's belief
+
+When the robot is uncertain, instructive actions that reveal $\theta$ can lead to higher cumulative reward than always acting optimally given $\theta$.
+
+::: {.callout-note title="Code: Teaching vs Demonstrating Simulation" collapse="false"}
+
+```{pyodide-python}
+#| autorun: true
+# Simplified CIRL simulation: teaching vs demonstrating
+np.random.seed(42)
+
+# Two possible reward types: theta=0 (prefers action 0) or theta=1 (prefers action 1)
+# Expert demonstration: always take optimal action for true theta
+# Instructive teaching: sometimes take suboptimal action to reveal theta
+
+def simulate_cirl(teaching=False, T=20):
+    """Simulate CIRL interaction."""
+    true_theta = np.random.randint(2)  # True reward type
+    robot_belief = 0.5  # P(theta=1)
+
+    rewards = []
+    beliefs = [robot_belief]
+
+    for t in range(T):
+        if teaching and t < 3:
+            # Instructive: exaggerate preference to teach robot
+            human_action = true_theta
+        else:
+            # Demonstration: take optimal action (same as teaching when certain)
+            human_action = true_theta
+
+        # Robot chooses based on belief
+        if robot_belief > 0.5:
+            robot_action = 1
+        elif robot_belief < 0.5:
+            robot_action = 0
+        else:
+            robot_action = np.random.randint(2)
+
+        # Reward: both get reward if robot matches true theta
+        reward = 1.0 if robot_action == true_theta else 0.0
+        rewards.append(reward)
+
+        # Robot updates belief (simplified Bayesian update)
+        # Observing human action provides signal about theta
+        likelihood_1 = 0.9 if human_action == 1 else 0.1  # P(action | theta=1)
+        likelihood_0 = 0.9 if human_action == 0 else 0.1  # P(action | theta=0)
+        posterior_1 = robot_belief * likelihood_1
+        posterior_0 = (1 - robot_belief) * likelihood_0
+        robot_belief = posterior_1 / (posterior_1 + posterior_0 + 1e-10)
+        beliefs.append(robot_belief)
+
+    return np.cumsum(rewards), beliefs
+
+# Compare strategies over multiple trials
+n_trials = 50
+demo_rewards = []
+teach_rewards = []
+
+for _ in range(n_trials):
+    demo_r, _ = simulate_cirl(teaching=False)
+    teach_r, _ = simulate_cirl(teaching=True)
+    demo_rewards.append(demo_r[-1])
+    teach_rewards.append(teach_r[-1])
+
+# Single detailed run
+np.random.seed(0)
+demo_cum, demo_beliefs = simulate_cirl(teaching=False)
+np.random.seed(0)
+teach_cum, teach_beliefs = simulate_cirl(teaching=True)
+
+fig, axes = plt.subplots(1, 2, figsize=(7, 3))
+
+# Left: Belief evolution
+T = len(demo_beliefs)
+axes[0].plot(range(T), demo_beliefs, 'b-', label='Demonstrating', linewidth=1.5)
+axes[0].plot(range(T), teach_beliefs, 'r-', label='Teaching', linewidth=1.5)
+axes[0].axhline(1.0, color='green', linestyle='--', alpha=0.5, label='True θ=1')
+axes[0].set_xlabel('Time step')
+axes[0].set_ylabel('Robot belief P(θ=1)')
+axes[0].set_title('Robot Belief Evolution')
+axes[0].legend(fontsize=7)
+axes[0].grid(True, alpha=0.3)
+axes[0].set_ylim(-0.05, 1.05)
+
+# Right: Average cumulative reward
+axes[1].bar(['Demonstrating', 'Teaching'],
+            [np.mean(demo_rewards), np.mean(teach_rewards)],
+            yerr=[np.std(demo_rewards)/np.sqrt(n_trials), np.std(teach_rewards)/np.sqrt(n_trials)],
+            color=['steelblue', 'coral'], alpha=0.8, capsize=5)
+axes[1].set_ylabel('Avg Cumulative Reward')
+axes[1].set_title(f'Teaching vs Demonstrating ({n_trials} trials)')
+axes[1].grid(True, alpha=0.3, axis='y')
+
+plt.tight_layout()
+plt.show()
+print(f"Teaching leads to faster belief convergence and can improve joint reward.")
+print(f"Demonstrating avg reward: {np.mean(demo_rewards):.1f} ± {np.std(demo_rewards):.1f}")
+print(f"Teaching avg reward: {np.mean(teach_rewards):.1f} ± {np.std(teach_rewards):.1f}")
+```
+
+:::
+
+### Choice Architecture
+
+As designers of preference learning systems, we are **choice architects**: the options we present and how we present them influence human behavior. Research in behavioral economics documents several effects:
+
+- **Order effects**: Items presented first or last receive disproportionate attention
+- **Framing effects**: How options are described changes perceived value
+- **Default effects**: Pre-selected options are chosen more often
+
+These effects are typically not captured in standard choice models (which assume IIA or similar properties). Responsible deployment of preference learning systems requires awareness of these biases.
+
+::: {.callout-tip title="Key Takeaway: Beyond Passive Oracles"}
+The transition from measurement to decision-making revealed that uncertainty should be managed, not just reduced. The transition from passive oracles to active humans reveals that **humans themselves are strategic agents** whose behavior depends on their beliefs about the system. CIRL provides a principled framework for this cooperative setting.
+:::
+
+::: {.callout-tip title="Looking Ahead: From Individual Decisions to Collective Preferences"}
+This chapter developed methods for sequential decision-making with preference feedback from a **single** user. But what happens when **multiple** users have different preferences? Chapter 5 (Aggregation) addresses this challenge using social choice theory and mechanism design. The winner concepts introduced here---Condorcet, Borda, von Neumann---will reappear in that context. In particular, a key result in Chapter 5 shows that DPO implicitly optimizes the **Borda score** when aggregating across annotators, connecting the dueling bandit framework developed here to the social choice theory of preference aggregation. Chapter 6 then asks the normative question: *whose* preferences should we optimize for, and what fairness constraints should apply?
 :::
 
 ## Discussion Questions
@@ -1840,33 +2940,6 @@ Setting $\epsilon=1 / T$ and running our POP-BO algorithm in Alg. 1,
 9. **POP-BO Regret Bound**: Following the proof sketch in the chapter, derive the regret bound for POP-BO with a linear kernel. Explain how the covering number $\mathcal{N}(\mathcal{B}_f, \epsilon, \|\cdot\|_\infty)$ appears in the bound.
 
 10. **Custom Acquisition Function**: Design and implement a novel acquisition function for preferential Bayesian optimization that balances exploration and exploitation in a different way than qEUBO. Provide theoretical justification or empirical evidence for its effectiveness.
-
-
-## Summary of Notation {#sec-notation-summary-chap5}
-
-| Symbol | Description |
-|--------|-------------|
-| $U_i \in \mathbb{R}^K$ | User latent embedding |
-| $V_j \in \mathbb{R}^K$ | Item feature vector |
-| $H_{ij} = h_i(V_j)$ | Latent utility of item $j$ for user $i$ |
-| $\mathcal{D}_t$ | Dataset of observations up to time $t$ |
-| $\tilde{U}_i^{(t)}$ | Thompson Sampling posterior sample at time $t$ |
-| $\sigma(\cdot)$ | Logistic sigmoid function |
-| $\mu_a = \mathbb{E}[r_t \mid a]$ | Expected reward of arm $a$ |
-| $R(T) = \sum_{t=1}^T (\mu^* - \mu_{a_t})$ | Cumulative regret after $T$ rounds |
-| $\mathcal{GP}(m, k)$ | Gaussian Process with mean $m$ and kernel $k$ |
-| $\mu_t(\cdot), \sigma_t^2(\cdot)$ | GP posterior mean and variance |
-| $\alpha(\cdot)$ | Acquisition function |
-| $P_{ij} = \Pr(i \succ j)$ | Preference probability of arm $i$ over $j$ |
-| $\pi_f([\mathbf{x}, \mathbf{x}'])$ | Preference function for duel |
-| $S(\mathbf{x})$ | Copeland score |
-| $C(\mathbf{x})$ | Soft-Copeland score |
-| $\mathbf{x}_c$ | Condorcet winner |
-| $g(\cdot)$ | Latent objective function in PBO |
-| $\mathcal{B}_g$ | Confidence set for $g$ |
-| $\text{qEUBO}_n(X)$ | Expected utility of best option acquisition function |
-| $K_t$ | GP kernel matrix at time $t$ |
-| $W$ | Diagonal matrix of $p(1-p)$ terms in Laplace approximation |
 
 
 <!--

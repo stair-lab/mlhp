@@ -34,6 +34,16 @@ filters:
   - pyodide
 ---
 
+::: {.content-visible when-format="html"}
+
+<iframe
+  src="../slides/chap2.html"
+  style="width:90%; height:450px;"
+></iframe>
+[Fullscreen Slides](../slides/chap2.html){.btn .btn-outline-primary .btn role="button"}
+
+:::
+
 ::: {.callout-note}
 ## Intended Learning Outcomes
 
@@ -84,8 +94,7 @@ Designing a good reward signal by hand for a complex AI system is difficult and 
 This chapter addresses the central question of **learning**: given observed preference data, how do we estimate the parameters of these models? We explore four complementary perspectives on parameter learning, each with distinct advantages:
 
 - **Maximum Likelihood Estimation** (@sec-mle): Find parameters that maximize the probability of observed data. Fast and scalable, but provides only point estimates.
-- **Bayesian Inference** (@sec-bayesian): Treat parameters as random variables with prior distributions. Quantifies uncertainty but requires more computation.
-- **Gaussian Process Inference** (@sec-gp-inference): Learn nonparametric reward functions using Laplace approximation. Provides both flexibility and principled uncertainty quantification.
+- **Bayesian Inference** (@sec-bayesian, @sec-gp-inference): Treat parameters as random variables with prior distributions. We cover both parametric models (using MCMC) and nonparametric Gaussian Process models (using Laplace approximation). Quantifies uncertainty but requires more computation.
 - **Online Learning** (@sec-online): Update estimates incrementally as new data arrives. Essential for dynamic systems with continuously arriving feedback.
 
 Beyond these core methods, we cover essential machine learning techniques for practical applications:
@@ -340,11 +349,19 @@ mse = np.mean((V - V_hat_aligned) ** 2)
 print(f"After center and whiten: Corr {corr:.4f}, MSE: {mse:.6f}")
 ```
 
+::: {.callout-tip title="Looking Ahead: Regularization"}
+MLE can overfit when parameters outnumber observations. @sec-regularization introduces L2 regularization, which adds a penalty $\frac{\lambda}{2}\|V\|_2^2$ to the objective. This is equivalent to MAP estimation with a Gaussian prior—connecting MLE to the Bayesian framework we develop next.
+:::
+
 ## Bayesian Inference {#sec-bayesian}
 
-A Bayesian approach provides a natural alternative to maximum likelihood for parameter estimation in the Bradley–Terry model. Instead of finding a single point estimate for the item parameters (V), we place a prior distribution on them (e.g., independent standard normals) and update this prior using the Bernoulli likelihood from the observed comparisons. This yields a posterior distribution over (V), which captures both central estimates and the uncertainty around them. In practice, this posterior cannot be computed in closed form, so we turn to approximate inference. One common method is Markov chain Monte Carlo (MCMC), which constructs a sequence of samples that, in the limit, follow the posterior distribution.
+A Bayesian approach provides a natural alternative to maximum likelihood for parameter estimation. Instead of finding a single point estimate, we place a prior distribution on parameters and update it using the likelihood from observed comparisons. This yields a posterior distribution that captures both central estimates and the uncertainty around them. We first cover parametric models using MCMC, then extend to nonparametric Gaussian Process models using Laplace approximation.
 
-In particular, the Metropolis–Hastings (MH) algorithm is straightforward to apply: at each step, we propose a new value for one or more coordinates of (V) (e.g., from a Gaussian centered at the current state), compute the acceptance ratio as the ratio of posterior densities between the proposed and current states, and accept the proposal with that probability. Repeating this process produces a chain of samples that can be used to approximate posterior means, variances, or other functionals of interest. This approach not only yields point predictions but also quantifies uncertainty about the relative strengths of items under the Bradley–Terry model.
+### Parametric Models
+
+For the Bradley–Terry model with finite-dimensional item parameters $V$, we place i.i.d. standard normal priors and update them using the Bernoulli likelihood from observed comparisons. In practice, this posterior cannot be computed in closed form, so we turn to Markov chain Monte Carlo (MCMC), which constructs a sequence of samples that, in the limit, follow the posterior distribution.
+
+The Metropolis–Hastings (MH) algorithm is straightforward to apply: at each step, we propose a new value for one or more coordinates of (V) (e.g., from a Gaussian centered at the current state), compute the acceptance ratio as the ratio of posterior densities between the proposed and current states, and accept the proposal with that probability. Repeating this process produces a chain of samples that can be used to approximate posterior means, variances, or other functionals of interest. This approach not only yields point predictions but also quantifies uncertainty about the relative strengths of items under the Bradley–Terry model.
 
 Let the prior be i.i.d. standard normal for each item parameter: $p(V) = \prod_{j=1}^M \mathcal N(V_j \mid 0, 1)$. Then the posterior distribution is $p(V \mid \mathcal D) = p(\mathcal D \mid V)p(V)/p(\mathcal D),$ where the likelihood is
 $$
@@ -428,9 +445,9 @@ ax_hist.set_title("Posterior")
 plt.show()
 ```
 
-## Inference for Gaussian Process Preference Models {#sec-gp-inference}
+### Gaussian Processes {#sec-gp-inference}
 
-Chapter 2 introduced Gaussian Processes (GPs) as a flexible nonparametric alternative to linear reward models. With GPs, we place a prior distribution over reward functions $r \sim \mathcal{GP}(m, k)$ and combine it with the Bradley-Terry likelihood for preferences. The challenge is that this likelihood is *non-Gaussian*, breaking the standard GP posterior formulas.
+MCMC works well for finite-dimensional parameter vectors, but what if we want to learn a *nonparametric* reward function? Gaussian Processes (GPs) extend Bayesian inference to *function spaces*, placing a prior distribution over reward functions $r \sim \mathcal{GP}(m, k)$ and combining it with the Bradley-Terry likelihood for preferences. The challenge is that this likelihood is *non-Gaussian*, breaking the standard GP posterior formulas and requiring approximations like Laplace.
 
 **The inference problem.** Given pairwise comparisons $\mathcal{D} = \{(x_A^{(i)}, x_B^{(i)}, y_i)\}_{i=1}^n$ where $y_i = 1$ if item $A$ was preferred, we want to compute the posterior:
 $$
@@ -444,7 +461,7 @@ $$ {#eq-gp-bt-likelihood}
 
 Because this sigmoid likelihood is not Gaussian, the posterior $p(r \mid \mathcal{D})$ is no longer a Gaussian Process.
 
-### Laplace Approximation
+#### Laplace Approximation
 
 The **Laplace approximation** provides a tractable Gaussian approximation to the true posterior:
 
@@ -567,7 +584,7 @@ print(f"Learned from {n_comparisons} pairwise comparisons")
 print(f"Posterior uncertainty varies: min std = {std_pred.min():.3f}, max std = {std_pred.max():.3f}")
 ```
 
-### Connection to Fisher Information {#sec-fisher-information}
+#### Connection to Fisher Information {#sec-fisher-information}
 
 The Laplace approximation has a natural connection to the Fisher information framework we developed for linear models. The Hessian of the negative log-likelihood at the mode gives the *observed Fisher information*:
 $$
@@ -576,7 +593,7 @@ $$ {#eq-fisher-information}
 
 Just as with linear preference models, comparisons with $p \approx 0.5$ contribute the most information (highest $p(1-p)$), while "easy" comparisons where one option clearly dominates contribute little.
 
-### Computational Considerations
+#### Computational Considerations
 
 **Complexity.** Each Newton iteration requires $O(m^3)$ computation for the matrix solve, where $m$ is the number of unique points. For $n$ comparisons involving $m \leq 2n$ unique points, the total cost is $O(n^3)$ per iteration.
 
@@ -592,7 +609,7 @@ $$ {#eq-marginal-likelihood}
 
 In Chapter 4, we will see how the GP posterior uncertainty enables *active* query selection—choosing which comparisons to ask to learn most efficiently.
 
-## Online Learning with Elo Ratings {#sec-online}
+## Online Learning {#sec-online}
 
 In many applications, comparisons between items arrive sequentially over time rather than being observed all at once. For example, players in online games are continuously matched, or recommendation systems log one user preference at a time. In such settings, it is often computationally infeasible to refit the full Bradley–Terry model by maximum likelihood or MCMC after each new observation. Instead, we want an online update rule that adjusts item strengths incrementally as new outcomes arrive.
 

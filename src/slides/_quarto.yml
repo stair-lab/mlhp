@@ -20,7 +20,32 @@ format:
     title-slide-attributes:
       data-background-color: "#f5f5f5"
     css: latex-font.css
-    math: mathjax
+    html-math-method: mathjax
+    include-in-header:
+      text: |
+        <script>
+        window.MathJax = {
+          tex: {
+            inlineMath: [['\\(','\\)']],
+            displayMath: [['\\[','\\]']],
+            processEscapes: true,
+            processEnvironments: true
+          },
+          startup: {
+            ready: function() {
+              MathJax.startup.defaultReady();
+              // Shim for RevealJS MathJax2 plugin compatibility
+              if (!MathJax.Hub) {
+                MathJax.Hub = {
+                  Config: function() {},
+                  Queue: function() {},
+                  Typeset: function() {}
+                };
+              }
+            }
+          }
+        };
+        </script>
     width: 1280
     height: 720
     margin: 0.1

@@ -1,0 +1,1108 @@
+---
+title: "Machine Learning from Human Preferences"
+subtitle: "Chapter 5: Aggregation"
+footer: "Chapter 5: Aggregation"
+---
+
+## Chapter Overview
+
+Chapters 1–4 focused on preferences of a *single* decision-maker. This chapter asks: how do we aggregate preferences across **multiple** individuals?
+
+. . .
+
+**Motivating examples:**
+
+- **RLHF**: Annotators disagree about which response is better
+- **Recommender systems**: Must balance diverse tastes across millions of users
+- **Content moderation**: Whose preferences should govern what is shown?
+- **AI alignment**: How to combine human values into a single objective?
+
+## Chapter Structure
+
+1. **Social Choice Theory**: Arrow's and Gibbard–Satterthwaite's impossibility theorems
+2. **Escaping Impossibility**: Single-peaked preferences, Borda count, DPO connection
+3. **Beyond Classical Voting**: Multi-issue voting, nosy preferences, Community Notes
+4. **Challenges in Practice**: Inversion problem, privacy, paternalism
+5. **Mechanism Design**: Auctions, VCG, peer prediction, incentive-compatible learning
+
+## Notation
+
+::: {.smaller}
+
+| Symbol | Meaning |
+|--------|---------|
+| $N = \{1, \ldots, n\}$ | Set of $n$ voters (agents) |
+| $A = \{a_1, \ldots, a_m\}$ | Set of $m$ alternatives |
+| $\succ_i$ | Voter $i$'s strict preference ordering over $A$ |
+| $\mathcal{L}(A)$ | Set of all strict linear orders over $A$ |
+| $f: \mathcal{L}(A)^n \to A$ | **Social choice function** (SCF): profile $\to$ winner |
+| $F: \mathcal{L}(A)^n \to \mathcal{L}(A)$ | **Social welfare function** (SWF): profile $\to$ ranking |
+| $\text{SP}(Y)$ | Single-peaked preferences on totally ordered set $Y$ |
+| $p(\succ_i)$ | Peak (ideal point) of voter $i$'s preferences |
+
+:::
+
+---
+
+## Social Choice Theory
+
+The central question: **Can we design an aggregation rule that faithfully represents individual preferences while satisfying fairness axioms?**
+
+. . .
+
+**Common voting rules:**
+
+- **Plurality**: Each voter names their top choice; most votes wins
+- **Borda Count**: Points based on ranking position ($m-1$ for top, $m-2$ for second, etc.)
+- **STV**: Iterative elimination of lowest-vote alternative, transferring votes
+- **Condorcet methods**: Winner must beat all others in pairwise majority contests
+
+## The Condorcet Paradox
+
+Majority preferences can be **cyclic** — even when individual preferences are transitive:
+
+| Voter | Ranking |
+|-------|---------|
+| Voter 1 | $A \succ B \succ C$ |
+| Voter 2 | $B \succ C \succ A$ |
+| Voter 3 | $C \succ A \succ B$ |
+
+. . .
+
+- Majority prefers $A$ to $B$ (voters 1, 3)
+- Majority prefers $B$ to $C$ (voters 1, 2)
+- Majority prefers $C$ to $A$ (voters 2, 3)
+
+**No Condorcet winner exists!** — a rock-paper-scissors cycle
+
+## Classical Fairness Axioms
+
+Three desirable properties for any social welfare function:
+
+. . .
+
+1. **Unanimity (Pareto efficiency)**: If every voter prefers $x$ to $y$, then society ranks $x$ above $y$
+
+. . .
+
+2. **Independence of Irrelevant Alternatives (IIA)**: The social ranking of $x$ vs. $y$ depends only on individual rankings of $x$ vs. $y$ — not on other alternatives
+
+. . .
+
+3. **Non-dictatorship**: No single voter always determines the social ranking
+
+. . .
+
+Additionally, we assume **unrestricted domain**: any transitive preference ordering is admissible.
+
+---
+
+## Arrow's Impossibility Theorem {.auto-animate}
+
+::: {.callout-important}
+**Theorem (Arrow, 1951)**: For $m \geq 3$ alternatives, no social welfare function can simultaneously satisfy:
+
+1. Unanimity
+2. Independence of Irrelevant Alternatives
+3. Non-dictatorship
+
+under unrestricted domain.
+:::
+
+. . .
+
+Every practical voting system must sacrifice **at least one** fairness criterion.
+
+[@arrow1951]{.citation}
+
+## Arrow's Theorem: Proof Sketch {.auto-animate}
+
+The proof proceeds by contradiction:
+
+1. Assume a SWF satisfies Unanimity, IIA, and Non-dictatorship
+2. Show that the social ranking between any pair $x, y$ must agree with some **pivotal voter**
+3. By IIA, the pivotal voter must be the **same** for all pairs of alternatives
+
+. . .
+
+4. This single pivotal voter dictates the entire social order — **contradiction** with Non-dictatorship
+
+**Key driver**: Condorcet cycles force the aggregation to "break ties" by deferring to one voter.
+
+## Arrow's Theorem: Which Axiom Does Each Rule Violate?
+
+::: {.smaller}
+
+| Voting Rule | Violates | Why |
+|-------------|----------|-----|
+| Dictatorship | Non-dictatorship | One voter decides everything |
+| Plurality | IIA | Adding a "spoiler" changes the winner |
+| Borda Count | IIA | Removing an alternative changes point totals |
+| Pairwise Majority | Transitivity | Condorcet cycles |
+
+:::
+
+. . .
+
+**Takeaway**: There is no free lunch — every voting rule makes trade-offs.
+
+## Gibbard–Satterthwaite Theorem {.auto-animate}
+
+::: {.callout-important}
+**Theorem (Gibbard, 1973; Satterthwaite, 1975)**: For $m \geq 3$ alternatives, any social choice function $f$ that is:
+
+- **Strategy-proof** (no voter benefits from misreporting preferences), and
+- **Onto** (every alternative can possibly win)
+
+must be **dictatorial**.
+:::
+
+. . .
+
+Every non-dictatorial voting rule is **manipulable**: some voter can gain by voting insincerely.
+
+[@gibbard1973; @satterthwaite1975]{.citation}
+
+## Strategic Voting Examples
+
+**Plurality** — "Lesser of two evils":
+
+- True preference: $C \succ A \succ B$, but $C$ has no chance
+- Strategic vote: $A$ (to prevent $B$ from winning)
+
+. . .
+
+**Borda Count** — Strategic ranking:
+
+- Artificially rank a strong competitor last to reduce their Borda score
+
+. . .
+
+**Practical deterrence**: While STV can always be manipulated in theory, finding a beneficial strategic vote can be **NP-hard** in worst cases.
+
+## Implications for AI Alignment
+
+Arrow's and Gibbard–Satterthwaite's theorems apply to **any** preference aggregation:
+
+- Aggregating RLHF annotator feedback faces the same impossibilities
+- A simple majority vote may yield unstable outcomes if annotators are diverse
+- Weighting votes by expertise risks creating dictator-like influence
+
+. . .
+
+**Modern approaches:**
+
+- **Jury learning**: Panel of models/subgroups whose aggregated judgment guides learning
+- **Pluralistic alignment**: Preserve diversity of values rather than collapsing to a single objective
+- **DPO**: Implicitly aggregates pairwise preferences (more on this soon)
+
+[@gordon2022jury]{.citation}
+
+---
+
+## Escaping Impossibility: Domain Restrictions
+
+Arrow's and Gibbard–Satterthwaite assume **unrestricted domain**: any transitive ordering is admissible.
+
+. . .
+
+**Key idea**: If we restrict which preferences can occur, we can escape impossibility!
+
+In many real-world settings, preferences have natural structure we can exploit.
+
+## Single-Peaked Preferences {.auto-animate}
+
+::: {.callout-note}
+**Definition**: A preference ordering $\succ$ over a totally ordered set $Y$ is **single-peaked** if there exists a peak $p(\succ) \in Y$ such that:
+
+- If $y \lt y' \leq p(\succ)$, then $y' \succ y$
+- If $p(\succ) \leq y' \lt y$, then $y' \succ y$
+:::
+
+. . .
+
+**Intuition**: Each voter has an "ideal point" (peak), and utility decreases as alternatives move away from the peak in either direction.
+
+This rules out "I prefer the extremes to the middle" — which creates cycles.
+
+## Single-Peaked: Temperature Example {.auto-animate}
+
+Three colleagues choosing the office thermostat (65°F to 75°F):
+
+- **Alice**: peak at 68°F — utility decreases away from 68
+- **Bob**: peak at 72°F — utility decreases away from 72
+- **Carol**: peak at 70°F — utility decreases away from 70
+
+. . .
+
+All three have single-peaked preferences on the temperature line.
+
+**Median voter outcome**: 70°F (Carol's peak) — and no one can profitably manipulate!
+
+## Generalized Median Voter Scheme {.auto-animate}
+
+::: {.callout-note}
+**Definition**: Fix *phantom votes* $a_1, \ldots, a_{n-1} \in \mathbb{R} \cup \{\pm\infty\}$. The **generalized median voter scheme** is:
+
+$$
+f(\succ_1, \ldots, \succ_n) = \text{median}\big(p(\succ_1), \ldots, p(\succ_n), a_1, \ldots, a_{n-1}\big)
+$$
+:::
+
+. . .
+
+The $n-1$ phantom votes act as **anchor points** that shift the median:
+
+- With $n$ voter peaks + $n-1$ phantoms = $2n-1$ total values $\Rightarrow$ median is well-defined
+
+## Phantom Vote Examples {.auto-animate}
+
+Different phantom choices yield different rules:
+
+| Rule | Phantom Votes | Effect |
+|------|--------------|--------|
+| Pure median | All $\pm\infty$ | Outcome = median of voter peaks |
+| Dictatorial | All equal to voter $i$'s peak | Voter $i$ always wins |
+| Status quo | All equal to status quo $q$ | Change requires consensus |
+
+. . .
+
+The phantom votes allow **tuning** the rule between fully responsive and highly conservative.
+
+## Moulin's Characterization Theorem {.auto-animate}
+
+::: {.callout-important}
+**Theorem (Moulin, 1980)**: On the domain of single-peaked preferences $\text{SP}(Y)$, a social choice function $f$ satisfies:
+
+1. **Strategy-proofness**: No voter benefits by misreporting their peak
+2. **Pareto efficiency**: Outcome is never unanimously dispreferred
+3. **Peaks-only**: Outcome depends only on the set of reported peaks
+
+if and only if $f$ is a **generalized median voter scheme**.
+:::
+
+. . .
+
+By restricting to single-peaked preferences, we **escape Arrow's impossibility** and achieve both strategy-proofness and efficiency!
+
+[@moulin1980strategy]{.citation}
+
+## Strategy-Proofness: Intuition
+
+**Why can't voters manipulate the median?**
+
+- Suppose voter $i$ has true peak $p_i = 5$ and outcome is median $= 6$
+- Voter $i$ wants to pull outcome **left** toward 5
+- They can misreport $p_i' = 0$ (exaggerate leftward preference)
+
+. . .
+
+- But the median of $\{0, p_2, \ldots, p_n, a_1, \ldots, a_{n-1}\}$ is the **same** as with $p_i = 5$
+- The voter's peak is already on the left side of the median — moving it further left doesn't change the median!
+
+. . .
+
+**Key insight**: You can only move the median if your peak crosses it — but then the outcome moves *away* from your true peak.
+
+---
+
+## Scoring Rules and the Borda Count {.auto-animate}
+
+Another escape from Arrow: **relax IIA** instead of restricting the domain.
+
+. . .
+
+::: {.callout-note}
+**Definition (Borda Count)**: The Borda score of alternative $y$ counts pairwise wins:
+
+$$
+\text{Borda}(y) = \sum_{i=1}^{n} |\{y' \neq y : y \succ_i y'\}|
+$$
+
+The **Borda winner** is the alternative with the maximum Borda score.
+:::
+
+Equivalently: with $m$ alternatives, voter gives $m-1$ points to top, $m-2$ to second, ..., 0 to last.
+
+## Modified IIA (IIA') {.auto-animate}
+
+Borda violates IIA but satisfies a weaker version:
+
+::: {.callout-note}
+**Definition (IIA')**: If two profiles have, for every voter:
+
+1. The same pairwise ordering of $y$ vs. $y'$, **AND**
+2. The same *number* of alternatives strictly between $y$ and $y'$
+
+then the social choice should not flip between $y$ and $y'$.
+:::
+
+. . .
+
+::: {.callout-important}
+**Theorem**: Borda satisfies Unrestricted Domain, Pareto Efficiency, Non-dictatorship, and IIA'. By relaxing IIA to IIA', we escape Arrow's impossibility.
+:::
+
+## Connection to DPO {.auto-animate}
+
+A remarkable result connects Borda to modern RLHF:
+
+::: {.callout-important}
+**Theorem (DPO-Borda Equivalence)**: Assume responses $y, y'$ are drawn from $\pi_{\text{ref}}(\cdot \mid x)$. The DPO-optimal policy satisfies:
+
+$$
+\frac{\pi_{\text{DPO}}(y \mid x)}{\pi_{\text{ref}}(y \mid x)} \propto \text{(weighted Borda score of } y \text{)}
+$$
+:::
+
+. . .
+
+**DPO upweights responses proportionally to their Borda scores** — it finds the response that wins the most head-to-head matchups.
+
+[@rafailov2023direct]{.citation}
+
+## DPO-Borda: Proof Sketch {.auto-animate}
+
+The DPO loss is:
+$$
+\mathcal{L}_{\text{DPO}}(\pi) = -\mathbb{E}_{x,y,y'}\Big[\bar{\sigma}(\Delta r^*) \cdot \log \sigma\big(\beta \log \tfrac{\hat{\pi}(y' \mid x)}{\hat{\pi}(y \mid x)}\big) + \cdots\Big]
+$$
+
+. . .
+
+Taking the gradient and setting to zero:
+$$
+\mathbb{E}_{y' \sim \hat{\pi}}\Big[\sigma\big(\beta \log \tfrac{\pi(y \mid x)}{\pi(y' \mid x)}\big)\Big] = \underbrace{\mathbb{E}_{y' \sim \mathcal{D}}\big[\bar{\sigma}(\Delta r^*(x, y', y))\big]}_{\text{Borda score of } y}
+$$
+
+. . .
+
+The RHS is the **expected win rate** of $y$ against a random alternative — exactly its Borda score.
+
+## DPO-Borda: What It Means
+
+**Social choice interpretation of DPO:**
+
+- DPO aggregates pairwise human preferences using the **Borda count**
+- It finds the policy that upweights responses by how often they would win head-to-head
+
+. . .
+
+**Implications:**
+
+- DPO inherits Borda's strengths: Pareto efficient, non-dictatorial, satisfies IIA'
+- DPO inherits Borda's weakness: violates IIA — adding a new response candidate can change rankings
+- The reference policy $\pi_{\text{ref}}$ determines the weighting of comparisons
+
+---
+
+## Multi-Issue Voting
+
+Real-world decisions often involve **multiple independent issues**.
+
+**Example in RLHF**: Optimize for helpfulness, harmlessness, *and* honesty simultaneously.
+
+. . .
+
+**Question**: Can we aggregate each criterion independently?
+
+## Voting by Committees {.auto-animate}
+
+::: {.callout-note}
+**Definition**: A voting scheme is **voting by committees** if for each object $x \in K$, there exists a committee $C_x$ with winning coalitions $W_x$ such that:
+
+The outcome includes $x$ $\iff$ $\{i : x \in B(\succ_i)\} \in W_x$
+
+where $B(\succ_i)$ is voter $i$'s top-ranked subset.
+:::
+
+. . .
+
+Each issue is decided **independently** by its own committee — a natural decomposition.
+
+## Separable Preferences {.auto-animate}
+
+::: {.callout-note}
+**Definition**: A preference $\succ$ on $2^K$ is **separable** if for all $A \subseteq K$ and $x \notin A$:
+
+$$
+A \cup \{x\} \succ A \quad \Longleftrightarrow \quad x \in G(\succ)
+$$
+
+where $G(\succ) = \{x \in K : \{x\} \succ \emptyset\}$ is the set of "good" objects.
+:::
+
+. . .
+
+**Separability** means: whether you want to add $x$ to a bundle doesn't depend on what's already there.
+
+## Characterization and Limits {.auto-animate}
+
+::: {.callout-important}
+**Theorem**: A voting scheme satisfies surjectivity, strategy-proofness, and separability if and only if it is **voting by committees**.
+:::
+
+. . .
+
+**Caveat**: Voting by committees generally does **not** satisfy Pareto efficiency.
+
+. . .
+
+**Application to RLHF**: Preferences over "helpful" and "harmless" are often **not** separable — a highly helpful response may necessarily involve some risk of harm, creating dependencies.
+
+---
+
+## Nosy Preferences
+
+::: {.callout-note}
+**Definition**: A preference is **nosy** if the individual cares about outcomes affecting *others*, not just themselves. A preference is **private** if the individual only cares about their own allocation.
+:::
+
+. . .
+
+**Examples of nosy preferences:**
+
+- **Safety**: Not wanting others to see dangerous instructions
+- **Privacy**: Wanting to prevent disclosure of others' data
+- **Content moderation**: Preferring certain content not be shown to *anyone*
+- **Fairness**: Caring that others receive equitable treatment
+
+## Sen's Liberal Paradox {.auto-animate}
+
+::: {.callout-important}
+**Theorem (Sen, 1970)**: The following three properties are **inconsistent**:
+
+1. **Minimal Liberalism**: Each individual is decisive over at least one pair in their personal sphere
+2. **Pareto Efficiency**: If everyone prefers $x$ to $y$, society chooses $x$
+3. **Unrestricted Domain**: Any preference profile is admissible
+:::
+
+. . .
+
+When preferences are nosy, even weak requirements conflict!
+
+[@sen1970impossibility]{.citation}
+
+## The Prude and the Book {.auto-animate}
+
+Two individuals and a controversial book. Alternatives: $a$ (Prude reads), $b$ (Lewd reads), $c$ (no one reads).
+
+. . .
+
+:::: {.columns}
+::: {.column width="50%"}
+**Prude**: $c \succ_P a \succ_P b$
+
+Prefers no one reads it, but would rather read it themselves than let Lewd read it (**nosy!**)
+:::
+::: {.column width="50%"}
+**Lewd**: $a \succ_L b \succ_L c$
+
+Wants Prude to read it most of all (**also nosy!**)
+:::
+::::
+
+## The Prude and the Book: The Cycle {.auto-animate}
+
+- **Prude's liberty** (personal reading choice): $c$ beats $a$
+- **Lewd's liberty** (personal reading choice): $b$ beats $c$
+- **Pareto** (both prefer $a$ to $b$): $a$ beats $b$
+
+. . .
+
+$$
+c \succ a \succ b \succ c \quad \text{— a cycle! No consistent social choice.}
+$$
+
+. . .
+
+**Implication for AI**: Content moderation involves exactly this tension — one user's preference for free expression conflicts with another's preference for a safe environment.
+
+---
+
+## Case Study: Community Notes
+
+**Community Notes** (formerly Birdwatch) aggregates ratings about content helpfulness across ideological divides.
+
+. . .
+
+**Problem with majority voting**: The largest ideological group would dominate.
+
+**Solution**: Find **bridging** notes — rated positively by users who *disagree* ideologically.
+
+## Community Notes: Factor Model {.auto-animate}
+
+$$
+u(y; \alpha, p, \varepsilon) = \mu + \alpha_j + \beta_j + p^\top q_j + \varepsilon_j
+$$
+
+. . .
+
+| Term | Interpretation |
+|------|---------------|
+| $\mu$ | Global intercept |
+| $\alpha_j$ | Rater intercept (some raters more positive) |
+| $\beta_j$ | **Note intercept** (note quality) |
+| $p^\top q_j$ | Ideological alignment factor |
+| $\varepsilon_j$ | Residual noise |
+
+## Community Notes: Bridging Mechanism {.auto-animate}
+
+**Key insight**: $\beta_j$ captures note quality **after controlling for ideology**.
+
+. . .
+
+- A note is selected if $\beta_j \geq c$ for some threshold $c$
+- This means it must be rated positively by users who **disagree** ideologically
+
+. . .
+
+**Connections:**
+
+- **Collaborative filtering**: The $p^\top q_j$ term $\approx$ matrix factorization
+- **Item response theory**: Resembles the Rasch model (Ch. 2) extended with latent factors
+- **Jury theorems**: Diverse juries aggregate to correct answers better than homogeneous majorities
+
+---
+
+## The Inversion Problem
+
+::: {.callout-important}
+**Core insight**: Observed behavior $\neq$ underlying preferences or utility.
+
+Standard revealed preference assumes choices reveal preferences. This can fail due to:
+
+1. **Habit formation**: Repeated behavior persists even when preferences change
+2. **Cognitive limitations**: Fatigue, distraction, bounded rationality
+3. **Context effects**: Same preference $\to$ different behaviors in different contexts
+4. **Strategic behavior**: People choose strategically, not according to true preferences
+:::
+
+## The Doritos Problem
+
+A smart pantry observes eating behavior:
+
+- User consistently chooses Doritos when offered
+- System infers: "User prefers Doritos"
+
+. . .
+
+**But**: The user might prefer healthier options — they just succumb to availability and habit.
+
+. . .
+
+**Lesson**: Optimizing for observed "preferences" (engagement) may not optimize for **true welfare**.
+
+This is the engagement vs. satisfaction problem in recommender systems.
+
+## Implications for RLHF
+
+The inversion problem directly affects AI training from human feedback:
+
+1. **Annotator fatigue**: Label quality degrades over long sessions
+2. **Engagement $\neq$ satisfaction**: Clicks and watch time $\neq$ user welfare
+3. **Context-dependent feedback**: Same annotator gives different feedback based on mood, prior examples
+4. **Strategic annotation**: Annotators may label strategically if they believe it affects outcomes
+
+. . .
+
+**Potential solutions:**
+
+- Weight annotations by estimated quality/consistency
+- Use deliberation before labeling to reduce noise
+- Model annotator state (fatigue, expertise) as **latent variables**
+- Collect meta-feedback about label confidence
+
+---
+
+## Privacy and Personalization
+
+Preference learning inherently involves collecting personal data.
+
+**Tension**: Better personalization requires more data, but privacy demands less.
+
+## Contextual Integrity Framework {.auto-animate}
+
+::: {.callout-note}
+**Contextual Integrity** (Nissenbaum): Privacy is preserved when information flows match **context-specific norms**. Five parameters:
+
+1. **Sender**: Who is sharing the information
+2. **Subject**: Whose information is being shared
+3. **Recipient**: Who receives the information
+4. **Data Type**: What kind of information
+5. **Transmission Principle**: What rules govern further use
+:::
+
+. . .
+
+A privacy violation occurs when information flows **against contextual norms**, even with consent.
+
+[@nissenbaum2009privacy]{.citation}
+
+## Example: Heart Rate Data {.auto-animate}
+
+A fitness tracker collects heart rate data:
+
+| Flow | Recipient | Transmission Principle | Appropriate? |
+|------|-----------|----------------------|-------------|
+| To running coach | Coach | Training optimization | Yes |
+| To advertiser | Ad network | Targeted advertising | **No** |
+
+. . .
+
+Same data, same consent — but different **transmission principles** violate expectations about the fitness context.
+
+## Differential Privacy: Limitations {.auto-animate}
+
+Differential privacy (DP) provides formal guarantees, but has fundamental limits for preference learning:
+
+1. **Personalization requires individual data** — by definition, DP prevents this
+2. **Trade-off is inherent**: Stronger privacy $\Rightarrow$ less accurate models
+3. **"Persuasive" DP**: Some systems claim protection with parameters so weak they provide little actual privacy
+
+. . .
+
+**Contextual Integrity as middle ground**: Allow data use that matches expectations (personalization within a service) while preventing unexpected flows (selling to third parties).
+
+---
+
+## Paternalism in AI Systems
+
+**When should an AI system override a user's stated preferences?**
+
+. . .
+
+Key distinction:
+
+- **Nosy preferences**: Caring about others' choices for *your own* sake
+- **Paternalism**: Overriding others' choices for *their* sake
+
+## When is Paternalism Justified?
+
+Four conditions that might justify intervention:
+
+. . .
+
+1. **Information asymmetry**: The system has information the user lacks (e.g., long-term health effects)
+
+. . .
+
+2. **Cognitive limitations**: The user is impaired (fatigue, addiction, cognitive decline)
+
+. . .
+
+3. **Protection of future self**: Current choice harms their future self (e.g., saving for retirement)
+
+. . .
+
+4. **Irreversible harm**: Consequences are severe and irreversible
+
+## Design Principles for Paternalistic AI
+
+AI systems that exercise paternalism should:
+
+1. **Be transparent**: Users know when preferences are overridden
+2. **Allow override**: Users can insist on their original choice
+3. **Minimize interference**: Use the lightest intervention that achieves the goal
+4. **Justify interventions**: Provide clear rationale for each override
+5. **Update based on feedback**: Learn when interventions are welcomed vs. resented
+
+. . .
+
+**Example**: When an AI assistant refuses a request — is it paternalism (protecting the user) or nosy (protecting others)? Often both.
+
+---
+
+## Mechanism Design: Overview
+
+While voting aggregates **ordinal** preferences, mechanism design aggregates **cardinal valuations** (with money).
+
+. . .
+
+**Central concept**: **Incentive compatibility** — design rules so that rational agents reveal true preferences.
+
+**Key question**: Can we align individual self-interest with social welfare?
+
+## Single-Item Auction Setup
+
+- One item for sale, $n$ bidders
+- Bidder $i$ has **private valuation** $v_i$ (how much the item is worth to them)
+- Utility: $v_i - p_i$ if they win and pay $p_i$; otherwise $0$
+
+. . .
+
+**Two objectives:**
+
+- **Social welfare**: Allocate to the highest valuer
+- **Revenue**: Maximize the seller's expected payment
+
+## Vickrey Second-Price Auction {.auto-animate}
+
+**Mechanism:**
+
+1. All bidders submit sealed bids $b_1, \ldots, b_n$
+2. Highest bidder wins
+3. Winner pays the **second-highest** bid
+
+. . .
+
+**Example**: Bids = $(2, 6, 4, 1)$
+
+- Bidder 2 wins (bid = 6)
+- Pays 4 (second-highest bid)
+- Utility = $v_2 - 4$
+
+[@vickrey1961]{.citation}
+
+## Why Truth-Telling is Dominant {.auto-animate}
+
+Bidding $b_i = v_i$ is a **dominant strategy** (DSIC):
+
+. . .
+
+- **Bid too low** ($b_i \lt v_i$): Risk losing when $v_i \gt$ second-highest bid — missed positive utility
+
+. . .
+
+- **Bid too high** ($b_i \gt v_i$): Win even when second-highest bid $\gt v_i$ — negative utility!
+
+. . .
+
+- **Bid truthfully** ($b_i = v_i$): Win $\iff$ $v_i$ is highest; pay $\leq v_i$ — guaranteed non-negative utility
+
+. . .
+
+**Result**: Allocates to highest valuer $\Rightarrow$ welfare-maximizing.
+
+## First-Price vs. Second-Price
+
+:::: {.columns}
+::: {.column width="50%"}
+**First-Price Auction**
+
+- Winner pays own bid
+- Incentive to **shade** bids below $v_i$
+- Nash equilibrium involves strategic behavior
+- Not DSIC
+:::
+::: {.column width="50%"}
+**Second-Price (Vickrey)**
+
+- Winner pays second-highest bid
+- Truth-telling is dominant
+- DSIC
+- Same efficiency in equilibrium
+:::
+::::
+
+. . .
+
+By decoupling the price from the winner's bid, Vickrey removes the incentive to shade.
+
+## Myerson's Optimal Auction {.auto-animate}
+
+**Goal**: Maximize **seller's expected revenue** (not welfare).
+
+. . .
+
+**Setup**: Bidders' values $v_i \sim F$ i.i.d. Define the **virtual valuation**:
+
+$$
+\varphi(v) = v - \frac{1 - F(v)}{f(v)}
+$$
+
+. . .
+
+**Myerson's theorem**: Allocate to the bidder with the highest **non-negative** virtual value. If all virtual values are negative, don't sell.
+
+For i.i.d. regular distributions: this is a **second-price auction with an optimal reserve price** $r$.
+
+[@myerson1981]{.citation}
+
+## Example: Uniform[0,1] Bidders {.auto-animate}
+
+For $v \sim \text{Uniform}[0,1]$: $\varphi(v) = 2v - 1$
+
+. . .
+
+Setting $\varphi(v) \geq 0$: optimal reserve price $r = 0.5$
+
+. . .
+
+**Revenue comparison** (two bidders):
+
+::: {.smaller}
+
+| Scenario | Probability | Revenue |
+|----------|------------|---------|
+| Both below 0.5 | $1/4$ | $0$ (no sale) |
+| Both above 0.5 | $1/4$ | $\approx 2/3$ (second-highest value) |
+| One above, one below | $1/2$ | $0.5$ (reserve price) |
+
+:::
+
+. . .
+
+Expected revenue: $0 + \tfrac{1}{6} + \tfrac{1}{4} = \tfrac{5}{12} \approx 0.417$ vs. $\tfrac{1}{3} \approx 0.333$ without reserve.
+
+## Bulow–Klemperer Theorem {.auto-animate}
+
+::: {.callout-important}
+**Theorem (Bulow & Klemperer, 1996)**: For i.i.d. regular $F$:
+
+$$
+\mathbb{E}[\text{Rev}^{\text{(second-price)}}(n+1)] \geq \mathbb{E}[\text{Rev}^{\text{(optimal)}}(n)]
+$$
+:::
+
+. . .
+
+A simple second-price auction with **one extra bidder** outperforms the optimal auction with fewer bidders!
+
+. . .
+
+**Practical takeaway**: Use **simple, transparent** mechanisms and focus on **attracting more participants** rather than complex optimal designs.
+
+[@bulow-klemperer1996]{.citation}
+
+---
+
+## The VCG Mechanism {.auto-animate}
+
+**Generalization** of Vickrey's auction to multiple items and complex outcomes.
+
+**Setting**: Outcomes $\omega \in \Omega$; agent $i$ has valuation $v_i(\omega)$; quasilinear utility.
+
+. . .
+
+**Allocation rule** — maximize total reported value:
+
+$$
+\omega^* = \arg\max_{\omega \in \Omega} \sum_{i=1}^n b_i(\omega)
+$$
+
+## VCG: Payment Rule {.auto-animate}
+
+Each agent pays the **externality** they impose on others:
+
+$$
+p_i(b) = \underbrace{\max_{\omega \in \Omega} \sum_{j \neq i} b_j(\omega)}_{\text{Others' welfare without } i} - \underbrace{\sum_{j \neq i} b_j(\omega^*)}_{\text{Others' welfare with } i}
+$$
+
+. . .
+
+**Intuition**: You pay the "damage" your presence causes to everyone else.
+
+- Reduces to second-price logic for single items
+- Truth-telling is a **dominant strategy** (DSIC)
+- Outcome maximizes social welfare $\sum_i v_i(\omega)$
+
+## VCG: Challenges in Practice {.auto-animate}
+
+Despite theoretical elegance, VCG faces practical hurdles:
+
+1. **Computational**: Finding $\arg\max_\omega \sum_i b_i(\omega)$ can be **NP-hard** (combinatorial auctions)
+
+. . .
+
+2. **Budget balance**: VCG payments may require subsidies in some settings
+
+. . .
+
+3. **Collusion and sybil attacks**: If one bidder splits into two identities, they can game the outcome
+
+. . .
+
+**Application**: Spectrum auctions — billions of dollars at stake; multi-round simultaneous auctions used in practice.
+
+---
+
+## Case Study: Peer Grading
+
+**Setting**: Students grade each other's work. Design a mechanism that incentivizes careful grading.
+
+. . .
+
+**The lazy grader problem**: Always giving 80% can yield 96% accuracy under naive scoring rules — the grader "cheats" by predicting the class average.
+
+. . .
+
+**Solution**: Optimize the scoring rule to **maximize the gap** between diligent grading and lazy strategies.
+
+. . .
+
+Result: Incentive compatibility aligns grader incentives with accurate assessment — "payments" are grade points.
+
+[@jasonH2020]{.citation}
+
+---
+
+## Incentive-Compatible Online Learning {.auto-animate}
+
+**Setting**: A planner (system) interacts with strategic agents (users) who arrive sequentially.
+
+- $K$ possible actions, each with mean reward $\mu_i \in [0,1]$
+- Agents want to maximize **their own** reward
+- Planner wants to learn the best alternative and maximize **overall** welfare
+
+. . .
+
+**Challenge**: Without monetary transfers, how can the planner induce **exploration**?
+
+**Key tool**: **Information asymmetry** — users only see their own recommendations.
+
+## The Guinea Pig Strategy {.auto-animate}
+
+**Idea**: Hide exploration in a pool of exploitation.
+
+. . .
+
+1. Deterministically recommend the best-known action ($A_1$) to most users
+2. Pick one **guinea pig** uniformly at random from the next $L$ users
+3. Recommend the exploratory action ($A_2$) to the guinea pig
+
+. . .
+
+Users don't know if they're the guinea pig, so following the recommendation is optimal!
+
+## Guinea Pig: Why It Works {.auto-animate}
+
+The expected gain from **deviating** (ignoring the recommendation):
+
+$$
+\mathbb{E}[\mu_1 - \mu_2 \mid I_t = 2] \leq \tfrac{1}{L}(\mu_1 - \mu_2) + (1 - \tfrac{1}{L})\mathbb{E}[\mu_1 - \mu_2 \mid \mu_1 \lt \mu_2] \cdot P[\mu_1 \lt \mu_2]
+$$
+
+. . .
+
+This is $\leq 0$ when $L \geq 12$.
+
+**Interpretation**: The small chance of being the guinea pig is outweighed by the chance that the exploration action is actually better.
+
+## Black-Box Reduction {.auto-animate}
+
+**General algorithm**: Turn **any** bandit algorithm into an incentive-compatible one.
+
+. . .
+
+**Recipe**: Wrap every decision that the bandit algorithm $A$ makes with $L-1$ recommendations of the best-known arm.
+
+. . .
+
+**Result**: Simulates $T$ steps of $A$ in $cT$ steps, achieving **$O(\sqrt{T})$ regret** — the same rate as non-strategic settings!
+
+. . .
+
+Incentive compatibility comes "for free" (up to a constant factor).
+
+[@mansour2019bayesianincentivecompatiblebanditexploration]{.citation}
+
+---
+
+## Mutual Information Paradigm {.auto-animate}
+
+**Problem**: How to incentivize truthful reporting when there's **no verifiable ground truth**?
+
+. . .
+
+**MIP** (Kong & Schoenebeck, 2019): Reward agents based on **mutual information** between their report and a reference agent's report:
+
+$$
+\text{Payment}_i = MI(\hat{\Psi}_i;\; \hat{\Psi}_j)
+$$
+
+where $j \neq i$ is randomly selected.
+
+[@kongschoenebeck2019]{.citation}
+
+## MIP: Properties of Information-Monotone MI {.auto-animate}
+
+An information-monotone MI measure satisfies:
+
+1. **Symmetry**: $MI(X; Y) = MI(Y; X)$
+2. **Non-negativity**: $MI(X; Y) \geq 0$, with equality iff $X \perp Y$
+3. **Data processing inequality**: For any channel $M$, $MI(M(X); Y) \leq MI(X; Y)$
+
+. . .
+
+Two important families:
+
+- **$f$-mutual information**: Based on $f$-divergence between joint and product of marginals
+- **Bregman mutual information**: Based on proper scoring rules
+
+## MIP: Key Result {.auto-animate}
+
+::: {.callout-important}
+**Theorem**: When the MI measure is **strictly information-monotone**, the resulting mechanism is:
+
+- **Dominantly truthful**: Truth-telling is a dominant strategy
+- **Strongly truthful**: Truth-telling equilibrium yields strictly higher payoffs than any non-permutation strategy
+:::
+
+. . .
+
+**Why it works**: Any manipulation (noise, partial reporting) can only **decrease** mutual information with the reference agent — so truthful reporting maximizes payment.
+
+---
+
+## Summary (1)
+
+**Social Choice Theory:**
+
+- Arrow's theorem: No SWF satisfies Unanimity + IIA + Non-dictatorship for $m \geq 3$
+- Gibbard–Satterthwaite: Every non-dictatorial SCF is manipulable
+- **Single-peaked preferences** + Moulin's theorem $\Rightarrow$ strategy-proof median voter schemes
+- **Borda count** relaxes IIA to IIA'; **DPO-Borda**: DPO aggregates as weighted Borda count
+
+## Summary (2)
+
+**Beyond Classical Voting:**
+
+- Multi-issue voting with separable preferences $\Rightarrow$ voting by committees
+- **Nosy preferences** create tensions (Sen's Liberal Paradox)
+- **Community Notes**: Factor model identifies bridging content across ideological divides
+
+. . .
+
+**Challenges in Practice:**
+
+- **Inversion problem**: Behavior $\neq$ preferences (habits, fatigue, strategy)
+- **Privacy**: Contextual Integrity $\gt$ simple consent models
+- **Paternalism**: Justified under info asymmetry, cognitive limits, irreversible harm
+
+## Summary (3)
+
+**Mechanism Design:**
+
+- **Vickrey auction**: Second-price $\Rightarrow$ truth-telling is dominant; welfare-maximizing
+- **Myerson**: Virtual valuations + reserve price $\Rightarrow$ optimal revenue
+- **Bulow–Klemperer**: One more bidder $\gt$ optimal mechanism
+- **VCG**: General externality-based payments for multi-item settings
+
+. . .
+
+**Incentives Without Money:**
+
+- **Guinea pig strategy**: Hide exploration in exploitation; $O(\sqrt{T})$ regret
+- **MIP**: Mutual information rewards $\Rightarrow$ dominant truthfulness in peer prediction
+
+## References
+
+::: {.smaller}
+- [@arrow1951]{.citation}
+- [@gibbard1973]{.citation}
+- [@satterthwaite1975]{.citation}
+- [@moulin1980strategy]{.citation}
+- [@rafailov2023direct]{.citation}
+- [@sen1970impossibility]{.citation}
+- [@vickrey1961]{.citation}
+- [@myerson1981]{.citation}
+- [@bulow-klemperer1996]{.citation}
+- [@nissenbaum2009privacy]{.citation}
+- [@kongschoenebeck2019]{.citation}
+- [@mansour2019bayesianincentivecompatiblebanditexploration]{.citation}
+- [@gordon2022jury]{.citation}
+- [@jasonH2020]{.citation}
+- [@bartholdi1989]{.citation}
+- [@black1948rationale]{.citation}
+:::

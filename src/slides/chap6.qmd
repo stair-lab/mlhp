@@ -1,0 +1,551 @@
+---
+title: "Machine Learning from Human Preferences"
+subtitle: "Chapter 7: Whose Preferences?"
+footer: "Chapter 7: Whose Preferences?"
+---
+
+## Overview
+
+- Previous chapters: *how* to learn from preferences (models, estimation, elicitation, decisions, aggregation)
+- This chapter: **whose** preferences should we learn from, and how should we weigh them?
+- Central thesis: **Every technical choice in the preference learning pipeline is a value choice about fairness**
+- You cannot avoid these choices — only choose whether to make them *consciously*
+
+## The Central Question
+
+- Choosing an active learning strategy determines **who gets asked**
+- Assuming IIA imposes structure on **what preferences are valid**
+- Selecting DPO's reference policy $\pi_{\text{ref}}$ determines **whose preferences count more**
+- Deciding when to override stated preferences determines **what preferences are respected**
+
+These are not merely technical decisions — they are **fairness decisions** with real consequences.
+
+## The Four-Stage Pipeline
+
+Every preference learning system follows four stages, each embedding values:
+
+1. **Elicitation** ($\mathcal{E}$): How do we collect data? Who do we query?
+2. **Learning** ($\mathcal{L}$): What model structure do we assume? What patterns are valid?
+3. **Aggregation** ($\mathcal{A}$): How do we combine preferences? Whose are weighted more?
+4. **Decision** ($\mathcal{D}$): When do we defer to preferences vs. override them?
+
+Bias at each stage **compounds** through feedback loops.
+
+## Running Example: AI Review Assistant
+
+**Setting**: Large ML conference, 10,000 papers, 5,000 reviewers. AI assistant learns from past reviews to help write better reviews.
+
+- **Elicitation**: Which reviewers to query for training data?
+- **Learning**: Should we assume context-free preferences (IIA)?
+- **Aggregation**: Weight all reviewers equally, or by volume?
+- **Decision**: Help reviewers be *consistently harsh* or nudge toward *constructive feedback*?
+
+Clear stakeholders, measurable outcomes, real fairness concerns.
+
+---
+
+## Design Decisions as Value Choices {.center}
+
+Tracing the pipeline stage by stage
+
+## Stage 1 — Elicitation: Who Gets Queried?
+
+Three design options for elicitation policy $\mathcal{E}$:
+
+1. **Universal querying**: Observe all reviewers equally
+2. **Productivity-based**: Query "productive" reviewers more (detailed, timely reviews)
+3. **Active learning**: Use Fisher information to query where model is most uncertain
+
+**Value embedded**: Options 2 & 3 prioritize *efficiency* over *representation*
+
+This seems purely technical — but has profound fairness consequences.
+
+## The Inversion Problem
+
+Observable behavior $\neq$ underlying mental state:
+
+$$
+P(B \mid M, C) \neq P(B \mid M)
+$$
+
+- $B$: observed behavior (e.g., detailed review)
+- $M$: mental state (true expertise and preferences)
+- $C$: context (time availability, fatigue, language proficiency)
+
+A detailed review could reflect **expertise** ($M$) *or* **available time** ($C$).
+
+## The Inversion Problem in Practice
+
+**Naive interpretation**: Reviewer A writes 800-word reviews, B writes 400-word reviews $\Rightarrow$ A is more thorough $\Rightarrow$ query A more
+
+**Reality**: A is a senior professor with a light teaching load. B is a postdoc with 60-hour weeks, writing reviews at midnight.
+
+**Result**: Active learning queries A more $\rightarrow$ model learns A's style $\rightarrow$ assists A well $\rightarrow$ A uses it more $\rightarrow$ more data. B gets poor assistance $\rightarrow$ disengages $\rightarrow$ less data. **The gap widens.**
+
+Optimizing for revealed behavior systematically misunderstands groups whose context differs.
+
+## Who Gets Undersampled?
+
+If we query productive reviewers more, we systematically undersample:
+
+- **Junior reviewers** (less time, heavier teaching loads)
+- **Non-native English speakers** (writing reviews takes longer)
+- **Reviewers with caregiving responsibilities** (less flexible time)
+- **Reviewers in disadvantageous time zones**
+
+The AI assistant becomes good at helping *senior, privileged* reviewers and poor at helping those already disadvantaged — this is **disparate impact**.
+
+## Alternative: Stratified Sampling
+
+Ensure representation from diverse reviewer populations:
+
+- Divide reviewers into strata (junior/senior, institution type, language background)
+- Ensure minimum sampling from each stratum
+- Within each stratum, can still use active learning
+
+**The tradeoff**: Efficiency vs. fairness
+
+- Pure active learning: maximizes information gain, may exacerbate disparities
+- Stratified sampling: ensures fairness, uses more queries for same overall quality
+
+There is no "right" answer — but you must choose **consciously and transparently**.
+
+## Stage 2 — Learning: What Preferences Are Valid?
+
+Bradley-Terry assumes **Independence of Irrelevant Alternatives (IIA)**:
+
+$$
+\frac{P(\text{choose } j \mid \{j, k\})}{P(\text{choose } k \mid \{j, k\})} = \frac{P(\text{choose } j \mid \{j, k, \ell\})}{P(\text{choose } k \mid \{j, k, \ell\})}
+$$
+
+Reduces model from $M!$ parameters to $M$ item utilities — makes learning tractable.
+
+But IIA is violated in peer review — and these violations have **fairness consequences**.
+
+## When IIA Fails: Three Violations
+
+**Complementarity**: Already reviewed 2 similar papers $\rightarrow$ less interested in a third. Preference changes with choice set.
+
+**Framing effects**: Paper C is exceptional quality $\rightarrow$ Paper A now looks mediocre by comparison. Reference point shifts preference.
+
+**Reviewer load**: Heavy assignment load $\rightarrow$ tolerance for marginal papers decreases. Preferences reflect current state, not intrinsic quality.
+
+By assuming IIA, we say: these are "irrational" and we'll ignore them.
+
+## IIA Has Fairness Implications
+
+Who is disadvantaged by assuming IIA?
+
+Groups with **context-dependent preferences**:
+
+- **Overburdened** reviewers (preferences change with load)
+- **Fatigued** reviewers (late-night reviews differ from fresh morning reviews)
+- Those with **complementarity effects** (similar papers $\rightarrow$ diminishing interest)
+
+These groups overlap with disadvantaged demographics: junior reviewers, non-Western reviewers, caregivers.
+
+IIA works well for **low-load senior reviewers**. It works poorly for **overburdened reviewers** — this is **individual unfairness**.
+
+## Alternative: Contextual Bradley-Terry
+
+Model **context-dependent preferences** explicitly:
+
+$$
+H_{ij} = U_i^\top V_j + f(C_i)
+$$
+
+Example with reviewer load $n_i$:
+
+$$
+H_{ij} = U_i^\top V_j - \lambda n_i
+$$
+
+- $-\lambda n_i$ captures diminishing willingness as load increases
+- Doesn't satisfy IIA, but more accurately captures real behavior
+
+**Tradeoff**: More data needed (additional parameters) vs. fairer model for all groups.
+
+## Stage 3 — Aggregation: How to Weigh Preferences?
+
+DPO (Chapter 3) maximizes:
+
+$$
+\mathcal{L}_{\text{DPO}} = -\mathbb{E}\!\left[\log \sigma\!\left(\beta \log \frac{\pi_\theta(y_w \mid x)}{\pi_{\text{ref}}(y_w \mid x)} - \beta \log \frac{\pi_\theta(y_l \mid x)}{\pi_{\text{ref}}(y_l \mid x)}\right)\right]
+$$
+
+Key question: **Who contributes to $\pi_{\text{ref}}$?**
+
+If trained on all past reviews, reviewers who write **more reviews get more weight** — volume-weighted aggregation.
+
+## Who Dominates the Reference Policy?
+
+High-volume reviewers tend to be:
+
+- **Senior researchers**: Invited to review more, higher accept rates
+- **Researchers at top institutions**: Editors preferentially invite them
+- **Native English speakers**: Writing reviews is faster, lower burden per review
+
+Volume-weighting encodes **status quo bias** — the system learns to reproduce existing inequities.
+
+**Value embedded**: Past data reflects "true" preferences worth replicating. But past data also reflects historical inequalities.
+
+## Alternative: Equal-Weight Aggregation
+
+Instead of volume-weighted:
+
+- Per-reviewer reference policies: $\pi_{\text{ref}}^{(i)}$ for each reviewer $i$
+- Equal weights: $\pi_{\text{ref}} = \frac{1}{N} \sum_{i=1}^N \pi_{\text{ref}}^{(i)}$
+- Or: stratified by group to ensure proportional representation
+
+**Tradeoff**:
+
+| Strategy | Variance | Bias | Fairness |
+|----------|----------|------|----------|
+| Volume-weighted | Low | High (status quo) | Poor |
+| Equal-weighted | Higher | Low | Better |
+| Group-stratified | Medium | Low | Best |
+
+## Stage 4 — Decision: Liberal vs. Illiberal Assistance
+
+Should the AI respect stated preferences or sometimes override them?
+
+Drawing on **Amartya Sen's framework**:
+
+- **Non-nosy preferences**: About your own outcomes ("I want to review ML papers")
+- **Nosy preferences**: About others' choices ("Junior reviewers should handle tedious papers")
+
+**Liberal assistance**: Respects non-nosy preferences — helps each reviewer follow their own style
+
+**Illiberal assistance**: Enforces community standards — nudges toward constructive feedback
+
+## Liberal vs. Illiberal in Practice
+
+**Liberal**: Reviewer A writes harsh reviews $\rightarrow$ assistant helps them write *consistently harsh* reviews
+
+**Illiberal**: Assistant nudges Reviewer A toward constructive feedback per community norms
+
+::: {.fragment}
+**When is illiberal justified?** (Sen's framework)
+
+1. Preferences **harm third parties** (harsh reviews harm authors)
+2. Preferences formed under **poor conditions** (fatigue $\rightarrow$ inversion problem)
+3. Individual preferences aggregate to **collective harm** (all harsh $\rightarrow$ authors leave)
+:::
+
+## Both Approaches Have Fairness Problems
+
+**Liberal assistance may be unfair if**:
+
+- Some reviewers have biased preferences (harsher on certain institutions)
+- System amplifies biases by helping reviewers be "consistently" biased
+- $\Rightarrow$ Individual autonomy respected, but **group fairness violated**
+
+**Illiberal assistance may be unfair if**:
+
+- "Community standards" reflect dominant group's norms
+- Diverse reviewing styles are "corrected" toward homogeneity
+- $\Rightarrow$ Group fairness pursued, but **individual autonomy violated**
+
+**No easy answer** — this is the core tension in fairness.
+
+---
+
+## Compounding Unfairness {.center}
+
+How small biases multiply through feedback loops
+
+## The Feedback Loop
+
+Each pipeline stage introduces bias — and they **compound**:
+
+1. **Elicitation**: Queries productive reviewers more (undersamples juniors)
+2. **Learning**: IIA mismodels overburdened reviewers (juniors fit poorly)
+3. **Aggregation**: Volume-weighting privileges seniors (juniors downweighted)
+4. **Decision**: Assistant trained on senior style (poor suggestions for juniors)
+
+**Feedback**: Juniors find assistant unhelpful $\rightarrow$ use less $\rightarrow$ less data $\rightarrow$ even worse assistance $\rightarrow$ the gap widens **exponentially**
+
+## Mathematical Model of Compounding
+
+Let $q_t^{(g)}$ = queries to group $g$ at time $t$, $a_t^{(g)}$ = assistant quality for group $g$
+
+**Elicitation**: Queries proportional to past usage:
+$$q_{t+1}^{(g)} \propto a_t^{(g)}$$
+
+**Learning + Aggregation**: Quality depends on data:
+$$a_{t+1}^{(g)} = f\!\left(q_{t+1}^{(g)}\right)$$
+
+**Combined**: $a_{t+1}^{(g)} = f(a_t^{(g)})$
+
+- If $f$ is **superlinear**: small advantages $\rightarrow$ exponential divergence
+- A 10% initial advantage becomes **40% after 15 rounds**
+
+## Breaking the Feedback Loop
+
+No single-stage fix prevents compounding — need interventions at multiple stages:
+
+1. **Stratified elicitation**: Minimum queries from each group (breaks Stage 1)
+2. **Fairness-constrained learning**: Minimize *maximum per-group error* (fixes Stage 2)
+3. **Equal-weight aggregation**: Weight by population, not volume (fixes Stage 3)
+4. **Illiberal assistance with equity goals**: Cap advantages until gap closes (fixes Stage 4)
+5. **Regular re-initialization**: Periodically reset to equal assistance
+
+**The tradeoff**: All interventions sacrifice some efficiency for fairness. You cannot optimize both simultaneously.
+
+---
+
+## Fairness Concepts and Impossibilities {.center}
+
+Fundamental tensions with no perfect resolution
+
+## Individual Fairness
+
+**Definition** (Dwork et al., 2012): Similar individuals should be treated similarly.
+
+$$
+d(x_i, x_j) \leq \epsilon \implies d(f(x_i), f(x_j)) \leq \delta(\epsilon)
+$$
+
+- $d$: distance metric on individuals and outcomes
+- $\delta$: non-decreasing function
+
+**In peer review**: Papers with similar topics and quality should get similar-quality reviewers. If Papers A and B both study transformers on low-resource languages, they should get comparable reviewers.
+
+## Group Fairness
+
+**Definition** (Demographic parity): Protected groups should have equal average outcomes.
+
+$$
+\mathbb{E}[f(x) \mid G = g_1] = \mathbb{E}[f(x) \mid G = g_2]
+$$
+
+- $G$: group membership variable
+- $g_1, g_2 \in \mathcal{G}$: protected groups
+
+**In peer review**: Papers from mainstream ML subfields vs. small subfields should receive equally qualified reviewers *on average*.
+
+## The Fundamental Incompatibility
+
+**Dwork et al. (2012)**: Individual and group fairness are often **mutually incompatible**.
+
+:::: {.columns}
+::: {.column width="50%"}
+**Individual fairness says:**
+
+Similar topics $\rightarrow$ similar reviewers. Small subfield papers get less-expert reviewers (few experts exist).
+:::
+::: {.column width="50%"}
+**Group fairness says:**
+
+Both groups get equally expert reviewers on average. Must assign small subfield papers to less-matched (but expert) reviewers.
+:::
+::::
+
+::: {.fragment}
+**These conflict**: To satisfy group fairness, must violate individual fairness (similar topics $\rightarrow$ different review quality based on group). **This is a mathematical impossibility**, not an implementation failure.
+:::
+
+## Process vs. Outcome Fairness
+
+Another fundamental tension:
+
+| | Process Fairness | Outcome Fairness |
+|--|-----------------|-----------------|
+| **Definition** | Same rules for all | Equitable results |
+| **In review** | All bids weighted equally | Adjust weights for junior reviewers |
+| **Philosophy** | Procedural justice | Distributive justice |
+| **Connection** | Liberal assistance | Illiberal assistance |
+
+**The tension**: Equal treatment of unequal groups perpetuates inequality. But adjusting for demographics means unequal treatment.
+
+## Process vs. Outcome: The Tradeoff
+
+**Process-fair allocation**: Senior reviewers bid strategically on high-quality papers $\rightarrow$ get better assignments. Juniors bid less strategically $\rightarrow$ worse papers.
+
+- Same rules for all, but **unequal outcomes**
+
+**Outcome-fair allocation**: Boost junior bids to compensate for less strategic bidding $\rightarrow$ equalized outcomes.
+
+- Different treatment by group, but **equal results**
+
+::: {.fragment}
+**Key insight**: Process and outcome fairness are **fundamentally in tension** when groups have unequal starting positions or differential access to strategic information.
+:::
+
+## Summary of Impossibilities
+
+Two proven incompatibilities constrain every system:
+
+1. **Individual vs. Group Fairness** (Dwork et al., 2012)
+    - Cannot treat similar individuals similarly *and* ensure equal group outcomes
+2. **Process vs. Outcome Fairness**
+    - Cannot use equal procedures *and* get equal results from unequal starting positions
+
+These aren't engineering failures — they are **impossibility results**. No system satisfies all fairness criteria. You must **choose which to prioritize**.
+
+---
+
+## Design Principles {.center}
+
+Eight actionable guidelines for fairer systems
+
+## Principle 1: Make Value Tradeoffs Explicit
+
+Document what values are prioritized, what's sacrificed, who benefits, who is harmed.
+
+**Example template**:
+
+| | |
+|---|---|
+| **Decision** | DPO with volume-weighted $\pi_{\text{ref}}$ |
+| **Value prioritized** | Statistical efficiency |
+| **Value sacrificed** | Group fairness (equal influence) |
+| **Who benefits** | High-volume annotators |
+| **Who is harmed** | Low-volume annotators |
+| **Mitigation** | Minimum sampling quotas |
+
+Claiming "technical neutrality" hides choices and prevents accountability.
+
+## Principle 2: Distinguish Behavior from Mental State
+
+Don't optimize for clicks, bids, or engagement without asking if they reflect true preferences.
+
+$$P(B \mid M, C) \neq P(B \mid M)$$
+
+- Don't query reviewers proportional to review length — use stratified sampling
+- If using engagement metrics, adjust for accessibility and context
+- Collect explicit preference signals in addition to implicit behavior
+
+**Red flag**: Using revealed preferences (clicks, purchases) as ground truth without modeling context = **inversion fallacy**
+
+## Principle 3: Audit for Compounding Unfairness
+
+Map the full pipeline. Simulate over time. Does disparity grow or shrink?
+
+**Audit checklist**:
+
+- Have you mapped all feedback paths from decision $\rightarrow$ elicitation?
+- Do you track per-group metrics, not just averages?
+- Have you simulated 10+ rounds to check for compounding?
+- Is there a process for emergency intervention if disparities explode?
+
+**Set circuit breakers**: If disparity exceeds threshold (e.g., 2x gap in quality), trigger automatic review.
+
+## Principle 4: Choose Fairness Definition Consciously
+
+Accept impossibilities. Choose based on domain and stakes:
+
+| Context | Prioritize | Rationale |
+|---------|-----------|-----------|
+| High-stakes (hiring, healthcare) | Outcome fairness | Must correct systemic disparities |
+| Well-defined merit (expertise matching) | Individual fairness | Similar entities $\rightarrow$ similar treatment |
+| Requiring diversity (research) | Group fairness | All perspectives represented |
+| Low-stakes personal (shopping) | Process fairness | Autonomy paramount |
+
+Make the choice, document it, and measure violations of non-prioritized criteria.
+
+## Principle 5: Use Stratification, Not Just Optimization
+
+Report performance **per subgroup**, not just average. Set minimum thresholds:
+
+$$
+\max_{\theta} \text{Utility}(\theta) \quad \text{s.t.} \quad \min_{g \in \mathcal{G}} \text{Quality}_g(\theta) \geq \tau
+$$
+
+- Don't report "95% accuracy" — report "98% for Group A, 87% for Group B"
+- Set constraints: "No group below 90%" rather than "average 95%"
+- Small subgroups have high variance — use confidence intervals
+
+Optimization on average hides disparities. Stratified reporting reveals them.
+
+## Principle 6: When in Doubt, Ask
+
+Involve affected communities early and throughout:
+
+- Form advisory boards with junior reviewers, underrepresented subfields, international scholars
+- Show them stratified metrics — ask: "Is this disparity acceptable?"
+- Iterate: Design $\rightarrow$ Deploy to subset $\rightarrow$ Gather feedback $\rightarrow$ Redesign
+- Provide **recourse mechanisms**: report unfairness, flag bad suggestions, opt out
+
+Designers often lack lived experience of disadvantaged groups. **Participatory design** surfaces invisible issues.
+
+## Principle 7: Build for Observability & Accountability
+
+Log decisions and context for auditing. Enable external verification.
+
+- **Logging**: Record queries, predictions, suggestions with demographics and context
+- **Dashboards**: Real-time stratified metrics visible to stakeholders
+- **Feedback channels**: "Report unfairness" button that triggers review
+- **Rapid response**: Freeze rollout when disparities detected, investigate, fix
+
+**Privacy note**: Logging demographics raises concerns — use differential privacy, aggregate before sharing.
+
+Without observability, fairness claims are unverifiable.
+
+## Principle 8: Recognize Limits of Liberal Assistance
+
+Default to respecting preferences. Override with **structured paternalism**:
+
+**Override (illiberal) when**:
+
+- Third-party harm is severe (hate speech, bias harming others)
+- Preferences formed under poor conditions (fatigue, manipulation)
+- Collective action problem (all harsh reviews harm science)
+
+**Respect (liberal) when**:
+
+- No third-party harm (personal preferences about own outcomes)
+- User has expertise and autonomy
+- Diversity of perspectives is valuable
+
+Always: **transparency** (explain overrides), **justification** (document harm), **recourse** (allow appeals).
+
+---
+
+## Red Flags {.center}
+
+Warning signs that indicate fairness problems
+
+## Eight Red Flags
+
+1. **Feedback loops**: Average improves, but some subgroup worsens
+2. **Optimization-fairness divergence**: Metrics $\neq$ what stakeholders care about
+3. **Invisibility of harm**: Affected parties can't see how they're harmed
+4. **Post-hoc rationalization**: Justifying disparity as "technically correct"
+5. **Ignoring context**: Assuming context-free preferences when they're not
+6. **Revealed preference fallacy**: Behavior = true preferences without modeling context
+7. **Homogenization**: System converges to one group's style; diversity decreases
+8. **Privilege escalation**: Initial advantages compound into permanent disparities
+
+**Monitoring**: Fairness audits before deployment, at launch, and **monthly** ongoing.
+
+---
+
+## Summary {.center}
+
+## Key Takeaways
+
+1. **Every technical choice is a value choice** about whose preferences matter
+2. **The inversion problem**: Behavior $\neq$ mental state — optimizing revealed preferences can systematically disadvantage groups
+3. **Unfairness compounds**: Small biases at each pipeline stage multiply through feedback loops
+4. **Impossibility results**: Individual vs. group fairness, process vs. outcome fairness — cannot satisfy all
+5. **Eight design principles**: Make tradeoffs explicit, audit for compounding, stratify, involve affected communities
+6. **Neither liberal nor illiberal assistance is always right** — use structured paternalism
+
+## The Central Thesis
+
+::: {.callout-important}
+**Every technical choice in the preference learning pipeline is a value choice about whose preferences matter and how they should be weighted.**
+
+You cannot avoid making these choices. You can only choose whether to make them **consciously and transparently**.
+:::
+
+## References
+
+::: {.smaller}
+- Dwork, C., Hardt, M., Pitassi, T., Reingold, O., & Zemel, R. (2012). Fairness through awareness. *ITCS*.
+- Sen, A. (1970). The impossibility of a Paretian liberal. *Journal of Political Economy*.
+- [@rafailov2023direct]{.citation}
+- [@train1986qualitative]{.citation}
+- [@luce1959individual]{.citation}
+:::

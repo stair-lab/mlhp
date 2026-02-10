@@ -1,15 +1,127 @@
 ---
-title: Aggregation
-format: html
+title: "Aggregation"
+format:
+  html:
+    include-after-body:
+      text: |
+        <script>
+        // Auto-execute all pyodide cells after initialization
+        document.addEventListener('DOMContentLoaded', function() {
+          // Wait for pyodide to be fully ready (mainPyodide is set after loading)
+          function waitForPyodide() {
+            if (typeof globalThis.mainPyodide !== 'undefined' && globalThis.mainPyodide) {
+              // Pyodide is ready, execute all cells with autorun=true
+              if (typeof globalThis.qpyodideCellDetails !== 'undefined') {
+                globalThis.qpyodideCellDetails.forEach((cell, index) => {
+                  if (cell.options && cell.options.autorun === 'true') {
+                    setTimeout(() => {
+                      const runButton = document.querySelector(`#qpyodide-button-run-${cell.id}`);
+                      if (runButton && !runButton.disabled) {
+                        runButton.click();
+                      }
+                    }, index * 1000); // Stagger execution by 1 second each
+                  }
+                });
+              }
+            } else {
+              setTimeout(waitForPyodide, 500);
+            }
+          }
+          setTimeout(waitForPyodide, 2000); // Start checking after 2 seconds
+        });
+        </script>
 filters:
   - pyodide
-execute:
-  engine: pyodide
-  pyodide:
-    auto: true
 ---
 
-## Social Choice Theory and Implications for AI Preference Aggregation {#sec-aggregation}
+::: {.callout-note}
+## Intended Learning Outcomes
+
+By the end of this chapter you will be able to:
+
+- **Distinguish** between social welfare functions and social choice functions, and explain their role in aggregating preferences from multiple agents.
+- **State** Arrow's Impossibility Theorem and the Gibbard–Satterthwaite Theorem, explaining why no "perfect" voting rule exists for three or more alternatives.
+- **Define** single-peaked preferences and derive the generalized median voter scheme as a strategy-proof aggregation rule on restricted domains.
+- **Apply** Moulin's theorem to design strategy-proof, Pareto efficient voting rules when preferences lie on a single-peaked domain.
+- **Connect** the Borda count to Direct Preference Optimization (DPO), showing that the DPO-optimal policy maximizes the expected Borda score.
+- **Identify** nosy vs. non-nosy preferences and apply Sen's framework to determine when liberal vs. illiberal assistance is appropriate in AI systems.
+- **Analyze** the tension between privacy and personalization in preference learning using the Contextual Integrity framework.
+- **Recognize** the inversion problem (observed behavior does not necessarily equal underlying preferences) and its implications for revealed preference approaches.
+- **Design** incentive-compatible mechanisms for settings without monetary transfers, including peer prediction and online learning.
+- **Evaluate** real-world aggregation systems like Community Notes for combining diverse perspectives on content moderation.
+
+:::
+
+::: {.callout-tip title="Suggested Lecture Plan" collapse="true"}
+This chapter can be covered in four 50-minute lectures plus a discussion section:
+
+**Lecture 1** (Sections 5.1–5.2): Classical Social Choice Theory
+
+- Motivation: When and why must we aggregate preferences? (10 min)
+- Voting rules: Plurality, Borda, STV, Condorcet (10 min)
+- Arrow's theorem and Gibbard–Satterthwaite (20 min)
+- Implications for AI alignment and RLHF (10 min)
+
+**Lecture 2** (Sections 5.3–5.4): Escaping Impossibility
+
+- Domain restrictions: Single-peaked preferences (15 min)
+- Generalized median voter and Moulin's theorem (15 min)
+- Borda count and modified IIA (IIA') (10 min)
+- Code demo: DPO-Borda connection (10 min)
+
+**Lecture 3** (Sections 5.5–5.7): Beyond Classical Voting
+
+- Multi-issue voting and separable preferences (10 min)
+- Nosy preferences and the Paretian Liberal paradox (15 min)
+- Case study: Community Notes model (15 min)
+- Discussion: When should systems override stated preferences? (10 min)
+
+**Lecture 4** (Sections 5.8–5.10): Challenges in Practice
+
+- The inversion problem: Behavior vs. mental states (15 min)
+- Privacy and Contextual Integrity (15 min)
+- Mechanism design: Auctions and VCG (20 min)
+
+**Discussion Section**: Peer prediction, incentive-compatible online learning, and exercises
+:::
+
+::: {.callout-note title="Notation"}
+Throughout this chapter, we use the following conventions:
+
+| Symbol | Meaning |
+|--------|---------|
+| $N = \{1, \ldots, n\}$ | Set of $n$ voters (agents) |
+| $A = \{a_1, \ldots, a_m\}$ | Set of $m$ alternatives |
+| $\succ_i$ | Voter $i$'s strict preference ordering over $A$ |
+| $\mathcal{L}(A)$ | Set of all strict linear orders over $A$ |
+| $f: \mathcal{L}(A)^n \to A$ | Social choice function (profile to winner) |
+| $F: \mathcal{L}(A)^n \to \mathcal{L}(A)$ | Social welfare function (profile to ranking) |
+| $\text{SP}(Y)$ | Single-peaked preferences on totally ordered set $Y$ |
+| $\text{peak}(\succ_i)$ | Peak (ideal point) of voter $i$'s preferences |
+| $v_i$ | Private valuation of agent $i$ (in auctions) |
+| $\varphi(v)$ | Virtual valuation in Myerson framework |
+| $\text{MI}(X; Y)$ | Mutual information between $X$ and $Y$ |
+:::
+
+Chapters 1–4 focused on modeling preferences of a *single* decision-maker or learning from the feedback of individual users. But many real-world applications require aggregating preferences across *multiple* individuals. When training a language model with RLHF, annotators may disagree about which response is better. When a recommender system serves millions of users, it must balance diverse tastes. When an AI assistant helps a family plan a vacation, it must somehow combine different members' preferences.
+
+This chapter explores the fundamental challenges and solutions for preference aggregation. We begin with classical social choice theory, which reveals deep impossibility results: there is no "perfect" way to aggregate preferences. We then examine how to escape these impossibilities through domain restrictions, scoring rules, and mechanism design. Along the way, we connect these classical results to modern AI alignment challenges, including the relationship between the Borda count and DPO, the problem of nosy preferences in content moderation, and the tension between privacy and personalization.
+
+## Chapter Overview
+
+This chapter is organized into five parts:
+
+1. **Social Choice Theory** (@sec-aggregation–@sec-arrow): We introduce the formal framework of social choice, present Arrow's and Gibbard–Satterthwaite's impossibility theorems, and discuss their implications for AI systems that aggregate human feedback.
+
+2. **Escaping Impossibility** (@sec-domain-restrictions–@sec-borda-dpo): We show how restricting the domain of preferences (e.g., to single-peaked preferences) enables strategy-proof aggregation, and we prove a key connection between the Borda count and DPO.
+
+3. **Beyond Classical Voting** (@sec-multi-issue–@sec-community-notes): We extend to multi-issue settings, discuss nosy preferences and the Paretian Liberal paradox, and analyze Community Notes as a real-world case study.
+
+4. **Challenges in Practice** (@sec-inversion–@sec-paternalism): We examine the inversion problem (behavior ≠ preferences), privacy concerns in preference learning, and when paternalistic intervention may be justified.
+
+5. **Mechanism Design** (@sec-mechanism-design–@sec-mip): We cover auctions, VCG mechanisms, optimal auction design, peer prediction, and incentive-compatible online learning.
+
+## Social Choice Theory {#sec-aggregation}
 
 In many applications, human preferences must be aggregated across multiple individuals to determine a collective decision or ranking. This process is central to social choice theory, which provides a mathematical foundation for preference aggregation. Unlike individual preference modeling, which focuses on how a single person makes decisions, social choice theory addresses the challenge of combining multiple preference profiles into a single coherent outcome. A social welfare function (SWF) takes as input each individual's preference ranking over a set of alternatives and produces a social ranking of those alternatives. A related concept is a social choice function (SCF), which selects a single winning alternative given individuals’ preferences. Many voting rules can be seen as social choice functions that aim to reflect the group’s preferences. Formally, let $N=\{1,2,\dots,n\}$ be a set of $n$ voters (agents) and $A=\{a_1,\dots,a_m\}$ a set of $m$ alternatives (with $m \ge 3$). Each voter $i$ has a preference order $\succ_i$ over $A$. A social choice function is a mapping $f: (\succ_1,\dots,\succ_n)\mapsto A$ that picks a winning alternative for each possible profile of individual preferences. A social welfare function is a mapping that produces a complete societal ranking $\succ^*$ of the alternatives. The central question is: can we design an aggregation rule that faithfully represents individual preferences while satisfying certain fairness or rationality axioms?
 
@@ -44,7 +156,417 @@ For example, aggregating human feedback to train a model may run into inconsiste
 
 These considerations are especially relevant in generative AI and large language models, where training involves human preference data. If we aggregate feedback naively, we might overfit to the majority preference and lose minority perspectives (a form of tyranny of the majority). On the other hand, trying to satisfy everyone can lead to indecision or an incoherent objective. The impossibility results remind us there is no free lunch: we must carefully decide which properties to prioritize (e.g. giving more weight to expert annotators versus preserving broader fairness, or balancing consistency vs inclusivity). Designing aggregation mechanisms for AI that reflect collective human values is an ongoing challenge. It often involves insights from traditional voting theory (to understand trade-offs and failure modes) combined with machine learning techniques (to model and learn from preference data). In summary, social choice theory provides cautionary guidance as we build systems that learn from human preferences: we need to be conscious of which fairness criteria we relax and be transparent about the compromises being made in any preference aggregation pipeline.
 
-## Mechanism Design {#single-item-auctions}
+## Escaping Impossibility: Domain Restrictions {#sec-domain-restrictions}
+
+Arrow's and Gibbard–Satterthwaite's theorems assume an *unrestricted domain*: any transitive preference ordering is admissible. But what if we restrict the types of preferences that can occur? In many real-world settings, preferences have natural structure that we can exploit.
+
+### Single-Peaked Preferences {#sec-single-peaked}
+
+One of the most important restricted domains is *single-peaked preferences*. The idea is that alternatives can be arranged along a line (e.g., a left-right political spectrum, a temperature setting, or a budget level), and each voter has an "ideal point" or "peak" on this line, with preferences decreasing monotonically as we move away from the peak in either direction.
+
+::: {.callout-note title="Definition: Single-Peaked Preferences"}
+Let $Y$ be a totally ordered set of alternatives. A preference ordering $\succ$ over $Y$ is **single-peaked** if there exists a peak $p(\succ) \in Y$ such that for all $y, y' \in Y$:
+
+- If $y < y' \leq p(\succ)$, then $y' \succ y$
+- If $p(\succ) \leq y' < y$, then $y' \succ y$
+
+The set of all single-peaked preferences on $Y$ is denoted $\text{SP}(Y)$.
+:::
+
+Intuitively, a voter with peak $p$ always prefers alternatives closer to $p$ over alternatives farther from $p$. This rules out preferences like "I prefer the extremes to the middle"—which would create the kind of cycles that drive Arrow's impossibility.
+
+**Example: Temperature preferences.** Consider three colleagues deciding on the office thermostat setting. The alternatives are temperatures from 65°F to 75°F. Alice prefers 68°F (her peak), with utility decreasing as temperature moves away from 68. Bob prefers 72°F. Carol prefers 70°F. All three have single-peaked preferences on the temperature spectrum.
+
+### Generalized Median Voter Scheme {#sec-median-voter}
+
+On single-peaked domains, a remarkable class of voting rules emerges that satisfies strategy-proofness, Pareto efficiency, and other desirable properties.
+
+::: {.callout-note title="Definition: Generalized Median Voter Scheme"}
+Fix *phantom votes* $a_1, \ldots, a_{n-1} \in \mathbb{R} \cup \{\pm\infty\}$. The **generalized median voter scheme** is defined as:
+$$
+f(\succ_1, \ldots, \succ_n) = \text{median}\big(p(\succ_1), \ldots, p(\succ_n), a_1, \ldots, a_{n-1}\big)
+$$ {#eq-median-voter}
+where $p(\succ_i)$ is the peak of voter $i$'s preferences.
+:::
+
+The phantom votes act as "anchor points" that can shift the median in various directions. With $n-1$ phantom votes, there are $2n-1$ total values, so the median is well-defined. Different choices of phantom votes yield different voting rules:
+
+- **Pure median rule**: Set all phantoms to $\pm\infty$ appropriately so they don't affect the median. The outcome is simply the median of the voters' peaks.
+- **Dictatorial rule**: Set all phantoms equal to voter $i$'s peak. The outcome is always voter $i$'s ideal point.
+- **Status quo rule**: Set all phantoms to the status quo point $q$. The outcome can only move toward the median of voter peaks if enough voters prefer change.
+
+::: {.callout-important title="Moulin's Characterization Theorem"}
+**Theorem (Moulin, 1980)**: On the domain of single-peaked preferences $\text{SP}(Y)$, a social choice function $f$ satisfies:
+
+1. **Strategy-proofness (SP)**: No voter can benefit by misreporting their peak
+2. **Pareto efficiency (PE)**: The outcome is never unanimously dispreferred to another alternative
+3. **Anonymity and peaks-only**: The outcome depends only on the set of reported peaks
+
+if and only if $f$ is a generalized median voter scheme.
+:::
+
+This is a powerful positive result: by restricting to single-peaked preferences, we escape Arrow's impossibility and can achieve both strategy-proofness and efficiency.
+
+The following code demonstrates the generalized median voter scheme and its strategy-proofness:
+
+```{pyodide-python}
+#| autorun: true
+import numpy as np
+import matplotlib.pyplot as plt
+
+def generalized_median(peaks, phantoms):
+    """Compute generalized median voter outcome."""
+    all_points = np.concatenate([peaks, phantoms])
+    return np.median(all_points)
+
+# Example: 5 voters with different peaks
+voter_peaks = np.array([2.0, 4.0, 5.0, 7.0, 9.0])
+phantoms = np.array([0.0, 3.0, 6.0, 10.0])  # 4 phantom votes
+
+outcome = generalized_median(voter_peaks, phantoms)
+print(f"Voter peaks: {voter_peaks}")
+print(f"Phantom votes: {phantoms}")
+print(f"Median outcome: {outcome}")
+
+# Demonstrate strategy-proofness: voter 1 tries to manipulate
+fig, axes = plt.subplots(1, 2, figsize=(10, 4))
+
+# Left plot: True reporting
+ax = axes[0]
+true_outcome = generalized_median(voter_peaks, phantoms)
+ax.scatter(voter_peaks, np.zeros(5), s=100, c='blue', label='Voter peaks', zorder=3)
+ax.scatter(phantoms, np.zeros(4), s=60, c='gray', marker='x', label='Phantoms', zorder=3)
+ax.axvline(true_outcome, color='green', linestyle='--', linewidth=2, label=f'Outcome: {true_outcome}')
+ax.axvline(voter_peaks[0], color='blue', linestyle=':', alpha=0.5)
+ax.set_xlim(-1, 11)
+ax.set_ylim(-0.5, 0.5)
+ax.set_xlabel('Alternative space')
+ax.set_title('Truth-telling: Voter 1 reports peak = 2.0')
+ax.legend(loc='upper right', fontsize=8)
+ax.set_yticks([])
+
+# Right plot: Voter 1 misreports (tries to pull outcome left)
+ax = axes[1]
+manipulated_peaks = voter_peaks.copy()
+manipulated_peaks[0] = 0.0  # Voter 1 reports 0 instead of 2
+manip_outcome = generalized_median(manipulated_peaks, phantoms)
+ax.scatter(manipulated_peaks, np.zeros(5), s=100, c='blue', label='Reported peaks', zorder=3)
+ax.scatter([voter_peaks[0]], [0], s=100, c='red', marker='o', facecolors='none', linewidths=2, label='True peak', zorder=4)
+ax.scatter(phantoms, np.zeros(4), s=60, c='gray', marker='x', label='Phantoms', zorder=3)
+ax.axvline(manip_outcome, color='green', linestyle='--', linewidth=2, label=f'Outcome: {manip_outcome}')
+ax.set_xlim(-1, 11)
+ax.set_ylim(-0.5, 0.5)
+ax.set_xlabel('Alternative space')
+ax.set_title('Manipulation attempt: Voter 1 reports 0.0')
+ax.legend(loc='upper right', fontsize=8)
+ax.set_yticks([])
+
+plt.tight_layout()
+plt.show()
+
+# Check: Is the manipulated outcome closer to voter 1's true peak?
+print(f"\nVoter 1's true peak: {voter_peaks[0]}")
+print(f"Outcome with truth-telling: {true_outcome} (distance: {abs(true_outcome - voter_peaks[0]):.1f})")
+print(f"Outcome with manipulation: {manip_outcome} (distance: {abs(manip_outcome - voter_peaks[0]):.1f})")
+print("Manipulation did not help voter 1!" if abs(manip_outcome - voter_peaks[0]) >= abs(true_outcome - voter_peaks[0]) else "Manipulation helped!")
+```
+
+## Scoring Rules and the DPO-Borda Connection {#sec-borda-dpo}
+
+Another way to escape Arrow's impossibility is to relax the Independence of Irrelevant Alternatives (IIA) axiom. The **Borda count** is a classic scoring rule that does exactly this.
+
+### The Borda Count
+
+::: {.callout-note title="Definition: Borda Count / Soft Copeland Score"}
+For a preference profile, the **Borda score** (or soft Copeland score) of alternative $y \in Y$ equals the expected number of alternatives ranked below $y$ by a randomly chosen voter. Equivalently, it counts the number of pairwise "matches" that $y$ wins against other alternatives:
+$$
+\text{Borda}(y) = \sum_{i=1}^{n} |\{y' \neq y : y \succ_i y'\}| = \sum_{y' \neq y} |\{i : y \succ_i y'\}|
+$$ {#eq-borda}
+The **Borda winner** is the alternative with the maximum Borda score.
+:::
+
+The Borda count satisfies many desirable properties but violates IIA. However, we can define a weaker version of IIA that Borda *does* satisfy.
+
+::: {.callout-note title="Definition: Modified IIA (IIA')"}
+Fix alternatives $y, y' \in Y$. If two preference profiles have, for every agent:
+1. The same pairwise ordering of $y$ vs. $y'$, AND
+2. The same *number* of alternatives strictly between $y$ and $y'$
+
+then it should not be the case that $f(\succ) = y$ and $f(\succ') = y'$.
+:::
+
+This relaxation allows the social choice to depend on *how far apart* two alternatives are in each voter's ranking, not just their relative order.
+
+::: {.callout-important title="Theorem: Properties of Borda Count"}
+The Borda count satisfies:
+- **Unrestricted domain (U)**
+- **Pareto efficiency (PE)**
+- **Non-dictatorship (ND)**
+- **Modified IIA (IIA')**
+
+By relaxing IIA to IIA', we escape Arrow's impossibility.
+:::
+
+### Connection to Direct Preference Optimization (DPO)
+
+A remarkable result connects the Borda count to modern RLHF methods, specifically Direct Preference Optimization (DPO).
+
+::: {.callout-important title="Theorem: DPO-Borda Equivalence"}
+Assume that responses $y, y'$ are drawn from a reference policy $\pi_{\text{ref}}(\cdot | x)$. Define the **$\pi$-weighted Borda winner** as:
+$$
+y^* = \arg\max_{y \in Y} \mathbb{E}_{y' \sim \pi_{\text{ref}}(\cdot | x)}\big[\mathbf{1}[y \succ y' \mid x]\big]
+$$ {#eq-borda-weighted}
+Consider DPO training with reference policy $\pi_{\text{ref}}$. Then the DPO-optimal policy $\pi_{\text{DPO}}$ satisfies:
+$$
+\frac{\pi_{\text{DPO}}(y | x)}{\pi_{\text{ref}}(y | x)} \propto \text{(weighted Borda score of } y \text{)}
+$$
+:::
+
+In other words, **DPO finds a policy that upweights responses proportionally to their Borda scores**. This provides a social choice interpretation of what DPO is doing: it aggregates pairwise preferences by finding the response that would win the most head-to-head matchups against alternatives drawn from the reference policy.
+
+::: {.callout-tip title="Proof Sketch" collapse="true"}
+Write $\hat{\pi} = \pi^* / \pi_{\text{ref}}$ for the density ratio. Let $\bar{\sigma}(\Delta r^*(x, y', y)) = \mathbb{P}(y \succ y' | x; r^*)$ denote the Bradley-Terry probability under the true reward $r^*$.
+
+The DPO loss is:
+$$
+\mathcal{L}_{\text{DPO}}(\pi) = -\mathbb{E}_{x,y,y'}\Big[\bar{\sigma}(\Delta r^*) \cdot \log \sigma\big(\beta \log \frac{\hat{\pi}(y' | x)}{\hat{\pi}(y | x)}\big) + (1 - \bar{\sigma}(\Delta r^*)) \cdot \log\big(1 - \sigma(\beta \log \frac{\hat{\pi}(y | x)}{\hat{\pi}(y' | x)})\big)\Big]
+$$
+
+Taking the gradient with respect to $\hat{\pi}(y | x)$ and setting to zero:
+$$
+\mathbb{E}_{y' \sim \hat{\pi}}\Big[\sigma\big(\beta \log \frac{\pi(y | x)}{\pi(y' | x)}\big)\Big] = \underbrace{\mathbb{E}_{y' \sim \mathcal{D}(\cdot | x)}\big[\bar{\sigma}(\Delta r^*(x, y', y))\big]}_{\text{Borda score of } y}
+$$
+
+The right-hand side is exactly the expected win rate of $y$ against a random alternative—i.e., its Borda score.
+:::
+
+## Multi-Issue Voting and Separable Preferences {#sec-multi-issue}
+
+Real-world decisions often involve multiple independent issues. For example, an AI system might need to optimize for helpfulness, harmlessness, *and* honesty simultaneously. How should we aggregate preferences when there are multiple dimensions?
+
+### Voting by Committees
+
+::: {.callout-note title="Definition: Voting by Committees"}
+Let $K = \{1, \ldots, k\}$ be a set of "objects" (issues), and let $Y = 2^K$ be the set of all subsets (possible outcomes include any combination of objects). A voting scheme $f: \mathcal{P}^n \to 2^K$ is **voting by committees** if for each object $x \in K$, there exists a committee $C_x = (N, W_x)$ where $W_x$ is a family of winning coalitions, such that:
+
+- The outcome includes object $x$ if and only if $\{i : x \in B(\succ_i)\} \in W_x$
+
+where $B(\succ_i)$ is voter $i$'s top-ranked subset.
+:::
+
+### Separable Preferences
+
+When can we decompose multi-issue decisions into independent single-issue decisions?
+
+::: {.callout-note title="Definition: Separable Preferences"}
+A preference $\succ$ on $2^K$ is **separable** if for all $A \subseteq K$ and $x \notin A$:
+$$
+A \cup \{x\} \succ A \quad \Longleftrightarrow \quad x \in G(\succ)
+$$ {#eq-separable}
+where $G(\succ) = \{x \in K : \{x\} \succ \emptyset\}$ is the set of objects the voter considers "good" in isolation.
+:::
+
+Separability means that whether you want to add object $x$ to a bundle doesn't depend on what's already in the bundle—it only depends on whether $x$ is intrinsically good.
+
+::: {.callout-important title="Characterization on Separable Domains"}
+**Theorem**: A voting scheme satisfies surjectivity (S), strategy-proofness (SP), and separability (SEP) if and only if $f$ is voting by committees.
+
+Note: Voting by committees generally does *not* satisfy Pareto efficiency.
+:::
+
+**Application to RLHF**: When training language models, we often want to optimize for multiple criteria (helpful, harmless, honest). If annotator preferences are separable across these criteria, we can aggregate each criterion independently. But preferences are often *not* separable—for instance, a highly helpful response might necessarily involve some risk of harm, creating dependencies between criteria.
+
+## Nosy Preferences and the Liberal Paradox {#sec-nosy-preferences}
+
+A crucial distinction in preference aggregation is between *private* preferences (caring only about your own outcomes) and *nosy* preferences (caring about what others receive).
+
+### Private vs. Nosy Preferences
+
+::: {.callout-note title="Definition: Nosy Preferences"}
+A preference is **nosy** if the individual cares about outcomes affecting others, not just themselves. Examples include:
+
+- **Safety concerns**: Not wanting others to see bomb-building instructions
+- **Privacy violations**: Wanting to prevent disclosure of others' personal data
+- **Content moderation**: Preferring that certain content not be shown to anyone
+- **Paternalism**: Wanting to protect others from choices that might harm them
+- **Fairness**: Caring that others receive equitable treatment
+- **Psychological harm**: Preferring that AI systems not deceive users
+
+A preference is **private** if the individual only cares about their own allocation or experience.
+:::
+
+Most classical social choice theory assumes private preferences. But in AI systems, especially content moderation and alignment, nosy preferences are ubiquitous.
+
+### Sen's Liberal Paradox
+
+When preferences are nosy, even seemingly weak requirements can conflict.
+
+::: {.callout-important title="Theorem: Impossibility of the Paretian Liberal (Sen, 1970)"}
+Consider a society where each individual has a "personal sphere"—a set of choices over which they should have autonomy. The following properties are inconsistent:
+
+1. **Minimal Liberalism**: Each individual is decisive over at least one pair of alternatives in their personal sphere.
+2. **Pareto Efficiency**: If everyone prefers $x$ to $y$, then society should choose $x$ over $y$.
+3. **Unrestricted Domain**: Any preference profile is admissible.
+:::
+
+**Classic Example: The Prude and the Book**
+
+Consider two individuals, Prude and Lewd, and a controversial book. The alternatives are:
+- $a$: Prude reads the book
+- $b$: Lewd reads the book
+- $c$: No one reads the book
+
+Prude's preferences: $c \succ_P a \succ_P b$ (prefers no one reads it, but would rather read it themselves than let Lewd read it—a nosy preference!)
+
+Lewd's preferences: $a \succ_L b \succ_L c$ (wants Prude to read it, then themselves, rather than no one reading it—also nosy!)
+
+- By Minimal Liberalism, Prude should decide between $a$ and $c$ (their personal reading choice). Prude prefers $c$.
+- By Minimal Liberalism, Lewd should decide between $b$ and $c$ (their personal reading choice). Lewd prefers $b$.
+- But both prefer $a$ to $b$! By Pareto, society should prefer $a$ to $b$.
+
+This creates a cycle: $c$ beats $a$ (Prude's liberty), $b$ beats $c$ (Lewd's liberty), but $a$ beats $b$ (Pareto). There is no consistent social choice.
+
+**Implications for AI Alignment**: The Liberal Paradox suggests that when different stakeholders have nosy preferences about AI behavior, there may be no way to respect both individual autonomy and collective efficiency. Content moderation decisions often involve exactly this tension—one user's preference for free expression conflicts with another's preference for a safe environment.
+
+## Case Study: Community Notes {#sec-community-notes}
+
+Community Notes (formerly Birdwatch) is a real-world system for aggregating preferences about content helpfulness that addresses some of the challenges discussed above.
+
+### The Community Notes Model
+
+Community Notes uses a factor model to identify "bridging" notes—notes that receive positive ratings from users across ideological divides:
+
+$$
+u(y; \alpha, p, \varepsilon) = \mu + \alpha_j + \beta_j + p^\top q_j + \varepsilon_j
+$$ {#eq-community-notes}
+
+where:
+- $\mu$ is a global intercept
+- $\alpha_j$ is a rater intercept (some raters are generally more positive)
+- $\beta_j$ is a note intercept (some notes are generally better)
+- $p$ and $q_j$ are $k$-dimensional factor vectors capturing ideological alignment
+- $\varepsilon_j$ is residual noise
+
+The key insight is that $\beta_j$ captures note quality *after controlling for ideological agreement*. A note is selected if $\beta_j \geq c$ for some threshold $c$. This means a note must be rated positively by users who *disagree* ideologically, not just by an ideological majority.
+
+### Why Bridging Works
+
+Traditional majority voting would select notes favored by the largest ideological group. Community Notes instead identifies notes with broad cross-partisan appeal. This is analogous to finding a Condorcet winner that beats all alternatives in pairwise comparisons across different subgroups.
+
+The factor model approach has connections to:
+- **Collaborative filtering**: The $p^\top q_j$ term is similar to matrix factorization in recommender systems
+- **Item response theory**: The model resembles the Rasch model from Chapter 1, extended with latent factors
+- **Jury theorems**: Under certain conditions, diverse juries aggregate to correct answers better than homogeneous majorities
+
+## The Inversion Problem: Behavior vs. Preferences {#sec-inversion}
+
+A fundamental challenge in preference learning is the **inversion problem**: observed behavior does not necessarily reveal underlying preferences or utility.
+
+### Behavior ≠ Mental State
+
+::: {.callout-important title="The Inversion Problem"}
+Standard revealed preference theory assumes that choices reveal preferences: if someone chooses $x$ over $y$, they must prefer $x$ to $y$. But this assumption can fail when:
+
+1. **Habit formation**: Repeated behavior creates habits that persist even when preferences change
+2. **Cognitive limitations**: Fatigue, distraction, or bounded rationality lead to suboptimal choices
+3. **Context effects**: The same underlying preference produces different behaviors in different contexts
+4. **Strategic behavior**: People may choose strategically rather than according to true preferences
+:::
+
+**Example: The Doritos Problem**
+
+Consider a smart pantry system that observes eating behavior. A user consistently chooses Doritos when offered. The system infers: "User prefers Doritos." But the user might actually prefer healthier options—they just succumb to availability and habit when Doritos are present. Optimizing for observed "preferences" (engagement) may not optimize for true welfare.
+
+**Example: Doctor Fatigue**
+
+Studies show that doctors' prescribing patterns change systematically throughout the day as fatigue accumulates. Late-afternoon decisions may reflect fatigue more than medical judgment. A preference learning system that treats all decisions equally would encode fatigue-induced biases as "preferences."
+
+### Implications for RLHF
+
+The inversion problem has direct implications for training AI systems from human feedback:
+
+1. **Annotator fatigue**: Quality of preference labels may degrade over long annotation sessions
+2. **Engagement vs. satisfaction**: Optimizing for clicks or watch time may not optimize for user welfare
+3. **Context-dependent feedback**: The same annotator might give different feedback depending on their mood, prior examples, or framing
+4. **Strategic annotation**: If annotators believe certain patterns lead to better outcomes for them, they may annotate strategically
+
+**Potential solutions**:
+- Weight annotations by estimated quality or consistency
+- Use deliberation or discussion before labeling to reduce noise
+- Explicitly model annotator state (fatigue, expertise) as latent variables
+- Collect meta-feedback about label confidence
+
+## Privacy and Personalization {#sec-privacy}
+
+Preference learning inherently involves collecting personal data. This creates tension between privacy protection and personalization quality.
+
+### Contextual Integrity
+
+Helen Nissenbaum's **Contextual Integrity** framework provides a nuanced approach to privacy that goes beyond simple "consent" models.
+
+::: {.callout-note title="Contextual Integrity Framework"}
+Privacy is preserved when information flows match context-specific norms. Five parameters determine appropriateness:
+
+1. **Sender**: Who is sharing the information
+2. **Subject**: Whose information is being shared
+3. **Recipient**: Who receives the information
+4. **Data Type**: What kind of information
+5. **Transmission Principle**: What rules govern further use
+
+A privacy violation occurs when information flows in ways that violate contextual norms, even if the subject "consented."
+:::
+
+**Example: Heart Rate Data**
+
+Consider a fitness tracker that collects heart rate data:
+- **Acceptable flow**: Sending to a running coach for training optimization
+- **Unacceptable flow**: Sending to an advertising network for targeted ads
+- **The difference**: The transmission principle (coaching vs. advertising) violates the user's expectations about the fitness context
+
+### Differential Privacy Limitations
+
+Differential privacy (DP) provides formal guarantees that algorithms don't reveal individual information. However, DP has fundamental limitations for preference learning:
+
+1. **Personalization requires individual data**: By definition, DP prevents using individual data for personalization
+2. **Trade-off is inherent**: Stronger privacy guarantees mean less accurate preference models
+3. **"Persuasive" use of DP**: Some systems claim DP protection with parameters so weak they provide little actual privacy
+
+Contextual integrity offers a middle ground: allow data use that matches user expectations (e.g., personalization within a service) while preventing unexpected flows (e.g., selling data to third parties).
+
+## Paternalism in AI Systems {#sec-paternalism}
+
+When should an AI system override a user's stated preferences?
+
+### Paternalism vs. Nosy Preferences
+
+Paternalism differs from nosy preferences:
+- **Nosy preferences**: Caring about others' choices for *your own* sake
+- **Paternalism**: Overriding others' choices for *their* sake
+
+### When is Paternalism Justified?
+
+Several conditions might justify paternalistic intervention:
+
+1. **Information asymmetry**: The system has information the user lacks (e.g., long-term health effects)
+2. **Cognitive limitations**: The user is impaired (fatigue, addiction, cognitive decline)
+3. **Protection of future self**: The user's current choice harms their future self (e.g., saving for retirement)
+4. **Irreversible harm**: The consequences of a choice are severe and irreversible
+
+### Design Principles
+
+AI systems that exercise any form of paternalism should:
+
+1. **Be transparent**: Users should know when and why their preferences are being overridden
+2. **Allow override**: Users should be able to insist on their original choice
+3. **Minimize interference**: The lightest intervention that achieves the goal should be used
+4. **Justify interventions**: Each paternalistic choice should have a clear rationale
+5. **Update based on feedback**: Systems should learn when interventions are welcomed vs. resented
+
+**Example: AI Assistants Refusing Requests**
+
+When a user asks an AI assistant for harmful information (e.g., how to synthesize drugs), the refusal is paternalistic if motivated by protecting the user, or nosy if motivated by protecting others. In practice, refusals often serve both purposes.
+
+## Mechanism Design {#sec-mechanism-design}
 
 While voting rules aggregate ordinal rank preferences to select a social outcome, another class of preference aggregation occurs in economic settings like auctions and general mechanism design. Here individuals reveal their valuations (numerical utilities) for outcomes, and the mechanism chooses an outcome (such as an allocation of goods) and possibly payments. Mechanism design asks: how can we design rules so that rational agents, acting in their own interest, end up revealing information that leads to a socially desirable outcome? A central concept is incentive compatibility – the mechanism should be designed so that each participant’s best strategy is to act according to their true preferences (e.g. bid their true value). In this section, we focus on auctions as a prime example of preference aggregation with money, and highlight classical results including Vickrey–Clarke–Groves (VCG) mechanisms and Myerson’s optimal auction.
 
@@ -158,7 +680,8 @@ $$ {#eq-guinea-pig-incentive}
 
 This holds when $L \geq 12$. It means that the gains from not taking the recommended action are negative, which implies that users should always take the recommendation. So far we have considered the case where rewards are deterministic, but what about stochastic rewards? We are now going to consider the case where rewards are independent and identically distributed from some distribution, and where each action $A_i$ has some reward distribution $r_i^t \sim D_i, \mathbb{E}[r_i^t] = \mu_i$. Back to the case where there are only two actions, we are going to adapt the prior algorithm of guinea pig-picking to the stochastic reward setting. Since one reward observation is not enough to fully know $\mu_1$ anymore, we'll instead observe the outcome of the first action $M$ times to form a strong posterior $\mathbb{E}[\mu_1 | r_1^1, \ldots r_1^M]$. We can use with stochastic rewards when there are two actions. Similarly, as before, we pick one guinea pig uniformly at random from the next $L$ users and use the reward we get as the exploratory signal.\ In a very similar manner, we can generalize this algorithm from always having two actions to the general multi-armed bandit problem. Now suppose we have a general multi-armed bandit algorithm $A$. We will wrap this algorithm around our black box reduction algorithm to make it incentive-compatible. We wrap every decision that $A$ would make by exactly $L-1$ recommendations of the action believed to be the best so far. This guarantees that the expected rewards for the users that are not chosen as guinea pigs are at least as good as $A$'s reward at phase $n$.
 
-## Mutual Information Paradigm {#mutual-information-paradigm}
+## Mutual Information Paradigm {#sec-mip}
+
 In this section we discuss an influential new framework for designing peer prediction mechanisms, the Mutual Information Paradigm (MIP) introduced by Kong and Schoenebeck [@kongschoenebeck2019]. Traditional peer prediction approaches typically rely on scoring rules and correlation between agents' signals. However, these methods often struggle with issues like uninformed equilibria, where agents can coordinate on uninformative strategies that yield higher payoffs than truth-telling. The core idea is to reward agents based on the mutual information between their report and the reports of other agents. We consider a setting with $n$ agents, each possessing a private signal $\Psi_i$ drawn from some set $\Sigma$. The mechanism asks each agent to report their signal, which we denote as $\hat{\Psi}_i$. For each agent $i$, the mechanism randomly selects a reference agent $j \neq i$. Agent $i$'s payment is then calculated as $MI(\hat{\Psi}_i; \hat{\Psi}_j)$ where $MI$ is an information-monotone mutual information measure. An information-monotone $MI$ measure must satisfy the following properties:
 
 -   Symmetry: $MI(X; Y) = MI(Y; X)$.
@@ -169,8 +692,155 @@ In this section we discuss an influential new framework for designing peer predi
 
 Two important families of mutual information measures that satisfy these properties are $f$-mutual information and Bregman mutual information. The $f$-mutual information is defined as $MI_f(X; Y) = D_f(U_{X,Y}, V_{X,Y})$, where $D_f$ is an $f$-divergence, $U_{X,Y}$ is the joint distribution of $X$ and $Y$, and $V_{X,Y}$ is the product of their marginal distributions. The Bregman mutual information is defined as: $BMI_{PS}(X; Y) = \mathbb{E}_{X} [D{PS}(U_{Y|X}, U_Y)]$, where $D_{PS}$ is a Bregman divergence based on a proper scoring rule $PS$, $U_{Y|X}$ is the conditional distribution of $Y$ given $X$, and $U_Y$ is the marginal distribution of $Y$. The MIP framework can be applied in both single-question and multi-question settings. In the multi-question setting, the mechanism can estimate the mutual information empirically from multiple questions. In the single-question setting, additional techniques like asking for predictions about other agents' reports are used to estimate the mutual information. A key theoretical result of the MIP framework is that when the chosen mutual information measure is strictly information-monotone with respect to agents' priors, the resulting mechanism is both dominantly truthful and strongly truthful. This means that truth-telling is a dominant strategy for each agent and that the truth-telling equilibrium yields strictly higher payoffs than any other non-permutation strategy profile. As research continues to address practical implementation challenges of designing truthful mechanisms, MIP-based approaches have significant potential to improve preference elicitation and aggregation in real-world applications lacking verifiable ground truth.
 
+## Discussion Questions
+
+1. **Arrow's theorem and cardinal utilities**: Arrow's Impossibility Theorem applies to ordinal preferences. How does allowing cardinal utilities (like summing utilities across voters) change the picture? What new problems arise when we allow interpersonal utility comparisons?
+
+2. **Single-peaked preferences in practice**: Can you think of real-world preference domains that are plausibly single-peaked? What about domains that clearly violate single-peakedness? How might you test whether a given preference dataset is approximately single-peaked?
+
+3. **DPO and Borda**: The DPO-Borda connection suggests that DPO finds the response that wins the most pairwise comparisons. Is this what we actually want for language model alignment? What are scenarios where the Borda winner might not be the "best" response?
+
+4. **Nosy preferences in content moderation**: Give three examples of nosy preferences that arise in content moderation for social media platforms. For each, discuss whether you think the platform should respect or override this preference.
+
+5. **The inversion problem**: How should RLHF systems handle the possibility that annotator choices don't reflect their true preferences (due to fatigue, cognitive biases, or the structure of the annotation task)? Propose a concrete intervention.
+
+6. **Privacy vs. personalization**: A streaming service wants to personalize recommendations but users are concerned about privacy. Using the Contextual Integrity framework, design a data policy that balances these concerns. What transmission principles would you specify?
+
+7. **Paternalism trade-offs**: Consider an AI assistant that notices a user frequently asks questions late at night that they seem to regret in the morning. Should the assistant intervene? If so, how? Discuss the ethical considerations.
+
+8. **Mechanism design without money**: In RLHF, we cannot pay annotators based on the "truth" of their labels (since there's no ground truth). How do peer prediction mechanisms like MIP help? What assumptions do they require?
+
+9. **Community Notes vs. majority voting**: Why does Community Notes use a factor model instead of simple majority voting? What problems would majority voting create for controversial topics?
+
+10. **Strategic annotators**: If RLHF annotators knew their labels would influence the model's behavior, would they have incentives to vote strategically? How does Gibbard-Satterthwaite apply here?
+
+11. **Auction design for AI compute**: Cloud providers sell AI compute resources. Design an auction mechanism for allocating GPU time that maximizes welfare. What properties should it have?
+
+12. **VCG and AI alignment**: Could VCG-like mechanisms be used to aggregate diverse stakeholder preferences for AI system design? What would the "payments" be in this context?
+
+13. **Pluralistic alignment**: Instead of aggregating preferences into a single objective, some propose that AI systems should preserve preference diversity. How would you operationalize this? What are the trade-offs?
+
+14. **Separability across criteria**: When is it reasonable to assume that preferences over "helpful," "harmless," and "honest" are separable? When does this assumption fail? Give concrete examples.
+
+15. **Contextual Integrity violations**: Identify three ways that current AI systems might violate contextual integrity norms. For each, propose a design change that would restore contextual integrity.
+
+## Bibliographic Notes
+
+**Social Choice Theory**: The foundational results in social choice are due to Arrow [-@arrow1951], who proved his impossibility theorem, and Gibbard [-@gibbard1973] and Satterthwaite [-@satterthwaite1975], who independently proved the manipulability theorem. Black [-@black1948rationale] introduced single-peaked preferences, and Moulin [-@moulin1980strategy] characterized strategy-proof rules on this domain. For comprehensive treatments of social choice theory, see @sen1970collective and @austen-smith_banks_2000.
+
+**Domain Restrictions**: Beyond single-peakedness, various restricted domains have been studied. See @gaertner2001domain for a survey. The connection between single-peaked preferences and the median voter theorem goes back to @black1948rationale and @downs1957economic.
+
+**Borda Count and Scoring Rules**: The Borda count was proposed by Jean-Charles de Borda in 1781. Modern treatments include @young1974axiomatization, who characterized Borda axiomatically. The connection between Borda and pairwise comparisons is explored in @fishburn1977condorcet. The DPO-Borda connection builds on insights from @rafailov2023direct.
+
+**Nosy Preferences and Liberalism**: Sen's [-@sen1970impossibility] Liberal Paradox sparked extensive literature on the conflict between liberty and efficiency. See @hausman2012preference for philosophical discussion and @gaertner1988when for domain restriction approaches.
+
+**Contextual Integrity**: Nissenbaum's [-@nissenbaum2009privacy] framework has been influential in privacy scholarship. Applications to machine learning appear in recent work on contextual data use.
+
+**Mechanism Design**: Vickrey [-@vickrey1961] introduced the second-price auction. The VCG mechanism was developed by Vickrey, Clarke [-@clarke1971], and Groves [-@groves1973]. Myerson's [-@myerson1981] optimal auction theory is foundational. The Bulow-Klemperer theorem appears in @bulow-klemperer1996. For textbook treatments, see @krishna2009auction and @borgers2015introduction.
+
+**Peer Prediction**: The Mutual Information Paradigm was introduced by @kongschoenebeck2019. Earlier work on peer prediction includes @miller2005eliciting and @prelec2004bayesian. Applications to peer grading appear in @jasonH2020 and @jasonH2023.
+
+**Incentive-Compatible Bandits**: The study of exploration under strategic agents is developed in @mansour2019bayesianincentivecompatiblebanditexploration and @mansour2021bayesianexplorationincentivizingexploration. Connections to information design are explored in @bergemann2019information.
+
+**AI Alignment and Aggregation**: Jury learning and methods for aggregating diverse annotator preferences are studied in @gordon2022jury. Scalable oversight through recursive reward modeling appears in @christiano2018supervising. AI-assisted debate is proposed in @irving2018ai. Community Notes is described in X/Twitter's public documentation.
+
 ## Exercises
-### Question 1: Pairwise Feedback Mechanisms for Digital Goods
+
+### Exercise 1: Condorcet Cycles (*)
+
+Consider three voters with the following preferences over alternatives $\{A, B, C\}$:
+
+- Voter 1: $A \succ B \succ C$
+- Voter 2: $B \succ C \succ A$
+- Voter 3: $C \succ A \succ B$
+
+**(a)** Show that majority rule produces a preference cycle. Specifically, determine the majority preference for each pair $(A, B)$, $(B, C)$, and $(A, C)$.
+
+**(b)** Compute the Borda score for each alternative. Which alternative wins under Borda count?
+
+**(c)** Does this preference profile have a Condorcet winner? Explain.
+
+### Exercise 2: Single-Peaked Preferences (**)
+
+Consider five voters with peaks at positions $\{1, 3, 5, 7, 9\}$ on a line (total order).
+
+**(a)** What is the outcome of the pure median rule (no phantom voters)?
+
+**(b)** Add two phantom voters at positions 2 and 8. Compute the generalized median outcome.
+
+**(c)** Suppose voter 1 (with true peak at 1) misreports their peak as 0. Does this change the outcome? Use this to argue informally why the generalized median is strategy-proof.
+
+### Exercise 3: DPO-Borda Connection (**)
+
+Consider three responses $\{y_1, y_2, y_3\}$ to a prompt $x$. Suppose annotators have the following pairwise preferences:
+
+- $\mathbb{P}(y_1 \succ y_2) = 0.7$
+- $\mathbb{P}(y_1 \succ y_3) = 0.6$
+- $\mathbb{P}(y_2 \succ y_3) = 0.8$
+
+**(a)** Compute the expected Borda score for each response (sum of pairwise win probabilities).
+
+**(b)** If responses are sampled uniformly at random from a reference policy, which response would DPO upweight most strongly? Connect to the DPO-Borda theorem.
+
+### Exercise 4: Virtual Valuations and Optimal Reserve (**)
+
+For bidders with values drawn i.i.d. from $\text{Uniform}[0, 1]$:
+
+**(a)** Derive the virtual valuation function $\varphi(v) = v - \frac{1-F(v)}{f(v)}$.
+
+**(b)** Compute the optimal reserve price $r^*$ by solving $\varphi(r^*) = 0$.
+
+**(c)** With two bidders, compute the expected revenue of a second-price auction with reserve $r = 0.5$ and compare to expected revenue without a reserve.
+
+### Exercise 5: VCG Payments (**)
+
+In a combinatorial auction with items $\{A, B\}$ and three bidders with the following valuations:
+
+| Bidder | $v(\{A\})$ | $v(\{B\})$ | $v(\{A, B\})$ |
+|--------|------------|------------|---------------|
+| 1      | 3          | 2          | 4             |
+| 2      | 2          | 4          | 5             |
+| 3      | 1          | 1          | 6             |
+
+**(a)** Find the welfare-maximizing allocation.
+
+**(b)** Compute the VCG payment for each winner using the externality formula.
+
+### Exercise 6: Nosy Preferences (***)
+
+Formalize the Paretian Liberal paradox for a content moderation setting:
+
+**(a)** Define the set of "content types" $C = \{c_1, c_2, c_3\}$ and two users with nosy preferences over what content each other should see.
+
+**(b)** Construct a preference profile where minimal liberalism (each user decides their own feed) conflicts with Pareto efficiency.
+
+**(c)** Propose a domain restriction that would resolve the paradox in this setting.
+
+### Exercise 7: Inversion Problem in RLHF (**)
+
+An RLHF annotator's preferences become more random as they fatigue. Model this as follows: in the first hour, preferences follow Bradley-Terry with true utilities. After the first hour, choices become uniform random with probability $p_{\text{fatigue}} = 0.3$.
+
+**(a)** Write the likelihood of observing $y_w \succ y_l$ as a mixture model.
+
+**(b)** Suppose you observe inconsistent annotations from an annotator (e.g., $y_1 \succ y_2$ and later $y_2 \succ y_1$). How would you detect whether this is due to fatigue vs. genuinely indifferent preferences?
+
+**(c)** Propose a weighting scheme to down-weight fatigued annotations in reward model training.
+
+### Exercise 8: Community Notes Factor Model (**)
+
+Implement a simplified Community Notes model. Generate synthetic data as follows:
+
+- 100 users with ideological positions $p_i \sim \text{Uniform}[-1, 1]$
+- 20 notes with true quality $\beta_j \sim \mathcal{N}(0, 1)$ and ideological slant $q_j \sim \text{Uniform}[-1, 1]$
+- Each user-note rating: $r_{ij} = \beta_j + p_i \cdot q_j + \varepsilon_{ij}$ where $\varepsilon_{ij} \sim \mathcal{N}(0, 0.5)$
+
+**(a)** Implement code to generate this synthetic data.
+
+**(b)** Use linear regression to estimate $\beta_j$ (note quality) controlling for the ideological interaction term $p_i \cdot q_j$.
+
+**(c)** Compare your estimated $\hat{\beta}_j$ to the true $\beta_j$. How well does the model recover note quality?
+
+### Exercise 9: Pairwise Feedback Mechanisms for Digital Goods (***)
 
 Consider a marketplace for digital goods (such as personalized articles, artwork, or AI-generated data), where the exact utility derived from these goods is only revealed to buyers after the goods have been generated and delivered. To elicit truthful preferences from buyers who find it difficult to precisely quantify their valuations beforehand, the marketplace implements a pairwise feedback mechanism, inspired by the work of Robertson and Koyejo (2023).
 
@@ -186,7 +856,7 @@ Answer the following:
 
 (d) **Practical Implications:** Suggest one practical scenario outside the digital-goods marketplace where such a feedback-driven, pairwise comparison approach would be beneficial. Briefly justify your choice, mentioning challenges and benefits.
 
-### Question 2: Scalable Oversight in Complex Decision-Making
+### Exercise 10: Scalable Oversight in Complex Decision-Making (***)
 
 In scenarios involving complex or high-dimensional outcomes (such as summarizing lengthy texts, assessing the quality of detailed AI-generated reports, or reviewing scientific papers), evaluating the quality of outputs can become infeasible for a single human overseer. One practical solution is scalable oversight, where the evaluation task is decomposed and distributed among multiple human evaluators or even assisted by AI agents. Consider a scalable oversight scenario inspired by recursive reward modeling, where complex evaluations are hierarchically decomposed into simpler tasks. Specifically, suppose you want to evaluate a lengthy report generated by an AI system. Answer the following:
 
@@ -203,73 +873,3 @@ Specifically, your simulation should:
 - Plot how the reliability of the top-level evaluation (accuracy at the root) varies as you increase the depth of hierarchy for a report of fixed length (e.g., \(N = 64\) paragraphs).
 
 **(d) Practical Discussion:** Briefly discuss advantages and potential drawbacks of scalable oversight approaches such as recursive decomposition in the context of AI alignment. Include considerations such as evaluator fatigue, consistency, cost, and vulnerability to manipulation or collusion.
-
-
-<!--
-## Social Choice Theory {#sec-choices-aggregation}
-In many applications, human preferences must be aggregated across multiple individuals to determine a collective decision or ranking. This process is central to social choice theory, which provides a mathematical foundation for preference aggregation. Unlike individual preference modeling, which focuses on understanding how a single person makes decisions, social choice theory addresses the challenge of combining multiple preference profiles into a single, coherent outcome. One of the most widely used approaches to aggregating preferences is voting. A voting rule is a function that maps a set of individual preference rankings to a collective decision. The outcome of a vote is determined by a social choice function (SCF), which selects a winner based on the aggregated preferences. Several voting rules exist, each with different properties:
-
-- Plurality Rule: Each voter assigns one point to their top choice, and the alternative with the most points wins.
-- Borda Count: Voters rank all alternatives, and points are assigned based on the position in each ranking.
-- Single Transferable Vote (STV): Voters rank choices, and rounds of elimination occur until a candidate has a majority.
-- Condorcet Methods: The Condorcet winner is the item that would win in all pairwise comparisons against other alternatives (if one exists).
-
-However, preference aggregation is not always straightforward. The Condorcet Paradox illustrates that no single alternative may be a clear winner due to cycles in majority preferences, violating transitivity. Additionally, different voting rules can yield different winners, highlighting the importance of selecting an appropriate aggregation method. A fundamental result in social choice theory is Arrow’s Impossibility Theorem, which states that when there are three or more alternatives, no voting system can simultaneously satisfy the following fairness criteria:
-
-1. Unanimity (Pareto efficiency): If all individuals prefer one item over another, the group ranking should reflect this.
-2. Independence of Irrelevant Alternatives: The relative ranking of two items should not be influenced by another unrelated item.
-3. Non-dictatorship: No single individual's preference should always determine the group's outcome.
-
-Arrow’s theorem suggests that every fair aggregation method must compromise on at least one of these desirable properties. Additionally, the Gibbard-Satterthwaite Theorem proves that any deterministic voting rule that selects a single winner is either dictatorial (one person always determines the result) or manipulable (voters can strategically misrepresent their preferences to achieve a better outcome). While manipulation is theoretically possible, certain voting rules, such as STV, introduce computational complexity that makes strategic voting impractical in real-world scenarios.
-
-Preference aggregation is also critical in RLHF, where human judgments guide model training. Aggregating human preferences in RLHF faces challenges similar to traditional voting, such as inconsistencies in preferences and strategic bias. Several approaches address these challenges. For example, Majority Voting simply aggregates by selecting the most preferred response. Weighted Voting adjusts vote weights based on expertise or trustworthiness. Jury Learning is a method that integrates dissenting opinions, ensuring that minority perspectives are not entirely disregarded. Lastly, Social Choice in AI Alignment incorporates diverse human feedback to align AI behavior with a broad spectrum of human values. These approaches highlight the interplay between human preference modeling and machine learning. Designing aggregation mechanisms that reflect collective human values is an ongoing research challenge. While traditional social choice methods focus on aggregation, recent work in pluralistic alignment suggests alternative frameworks that preserve the diversity of human preferences rather than collapsing them into a single decision. Pluralistic AI systems aim to:
-
-1. Present a spectrum of reasonable responses instead of forcing a single choice.
-2. Allow steering towards specific perspectives while maintaining fairness.
-3. Ensure distributional pluralism, calibrating AI systems to diverse human viewpoints.
-
-This perspective is particularly relevant in generative AI, where models trained on aggregated preferences may fail to capture the nuances of diverse human values. Aggregating human preferences is a complex task influenced by mathematical constraints and strategic considerations. Voting-based methods provide well-studied mechanisms for aggregation, but they face fundamental limitations, as Arrow’s and Gibbard-Satterthwaite’s theorems outlined. Beyond traditional aggregation, emerging approaches in RL and AI alignment seek to balance fairness, robustness, and pluralism. As machine learning systems increasingly interact with human preferences, designing aggregation frameworks that capture the richness of human decision-making remains an active and critical area of research.
-
-## Auction Theory {#single-item-auctions}
-
-The first problem within auction theory we will consider is the single-item auction. The premise of this problem is that there is a single item to sell, $n$ bidders (with unknown private valuations of the item $v_1$, \..., $v_n$). The bidder's individual objective is to maximize utility: the value $v_i$ of the item subtracted by the price paid for the item. The auction procedure is standard in the sense that bids are solicited and the highest bid will win the auction. While the objective of the individual bidder is clear, there could be a plethora of different objectives for the auction as a whole. One option could be to maximize social surplus, meaning the goal is to maximize the value of the winner. Another objective could be to maximize seller profit which is the payment of the winner. For simplicity, we can focus on the first objective where the goal is to maximize social surplus. If we want to maximize social surplus it turns out that a great way to do this is the "second-price auction".
-
-In the second-price auction, we will operate under slightly different conditions. In the second-price auction we (1) solicit sealed bids, (2) have the winner be the highest bidder, and (3) charger winner the second-highest bid price. As an example, if the solicited bids are $b = (2, 6, 4, 1)$ the winner will be that who bid $6$, but will pay a price of $4$. From here, we can do some equilibrium analysis to try and learn what the optimal bidding strategy is for each bidder. Let the amount bidder $i$ bids to be $b_i$, so we have bids $b_1, b_2, ..., b_n$. How much should bidder $i$ bid? To analyze this, let us define $t_i = max_{j \neq i} b_j$ which represents the max of the bids that is not from bidder $i$. There are now two cases to consider: if $b_i$ \> $t_i$ and if $b_i$ \< $t_i$. In the first case the bidder $i$ wins, and if the bidder bid $b_i = v_i$, they are guaranteed to have a positive return on bid. In the other case, they lose the bid and the net loss is 0 because they don't have to pay. From this we can conclude that bidder $i$'s dominant strategy is to just bid $b_i = v_i$. Rigorously proving this is a little bit trickier, but it was shown from Vickrey in 1961 \[cite\] that truthful bidding is the dominant strategy in second-price auctions. A corollary of this is that we are maximizing social surplus since bids are values and the winner is the bidder with highest valuation.
-
-If we want to look at things from the perspective of a seller trying to maximize their profit we need to treat the bidder's bids as uniform random variables. Consider the example scenario where we have two bidders each bidding uniformly between 0 and 1. What is the seller's expected profit? (in this case profit and revenue for the seller are the same because we assume the seller throws away the item if it doesn't sell/has no valuation for it). From there the question now becomes, can we get more expected profit from the seller's perspective? It turns out there is a design where we can add a reserve price of $r$ to the second-price auction. The way this works is we can (1) Insert seller-bid at $r$, (2) solicit bids, (3) pick the highest bidder, and 3) charge the 2nd-highest bid. In effect, this is just the second-price auction but with a bid from the seller as well, at a price of $r$. A lemma, that we won't prove here, is that the second-price auction with reserve price $r$ still has a dominant strategy of just being truthful. Let's now consider what the profit of a second-price auction would be with two bidders that uniformly bid between 0 and 1 -- but this time we have a reserve price of $1/2$. To calculate the expected profit we break down the situation into 3 cases:
-
--   Case 1: $1/2 > v_1 > v_2 \rightarrow 1/4 \text{ probability} \rightarrow  \mathbb{E}[\text{profit}] = 0$
-
--   Case 2: $v_1 > v_2 > 1/2 \rightarrow 1/4 \text{probability} \rightarrow \mathbb{E}[v_2 | \text{case 2}] = 2/3$
-
--   Case 3: $v_1 > 1/2 > v_2 \rightarrow 1/2 \text{ probability} \rightarrow 1/2$
-
-Why is $E[v2 | case 2] = 2/3$? If $v_1$ and $v_2$ are greater than $1/2$, they are evenly spread across the interval, meaning the expectation will be 1/2 + 1/6 = 2/3. Adding up all these cases we get $E[profit] = 5/12$. It turns out that second-price auctions with reserve actually maximize profit in general (for symmetric bidders)! In the previous section we conclude that second-price auctions with reserve maximize profit for the seller. In order to prove this, we now move to the more general topic of asking how should a monopolist divide good across separate markets. We can make the assumption that the demand model is a concave revenue $R(q)$ in quantity $q$. Under this assumption, we can just divide supply into $q = q_a + q_b$ such that $R'_a(q_a) = R'_b(q_b)$. The idea from here is a theorem from Myerson in 1981 that states an optimal action maximizes "marginal revenue". Consider an example where we have two bidders bidding a uniform value between 0 and 1. Our revenue curve can now be derived from the offering price $V(q) = 1 - q$ like so: $R(q) = qV(q) = q - q^2$. Taking the derivative gives us the marginal revenue $R'(q) = 1-2q$. This means two things: 1) we want to sell to bidder $i$ with the highest $R'(q_i)$ and 2) we want to sell to bidder $i$ with value at least $1/2$ (if we want a positive $R'(q_i)$. But this is just a second-price auction with reserve $1/2$! This means that for symmetric bidders, a second price with reserve is the optimal auction.
-
-An interesting topic to discuss is what benefits auctions bring to the table as opposed to just standard pricing. Online auctions used to be a lot more popular in the early 2000s and have been completely replaced by standard online pricing, even on sites like e-bay. While auctions are slower and have added inherent complexities, they are actually optimal on paper. Standard pricing on the other is non-optimal; although it is fast and simpler for buyers. There is actually a way to quantify this: for pricing $k$ units, the loss is at most $1 / \sqrt{2\pi k}$ of optimal profit. Let's consider applications in duopoly platform design. We know that the optimal auction is second-price with reserve, but what happens when we introduce competition between two auction platforms? Some important details related to the revenue of a second-price auction is that a second-price auction with no reserve and n bidders leads to larger revenue having an optimal reserve and n - 1 bidders [@bulow-klemperer1996]. Additionally, with an entry cost, no reserve is the optimal strategy for maximizing revenue  [@mcafee-87]. Let's consider an example of a competing auction system which is Google ads vs Bing ads. How should an advertiser divide the budget between Google and Bing? They should give the same budget to both companies. What happens if Bing raises their prices? Then, the advertising company moves more of its budget to Google from Bing.
-
-The Bulow-Klemperer theorem demonstrates that increased competition can be more valuable than perfect knowledge of bidders' valuation distributions. This result provides insight into the potential of simple, prior-independent auctions to approach the performance of optimal auctions. The theorem states that for a single-item auction with bidders' valuations drawn independently from a regular distribution $F$. Let $F$ be a regular distribution and $n$ a positive integer. Then:
-$$E_{v_1,\ldots,v_{n+1} \sim F}[\text{Rev(VA)}(n+1 \text{ bidders})] \geq E_{v_1,\ldots,v_n \sim F}[\text{Rev(OPT}_F)(n \text{ bidders})]$$  {#eq-eq3.64}
-where VA denotes the Vickrey auction and $\text{OPT}_F$ denotes the
-optimal auction for $F$. This shows that running a simple Vickrey auction with one extra bidder outperforms the revenue-optimal auction that requires precise knowledge of the distribution. It suggests that in practice, effort spent on recruiting additional bidders may be more fruitful than fine-tuning auction parameters.
-
-The VCG mechanism is a cornerstone of mechanism design, providing a general solution for welfare maximization in multi-parameter environments. The key result is that in every general mechanism design environment, there is a dominant-strategy incentive-compatible (DSIC) welfare-maximizing mechanism. According to VCG, given bids $b_1, \ldots, b_n$, where each $b_i$ is indexed by the outcome set $\Omega$, the allocation rule is $x(b) = \arg \max_{\omega \in \Omega} \sum_{i=1}^n b_i(\omega)$. The payment rule for each agent $i$ is $p_i(b) = \max_{\omega \in \Omega} \sum_{j \neq i} b_j(\omega) - \sum_{j \neq i} b_j(\omega^*)$ where $\omega^* = x(b)$ is the chosen outcome. The key insight is to charge each agent its "externality" - the welfare loss inflicted on other agents by its presence. This payment rule, coupled with the welfare-maximizing allocation rule, yields a DSIC mechanism. The VCG mechanism can be interpreted as having each agent pay its bid minus a "rebate" equal to the increase in welfare attributable to its presence:
-
-$$p_i(b) = b_i(\omega^*) - \left[ \sum_{j=1}^n b_j(\omega^*) - \max_{\omega \in \Omega} \sum_{j \neq i} b_j(\omega) \right]$$  {#eq-eq3.67}
-
-While the VCG mechanism provides a theoretical solution for DSIC welfare-maximization in general environments, it can be challenging to implement in practice due to computational and communication complexities.
-
-Combinatorial auctions are an important class of multi-parameter mechanism design problems, with applications ranging from spectrum auctions to airport slot allocation. In a combinatorial auction, there are $n$ bidders and a set $M$ of $m$ items. The outcome set $\Omega$ consists of allocations $(S_1, \ldots, S_n)$, where $S_i$ is the bundle allocated to bidder $i$. Each bidder $i$ has a private valuation $v_i(S)$ for each bundle $S \subseteq M$. While the VCG mechanism theoretically solves the welfare-maximization problem, combinatorial auctions face several major challenges in practice. First, each bidder has $2^m - 1$ private parameters, making direct revelation infeasible for even moderate numbers of items. This necessitates the use of indirect mechanisms that elicit information on a "need-to-know" basis. In addition, even when preference elicitation is not an issue, welfare-maximization can be an intractable problem. In practice, approximations are often used, hoping to achieve reasonably good welfare. The VCG mechanism can exhibit bad revenue and incentive properties in combinatorial settings. For example, adding bidders can sometimes decrease revenue to zero, and the mechanism can be vulnerable to collusion and false-name bids. Last but not least, strategic Behavior in Iterative Auctions: Most practical combinatorial auctions are iterative, comprising multiple rounds. This introduces new opportunities for strategic behavior, such as using bids to signal intentions to other bidders. These challenges make combinatorial auctions a rich and complex area of study, requiring careful design to balance theoretical guarantees with practical considerations.
-
-Spectrum auctions represent a complex application of combinatorial auction theory. With n bidders and m non-identical items, each bidder has a private valuation for every possible bundle of items, making it impractical to directly elicit all preferences. This necessitates the use of indirect, iterative mechanisms that query bidders for valuation information on a "need-to-know" basis, sacrificing some of the desirable properties of direct mechanisms like dominant strategy incentive compatibility (DSIC) and full welfare maximization. The fundamental challenge in spectrum auctions lies in the nature of the items being sold. There is a dichotomy between items that are substitutes (where $v(AB) \leq v(A) + v(B))$ and those that are complements (where $v(AB) > v(A) + v(B))$. Substitute items, such as licenses for the same area with equal-sized frequency ranges, are generally easier to handle. When items are substitutes, welfare maximization is computationally tractable, and the VCG mechanism avoids many undesirable properties. However, complementary items, which arise naturally in spectrum auctions when bidders want adjacent licenses, present significant challenges. Early attempts at spectrum auctions revealed the pitfalls of naive approaches. Sequential auctions, where items are sold one after another, proved problematic as demonstrated by a Swiss auction in 2000. Bidders struggled to bid intelligently without knowing future prices, leading to unpredictable outcomes and potential revenue loss. Similarly, simultaneous sealed-bid auctions, as used in New Zealand in 1990, created difficulties for bidders in coordinating their bids across multiple items, resulting in severely suboptimal outcomes.
-
-The Simultaneous Ascending Auction (SAA) emerged as a solution to these issues and has formed the basis of most spectrum auctions over the past two decades. In an SAA, multiple items are auctioned simultaneously in rounds, with bidders placing bids on any subset of items subject to an activity rule. This format facilitates price discovery, allowing bidders to adjust their strategies as they learn about others' valuations. It also allows bidders to determine valuations on a need-to-know basis, reducing the cognitive burden compared to direct-revelation auctions. Despite its advantages, the SAA is not without vulnerabilities. Demand reduction, where bidders strategically reduce their demand to lower prices, can lead to inefficient outcomes even when items are substitutes. The exposure problem arises with complementary items, where bidders risk winning only a subset of desired items at unfavorable prices. These issues highlight the ongoing challenges in designing effective spectrum auctions, balancing theoretical guarantees with practical considerations.
-
-Case study: Classroom Peer Grading. This section discusses work by Jason Hartline, Yingkai Li, Liren Shan, and Yifan Wu at Northwestern University, where researchers examined mechanism design for the classroom, specifically in terms of the optimization of scoring rules. They explored peer grading in the classroom and how to construct a peer grading system that optimizes the objectives for each stakeholder in the system, including those being graded, the peer graders, the TAs of the class, and the professor. Firstly, let's think of the classroom like a computer. We can think of students as local optimizers; their incentive is to minimize the amount of work they need to do and maximize the grades that they receive. The graders are imprecise operators, which means that there is some uncertainty in their ability to grade the work completed by the students. The syllabus can be thought of as the rules that map the actions of the students to the grade they end up receiving in the class. Our overall goals for this classroom based on these definitions is to minimize work, maximize learning, and fairly assess the students for the work that they do [@jasonH2020]. One basic question that we can examine, is what is the best syllabus that maximizes our objectives for our classroom design. Some components of this could include grading randomized exams, grading with partial credit, group projects, and finally, peer grading, which is the component that we will be taking a deeper dive into. The general situation of the peer grading problem is that proper scoring rules make peer grades horrible [@jasonH2020]. So we want to be able to optimize scoring rules and make sure that we are optimizing each component of the peer grading pipeline.
-
-The main algorithms focused on in this peer grading design paper were matching peers and TAs to submissions and the grading of those submissions from the TAs and the peer reviews  [@jasonH2020]. There are quite a number of advantages to peer grading including that peers are able to learn from reviewing other people's work, it reduces the work for the teacher, and improves the turnaround time for assignment feedback (which are all part of our overarching goals for our mechanism design for the classroom). But, it is also important to acknowledge the potential disadvantages of the peer grading system: it is possible that the peer graders present inaccurate grades and there is student unrest. This presents us with a challenge: being able to incentivize accurate peer reviews.
-
-One problem that we run into, when we use the proper scoring rule to score peer reviews, if the peer graders use the lazy peer strategy, which means that they always report 80$\%$ for their peer reviews, they get graded very well using the proper scoring rule algorithm. In fact, the proper scoring rule says that their peer review is 96$\%$ accurate [@jasonH2023]. So how do we incentivize effort in reviews from peer graders? We use a scoring rule that maximizes the difference in score between effort or no effort reviews as indicated by the peer reviewers [@jasonH2023]. So overall, the analysis of datasets leads to decision optimizations and, eventually, payoff from those decisions.
-
-In conclusion, scoring rules are essential in being able to understand and analyze data thoroughly, and optimal scoring rules for binary effort allow us to understand the setting independent of the dataset [@jasonH2023].
--->

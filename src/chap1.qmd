@@ -37,15 +37,10 @@ filters:
 ::: {.content-visible when-format="html"}
 
 <iframe
-  src="../slides/2.1.choice_models.html"
-  style="width:45%; height:225px;"
+  src="../slides/chap1.html"
+  style="width:90%; height:450px;"
 ></iframe>
-<iframe
-  src="../slides/2.2.choice_models.html"
-  style="width:45%; height:225px;"
-></iframe>
-[Fullscreen Part 1](../slides/2.1.choice_models.html){.btn .btn-outline-primary .btn role="button"}
-[Fullscreen Part 2](../slides/2.2.choice_models.html){.btn .btn-outline-primary .btn role="button"}
+[Fullscreen Slides](../slides/chap1.html){.btn .btn-outline-primary .btn role="button"}
 
 :::
 
