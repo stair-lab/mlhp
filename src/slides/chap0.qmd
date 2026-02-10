@@ -1,7 +1,7 @@
 ---
 title: "Machine Learning from Human Preferences"
-subtitle: "Chapter 1: Introduction"
-footer: "Chapter 1: Introduction"
+subtitle: "Chapter 0: Introduction"
+footer: "Chapter 0: Introduction"
 ---
 
 ## Overview

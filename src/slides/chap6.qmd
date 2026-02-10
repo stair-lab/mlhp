@@ -1,7 +1,7 @@
 ---
 title: "Machine Learning from Human Preferences"
-subtitle: "Chapter 7: Whose Preferences?"
-footer: "Chapter 7: Whose Preferences?"
+subtitle: "Chapter 6: Whose Preferences?"
+footer: "Chapter 6: Whose Preferences?"
 ---
 
 ## Overview

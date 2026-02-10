@@ -1,7 +1,7 @@
 ---
 title: "Machine Learning from Human Preferences"
-subtitle: "Chapter 4: Elicitation"
-footer: "Chapter 4: Elicitation"
+subtitle: "Chapter 3: Elicitation"
+footer: "Chapter 3: Elicitation"
 ---
 
 ## Overview

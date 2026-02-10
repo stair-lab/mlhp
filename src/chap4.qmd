@@ -217,7 +217,7 @@ cum_ts, counts_ts = simulate_policy(thompson, T)
 # Optimal cumulative reward
 optimal = np.arange(1, T+1) * true_means[best_arm]
 
-fig, axes = plt.subplots(1, 2, figsize=(8, 3))
+fig, axes = plt.subplots(1, 2, figsize=(6, 2.5))
 
 # Left: Cumulative reward
 axes[0].plot(range(1, T+1), optimal, 'k--', linewidth=1, label='Optimal', alpha=0.7)
@@ -473,7 +473,7 @@ for t in range(T):
     regret.append(cumulative_regret)
 
 # Visualize
-fig, axes = plt.subplots(1, 3, figsize=(9, 3))
+fig, axes = plt.subplots(1, 3, figsize=(6, 2))
 
 # Left: Posterior evolution (2D)
 from matplotlib.patches import Ellipse
@@ -587,7 +587,7 @@ X = np.linspace(-3, 3, 100)
 
 # Compare kernels with different lengthscales
 lengthscales = [0.3, 1.0, 3.0]
-fig, axes = plt.subplots(2, 3, figsize=(7, 4))
+fig, axes = plt.subplots(2, 3, figsize=(6, 4))
 
 np.random.seed(42)
 for i, ls in enumerate(lengthscales):
@@ -857,7 +857,7 @@ Y_obs = (np.random.rand(len(X_obs)) < 1/(1 + np.exp(-f_obs))).astype(float)
 mu, sigma = gp_laplace_binary_np(X_obs, Y_obs, X_grid, lengthscale=1.0)
 
 # Plot
-fig, axes = plt.subplots(1, 2, figsize=(7, 3))
+fig, axes = plt.subplots(1, 2, figsize=(6, 3))
 
 # Left: latent function posterior
 axes[0].plot(X_grid, true_f, 'k--', label='True $h(x)$', linewidth=1)
@@ -969,7 +969,7 @@ for t in range(T):
     regret.append(cumulative_regret)
 
 # Visualize results
-fig, axes = plt.subplots(1, 3, figsize=(8, 2.5))
+fig, axes = plt.subplots(1, 3, figsize=(6, 2))
 
 # Left: True utility and selected items
 axes[0].plot(items, true_utils, 'k-', linewidth=1.5, label='True utility')
@@ -1134,7 +1134,7 @@ strengths = np.array([3.0, 2.5, 2.0, 1.5, 1.0])
 labels = ['A', 'B', 'C', 'D', 'E']
 P = bradley_terry_matrix(strengths)
 
-fig, axes = plt.subplots(1, 2, figsize=(7, 3))
+fig, axes = plt.subplots(1, 2, figsize=(6, 3))
 
 # Preference matrix heatmap
 im = axes[0].imshow(P, cmap='RdYlGn', vmin=0, vmax=1)
@@ -1360,7 +1360,7 @@ print(f"Borda scores: {dict(zip(pizzas, [f'{s:.2f}' for s in borda_scores]))}")
 print(f"Borda winner: {borda_winner}")
 
 # Visualize
-fig, axes = plt.subplots(1, 2, figsize=(7, 3))
+fig, axes = plt.subplots(1, 2, figsize=(6, 3))
 
 # Preference matrix
 im = axes[0].imshow(P, cmap='RdYlGn', vmin=0, vmax=1)
@@ -2014,7 +2014,7 @@ n_rounds = 500
 regret_ts, wins_ts, losses_ts = run_ts_dueling(n_rounds, true_quality, np.random.default_rng(0))
 regret_eg, wins_eg, losses_eg = run_eps_greedy(n_rounds, true_quality, np.random.default_rng(0))
 
-fig, axes = plt.subplots(1, 2, figsize=(7, 3))
+fig, axes = plt.subplots(1, 2, figsize=(6, 3))
 axes[0].plot(regret_ts, label='Thompson Sampling', lw=2)
 axes[0].plot(regret_eg, label='ε-Greedy (ε=0.1)', lw=2, ls='--')
 axes[0].set_xlabel('Round'); axes[0].set_ylabel('Cumulative Regret')
@@ -2187,7 +2187,7 @@ condorcet_x = X[condorcet_idx]
 true_min_idx = np.argmin(g(X))
 true_min_x = X[true_min_idx]
 
-fig, axes = plt.subplots(1, 2, figsize=(7, 3))
+fig, axes = plt.subplots(1, 2, figsize=(6, 3))
 
 # Left: Latent function g(x)
 axes[0].plot(X, g(X), 'b-', linewidth=1.5, label='$g(x)$')
@@ -2296,7 +2296,7 @@ for i, x in enumerate(X_grid):
 # Compute estimated Copeland scores
 est_copeland = pred_matrix.mean(axis=1)
 
-fig, axes = plt.subplots(1, 2, figsize=(7, 3))
+fig, axes = plt.subplots(1, 2, figsize=(6, 3))
 
 # Predicted preference matrix
 im = axes[0].imshow(pred_matrix, extent=[-1, 1, -1, 1], origin='lower', cmap='RdYlGn', vmin=0, vmax=1)
@@ -2690,7 +2690,7 @@ X_grid = np.linspace(-1, 1, 100)
 true_optimum = X_grid[np.argmin(true_g(X_grid))]
 
 # Visualize results
-fig, axes = plt.subplots(1, 3, figsize=(9, 3))
+fig, axes = plt.subplots(1, 3, figsize=(6, 2))
 
 # Left: True function and recommendations
 axes[0].plot(X_grid, true_g(X_grid), 'k-', linewidth=1.5, label='True $g(x)$')
@@ -2835,7 +2835,7 @@ demo_cum, demo_beliefs = simulate_cirl(teaching=False)
 np.random.seed(0)
 teach_cum, teach_beliefs = simulate_cirl(teaching=True)
 
-fig, axes = plt.subplots(1, 2, figsize=(7, 3))
+fig, axes = plt.subplots(1, 2, figsize=(6, 3))
 
 # Left: Belief evolution
 T = len(demo_beliefs)
