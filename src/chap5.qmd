@@ -34,6 +34,16 @@ filters:
   - pyodide
 ---
 
+::: {.content-visible when-format="html"}
+
+<iframe
+  src="../slides/chap5.html"
+  style="width:90%; height:450px;"
+></iframe>
+[Fullscreen Slides](../slides/chap5.html){.btn .btn-outline-primary .btn role="button"}
+
+:::
+
 ::: {.callout-note}
 ## Intended Learning Outcomes
 

@@ -38,7 +38,7 @@ filters:
 
 <iframe
   src="../slides/chap4.html"
-  style="width:80%; height:225px;"
+  style="width:90%; height:450px;"
 ></iframe>
 [Fullscreen Slides](../slides/chap4.html){.btn .btn-outline-primary .btn role="button"}
 

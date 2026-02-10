@@ -34,6 +34,16 @@ filters:
   - pyodide
 ---
 
+::: {.content-visible when-format="html"}
+
+<iframe
+  src="../slides/chap6.html"
+  style="width:90%; height:450px;"
+></iframe>
+[Fullscreen Slides](../slides/chap6.html){.btn .btn-outline-primary .btn role="button"}
+
+:::
+
 ::: {.callout-note}
 
 By the end of this chapter you will be able to:
