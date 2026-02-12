@@ -61,26 +61,6 @@ By the end of this chapter you will be able to:
 
 :::
 
-::: {.callout-note title="Notation"}
-This chapter uses notation established in previous chapters:
-
-- User embedding: $U_i \in \mathbb{R}^K$
-- Item features/loadings: $V_j \in \mathbb{R}^K$
-- Latent utility: $H_{ij} = h_i(V_j)$ where $h_i: \mathbb{R}^K \to \mathbb{R}$
-- Binary preference outcome: $Y_{ij} \in \{0, 1\}$
-- Sigmoid function: $\sigma(x) = 1/(1 + e^{-x})$
-
-New notation for this chapter:
-
-- Dataset at time $t$: $\mathcal{D}_t = \{(V_j, Y_{ij})\}_{j=1}^t$
-- Posterior sample: $\tilde{U}_i^{(t)} \sim p(U_i \mid \mathcal{D}_t)$
-- Acquisition function: $\alpha(\cdot)$
-- Cumulative regret after $T$ steps: $R(T) = \sum_{t=1}^T (\mu^* - \mu_{a_t})$
-- GP posterior mean/variance: $\mu_t(\cdot), \sigma_t^2(\cdot)$
-- Kernel function: $k(\cdot, \cdot)$
-- Preference function: $\pi_f([\mathbf{x}, \mathbf{x}'])$ — probability that $\mathbf{x}$ is preferred to $\mathbf{x}'$
-:::
-
 ::: {.callout-tip title="Suggested Lecture Plan" collapse="true"}
 This chapter can be covered in four 50-minute lectures:
 
@@ -252,6 +232,31 @@ print(f"Thompson Sampling selected best arm {int(counts_ts[best_arm])}/{T} times
 Thompson Sampling (TS) is among the most conceptually transparent and empirically successful methods for decision-making under uncertainty. It converts Bayesian inference into a simple randomized decision rule: sample a plausible world, then act optimally within it. Formally, suppose we maintain a posterior distribution over the latent user embedding $p(U_i \mid \mathcal{D}_t) \propto p(\mathcal{D}_t \mid U_i) p(U_i),$ where $\mathcal{D}_t = {(V_j, Y_{ij})}_{j=1}^t$ denotes the user’s observed responses. At each round $t+1$, Thompson Sampling draws a single sample $\tilde{U}_i^{(t)} \sim p(U_i \mid \mathcal{D}_t),$
 and then chooses the next item that maximizes the sampled expected utility: $j^* = \arg\max_j \tilde{U}_i^{(t)\top} V_j.$
 This randomized strategy naturally balances exploration and exploitation: if posterior uncertainty is large, different draws $\tilde{U}_i^{(t)}$ lead to diverse item choices; as the posterior concentrates, the policy converges to greedy exploitation.
+
+::: {.callout-warning title="Common Pitfall: Thompson Sampling Requires a Correct Posterior"}
+Thompson Sampling's theoretical guarantees depend on maintaining an **accurate posterior** over the latent parameters. A common mistake is to use a poor approximation (e.g., a point estimate, or a Gaussian approximation when the true posterior is multimodal) and still expect TS to explore effectively. If the posterior is overconfident, TS degenerates to greedy exploitation too early; if underconfident, it wastes rounds exploring suboptimal items. The **Laplace approximation** works well for logistic likelihoods (Bradley-Terry), but always check that the posterior is unimodal. Also, do **not** add explicit exploration bonuses (as in UCB) on top of Thompson Sampling — the randomization *is* the exploration mechanism, and adding bonuses breaks the balance.
+:::
+
+::: {.callout-caution title="Worked Example: Thompson Sampling Intuition" collapse="false"}
+Suppose we have 3 items and a 1D user embedding. After 5 observations, the posterior over $U$ is approximately $\mathcal{N}(1.2, 0.5^2)$.
+
+**Round 1:** Draw $\tilde{U} = 1.6$ (high sample). With item features $V_1 = 0.5, V_2 = 1.0, V_3 = -0.3$:
+
+- Expected utilities: $\tilde{U} \cdot V_1 = 0.80$, $\tilde{U} \cdot V_2 = 1.60$, $\tilde{U} \cdot V_3 = -0.48$
+- Select $j^* = 2$ (highest utility under this sample)
+
+**Round 2:** Draw $\tilde{U} = 0.7$ (low sample). Now:
+
+- Expected utilities: $0.35$, $0.70$, $-0.21$
+- Still select $j^* = 2$, but the margin is smaller
+
+**Round 3:** Draw $\tilde{U} = -0.1$ (rare tail sample). Now:
+
+- Expected utilities: $-0.05$, $-0.10$, $0.03$
+- Select $j^* = 3$ — **exploration!** The unlikely sample led us to try a different item.
+
+**Key insight:** Thompson Sampling explores *automatically* because posterior uncertainty generates diverse samples. Early on (wide posterior), many different items get selected. As the posterior narrows around the true $U$, exploration decreases naturally — no explicit exploration schedule needed.
+:::
 
 Under binary or preference feedback modeled by a logistic link,
 $$
@@ -2429,7 +2434,7 @@ $\mathcal{B}_g^{t+1}$.
 
 #### qEUBO: Decision-Theoretic EUBO {#qeubo-decision-theoretic-eubo .unnumbered}
 
-qEUBO [@astudillo2023qeubodecisiontheoreticacquisitionfunction] derives
+qEUBO [@astudillo2023qeubo] derives
 an acquisition function that extends duels to $q>2$ options which we
 call *queries*. Let
 $X=\left(\mathbf{x_1}, \ldots, \mathbf{x_q}\right) \in \mathcal{X}^q$
@@ -2460,7 +2465,7 @@ use qEUBO as a sufficient policy due to the following theorem:
 $$\underset{X \in \mathbb{X}^q}{\operatorname{argmax}} \mathrm{qEUBO}_n(X) \subseteq \underset{X \in \mathbb{X}^q}{\operatorname{argmax}} V_n(X) .$$ {#eq-qeubo-optimality}
 :::
 
-*Proof sketch.* The proof establishes two key inequalities. First, the one-step value $V_n(X)$ is bounded above by $\text{qEUBO}_n(X^+(X))$, where $X^+(X)$ contains the best post-observation recommendations---because selecting the best option from a query can only be as good as already knowing the best option in the pool. Second, $\text{qEUBO}_n(X) \leq V_n(X)$ because the user-selected option from the query may not be the global optimum. Combining these via a proof by contradiction shows that any maximizer of qEUBO is also a maximizer of the one-step Bayes-optimal value function $V_n$. See @astudillo2023qeubodecisiontheoreticacquisitionfunction for the full proof. $\square$
+*Proof sketch.* The proof establishes two key inequalities. First, the one-step value $V_n(X)$ is bounded above by $\text{qEUBO}_n(X^+(X))$, where $X^+(X)$ contains the best post-observation recommendations---because selecting the best option from a query can only be as good as already knowing the best option in the pool. Second, $\text{qEUBO}_n(X) \leq V_n(X)$ because the user-selected option from the query may not be the global optimum. Combining these via a proof by contradiction shows that any maximizer of qEUBO is also a maximizer of the one-step Bayes-optimal value function $V_n$. See @astudillo2023qeubo for the full proof. $\square$
 
 Therefore a sufficient condition for following one-step Bayes optimality
 is by maximizing $\text{qEUBO}_n$.
@@ -2543,7 +2548,7 @@ This theorem holds under the following assumptions:
 Further lemmas leading to a proof of Theorem
 [\[th:quebo_regret\]](#th:quebo_regret){reference-type="ref"
 reference="th:quebo_regret"} is given in
-[@astudillo2023qeubodecisiontheoreticacquisitionfunction] Section B.
+[@astudillo2023qeubo] Section B.
 
 #### qEI Regret {#qei-regret .unnumbered}
 
@@ -2561,7 +2566,7 @@ $\left.f\left(\widehat{x}_n^*\right)\right] \geq R$ for all $n$, for a
 constant $R>0$.
 :::
 
-*Proof sketch.* The counterexample constructs four functions on $\mathcal{X} = \{1,2,3,4\}$ with a carefully chosen prior. The key insight is that qEI optimizes improvement over the *current best estimate*, which in this construction is always $x = 2$ (with $f(2) = 0$). Since comparing $x = 3$ vs. $x = 4$ always yields the highest expected improvement over $f(2) = 0$, qEI perpetually selects the query $(3, 4)$---never querying the pairs that would reveal whether the true optimum lies at $x = 3$ or $x = 4$. One can show by induction that this trapping behavior persists for all $n$, yielding constant Bayesian simple regret $R = p > 0$. In contrast, qEUBO avoids this trap because it maximizes the expected utility of the *best option shown*, which naturally encourages diverse queries. See @astudillo2023qeubodecisiontheoreticacquisitionfunction Section B for the full induction argument. $\square$
+*Proof sketch.* The counterexample constructs four functions on $\mathcal{X} = \{1,2,3,4\}$ with a carefully chosen prior. The key insight is that qEI optimizes improvement over the *current best estimate*, which in this construction is always $x = 2$ (with $f(2) = 0$). Since comparing $x = 3$ vs. $x = 4$ always yields the highest expected improvement over $f(2) = 0$, qEI perpetually selects the query $(3, 4)$---never querying the pairs that would reveal whether the true optimum lies at $x = 3$ or $x = 4$. One can show by induction that this trapping behavior persists for all $n$, yielding constant Bayesian simple regret $R = p > 0$. In contrast, qEUBO avoids this trap because it maximizes the expected utility of the *best option shown*, which naturally encourages diverse queries. See @astudillo2023qeubo Section B for the full induction argument. $\square$
 
 #### POP-BO Regret {#pop-bo-regret .unnumbered}
 
@@ -2885,6 +2890,38 @@ The transition from measurement to decision-making revealed that uncertainty sho
 This chapter developed methods for sequential decision-making with preference feedback from a **single** user. But what happens when **multiple** users have different preferences? Chapter 5 (Aggregation) addresses this challenge using social choice theory and mechanism design. The winner concepts introduced here---Condorcet, Borda, von Neumann---will reappear in that context. In particular, a key result in Chapter 5 shows that DPO implicitly optimizes the **Borda score** when aggregating across annotators, connecting the dueling bandit framework developed here to the social choice theory of preference aggregation. Chapter 6 then asks the normative question: *whose* preferences should we optimize for, and what fairness constraints should apply?
 :::
 
+## Summary
+
+- This chapter shifts perspective from **measuring** preferences (Chapter 3) to **making decisions** under preference uncertainty---managing uncertainty to maximize cumulative reward rather than merely reducing it.
+- **Thompson Sampling** ("sample a plausible world, act optimally within it") naturally balances exploration and exploitation by sampling from the posterior. Combined with the Laplace approximation, it handles both linear and nonlinear (GP-based) preference models.
+- **Dueling bandits** formalize decision-making when only pairwise comparisons are observable. Three winner concepts---**Condorcet** (beats all others), **Borda** (highest average win rate), and **von Neumann** (minimax optimal mixed strategy)---can diverge, and the choice of winner concept shapes what "regret" means.
+- **Preferential Bayesian Optimization (PBO)** tackles the continuous-armed case where the goal is to find the best option in a large or infinite space using only preference feedback. The **qEUBO** acquisition function provably converges while the seemingly natural **qEI** can fail.
+- Regret bounds for PBO scale as $R_T = O(\sqrt{\beta_T \gamma_T T})$, where $\gamma_T$ is the maximum information gain---providing convergence guarantees that depend on the kernel's complexity.
+- **Cooperative Inverse Reinforcement Learning (CIRL)** models humans as strategic agents who actively teach rather than passively demonstrate, enabling more efficient preference communication through cooperative interaction.
+- As system designers, we are **choice architects**: order effects, framing, and defaults influence human choices in ways that standard models (IIA) do not capture, requiring awareness of these biases in deployment.
+
+## Quick Check
+
+Test your understanding before proceeding to the exercises.
+
+1. Thompson Sampling draws from the posterior and acts greedily under the sample. Why does this produce exploration, even though each individual decision is "greedy"?
+
+2. Construct a 3-arm preference matrix where the Condorcet winner and Borda winner differ. (Hint: the Condorcet winner beats all others head-to-head but may have low average win rates.)
+
+3. Why does the qEI acquisition function fail to converge in some settings while qEUBO provably converges? What is the key difference in their objectives?
+
+4. In CIRL, what changes if the human acts as a *teacher* (choosing informative demonstrations) rather than a *demonstrator* (acting optimally for themselves)?
+
+::: {.callout-tip title="Essential Reading" collapse="true"}
+If you read only five papers from this chapter's references, make them these:
+
+1. **@thompson1933likelihood** — Thompson Sampling: the original 1933 paper on probability matching for sequential decisions
+2. **@russo2018tutorial** — A modern tutorial on Thompson Sampling with theory and applications
+3. **@sui2017multi** — Multi-dueling bandits: extending pairwise comparisons to multi-way preference feedback
+4. **@brochu2010tutorial** — A tutorial on Bayesian optimization, the foundation for preferential BO
+5. **@hadfield2016cooperative** — CIRL: cooperative inverse reinforcement learning for value alignment
+:::
+
 ## Discussion Questions
 
 1. **Measurement vs. Optimization**: How does the reward maximization perspective differ from the measurement perspective on preference learning? When might one approach be more appropriate than the other?
@@ -2913,7 +2950,7 @@ This chapter developed methods for sequential decision-making with preference fe
 
 ## Exercises
 
-### ⭐ Basic
+### Basic (*)
 
 1. **Posterior Sampling**: Given a logistic regression model with prior $U \sim \mathcal{N}(0, I)$ and two observations $(V_1, Y_1=1)$ and $(V_2, Y_2=0)$ with $V_1 = [1, 0]^\top$ and $V_2 = [0, 1]^\top$, write down the log-posterior and identify the form of the Laplace approximation.
 
@@ -2923,7 +2960,7 @@ This chapter developed methods for sequential decision-making with preference fe
 
 3. **Copeland Score**: For the preference matrix in Exercise 2, compute the Copeland score for each arm.
 
-### ⭐⭐ Intermediate
+### Intermediate (**)
 
 4. **GP Classification**: Implement GP classification with Laplace approximation for a 1D toy problem. Generate binary labels from a latent sinusoidal function passed through a sigmoid, then fit a GP and visualize the posterior mean and uncertainty.
 
@@ -2931,7 +2968,7 @@ This chapter developed methods for sequential decision-making with preference fe
 
 6. **Dueling Bandit Simulation**: Implement the Interleaved Filter algorithm and test it on a dueling bandit problem with 5 arms. Compare its sample complexity to uniform exploration for finding the Condorcet winner.
 
-### ⭐⭐⭐ Advanced
+### Advanced (***)
 
 7. **Laplace Approximation Derivation**: Starting from the GP binary classification model, derive the full Laplace approximation including the Hessian computation for the posterior covariance. Show that the resulting approximation is Gaussian with the correct mean and covariance.
 

@@ -628,6 +628,24 @@ $$ {#eq-elo-update}
 
 This is exactly the Elo update rule. The learning rate $\eta$ is often called the **K-factor** in Elo literature. If $y=1$ (item $j$ wins) but the model predicted a low $p$, then $(y - p)$ is positive and $V_j$ increases, $V_{j'}$ decreases — the system learns that $j$ is stronger than previously believed. If $y=0$ (item $j'$ wins), the opposite adjustment happens. The magnitude of the update is larger when the outcome is surprising (large prediction error), and smaller when the outcome is expected (small prediction error). Thus, Elo is an online learning algorithm for the Bradley–Terry model, interpretable as stochastic gradient ascent with a fixed step size.
 
+::: {.callout-caution title="Worked Example: Elo as Stochastic Gradient Ascent" collapse="false"}
+Two chess players have current ratings $V_A = 1500$ and $V_B = 1700$ (using the traditional Elo scale where $\sigma$ operates on $(V_A - V_B)/400$). With $K = 32$:
+
+**Step 1.** Predicted win probability for A:
+$$p = \sigma\left(\frac{V_A - V_B}{400}\right) = \sigma\left(\frac{-200}{400}\right) = \sigma(-0.5) \approx 0.378$$
+Player A is expected to win about 38\% of the time.
+
+**Step 2.** Suppose A wins (upset!). The prediction error is $y - p = 1 - 0.378 = 0.622$. Updates:
+$$V_A \leftarrow 1500 + 32 \times 0.622 = 1500 + 19.9 \approx 1520$$
+$$V_B \leftarrow 1700 - 32 \times 0.622 = 1700 - 19.9 \approx 1680$$
+
+**Step 3.** If instead the favorite B had won ($y = 0$, prediction error $= -0.378$):
+$$V_A \leftarrow 1500 - 32 \times 0.378 \approx 1488$$
+$$V_B \leftarrow 1700 + 32 \times 0.378 \approx 1712$$
+
+**Key insight:** Upsets produce larger rating changes (19.9 points) than expected outcomes (12.1 points). This is exactly stochastic gradient ascent: the step size is proportional to the prediction error, so surprising results move parameters more. The $K$-factor controls the tradeoff between responsiveness (large $K$) and stability (small $K$).
+:::
+
 ```{pyodide-python}
 #| autorun: true
 # Build a stream of observed pairs for the single user from Y_BT upper triangle
@@ -1385,6 +1403,33 @@ All methods successfully recover utilities correlated with the ground truth desp
 Recall from @sec-llm-example that Direct Preference Optimization (DPO) for language models is equivalent to Bradley-Terry MLE where the "utility" is $\beta \log \frac{\pi_\theta(y \mid x)}{\pi_{\text{ref}}(y \mid x)}$. The MLE techniques developed in this chapter directly apply to DPO training: regularization prevents overfitting to preference data, and optimization methods (Adam, learning rate schedules) accelerate convergence.
 :::
 
+::: {.callout-warning title="Common Pitfall: DPO's Hidden Assumptions"}
+DPO is often described as "reward-model-free," but it is not assumption-free. DPO's implicit reward is $r^*(y \mid x) = \beta \log \frac{\pi_\theta(y \mid x)}{\pi_{\text{ref}}(y \mid x)}$, which means: (1) the recovered reward **depends on the reference policy** $\pi_{\text{ref}}$ — different reference models yield different implicit rewards; (2) preferences are assumed to follow **Bradley-Terry** (i.i.d. Gumbel noise), so IIA violations in human judgments propagate silently; (3) the hyperparameter $\beta$ controls the tradeoff between staying close to $\pi_{\text{ref}}$ and optimizing for preferences — too small and the model barely moves; too large and it overfits to noisy labels. Always validate DPO-trained models against held-out preference data.
+:::
+
+## Summary
+
+- This chapter develops three complementary approaches to estimating preference model parameters from observed comparison data, each with distinct tradeoffs in scalability, uncertainty quantification, and data requirements.
+- **Maximum Likelihood Estimation (MLE)** finds point estimates by maximizing $\ell(V) = \sum \log \sigma(V_j - V_k)$ via gradient ascent. It is fast, scalable, and the foundation for DPO training in language model alignment.
+- **Bayesian inference** via Markov Chain Monte Carlo (MCMC) provides full posterior distributions over parameters, enabling uncertainty quantification---but at substantially higher computational cost. The **Laplace approximation** offers a cheaper Gaussian approximation to the posterior, essential for GP-based preference models where the non-Gaussian likelihood makes exact inference intractable.
+- **Online learning (Elo ratings)** processes comparisons one at a time as streaming data. Elo is precisely **stochastic gradient ascent** on the Bradley-Terry log-likelihood with step size $K$, bridging a 70-year-old rating system to modern optimization.
+- **Regularization** (L2 penalty, early stopping) prevents overfitting, especially when comparisons are sparse. L2 regularization is equivalent to MAP estimation with a Gaussian prior, connecting frequentist and Bayesian perspectives.
+- **Cross-validation** provides principled model selection---choosing regularization strength, model dimensionality, or kernel hyperparameters---by estimating out-of-sample performance without a separate test set.
+- **Evaluation** requires multiple metrics: AUC measures ranking accuracy, log-likelihood measures calibration quality, and calibration error directly assesses whether predicted probabilities match observed frequencies.
+- In practice, all three methods often recover similar utility estimates on well-specified problems; the choice depends on whether you need uncertainty (Bayesian), scalability (MLE), or streaming updates (online).
+
+## Quick Check
+
+Test your understanding before proceeding to the exercises.
+
+1. Why does the Bradley-Terry log-likelihood have a unique maximum when the comparison graph is strongly connected, but may not otherwise?
+
+2. An Elo system uses $K = 32$. After a game where the favorite (predicted 80% win probability) loses, how many rating points does each player gain/lose? What if $K = 16$?
+
+3. You fit a Bradley-Terry model with no regularization on a sparse dataset (50 items, 100 comparisons). Some items have never been compared. What happens to the MLE for those items? How does L2 regularization help?
+
+4. A colleague says "our model has 95% AUC on the test set, so it's excellent." What additional evaluation would you recommend, and why might high AUC still mask poor performance?
+
 ## Discussion Questions
 
 - In the synthetic experiments, why is the Bayes optimal AUC less than 1.0 even though we know the true parameters? What does this reveal about the fundamental limits of prediction from noisy preference data?
@@ -1416,6 +1461,16 @@ Recall from @sec-llm-example that Direct Preference Optimization (DPO) for langu
 **LLM alignment** via preference learning gained prominence with @christiano2017deep's introduction of RLHF. The connection to Bradley-Terry and reward modeling was made explicit in @ouyang2022training (InstructGPT). Direct Preference Optimization (DPO) [@rafailov2023direct] showed that RLHF can be reformulated as Bradley-Terry MLE, eliminating the need for a separate reward model. Recent work explores calibration [@stiennon2020learning], robustness to noise [@bai2022constitutional], and scaling laws [@gao2022scaling] for preference-based LLM training.
 
 **For further reading**: @agresti2002categorical provides comprehensive coverage of categorical data analysis including paired comparisons. @marden1995analyzing covers ranking models from a statistical perspective. @liu2011learning surveys learning-to-rank methods in information retrieval, many of which build on preference models.
+
+::: {.callout-tip title="Essential Reading" collapse="true"}
+If you read only five papers from this chapter's references, make them these:
+
+1. **@elo1978rating** — The Elo rating system: the most widely deployed preference learning algorithm in history
+2. **@herbrich2006trueskill** — TrueSkill: Bayesian preference learning with uncertainty, the Elo successor
+3. **@rafailov2023direct** — DPO as Bradley-Terry MLE, unifying reward modeling and policy optimization
+4. **@ouyang2022training** — InstructGPT: scaling RLHF to large language models
+5. **@hastie2009elements** — The statistical learning textbook covering regularization, cross-validation, and model selection foundations
+:::
 
 ## Exercises
 

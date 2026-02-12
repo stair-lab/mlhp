@@ -1,0 +1,144 @@
+# Glossary {.unnumbered}
+
+Key terms used throughout this book, organized alphabetically. Chapter references indicate where each concept is first introduced or primarily developed.
+
+**A-Optimal Design**
+: Experimental design that minimizes the *average* variance of parameter estimates, i.e., $\text{tr}(\mathcal{I}^{-1})$. Contrasts with D-optimal (volume) and E-optimal (worst-case). See @sec-measurement.
+
+**Acquisition Function**
+: A function that quantifies the value of querying a particular item or pair, balancing information gain against expected reward. Used in active learning, Bayesian optimization, and dueling bandits. See @sec-thompson-sampling.
+
+**Active Learning**
+: A paradigm where the learner adaptively selects which queries to pose (e.g., which items to compare) to maximize information gain, rather than passively receiving data. See @sec-measurement.
+
+**Arrow's Impossibility Theorem**
+: A foundational result in social choice theory: no social welfare function over three or more alternatives can simultaneously satisfy unanimity, independence of irrelevant alternatives, and non-dictatorship. See @sec-aggregation.
+
+**Bayesian Inference**
+: A statistical framework that combines prior beliefs $p(\theta)$ with observed data via Bayes' rule to obtain a posterior distribution $p(\theta \mid \mathcal{D})$, enabling uncertainty quantification over model parameters. See @sec-bayesian.
+
+**Borda Count**
+: A positional voting rule where each voter assigns points based on rank position (highest-ranked gets $m-1$ points, next gets $m-2$, etc.). The alternative with the most total points wins. Violates IIA but satisfies other desirable properties. See @sec-aggregation.
+
+**Bradley-Terry Model**
+: A pairwise comparison model where the probability that item $j$ beats item $k$ is $p(j \succ k) = \sigma(V_j - V_k)$, with $\sigma$ the logistic function. Equivalent to random utility with i.i.d. Gumbel noise. See @sec-bradley-terry.
+
+**Calibration**
+: The property that predicted probabilities match observed frequencies: if a model predicts $p(j \succ k) = 0.7$, then $j$ should beat $k$ approximately 70% of the time in practice. See @sec-model-selection.
+
+**Computerized Adaptive Testing (CAT)**
+: An assessment paradigm that selects test items adaptively based on a test-taker's estimated ability, using information-theoretic criteria to maximize measurement precision with fewer items. See @sec-measurement.
+
+**Condorcet Winner**
+: An alternative that beats every other alternative in pairwise majority comparison. May not exist (see Condorcet paradox). When it exists, many argue it should be the social choice. See @sec-aggregation.
+
+**Condorcet Paradox**
+: The observation that majority preferences can cycle even when all individual preferences are transitive. With three voters ranking $A \succ B \succ C$, $B \succ C \succ A$, $C \succ A \succ B$: $A$ beats $B$, $B$ beats $C$, $C$ beats $A$. See @sec-aggregation.
+
+**Cooperative Inverse Reinforcement Learning (CIRL)**
+: A game-theoretic framework where a robot and human jointly optimize the human's reward function, which the robot does not initially know. The robot must actively learn preferences through interaction. See Chapter 4.
+
+**Cross-Validation**
+: A model selection technique that partitions data into training and validation folds, fitting on training data and evaluating on held-out data. Used to select regularization strength, kernel hyperparameters, and model complexity. See @sec-model-selection.
+
+**D-Optimal Design**
+: Experimental design that maximizes $\det(\mathcal{I})$, the determinant of the Fisher information matrix. Geometrically, this maximally shrinks the volume of the posterior uncertainty ellipsoid. See @sec-measurement.
+
+**Demographic Parity**
+: A group fairness criterion requiring that the probability of a positive outcome is equal across protected groups: $P(\hat{Y}=1 \mid A=a) = P(\hat{Y}=1 \mid A=b)$. See @sec-fairness-concepts.
+
+**Direct Preference Optimization (DPO)**
+: A method for aligning language models directly from pairwise preference data without training a separate reward model. Equivalent to Bradley-Terry MLE where the utility is $\beta \log \frac{\pi_\theta(y \mid x)}{\pi_{\text{ref}}(y \mid x)}$. See @sec-llm-example.
+
+**Dueling Bandits**
+: A variant of the multi-armed bandit problem where feedback comes as pairwise comparisons ("which of these two options is better?") rather than absolute rewards. See Chapter 4.
+
+**E-Optimal Design**
+: Experimental design that maximizes $\lambda_{\min}(\mathcal{I})$, the smallest eigenvalue of the Fisher information matrix. Guards against worst-case estimation error. See @sec-measurement.
+
+**Elo Rating System**
+: A rating system (originally for chess) that updates player ratings after each match. Mathematically equivalent to stochastic gradient ascent on the Bradley-Terry log-likelihood. See @sec-online.
+
+**Equalized Odds**
+: A group fairness criterion requiring that the true positive rate and false positive rate are equal across protected groups: $P(\hat{Y}=1 \mid Y=y, A=a) = P(\hat{Y}=1 \mid Y=y, A=b)$ for $y \in \{0,1\}$. See @sec-fairness-concepts.
+
+**Exploration-Exploitation Tradeoff**
+: The fundamental tension in sequential decision-making: exploit current best knowledge for immediate reward, or explore uncertain options for future information gain. See @sec-thompson-sampling.
+
+**Fisher Information**
+: A measure of how much information an observation carries about an unknown parameter. For the Bradley-Terry model with one comparison, $\mathcal{I}(U) = p(1-p)$ where $p = \sigma(U - V_j)$. Maximized when $p \approx 0.5$. See @sec-measurement.
+
+**Gaussian Process (GP)**
+: A nonparametric Bayesian model that places a prior distribution over functions. In preference learning, GPs model utility functions with uncertainty, enabling principled exploration through posterior sampling. See @sec-gp-inference.
+
+**Gibbard-Satterthwaite Theorem**
+: Any deterministic social choice function over three or more alternatives that is strategy-proof (no voter can benefit from misreporting preferences) and onto must be dictatorial. Implies all non-dictatorial voting rules are manipulable. See @sec-aggregation.
+
+**Goodhart's Law**
+: "When a measure becomes a target, it ceases to be a good measure." In preference learning: optimizing a learned reward model too aggressively can lead to reward hacking, where the model exploits the proxy rather than satisfying true human preferences. See Chapter 7.
+
+**Group Fairness**
+: Fairness criteria defined over protected demographic groups (e.g., requiring equal outcomes or error rates across groups). Includes demographic parity, equalized odds, and calibration. See @sec-fairness-concepts.
+
+**Identification**
+: The property that model parameters can be uniquely recovered from observable data. In utility models, parameters are typically identified only up to location/scale transformations, requiring normalization constraints. See @sec-identification-rashomon.
+
+**Independence of Irrelevant Alternatives (IIA)**
+: The property that the relative probability of choosing between two alternatives is unaffected by the presence or absence of other alternatives. Equivalent to i.i.d. Gumbel noise in random utility models. See @sec-iia.
+
+**Individual Fairness**
+: A fairness criterion requiring that similar individuals receive similar treatment: $d(f(x), f(x')) \leq L \cdot d(x, x')$ for a Lipschitz constant $L$ and appropriate metrics. Fundamentally incompatible with group fairness in many settings. See @sec-fairness-concepts.
+
+**Inversion Problem**
+: The challenge that preference learning pipelines can *invert* intended fairness guarantees: choices that seem fair at one stage (e.g., efficient elicitation) can produce unfair outcomes downstream. See @sec-inversion.
+
+**Item Response Theory (IRT)**
+: A family of psychometric models relating a latent trait (ability) to observable responses. The Rasch model is a special case where $p(\text{correct}) = \sigma(U_i - V_j)$, with $U_i$ the person's ability and $V_j$ the item's difficulty. See @sec-measurement.
+
+**Laplace Approximation**
+: A technique that approximates a posterior distribution with a Gaussian centered at the MAP estimate, using the Hessian of the log-posterior as the precision matrix. Essential for tractable GP-based preference models. See @sec-bayesian.
+
+**Maximum Likelihood Estimation (MLE)**
+: Point estimation by maximizing the likelihood function $\hat{\theta} = \arg\max_\theta \prod_i p(y_i \mid \theta)$. For Bradley-Terry: $\hat{V} = \arg\max \sum \log \sigma(V_{w} - V_{\ell})$. See @sec-mle.
+
+**Mechanism Design**
+: The field of designing rules or institutions (mechanisms) that produce desirable outcomes even when participants act strategically in their own self-interest. Sometimes called "reverse game theory." See @sec-aggregation.
+
+**Plackett-Luce Model**
+: A ranking model that generalizes Bradley-Terry to full rankings. The probability of ranking $j_1 \succ j_2 \succ \cdots$ is $\prod_r \frac{e^{V_{j_r}}}{\sum_{s \geq r} e^{V_{j_s}}}$. Each position is chosen by softmax from the remaining alternatives. See @sec-foundations.
+
+**Preferential Bayesian Optimization (PBO)**
+: Bayesian optimization using pairwise preference feedback instead of scalar function evaluations. Useful when humans can compare outcomes more reliably than they can assign absolute scores. See Chapter 4.
+
+**Random Utility Model (RUM)**
+: A framework where an individual's utility for item $j$ is $\tilde{V}_j = V_j + \epsilon_j$, with $V_j$ the deterministic component and $\epsilon_j$ random noise capturing unobserved factors. The individual chooses the item with highest realized utility. See @sec-foundations.
+
+**Rashomon Effect**
+: The phenomenon where many substantially different models explain the data equally well. Named after the Kurosawa film. In preference learning, different utility vectors may fit identical comparison data. See @sec-identification-rashomon.
+
+**Rasch Model**
+: A one-parameter IRT model where the probability of a correct response depends only on the difference between person ability $U_i$ and item difficulty $V_j$: $p(\text{correct}) = \sigma(U_i - V_j)$. See @sec-measurement.
+
+**Regret**
+: The cumulative difference between the reward of the optimal policy and the reward actually obtained. A standard measure of sequential decision-making performance: $R_T = \sum_{t=1}^T [r^* - r_t]$. See @sec-thompson-sampling.
+
+**Reinforcement Learning from Human Feedback (RLHF)**
+: A pipeline for aligning language models: (1) collect pairwise human preferences over model outputs, (2) train a reward model on these preferences, (3) optimize the language model against the reward model using RL (typically PPO). See @sec-llm-example.
+
+**Reliability**
+: In psychometrics, the proportion of observed variance attributable to true differences rather than measurement error: $\text{Rel} = 1 - \sigma^2_{\text{error}} / \sigma^2_{\text{total}}$. Ranges from 0 (pure noise) to 1 (perfect measurement). See @sec-measurement.
+
+**Social Welfare Function**
+: A function that maps individual preference orderings to a single collective ordering over alternatives. Arrow's theorem constrains what properties such functions can simultaneously satisfy. See @sec-aggregation.
+
+**Thompson Sampling**
+: A Bayesian decision-making algorithm: sample parameters from the posterior, then act optimally given those sampled parameters. Naturally balances exploration (sampling from uncertain posteriors) and exploitation (acting optimally). See @sec-thompson-sampling.
+
+**Thurstone Model**
+: A paired comparison model (1927) where $p(j \succ k) = \Phi\left(\frac{V_j - V_k}{\sqrt{2}\sigma}\right)$, using Gaussian noise rather than Gumbel. Practically similar to Bradley-Terry for most applications. See @sec-bradley-terry.
+
+**Unanimity (Pareto Efficiency)**
+: A fairness axiom: if every individual strictly prefers $x$ to $y$, then the social ranking should prefer $x$ to $y$. One of Arrow's three axioms. See @sec-aggregation.
+
+**Upper Confidence Bound (UCB)**
+: A decision-making strategy that selects the action with the highest optimistic estimate: $j^* = \arg\max_j [\hat{\mu}_j + \beta \hat{\sigma}_j]$, where $\beta$ controls the exploration-exploitation tradeoff. See @sec-thompson-sampling.

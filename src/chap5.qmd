@@ -95,24 +95,6 @@ This chapter can be covered in four 50-minute lectures plus a discussion section
 **Discussion Section**: Peer prediction, incentive-compatible online learning, and exercises
 :::
 
-::: {.callout-note title="Notation"}
-Throughout this chapter, we use the following conventions:
-
-| Symbol | Meaning |
-|--------|---------|
-| $N = \{1, \ldots, n\}$ | Set of $n$ voters (agents) |
-| $A = \{a_1, \ldots, a_m\}$ | Set of $m$ alternatives |
-| $\succ_i$ | Voter $i$'s strict preference ordering over $A$ |
-| $\mathcal{L}(A)$ | Set of all strict linear orders over $A$ |
-| $f: \mathcal{L}(A)^n \to A$ | Social choice function (profile to winner) |
-| $F: \mathcal{L}(A)^n \to \mathcal{L}(A)$ | Social welfare function (profile to ranking) |
-| $\text{SP}(Y)$ | Single-peaked preferences on totally ordered set $Y$ |
-| $\text{peak}(\succ_i)$ | Peak (ideal point) of voter $i$'s preferences |
-| $v_i$ | Private valuation of agent $i$ (in auctions) |
-| $\varphi(v)$ | Virtual valuation in Myerson framework |
-| $\text{MI}(X; Y)$ | Mutual information between $X$ and $Y$ |
-:::
-
 Chapters 1–4 focused on modeling preferences of a *single* decision-maker or learning from the feedback of individual users. But many real-world applications require aggregating preferences across *multiple* individuals. When training a language model with RLHF, annotators may disagree about which response is better. When a recommender system serves millions of users, it must balance diverse tastes. When an AI assistant helps a family plan a vacation, it must somehow combine different members' preferences.
 
 This chapter explores the fundamental challenges and solutions for preference aggregation. We begin with classical social choice theory, which reveals deep impossibility results: there is no "perfect" way to aggregate preferences. We then examine how to escape these impossibilities through domain restrictions, scoring rules, and mechanism design. Along the way, we connect these classical results to modern AI alignment challenges, including the relationship between the Borda count and DPO, the problem of nosy preferences in content moderation, and the tension between privacy and personalization.
@@ -121,9 +103,9 @@ This chapter explores the fundamental challenges and solutions for preference ag
 
 This chapter is organized into five parts:
 
-1. **Social Choice Theory** (@sec-aggregation–@sec-arrow): We introduce the formal framework of social choice, present Arrow's and Gibbard–Satterthwaite's impossibility theorems, and discuss their implications for AI systems that aggregate human feedback.
+1. **Social Choice Theory** (@sec-aggregation): We introduce the formal framework of social choice, present Arrow's and Gibbard–Satterthwaite's impossibility theorems, and discuss their implications for AI systems that aggregate human feedback.
 
-2. **Escaping Impossibility** (@sec-domain-restrictions–@sec-borda-dpo): We show how restricting the domain of preferences (e.g., to single-peaked preferences) enables strategy-proof aggregation, and we prove a key connection between the Borda count and DPO.
+2. **Escaping Impossibility** (@sec-borda-dpo): We show how restricting the domain of preferences (e.g., to single-peaked preferences) enables strategy-proof aggregation, and we prove a key connection between the Borda count and DPO.
 
 3. **Beyond Classical Voting** (@sec-multi-issue–@sec-community-notes): We extend to multi-issue settings, discuss nosy preferences and the Paretian Liberal paradox, and analyze Community Notes as a real-world case study.
 
@@ -142,7 +124,129 @@ Many common voting rules illustrate different methods of aggregation, each with 
 - Single Transferable Vote (STV): Voters rank choices, and the count proceeds in rounds. In each round, the alternative with the fewest votes is eliminated and those votes are transferred to the next preferred remaining alternative on each ballot, until one candidate has a majority.
 - Condorcet Methods: These look for a candidate that wins in all pairwise majority contests against other alternatives (the Condorcet winner), if such an alternative exists.
 
-However, preference aggregation is not always straightforward. The Condorcet paradox illustrates that majority preferences can be cyclic (rock-paper-scissors style), so that no single alternative is majority-preferred to all others, violating transitivity. Different voting rules can yield different winners on the same profile, highlighting how the choice of rule influences the outcome. To guide the design of social choice functions, several desirable properties or axioms have been proposed. Three classical fairness criteria are:
+However, preference aggregation is not always straightforward. The Condorcet paradox illustrates that majority preferences can be cyclic (rock-paper-scissors style), so that no single alternative is majority-preferred to all others, violating transitivity. Different voting rules can yield different winners on the same profile, highlighting how the choice of rule influences the outcome.
+
+The following code demonstrates how the same set of voter preferences can produce different winners under different voting rules—a phenomenon that underscores why the choice of aggregation method is itself a value judgment.
+
+```{pyodide-python}
+#| autorun: true
+import numpy as np
+import matplotlib.pyplot as plt
+
+def plurality_winner(rankings, alternatives):
+    """Plurality: each voter's top choice gets one vote."""
+    first_place_counts = {a: 0 for a in alternatives}
+    for ranking in rankings:
+        first_place_counts[ranking[0]] += 1
+    return max(first_place_counts, key=first_place_counts.get), first_place_counts
+
+def borda_winner(rankings, alternatives):
+    """Borda count: m-1 points for 1st, m-2 for 2nd, etc."""
+    m = len(alternatives)
+    scores = {a: 0 for a in alternatives}
+    for ranking in rankings:
+        for pos, alt in enumerate(ranking):
+            scores[alt] += (m - 1 - pos)
+    return max(scores, key=scores.get), scores
+
+def condorcet_winner(rankings, alternatives):
+    """Find Condorcet winner (beats all others in pairwise majority), if one exists."""
+    m = len(alternatives)
+    pairwise = {a: {b: 0 for b in alternatives} for a in alternatives}
+    for ranking in rankings:
+        for i, a in enumerate(ranking):
+            for b in ranking[i+1:]:
+                pairwise[a][b] += 1
+    n = len(rankings)
+    for a in alternatives:
+        if all(pairwise[a][b] > n / 2 for b in alternatives if b != a):
+            return a, pairwise
+    return None, pairwise
+
+# Example: 7 voters, 3 alternatives where different rules disagree
+alternatives = ['A', 'B', 'C']
+rankings = [
+    ['A', 'B', 'C'],  # Voter 1
+    ['A', 'B', 'C'],  # Voter 2
+    ['A', 'B', 'C'],  # Voter 3
+    ['B', 'C', 'A'],  # Voter 4
+    ['B', 'C', 'A'],  # Voter 5
+    ['C', 'B', 'A'],  # Voter 6
+    ['C', 'B', 'A'],  # Voter 7
+]
+
+plur_win, plur_scores = plurality_winner(rankings, alternatives)
+borda_win, borda_scores = borda_winner(rankings, alternatives)
+condorcet_win, pairwise = condorcet_winner(rankings, alternatives)
+
+print("=== 7 Voters, 3 Alternatives ===")
+print(f"Rankings: 3×(A>B>C), 2×(B>C>A), 2×(C>B>A)\n")
+print(f"Plurality winner: {plur_win}  (votes: {plur_scores})")
+print(f"Borda winner:     {borda_win}  (scores: {borda_scores})")
+print(f"Condorcet winner: {condorcet_win or 'None (cycle!)'}")
+print(f"\nPairwise margins:")
+for a in alternatives:
+    for b in alternatives:
+        if a != b:
+            print(f"  {a} vs {b}: {pairwise[a][b]}-{pairwise[b][a]}",
+                  "✓" if pairwise[a][b] > len(rankings)/2 else "")
+
+# Visualize
+fig, axes = plt.subplots(1, 2, figsize=(8, 3.5))
+
+# Left: Plurality vs Borda scores
+x = np.arange(len(alternatives))
+width = 0.35
+ax = axes[0]
+bars1 = ax.bar(x - width/2, [plur_scores[a] for a in alternatives], width,
+               label='Plurality', color='steelblue', alpha=0.8)
+bars2 = ax.bar(x + width/2, [borda_scores[a] for a in alternatives], width,
+               label='Borda', color='coral', alpha=0.8)
+ax.set_xticks(x)
+ax.set_xticklabels(alternatives, fontsize=12)
+ax.set_ylabel('Score')
+ax.set_title('Same voters, different winners')
+ax.legend()
+ax.grid(True, alpha=0.3, axis='y')
+
+# Right: Condorcet paradox — 3 voters creating a cycle
+cycle_rankings = [
+    ['A', 'B', 'C'],  # Voter 1: A > B > C
+    ['B', 'C', 'A'],  # Voter 2: B > C > A
+    ['C', 'A', 'B'],  # Voter 3: C > A > B
+]
+_, cycle_pairwise = condorcet_winner(cycle_rankings, alternatives)
+
+ax = axes[1]
+theta = np.linspace(0, 2*np.pi, 4)[:-1] + np.pi/2
+positions = {a: (np.cos(t), np.sin(t)) for a, t in zip(alternatives, theta)}
+for a in alternatives:
+    ax.scatter(*positions[a], s=400, zorder=5, color='steelblue')
+    ax.annotate(a, positions[a], fontsize=14, fontweight='bold', ha='center', va='center', color='white')
+
+# Draw arrows for majority preferences
+arrows = [('A', 'B'), ('B', 'C'), ('C', 'A')]  # The cycle
+for a, b in arrows:
+    ax.annotate('', xy=positions[b], xytext=positions[a],
+                arrowprops=dict(arrowstyle='->', color='red', lw=2,
+                                connectionstyle='arc3,rad=0.15'))
+    mid = ((positions[a][0]+positions[b][0])/2, (positions[a][1]+positions[b][1])/2)
+    ax.annotate('2-1', mid, fontsize=9, ha='center', va='center',
+                bbox=dict(boxstyle='round,pad=0.2', facecolor='lightyellow'))
+
+ax.set_title('Condorcet paradox: A→B→C→A')
+ax.set_xlim(-1.5, 1.5)
+ax.set_ylim(-1.5, 1.5)
+ax.set_aspect('equal')
+ax.axis('off')
+
+plt.tight_layout()
+plt.show()
+
+print("\nCondorcet paradox: With 3 voters (A>B>C, B>C>A, C>A>B),")
+print("majority rule cycles: A beats B (2-1), B beats C (2-1), C beats A (2-1).")
+print("No Condorcet winner exists — every alternative loses to some other.")
+``` To guide the design of social choice functions, several desirable properties or axioms have been proposed. Three classical fairness criteria are:
 
 1. Unanimity (Pareto efficiency): If all individuals strictly prefer one alternative $x$ over another $y$ (i.e. $x \succ_i y$ for every voter $i$), then the group ranking should prefer $x$ over $y$ as well ($x \succ^* y$).
 2. Independence of Irrelevant Alternatives (IIA): The social preference between any two alternatives $x$ and $y$ should depend only on the individual preferences between $x$ and $y$. In other words, if we change individuals’ rankings of other “irrelevant” alternatives (not $x$ or $y$) in any way, the group’s relative ordering of $x$ and $y$ should remain unchanged.
@@ -150,11 +254,45 @@ However, preference aggregation is not always straightforward. The Condorcet par
 
 Additionally, we assume an unrestricted domain (universal admissibility): individuals may have any transitive preference ordering over the $m$ alternatives (no restrictions like single-peaked preferences unless explicitly imposed). One might hope that a fair voting rule exists that satisfies all the above properties for three or more alternatives. Surprisingly, a seminal negative result shows this is impossible.
 
+::: {.callout-caution title="Worked Example: Same Voters, Three Different Winners" collapse="false"}
+Consider 7 RLHF annotators ranking three model responses $\{A, B, C\}$ to a prompt:
+
+| Annotators | Ranking |
+|:---:|:---:|
+| 3 annotators | $A \succ B \succ C$ |
+| 2 annotators | $B \succ C \succ A$ |
+| 2 annotators | $C \succ B \succ A$ |
+
+**Plurality:** Count first-place votes: $A$ gets 3, $B$ gets 2, $C$ gets 2. Winner: **A**.
+
+**Borda Count:** With 3 alternatives, assign 2 points for 1st, 1 for 2nd, 0 for 3rd:
+
+- $A$: $3 \times 2 + 2 \times 0 + 2 \times 0 = 6$
+- $B$: $3 \times 1 + 2 \times 2 + 2 \times 1 = 9$
+- $C$: $3 \times 0 + 2 \times 1 + 2 \times 2 = 6$
+
+Winner: **B** (with 9 points).
+
+**Condorcet:** Check pairwise majorities:
+
+- $A$ vs $B$: 3 prefer $A$, 4 prefer $B$ $\Rightarrow$ $B$ wins
+- $A$ vs $C$: 3 prefer $A$, 4 prefer $C$ $\Rightarrow$ $C$ wins
+- $B$ vs $C$: 5 prefer $B$, 2 prefer $C$ $\Rightarrow$ $B$ wins
+
+$B$ beats both $A$ and $C$ in pairwise majority. Condorcet winner: **B**.
+
+**Takeaway:** Plurality selects $A$ (most first-place votes), but $A$ actually *loses* to both $B$ and $C$ in head-to-head matchups! The Borda and Condorcet methods agree on $B$, which has broader support. In RLHF, this matters: if annotator preferences are aggregated via majority-of-first-choices (like "pick the best"), the selected response may not be the one with the broadest appeal.
+:::
+
 #### Arrow's Impossibility Theorem {#sec-arrow}
 
 Arrow's Impossibility Theorem [@arrow1951] is a cornerstone of social choice theory. It states that when there are three or more alternatives ($m\ge 3$), no social welfare function can simultaneously satisfy Unanimity, IIA, and Non-dictatorship – unless it is a trivial dictatorial rule. In other words, any aggregation mechanism that is not dictatorial will inevitably violate at least one of the fairness criteria. The theorem is usually proven by contradiction: assuming a social welfare function satisfies all conditions, one can show that one voter’s preferences always decide the outcome, hence the rule is dictatorial. Intuitively, Arrow’s theorem is driven by the possibility of preference cycles in majority voting. Even if individual preferences are transitive, aggregated majorities can prefer $A$ to $B$, $B$ to $C$, and $C$ to $A$ in a cycle, as in the Condorcet paradox. Under Unanimity and IIA, the social ranking must locally match these pairwise preferences, but this produces a contradiction with transitivity unless one voter’s ranking is given overriding authority. A sketch of Arrow’s proof is as follows: one shows that under the axioms, the social ranking between any two alternatives $x$ and $y$ must agree with some particular voter’s preference (the “pivotal” voter for that pair). With IIA, the identity of the pivotal voter must be the same across all pairs of alternatives, otherwise by cleverly constructing profiles one can derive a conflict. This single pivotal voter then effectively dictates the entire social order, violating Non-dictatorship. Hence, the axioms are incompatible.
 
-Arrow’s Impossibility Theorem has profound implications: it formalizes the inherent trade-offs in designing any fair aggregation scheme. In practice, different voting rules relax one or more of Arrow’s conditions. For instance, Borda count violates IIA (since introducing or removing an irrelevant alternative can change the point totals), while a dictatorship violates fairness blatantly. The theorem suggests that every practical voting system must sacrifice at least one of the ideal fairness criteria. It also motivated the exploration of alternative frameworks (such as allowing interpersonal comparisons of utility or cardinal preference aggregation) to escape the impossibility by weakening assumptions.
+::: {.callout-warning title="Common Pitfall: Overgeneralizing Arrow's Theorem"}
+Arrow's theorem applies specifically to **social welfare functions** that produce a complete ranking from ordinal preferences over three or more alternatives. A common misconception is that "all preference aggregation is impossible." In fact, Arrow's theorem does **not** directly apply to (1) cardinal scores (e.g., 1-5 ratings), (2) pairwise comparison models that output partial orders rather than complete rankings, or (3) domains with restricted preferences (e.g., single-peaked preferences, where majority rule is well-behaved). In RLHF, we typically work with cardinal reward models or pairwise Bradley-Terry likelihoods, which sidestep Arrow's specific impossibility — but other impossibilities (Gibbard-Satterthwaite) still constrain what's achievable. The theorem tells us we must **sacrifice at least one axiom**, not that aggregation is hopeless.
+:::
+
+Arrow's Impossibility Theorem has profound implications: it formalizes the inherent trade-offs in designing any fair aggregation scheme. In practice, different voting rules relax one or more of Arrow’s conditions. For instance, Borda count violates IIA (since introducing or removing an irrelevant alternative can change the point totals), while a dictatorship violates fairness blatantly. The theorem suggests that every practical voting system must sacrifice at least one of the ideal fairness criteria. It also motivated the exploration of alternative frameworks (such as allowing interpersonal comparisons of utility or cardinal preference aggregation) to escape the impossibility by weakening assumptions.
 
 Complementing Arrow’s theorem, the Gibbard–Satterthwaite theorem focuses on incentives and strategic manipulation in voting systems [@gibbard1973; @satterthwaite1975]. It considers any deterministic social choice function $f$ that chooses a single winner from the set of $m\ge 3$ alternatives. The theorem states that if $f$ is strategy-proof (incentive compatible) and onto (its range of outcomes is the entire set of alternatives), then $f$ must be dictatorial. Strategy-proofness (also called truthfulness or dominant-strategy incentive compatibility) means that no voter can ever benefit by misrepresenting their true preferences, regardless of what others do. In other words, reporting their genuine ranking is a (weakly) dominant strategy for each voter. The theorem implies that for any realistic voting rule where every alternative can possibly win, either one voter effectively decides the outcome (a dictatorship) or else the rule is susceptible to strategic manipulation by voters. The Gibbard–Satterthwaite theorem tells us that every non-dictatorial voting rule for 3 or more alternatives is manipulable: there will exist some election scenario where a voter can gain a more preferred outcome by voting insincerely (i.e. not according to their true preferences). For example, in a simple plurality vote, a voter whose true favorite is a long-shot candidate might vote for a more viable candidate to avoid a worst-case outcome (“lesser of two evils” voting). In a Borda count election, voters might strategically raise a competitor in their ranking to push down an even stronger rival. The only way to avoid all such strategic voting incentives is to have a dictatorship or limit the choice set to at most two alternatives.
 
@@ -334,6 +472,101 @@ $$
 
 In other words, **DPO finds a policy that upweights responses proportionally to their Borda scores**. This provides a social choice interpretation of what DPO is doing: it aggregates pairwise preferences by finding the response that would win the most head-to-head matchups against alternatives drawn from the reference policy.
 
+The following code demonstrates the DPO-Borda connection empirically: we compute the Borda scores from pairwise preferences and verify that DPO's implicit reward ranking matches the Borda ranking.
+
+```{pyodide-python}
+#| autorun: true
+import numpy as np
+import matplotlib.pyplot as plt
+
+np.random.seed(42)
+
+# Simulate pairwise preferences from multiple annotators
+n_responses = 5
+n_annotators = 50
+
+# True quality of each response (unknown in practice)
+true_quality = np.array([0.2, 0.8, 1.5, 0.5, 1.0])
+
+# Generate pairwise comparisons via Bradley-Terry
+# Each annotator compares all pairs
+def sigmoid(x):
+    return 1 / (1 + np.exp(-x))
+
+# Collect pairwise win counts
+wins = np.zeros((n_responses, n_responses))
+for ann in range(n_annotators):
+    # Each annotator has slightly noisy perception of quality
+    perceived = true_quality + np.random.normal(0, 0.3, n_responses)
+    for i in range(n_responses):
+        for j in range(i+1, n_responses):
+            p_i_wins = sigmoid(perceived[i] - perceived[j])
+            if np.random.random() < p_i_wins:
+                wins[i, j] += 1
+            else:
+                wins[j, i] += 1
+
+# Compute Borda scores (= total pairwise wins)
+borda_scores = wins.sum(axis=1)
+n_comparisons = wins.sum(axis=1) + wins.sum(axis=0)  # total comparisons per response
+
+# Compute DPO-implied reward: beta * log(pi/pi_ref) is proportional to Borda score
+# Under uniform reference policy, DPO upweights proportionally to win rate
+win_rates = borda_scores / n_comparisons
+dpo_reward = np.log(win_rates / (1 - win_rates + 1e-8))  # log-odds ∝ Borda ranking
+
+# Visualize
+fig, axes = plt.subplots(1, 3, figsize=(10, 3.5))
+labels = [f'y{i+1}' for i in range(n_responses)]
+
+# Left: Borda scores
+ax = axes[0]
+colors = plt.cm.viridis(np.linspace(0.2, 0.8, n_responses))
+order = np.argsort(borda_scores)
+ax.barh(range(n_responses), borda_scores[order], color=colors[order], alpha=0.8)
+ax.set_yticks(range(n_responses))
+ax.set_yticklabels([labels[i] for i in order])
+ax.set_xlabel('Borda score (total wins)')
+ax.set_title('Borda ranking')
+ax.grid(True, alpha=0.3, axis='x')
+
+# Middle: True quality vs Borda score
+ax = axes[1]
+ax.scatter(true_quality, borda_scores, s=80, color='steelblue', zorder=3)
+for i in range(n_responses):
+    ax.annotate(labels[i], (true_quality[i], borda_scores[i]),
+                textcoords="offset points", xytext=(8, 0), fontsize=10)
+corr = np.corrcoef(true_quality, borda_scores)[0, 1]
+ax.set_xlabel('True quality')
+ax.set_ylabel('Borda score')
+ax.set_title(f'Quality vs Borda (r={corr:.2f})')
+ax.grid(True, alpha=0.3)
+
+# Right: Pairwise win matrix
+ax = axes[2]
+win_fractions = wins / (wins + wins.T + 1e-8)
+im = ax.imshow(win_fractions, cmap='RdYlGn', vmin=0, vmax=1)
+ax.set_xticks(range(n_responses))
+ax.set_yticks(range(n_responses))
+ax.set_xticklabels(labels)
+ax.set_yticklabels(labels)
+ax.set_xlabel('Loses to →')
+ax.set_ylabel('← Beats')
+ax.set_title('Pairwise win rates')
+plt.colorbar(im, ax=ax, shrink=0.8)
+
+plt.tight_layout()
+plt.show()
+
+# Rankings comparison
+borda_ranking = np.argsort(-borda_scores)
+quality_ranking = np.argsort(-true_quality)
+print("Borda ranking: ", " > ".join(labels[i] for i in borda_ranking))
+print("True ranking:  ", " > ".join(labels[i] for i in quality_ranking))
+print(f"\nDPO's implicit aggregation recovers the Borda winner: {labels[borda_ranking[0]]}")
+print(f"This is the response that wins the most head-to-head matchups.")
+```
+
 ::: {.callout-tip title="Proof Sketch" collapse="true"}
 Write $\hat{\pi} = \pi^* / \pi_{\text{ref}}$ for the density ratio. Let $\bar{\sigma}(\Delta r^*(x, y', y)) = \mathbb{P}(y \succ y' | x; r^*)$ denote the Bradley-Terry probability under the true reward $r^*$.
 
@@ -467,6 +700,130 @@ The factor model approach has connections to:
 - **Collaborative filtering**: The $p^\top q_j$ term is similar to matrix factorization in recommender systems
 - **Item response theory**: The model resembles the Rasch model from Chapter 1, extended with latent factors
 - **Jury theorems**: Under certain conditions, diverse juries aggregate to correct answers better than homogeneous majorities
+
+### Implementing Community Notes
+
+The following code implements a simplified Community Notes model. We generate synthetic ratings where users have ideological positions and notes have both quality (what we want to estimate) and ideological slant (what we want to control for). The key question is: can we recover true note quality by factoring out ideological agreement?
+
+```{pyodide-python}
+#| autorun: true
+import numpy as np
+import matplotlib.pyplot as plt
+
+np.random.seed(42)
+
+# Generate synthetic data
+n_users = 100
+n_notes = 30
+k_factors = 1  # 1D ideological spectrum
+
+# Users: ideological position on [-1, 1]
+user_ideology = np.random.uniform(-1, 1, n_users)
+
+# Notes: true quality + ideological slant
+note_quality = np.random.normal(0, 1, n_notes)        # beta_j: what we want to estimate
+note_slant = np.random.uniform(-1, 1, n_notes)         # q_j: ideological lean
+rater_bias = np.random.normal(0, 0.3, n_users)         # alpha_i: some raters are harsher
+
+# Generate ratings: r_ij = mu + alpha_i + beta_j + p_i * q_j + noise
+mu = 3.0  # global intercept (on a 1-5 scale)
+noise_std = 0.5
+
+# Not all users rate all notes (sparse observations)
+observe_prob = 0.4
+observed = np.random.random((n_users, n_notes)) < observe_prob
+
+ratings = np.full((n_users, n_notes), np.nan)
+for i in range(n_users):
+    for j in range(n_notes):
+        if observed[i, j]:
+            ratings[i, j] = (mu + rater_bias[i] + note_quality[j]
+                             + user_ideology[i] * note_slant[j]
+                             + np.random.normal(0, noise_std))
+
+print(f"Generated {np.sum(observed)} ratings from {n_users} users on {n_notes} notes")
+print(f"Observation density: {np.mean(observed):.1%}")
+
+# Method 1: Naive average (ignoring ideology)
+naive_scores = np.nanmean(ratings, axis=0)
+
+# Method 2: Bridging model — control for ideology via regression
+# For each note j, fit: r_ij = a + b * p_i + eps
+# The intercept a estimates quality controlling for ideology
+bridging_scores = np.zeros(n_notes)
+for j in range(n_notes):
+    mask = observed[:, j]
+    if mask.sum() < 3:
+        bridging_scores[j] = np.nan
+        continue
+    r = ratings[mask, j]
+    p = user_ideology[mask]
+    # OLS: r = a + b*p
+    X = np.column_stack([np.ones(mask.sum()), p])
+    beta_hat = np.linalg.lstsq(X, r, rcond=None)[0]
+    bridging_scores[j] = beta_hat[0] - mu  # subtract global mean to get quality
+
+# Compare both methods to ground truth
+fig, axes = plt.subplots(1, 3, figsize=(10, 3.5))
+
+# Left: Naive vs true quality
+ax = axes[0]
+ax.scatter(note_quality, naive_scores - mu, alpha=0.6, s=40, color='steelblue')
+corr_naive = np.corrcoef(note_quality, naive_scores - mu)[0, 1]
+ax.plot([-3, 3], [-3, 3], 'k--', alpha=0.3)
+ax.set_xlabel('True quality')
+ax.set_ylabel('Estimated quality')
+ax.set_title(f'Naive average (r={corr_naive:.2f})')
+ax.grid(True, alpha=0.3)
+
+# Middle: Bridging model vs true quality
+ax = axes[1]
+valid = ~np.isnan(bridging_scores)
+ax.scatter(note_quality[valid], bridging_scores[valid], alpha=0.6, s=40, color='coral')
+corr_bridge = np.corrcoef(note_quality[valid], bridging_scores[valid])[0, 1]
+ax.plot([-3, 3], [-3, 3], 'k--', alpha=0.3)
+ax.set_xlabel('True quality')
+ax.set_ylabel('Estimated quality')
+ax.set_title(f'Bridging model (r={corr_bridge:.2f})')
+ax.grid(True, alpha=0.3)
+
+# Right: Show how bridging identifies cross-partisan notes
+ax = axes[2]
+# Color notes by their slant
+colors = plt.cm.RdBu(0.5 + note_slant[valid] / 2)
+scatter = ax.scatter(note_quality[valid], bridging_scores[valid],
+                     c=note_slant[valid], cmap='RdBu', s=50, alpha=0.7,
+                     vmin=-1, vmax=1)
+ax.plot([-3, 3], [-3, 3], 'k--', alpha=0.3)
+ax.set_xlabel('True quality')
+ax.set_ylabel('Bridging score')
+ax.set_title('Colored by ideological slant')
+plt.colorbar(scatter, ax=ax, label='Note slant')
+ax.grid(True, alpha=0.3)
+
+plt.tight_layout()
+plt.show()
+
+# Analysis
+print(f"\nCorrelation with true quality:")
+print(f"  Naive average:   {corr_naive:.3f}")
+print(f"  Bridging model:  {corr_bridge:.3f}")
+print(f"\nThe bridging model better recovers true quality by controlling")
+print(f"for ideological agreement between users and notes.")
+
+# Show which notes would be selected under each method
+threshold = 0.5
+naive_selected = set(np.where((naive_scores - mu) > threshold)[0])
+bridge_selected = set(np.where(bridging_scores > threshold)[0])
+true_good = set(np.where(note_quality > threshold)[0])
+
+print(f"\nNotes selected as 'high quality' (threshold={threshold}):")
+print(f"  Ground truth:    {len(true_good)} notes")
+print(f"  Naive method:    {len(naive_selected)} notes  (precision: {len(naive_selected & true_good)/max(len(naive_selected),1):.0%})")
+print(f"  Bridging method: {len(bridge_selected)} notes (precision: {len(bridge_selected & true_good)/max(len(bridge_selected),1):.0%})")
+```
+
+The bridging model's advantage is most pronounced for **polarizing notes**—notes with strong ideological slant that would be overrated by ideological allies and underrated by opponents under naive averaging. By controlling for the $p_i \cdot q_j$ interaction term, the model isolates genuine quality from ideological agreement, effectively identifying notes that earn cross-partisan respect.
 
 ## The Inversion Problem: Behavior vs. Preferences {#sec-inversion}
 
@@ -702,6 +1059,29 @@ In this section we discuss an influential new framework for designing peer predi
 
 Two important families of mutual information measures that satisfy these properties are $f$-mutual information and Bregman mutual information. The $f$-mutual information is defined as $MI_f(X; Y) = D_f(U_{X,Y}, V_{X,Y})$, where $D_f$ is an $f$-divergence, $U_{X,Y}$ is the joint distribution of $X$ and $Y$, and $V_{X,Y}$ is the product of their marginal distributions. The Bregman mutual information is defined as: $BMI_{PS}(X; Y) = \mathbb{E}_{X} [D{PS}(U_{Y|X}, U_Y)]$, where $D_{PS}$ is a Bregman divergence based on a proper scoring rule $PS$, $U_{Y|X}$ is the conditional distribution of $Y$ given $X$, and $U_Y$ is the marginal distribution of $Y$. The MIP framework can be applied in both single-question and multi-question settings. In the multi-question setting, the mechanism can estimate the mutual information empirically from multiple questions. In the single-question setting, additional techniques like asking for predictions about other agents' reports are used to estimate the mutual information. A key theoretical result of the MIP framework is that when the chosen mutual information measure is strictly information-monotone with respect to agents' priors, the resulting mechanism is both dominantly truthful and strongly truthful. This means that truth-telling is a dominant strategy for each agent and that the truth-telling equilibrium yields strictly higher payoffs than any other non-permutation strategy profile. As research continues to address practical implementation challenges of designing truthful mechanisms, MIP-based approaches have significant potential to improve preference elicitation and aggregation in real-world applications lacking verifiable ground truth.
 
+## Summary
+
+- When **multiple stakeholders** have conflicting preferences, aggregation is unavoidable---and impossibility results constrain what any aggregation rule can achieve.
+- **Arrow's Impossibility Theorem** shows that no rule for three or more alternatives can simultaneously satisfy Unanimity, IIA, and Non-dictatorship. The **Gibbard-Satterthwaite Theorem** adds that non-dictatorial rules are always manipulable.
+- **Domain restrictions** provide an escape: when preferences are **single-peaked** (each voter has a unique ideal point on an ordered spectrum), the **generalized median voter scheme** is both strategy-proof and Pareto efficient (Moulin's theorem).
+- The **DPO-Borda connection** is a key bridge between this chapter and modern ML: DPO implicitly optimizes the expected Borda score when aggregating across annotators, linking social choice theory directly to language model alignment.
+- **Nosy vs. non-nosy preferences** (Sen's framework) distinguish personal choices from preferences about others' behavior. The **liberal paradox** shows that respecting individual rights can conflict with Pareto efficiency---a tension that AI systems must navigate explicitly.
+- The **inversion problem**---that observed behavior does not necessarily reflect underlying preferences---undermines revealed preference approaches and has direct implications for RLHF, where annotator fatigue, framing, and incentives distort the feedback signal.
+- **Mechanism design without money** (peer prediction, the Mutual Information Paradigm) provides tools for eliciting truthful reports when standard payment-based incentives are unavailable, as in crowdsourced annotation.
+- **Community Notes** exemplifies real-world preference aggregation: its factor model separates note quality from ideological slant, surfacing content that earns cross-partisan agreement.
+
+## Quick Check
+
+Test your understanding before proceeding to the exercises.
+
+1. Arrow's theorem requires three axioms. Which axiom does the Borda count violate, and how?
+
+2. Under single-peaked preferences with 5 voters whose peaks are $\{2, 4, 5, 7, 9\}$, what is the pure median outcome? Can any voter manipulate this outcome by misreporting their peak?
+
+3. In the Community Notes model, why does controlling for the $p_i \cdot q_j$ interaction term improve note quality estimation compared to simple averaging?
+
+4. Give an example of a "nosy preference" in AI content moderation. Why does Sen's liberal paradox make it impossible to both respect individual rights and achieve Pareto efficiency when nosy preferences are present?
+
 ## Discussion Questions
 
 1. **Arrow's theorem and cardinal utilities**: Arrow's Impossibility Theorem applies to ordinal preferences. How does allowing cardinal utilities (like summing utilities across voters) change the picture? What new problems arise when we allow interpersonal utility comparisons?
@@ -753,6 +1133,16 @@ Two important families of mutual information measures that satisfy these propert
 **Incentive-Compatible Bandits**: The study of exploration under strategic agents is developed in @mansour2019bayesianincentivecompatiblebanditexploration and @mansour2021bayesianexplorationincentivizingexploration. Connections to information design are explored in @bergemann2019information.
 
 **AI Alignment and Aggregation**: Jury learning and methods for aggregating diverse annotator preferences are studied in @gordon2022jury. Scalable oversight through recursive reward modeling appears in @christiano2018supervising. AI-assisted debate is proposed in @irving2018ai. Community Notes is described in X/Twitter's public documentation.
+
+::: {.callout-tip title="Essential Reading" collapse="true"}
+If you read only five papers from this chapter's references, make them these:
+
+1. **@arrow1951** — Arrow's Impossibility Theorem: the foundational impossibility result for preference aggregation
+2. **@gibbard1973** — The Gibbard-Satterthwaite theorem: strategy-proofness is incompatible with non-dictatorship
+3. **@sen1970impossibility** — The Impossibility of a Paretian Liberal: liberty vs. efficiency in social choice
+4. **@gordon2022jury** — Jury learning: aggregating diverse annotator preferences for fairer AI systems
+5. **@kongschoenebeck2019** — The Mutual Information Paradigm for incentive-compatible preference elicitation
+:::
 
 ## Exercises
 

@@ -65,17 +65,7 @@ By the end of this chapter you will be able to:
 
 :::
 
-::: {.callout-note title="Notation"}
-Throughout this book, we use the following conventions:
-
-- Items are indexed by $j, j', k \in \{1, \ldots, M\}$
-- Users are indexed by $i \in \{1, \ldots, N\}$
-- Latent utility for user $i$ on item $j$ is $H_{ij} \in \mathbb{R}$
-- Item appeal (item-specific parameter) is $V_j \in \mathbb{R}$
-- Binary preference outcomes are random variables $Y_{jj'} \in \{0, 1\}$, where $Y_{jj'} = 1$ means item $j$ is preferred over $j'$
-- Probabilities are written as $p(\cdot)$ with conditioning after $\mid$
-- The sigmoid function is $\sigma(x) = 1/(1 + e^{-x})$
-:::
+*A consolidated table of mathematical notation used throughout this book is provided in the [Mathematical Notation](notation.qmd) appendix.*
 
 This is a book about machine learning from human preferences. Preference data arises throughout machine learning: recommender systems learn which products users prefer, search engines learn which results are most relevant, robots learn which trajectories humans find natural, and language models learn which responses are helpful. This chapter lays the theoretical foundation for understanding how preference data can be modeled and used for learning across all these domains.
 
@@ -134,6 +124,22 @@ $$ {#eq-bradley-terry-dpo}
 This is precisely the *Bradley-Terry model* @bradley1952rank, one of the oldest and most widely-used models for pairwise comparisons. The Bradley-Terry model says that the probability of preferring item $j$ over item $j'$ is a sigmoid function of the difference in their "strengths" or utilities.
 
 This raises natural questions: *Why is the Bradley-Terry model a reasonable assumption? Where does it come from? When does it fail?* Answering these questions is the goal of the rest of this chapter. We will see that Bradley-Terry arises naturally from a *random utility model* with specific noise assumptions, and that its key property---the *Independence of Irrelevant Alternatives*---is both powerful and limiting.
+
+::: {.callout-caution title="Worked Example: Computing Bradley-Terry Probabilities" collapse="false"}
+Suppose we have three chess players with Elo-style utilities $V_A = 2.0$, $V_B = 1.0$, and $V_C = 0.0$. Under the Bradley-Terry model:
+
+**Step 1.** Compute pairwise win probabilities:
+$$p(A \succ B) = \sigma(V_A - V_B) = \sigma(1.0) = \frac{1}{1 + e^{-1}} \approx 0.731$$
+$$p(A \succ C) = \sigma(V_A - V_C) = \sigma(2.0) = \frac{1}{1 + e^{-2}} \approx 0.881$$
+$$p(B \succ C) = \sigma(V_B - V_C) = \sigma(1.0) \approx 0.731$$
+
+**Step 2.** Check IIA: Adding or removing player C does not change the probability that A beats B. This is a direct consequence of the model --- $p(A \succ B)$ depends only on $V_A - V_B$.
+
+**Step 3.** Compute Plackett-Luce ranking probabilities for a full ranking $A \succ B \succ C$:
+$$p(A \succ B \succ C) = \frac{e^{V_A}}{e^{V_A} + e^{V_B} + e^{V_C}} \cdot \frac{e^{V_B}}{e^{V_B} + e^{V_C}} = \frac{e^2}{e^2 + e^1 + e^0} \cdot \frac{e^1}{e^1 + e^0} \approx 0.665 \times 0.731 \approx 0.486$$
+
+**Interpretation:** The strongest player (A) is expected to win about 73\% of games against the middle player (B) and 88\% against the weakest (C). The most likely full ranking has A first, occurring about 49\% of the time.
+:::
 
 ::: {.callout-important title="Key Takeaway: The Bradley-Terry Model"}
 Whether aligning language models, building recommender systems, or ranking chess players, many preference learning methods assume the Bradley-Terry model: $p(j \succ k) = \sigma(V_j - V_k)$. Understanding *why* this model is reasonable---and when it fails---requires the theory of random utility models and the Independence of Irrelevant Alternatives. The same mathematical framework applies across all these applications.
@@ -889,6 +895,10 @@ The Independence of Irrelevant Alternatives (IIA) is equivalent to i.i.d. Gumbel
 
 This is the end of our discussion of the Independence of Irrelevant Alternatives. Additional features can be found in [@train2009discrete;@ben1985discrete;@mcfadden1981econometric] and the original paper for logit analysis @mcfadden1972conditional.
 
+::: {.callout-warning title="Common Pitfall: Forgetting Identifiability Constraints"}
+When fitting utility models to choice data, utilities are only identified **up to a constant**: adding the same value $c$ to all $V_j$ produces identical choice probabilities. A common mistake is to estimate all parameters freely, which causes non-identifiable likelihoods and numerical instability during optimization. **Always anchor one parameter** (e.g., set $V_1 = 0$) or impose a sum-to-zero constraint before fitting. The same issue arises in two-sided models (user $U_i$ and item $V_j$): you cannot estimate both scales simultaneously without a normalization.
+:::
+
 ## Identification and the Rashomon Effect {#sec-identification-rashomon}
 
 When learning utility parameters from choice data, two fundamental challenges arise: the **identification problem** and the **Rashomon effect**. Both concern the multiplicity of models that can explain the same observations, but they operate at different levels. These challenges apply to **both deterministic and stochastic utility models**.
@@ -1151,6 +1161,29 @@ The next chapter is the first to study learning of average utility functions fro
 
 : **Table 1 — Notation used in Chapter "Foundations of Preference Modeling".** {#tbl-notation}
 
+## Summary
+
+- Preference data pervades machine learning---from recommender systems and information retrieval to robotics and language model alignment---and this chapter provides the unified probabilistic foundation for modeling it.
+- **Deterministic** utility models assign a fixed score $V_j$ to each item but cannot explain why the same person sometimes chooses differently; **stochastic** (random utility) models add noise $\varepsilon_j$ to capture this variability.
+- The **Rasch model** decomposes item-wise response probabilities into user appetite $U_i$ and item appeal $V_j$ via $p(Y_{ij}=1) = \sigma(U_i + V_j)$. The **Bradley-Terry model** for pairwise comparisons emerges as a special case: $p(j \succ k) = \sigma(V_j - V_k)$.
+- **Independence of Irrelevant Alternatives (IIA)** is the key structural assumption: it makes estimation tractable (only $M$ parameters) but fails under population heterogeneity and the red-bus/blue-bus cloning problem.
+- **K-dimensional factor models** extend scalar utilities to vector embeddings $U_i, V_j \in \mathbb{R}^K$, enabling richer representations needed for recommender systems and multi-dimensional preferences.
+- **Gaussian Processes** provide a nonparametric alternative when the utility function's form is unknown, placing a prior directly over functions rather than assuming a parametric structure.
+- The **Bradley-Terry model connects directly to DPO**: the DPO objective for language model alignment is equivalent to Bradley-Terry maximum likelihood with utilities defined by the policy's log-ratio.
+- **Plackett-Luce** generalizes Bradley-Terry from pairwise comparisons to full rankings, and all these models share the same random utility foundation with i.i.d. Gumbel noise.
+
+## Quick Check
+
+Test your understanding before proceeding to the exercises.
+
+1. In the Rasch model $p(Y_{ij}=1) = \sigma(U_i + V_j)$, why can't we estimate both $U_i$ and $V_j$ without a constraint? What happens if we add a constant to all $U_i$ and subtract it from all $V_j$?
+
+2. If two items have identical appeal $V_j = V_k$, what does Bradley-Terry predict about $p(j \succ k)$? What does this mean for learning from such a comparison?
+
+3. A recommender system adds a duplicate of an already-popular item to the catalog. Under IIA, what happens to the choice probabilities of the original items? Why is this problematic? (Hint: red bus/blue bus.)
+
+4. When would you prefer a Gaussian Process preference model over a $K$-dimensional factor model? What is the main computational tradeoff?
+
 ## Discussion Questions
 
 - How does modeling preferences as **random** (rather than deterministic) help us capture real-world choice behavior?
@@ -1184,9 +1217,19 @@ The next chapter is the first to study learning of average utility functions fro
 
 **Proper scoring rules** have a long history in probability forecasting; see @gneiting2007strictly for a comprehensive treatment. The connection between proper scoring rules and calibration is fundamental to understanding why cross-entropy is the standard loss for classification and language modeling.
 
-**Preference learning in machine learning** has grown rapidly since @christiano2017deep introduced RLHF for learning from human preferences without hand-specified reward functions. @ouyang2022training scaled this approach to large language models. @rafailov2023direct introduced DPO, making explicit the Bradley-Terry assumption underlying reward modeling. For connections to social choice theory, see @arrow1951social and @sen1986social.
+**Preference learning in machine learning** has grown rapidly since @christiano2017deep introduced RLHF for learning from human preferences without hand-specified reward functions. @ouyang2022training scaled this approach to large language models. @rafailov2023direct introduced DPO, making explicit the Bradley-Terry assumption underlying reward modeling. For connections to social choice theory, see @arrow1951 and @sen1986social.
 
 **For further reading**: On the economics of discrete choice, @ben1985discrete provides accessible coverage. On the psychology of choice, @kahneman2011thinking discusses bounded rationality and systematic deviations from utility maximization. On recent advances in preference learning for AI, see the surveys by @kaufmann2023survey.
+
+::: {.callout-tip title="Essential Reading" collapse="true"}
+If you read only five papers from this chapter's references, make them these:
+
+1. **@thurstone1927law** — The 1927 origin of random utility models for paired comparisons
+2. **@luce1959individual** — The axiomatic foundations of IIA and choice theory
+3. **@mcfadden1974conditional** — The conditional logit model that launched discrete choice econometrics (Nobel Prize 2000)
+4. **@bradley1952rank** — The Bradley-Terry model for paired comparison ranking
+5. **@rafailov2023direct** — DPO: the modern connection between Bradley-Terry and LLM alignment
+:::
 
 ## Exercises
 Exercises are marked with difficulty levels: (\*) for introductory, (\*\*) for intermediate, and (\*\*\*) for challenging.

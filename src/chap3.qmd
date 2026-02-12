@@ -60,25 +60,6 @@ By the end of this chapter you will be able to:
 - **Analyze** active preference learning in robotics, including trajectory comparison and reward function inference.
 :::
 
-::: {.callout-note title="Notation"}
-Throughout this chapter, we use the following conventions (extending Chapter 2):
-
-| Symbol | Meaning |
-|--------|---------|
-| $U \in \mathbb{R}^K$ | User embedding/preference vector |
-| $V_j \in \mathbb{R}^K$ | Item embedding/appeal vector |
-| $Z_j \in \mathbb{R}$ | Item offset (difficulty in Rasch model: $-V_j$) |
-| $H_{ij} = U_i^\top V_j + Z_j$ | Latent utility for user $i$ on item $j$ |
-| $\mathcal{I}(U)$ | Fisher information (scalar or matrix) |
-| $p = \sigma(H)$ | Response probability under logistic model |
-| $\Lambda = \Sigma^{-1}$ | Posterior precision matrix |
-| $\text{Rel}$ | Reliability: $1 - \text{tr}(\hat{\Sigma}_{\text{err}}) / \text{tr}(\Sigma_U)$ |
-| $\Delta_D, \Delta_A, \Delta_E$ | D/A/E-optimal acquisition functions |
-| $a(Q)$ | Acquisition function value for query $Q$ |
-| $H(y)$ | Entropy of random variable $y$ |
-| $I(r; y)$ | Mutual information between $r$ and $y$ |
-:::
-
 ## Chapter Overview
 
 Chapter 1 developed models for how preferences arise from latent utilities. Chapter 2 showed how to estimate these utilities from observed comparisons. This chapter addresses the complementary question: **given that human feedback is expensive, how should we choose which comparisons to request?**
@@ -139,6 +120,24 @@ For the Rasch model with $p_j(U) = \sigma(U + V_j)$, the Fisher Information $\ma
 
 ::: {.callout-tip title="Proof" collapse="true"}
 The function $f(p) = p(1-p)$ is a downward parabola with roots at $p=0$ and $p=1$. Taking the derivative: $f'(p) = 1 - 2p = 0 \Rightarrow p = 0.5$. At this point, $f(0.5) = 0.25$, which is the maximum. Since $p_j(U) = \sigma(U + V_j) = 0.5$ when $U + V_j = 0$, the optimal item has $V_j = -U$.
+:::
+
+::: {.callout-caution title="Worked Example: Fisher Information for Item Selection" collapse="false"}
+A user has estimated ability $\hat{U} = 1.0$. We have three candidate items with appeals $V_1 = -2.0$ (hard), $V_2 = -1.0$ (matched), and $V_3 = 1.0$ (easy). Which item should we ask next?
+
+**Step 1.** Compute predicted success probabilities:
+$$p_1 = \sigma(1.0 + (-2.0)) = \sigma(-1.0) \approx 0.269$$
+$$p_2 = \sigma(1.0 + (-1.0)) = \sigma(0.0) = 0.500$$
+$$p_3 = \sigma(1.0 + 1.0) = \sigma(2.0) \approx 0.881$$
+
+**Step 2.** Compute Fisher information for each item:
+$$\mathcal{I}_1 = p_1(1-p_1) = 0.269 \times 0.731 \approx 0.197$$
+$$\mathcal{I}_2 = p_2(1-p_2) = 0.500 \times 0.500 = 0.250$$
+$$\mathcal{I}_3 = p_3(1-p_3) = 0.881 \times 0.119 \approx 0.105$$
+
+**Step 3.** Select the most informative item: $j^* = \arg\max_j \mathcal{I}_j = 2$ (the matched item).
+
+**Interpretation:** Item 2, whose difficulty $-V_2 = 1.0$ matches the user's ability $\hat{U} = 1.0$, is most informative because it produces responses closest to 50-50. The easy item ($V_3$) is least informative --- the user almost certainly succeeds, so the response tells us little about their ability. This is the principle behind *computerized adaptive testing*: the test "follows" the student, always selecting questions near their ability level.
 :::
 
 This result has a natural interpretation: items that are too easy ($p \approx 1$) or too hard ($p \approx 0$) yield near-deterministic responses that teach little about the user. Items matched to the user's ability ($p \approx 0.5$) are maximally informative. So the best next item is one whose difficulty ($-V_j$) is close to the current estimate of $U$. Active elicitation policies therefore "hover" around the user’s current location, rapidly shrinking uncertainty. Place a Gaussian prior $U \sim \mathcal N(0,\sigma_0^2)$. After observing independent items $\mathcal J$, a Laplace (or IRLS) update for $U$ uses the score and observed information
@@ -292,6 +291,10 @@ Given a Fisher Information matrix $\mathcal{I}(U)$, the classical **optimal expe
 
 All three reduce uncertainty, but emphasize different aspects: A-optimal targets average precision, D-optimal targets overall information volume, and E-optimal targets the least-informed direction.
 :::
+:::
+
+::: {.callout-warning title="Common Pitfall: Confusing A-Optimal, D-Optimal, and E-Optimal"}
+These three criteria **optimize different objectives** and can select different queries. A-optimal minimizes average variance (good when all parameters matter equally), D-optimal maximizes the determinant of the information matrix (shrinks the posterior ellipsoid volume — good for overall uncertainty), and E-optimal maximizes the minimum eigenvalue (guards against worst-case directions). A common mistake is to treat them as interchangeable. In practice: D-optimal naturally encourages **diversity** in selected items (redundant items give diminishing information), while E-optimal is **conservative** (focuses all effort on the least-informed direction). Choose the criterion based on your downstream task — if you need accurate *ranking* of all items, A-optimal is natural; if you need a single *best* decision, E-optimal may be preferable.
 :::
 
 Adaptive measurement picks the next item $j$ to maximize an acquisition function such as $\det(\mathcal I+\mathcal I_j)$. We also use reliability as the evaluation metric here. If $\Sigma_U$ is the population covariance and $\widehat{\Sigma}_{\text{err}}$ the average posterior covariance, then $\text{Reliability} = 1 - \mathrm{tr}(\widehat{\Sigma}_{\text{err}}) \mathrm{tr}(\Sigma_U)^{-1}.$ This generalizes the Rasch reliability to multi-dimensional latent traits. Below is a toy simulation with 2-dimensional users and items, comparing random item selection vs D-optimal Fisher active selection:
@@ -1209,6 +1212,36 @@ The D-optimal criterion naturally encourages diversity: selecting redundant quer
 | Theoretical basis | Mutual information | Fisher information |
 
 Both approaches share the core insight: **use model uncertainty to guide query selection**.
+:::
+
+## Summary
+
+- When human feedback is expensive, **which comparisons to request** matters as much as how to learn from them. This chapter develops the theory of optimal query selection for preference learning.
+- **Fisher information** $\mathcal{I}_j(U) = p(1-p)$ quantifies how much a single comparison reveals about user preferences. Items with predicted win probability $p \approx 0.5$ are most informative---close competitions reveal more than blowouts.
+- Three **optimal design criteria** guide query selection: **A-optimal** (minimize average variance), **D-optimal** (maximize the determinant of the information matrix, shrinking the posterior ellipsoid's volume), and **E-optimal** (minimize the worst-case variance).
+- For multi-dimensional preferences, the **Sherman-Morrison update** enables efficient $O(K^2)$ covariance updates after each query, making real-time active selection practical.
+- **Gaussian Process active learning** extends these ideas to nonparametric models using information-theoretic acquisition functions---selecting queries that maximize mutual information between the response and the latent preference function.
+- **Active DPO (ADPO)** applies D-optimal design to language model alignment, using a log-linear approximation to make Fisher information computation tractable for billion-parameter models. ADPO achieves the minimax-optimal convergence rate $O(d/\sqrt{n})$.
+- Across all settings---scalar preferences, factor models, GPs, and LLMs---the core insight is the same: **use model uncertainty to guide query selection**, focusing annotation effort where it reduces uncertainty most.
+
+## Quick Check
+
+Test your understanding before proceeding to the exercises.
+
+1. An item has predicted success probability $p = 0.95$. What is its Fisher information $\mathcal{I} = p(1-p)$? Would you select this item for active learning? Why or why not?
+
+2. A-optimal design minimizes the average posterior variance; D-optimal minimizes the volume of the confidence ellipsoid. In what situation would these select different items?
+
+3. In ADPO, why is the log-linear policy assumption ($\pi(y|x;\theta) \propto \exp(\phi(x,y)^\top \theta)$) important? What would happen without it?
+
+::: {.callout-tip title="Essential Reading" collapse="true"}
+If you read only five papers from this chapter's references, make them these:
+
+1. **@rasch1960probabilistic** — The Rasch model: foundational psychometric model connecting item difficulty to person ability
+2. **@fedorov1972theory** — The theory of optimal experimental design (A/D/E-optimality)
+3. **@chu2005preference** — Gaussian process preference learning: nonparametric Bayesian approach to utility functions
+4. **@houlsby2011bayesian** — Bayesian active learning by disagreement (BALD), connecting information gain to query selection
+5. **@christiano2017deep** — Deep RL from human preferences: the original active elicitation pipeline for reward learning
 :::
 
 ## Discussion Questions

@@ -222,13 +222,49 @@ Design of tools for eliciting feedback from humans often has to tradeoff several
 
 ![](figures/assumption+discussion.png)
 
+## Book Structure
+
+::: {.smaller}
+| Part | Focus | Chapters |
+|------|-------|----------|
+| **Part 1: Foundations** | Mathematical groundwork for preference modeling | Ch 1: Foundations |
+| **Part 2: Learning** | How to learn from and act on preferences | Ch 2: Learning, Ch 3: Elicitation, Ch 4: Decisions |
+| **Part 3: Society** | Aggregating preferences and whose preferences count | Ch 5: Aggregation, Ch 6: Whose? |
+| **Conclusion** | Open challenges | Ch 7: Conclusion |
+:::
+
+## Chapter Overview
+
+::: {.smaller}
+- **Ch 1 -- Foundations:** Random preference models, Bradley-Terry, IIA axiom, DPO derivation
+- **Ch 2 -- Learning:** MLE, Bayesian inference, Elo ratings, regularization, LLM preference learning
+- **Ch 3 -- Elicitation:** Fisher information, optimal query selection, active DPO
+- **Ch 4 -- Decisions:** Thompson Sampling, dueling bandits, preferential Bayesian optimization, CIRL
+- **Ch 5 -- Aggregation:** Arrow's theorem, social choice theory, Borda-DPO connection, Community Notes, mechanism design
+- **Ch 6 -- Whose?:** Fairness, value judgments, AI alignment, human-centered design
+- **Ch 7 -- Conclusion:** Open challenges
+:::
+
+## Reading Pathways
+
+::: {.smaller}
+| Pathway | Chapters | Audience |
+|---------|----------|----------|
+| **Practitioners / Applied AI** | 1, 2, 4 | Early graduate ML course |
+| **Discrete Choice Background** | Skim 1, study 2 & 4 | Economics, IO, demand models |
+| **ML-Heavy** | 2, 3, 4 | Deep learning course |
+| **Society & Theory** | 1, 5, 6 | Computation and society course |
+
+Chapter 1 is foundational to all pathways.
+:::
+
 ## Logistics: Course Goals
 
-- Focus on breadth vs. depth
-- **Foundations:** Judgement, decision making and choice, biases (psychology, marketing), discrete choice theory, mechanism design, choice aggregation (micro-economics), human-computer interaction, ethics
-- **Machine learning:** Modeling, active learning, bandits
-- **Applications:** recommender systems, language models, reinforcement learning, AI alignment
-- **Note:** Schedule is tentative
+- **Part 1 -- Foundations:** Preference models, Bradley-Terry, IIA, utility theory
+- **Part 2 -- Learning:** Parameter estimation, active elicitation, sequential decisions, bandits
+- **Part 3 -- Society:** Social choice theory, aggregation, fairness, AI alignment
+- **Applications throughout:** Recommender systems, language models, reinforcement learning
+- **Approach:** Breadth across foundations, learning methods, and societal considerations
 
 ## Logistics: Prerequisites
 
@@ -243,6 +279,6 @@ Our textbook is available online at: [mlhp.stanford.edu](https://mlhp.stanford.e
 
 ## Next Topics
 
-Chapter 2: Human Decision Making and Choice Models
+Chapter 1: Foundations (Preference Models)
 
 ## Welcome to CS329H!

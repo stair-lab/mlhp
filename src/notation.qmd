@@ -1,0 +1,93 @@
+# Mathematical Notation {#sec-mathematical-notation .unnumbered}
+
+This appendix consolidates the mathematical notation used throughout the book. Symbols are grouped by topic; the **Introduced** column indicates the chapter where each symbol first appears.
+
+## General
+
+| Symbol | Meaning |
+|--------|---------|
+| $j, j', k \in \{1, \ldots, M\}$ | Item (alternative) indices |
+| $i \in \{1, \ldots, N\}$ | User (agent) index |
+| $H_{ij} \in \mathbb{R}$ | Latent utility of user $i$ for item $j$ |
+| $V_j \in \mathbb{R}$ or $\mathbb{R}^K$ | Item appeal / item embedding vector |
+| $U_i \in \mathbb{R}^K$ | User embedding / preference vector |
+| $Y_{jj'} \in \{0, 1\}$ | Binary preference outcome ($1$ means $j \succ j'$) |
+| $\sigma(x) = 1/(1+e^{-x})$ | Logistic sigmoid function |
+| $p(\cdot \mid \cdot)$ | Conditional probability |
+| $\mathcal{D}_t = \{(V_j, Y_{ij})\}_{j=1}^t$ | Observed dataset at time $t$ |
+
+## Preference Models (Chapter 1)
+
+| Symbol | Meaning |
+|--------|---------|
+| $p(j \succ k) = \sigma(V_j - V_k)$ | Bradley-Terry comparison probability |
+| $\tilde{V}_j = V_j + \epsilon_j$ | Random utility ($\epsilon_j$ is noise) |
+| $p(j \mid \mathcal{S}) = e^{V_j} / \sum_{k \in \mathcal{S}} e^{V_k}$ | Multinomial logit (softmax) choice probability |
+| $\prod_r e^{V_{j_r}} / \sum_{s \geq r} e^{V_{j_s}}$ | Plackett-Luce ranking probability |
+
+## Learning and Estimation (Chapter 2)
+
+| Symbol | Meaning |
+|--------|---------|
+| $\ell(V) = \sum \log \sigma(V_w - V_\ell)$ | Bradley-Terry log-likelihood |
+| $\hat{V}_{\text{MLE}} = \arg\max_V \ell(V)$ | Maximum likelihood estimate |
+| $p(\theta \mid \mathcal{D}) \propto p(\mathcal{D} \mid \theta)\,p(\theta)$ | Posterior distribution (Bayes' rule) |
+| $K$ | Elo step size / learning rate |
+| $\lambda$ | L2 regularization strength |
+| $\pi_\theta(y \mid x)$ | Policy (language model) parameterized by $\theta$ |
+| $\pi_{\text{ref}}(y \mid x)$ | Reference policy in DPO |
+| $\beta$ | DPO temperature parameter |
+
+## Elicitation and Measurement (Chapter 3)
+
+| Symbol | Meaning |
+|--------|---------|
+| $\mathcal{I}(U)$ | Fisher information (scalar or matrix) |
+| $Z_j$ | Item offset / difficulty ($-V_j$ in Rasch model) |
+| $\Lambda = \Sigma^{-1}$ | Posterior precision matrix |
+| $\text{Rel} = 1 - \text{tr}(\hat{\Sigma}_{\text{err}}) / \text{tr}(\Sigma_U)$ | Reliability |
+| $\Delta_D, \Delta_A, \Delta_E$ | D-optimal, A-optimal, E-optimal acquisition functions |
+| $a(Q)$ | Acquisition function value for query $Q$ |
+| $H(y)$ | Entropy of random variable $y$ |
+| $I(r; y)$ | Mutual information between $r$ and $y$ |
+
+## Sequential Decisions (Chapter 4)
+
+| Symbol | Meaning |
+|--------|---------|
+| $\tilde{U}_i^{(t)} \sim p(U_i \mid \mathcal{D}_t)$ | Posterior sample (Thompson Sampling) |
+| $\alpha(\cdot)$ | Acquisition function |
+| $R(T) = \sum_{t=1}^T (\mu^* - \mu_{a_t})$ | Cumulative regret after $T$ rounds |
+| $\mu_t(\cdot),\; \sigma_t^2(\cdot)$ | GP posterior mean and variance |
+| $k(\cdot, \cdot)$ | Kernel (covariance) function |
+| $\pi_f([\mathbf{x}, \mathbf{x}'])$ | Preference function: probability $\mathbf{x} \succ \mathbf{x}'$ |
+
+## Social Choice and Aggregation (Chapter 5)
+
+| Symbol | Meaning |
+|--------|---------|
+| $N = \{1, \ldots, n\}$ | Set of $n$ voters (agents) |
+| $A = \{a_1, \ldots, a_m\}$ | Set of $m$ alternatives |
+| $\succ_i$ | Voter $i$'s strict preference ordering |
+| $\mathcal{L}(A)$ | Set of all strict linear orders over $A$ |
+| $f: \mathcal{L}(A)^n \to A$ | Social choice function (profile $\to$ winner) |
+| $F: \mathcal{L}(A)^n \to \mathcal{L}(A)$ | Social welfare function (profile $\to$ ranking) |
+| $\text{SP}(Y)$ | Single-peaked preferences on ordered set $Y$ |
+| $\text{peak}(\succ_i)$ | Peak (ideal point) of voter $i$ |
+| $v_i$ | Private valuation of agent $i$ (mechanism design) |
+| $\varphi(v)$ | Virtual valuation (Myerson framework) |
+
+## Fairness (Chapter 6)
+
+| Symbol | Meaning |
+|--------|---------|
+| $\mathcal{E}$ | Elicitation policy |
+| $\mathcal{L}$ | Learning model structure |
+| $\mathcal{A}$ | Aggregation function |
+| $\mathcal{D}$ | Decision policy |
+| $d(\cdot, \cdot)$ | Distance metric for individual fairness |
+| $\mathcal{G}$ | Set of protected groups |
+| $\text{Nosy}(p)$ | True if preference $p$ concerns others' choices (Sen) |
+| $\mathcal{F}_{\text{ind}}$ | Individual fairness constraint: $d(x_i, x_j) \leq \epsilon \Rightarrow d(f(x_i), f(x_j)) \leq \delta$ |
+| $\mathcal{F}_{\text{group}}$ | Group fairness constraint: $\mathbb{E}[f(x) \mid G{=}g_1] = \mathbb{E}[f(x) \mid G{=}g_2]$ |
+| $B, M, C$ | Behavior, Mental state, Context (inversion problem) |

@@ -43,6 +43,34 @@ Every technical choice in the preference learning pipeline—from who gets queri
 
 This critical lens does not reject the technical methods developed in earlier chapters. Rather, it calls for conscious recognition that preference learning is not value-neutral. The designer's choices shape who benefits and who is harmed. Fairness constraints, stratified evaluation, and participatory design are not add-ons but essential components of responsible system development.
 
+## Lessons from the Alignment Era
+
+The rapid adoption of RLHF and DPO for language model alignment—beginning with InstructGPT in 2022 and accelerating through ChatGPT, Claude, and their successors—has stress-tested preference learning at a scale that the field's founders could not have anticipated. Several lessons have emerged from this experience that inform how we should think about the methods developed in this book.
+
+### What Worked
+
+**Bradley-Terry is remarkably effective in practice.** Despite its strong assumptions (IIA, homogeneous annotators, context-independence), the Bradley-Terry model has proven to be a workhorse for reward modeling and DPO. The simplicity that makes it analytically tractable—a single parameter per item, sigmoid link function, logistic likelihood—also makes it computationally efficient at scale. The DPO reformulation (Chapter 1, @sec-llm-example) eliminates the separate reward model entirely, showing that the Bradley-Terry likelihood can be directly optimized as a policy objective. This is a striking vindication of the classical models that form the backbone of this book.
+
+**Active learning reduces annotation cost.** The Fisher information framework from Chapter 3 has proven practically valuable for selecting which comparisons to annotate. ADPO (@sec-adpo) and related methods demonstrate that intelligent query selection can reduce annotation budgets by 30-50\% compared to random sampling, a substantial saving when human preference labels cost \$1-10 each and training runs require tens of thousands of comparisons.
+
+**Uncertainty quantification matters for deployment.** The Bayesian methods from Chapter 2 and the posterior-based decision-making from Chapter 4 (Thompson Sampling, PBO) are not merely academic exercises. In production systems, knowing *how confident* the model is in its preference predictions enables calibrated decisions about when to deploy new model versions, when to collect more data, and when to fall back to conservative defaults.
+
+### What Surprised Us
+
+**The gap between reward models and human judgment is smaller than expected—but the remaining gap is consequential.** Modern reward models trained via Bradley-Terry achieve high agreement with held-out human preferences (often 70-80\% accuracy on binary comparisons). But the errors are not random: they cluster around responses that are subtly harmful, sycophantic, or superficially impressive but factually wrong. These failure modes are precisely the cases where getting preferences right matters most, and they suggest that the IIA assumption—which treats all comparisons as equally well-modeled—may need to be relaxed for safety-critical applications.
+
+**Goodhart's Law is real and pernicious.** When models are optimized against a learned reward function, they inevitably find ways to achieve high reward without satisfying the underlying human preferences. This "reward hacking" is a direct consequence of the gap between the proxy (learned reward) and the target (true human preferences). The phenomenon manifests as models that produce longer responses (because annotators weakly prefer length), use confident-sounding language regardless of accuracy, or agree with the user's stated views rather than providing honest assessments. Recognizing reward hacking as an instance of Goodhart's Law—"when a measure becomes a target, it ceases to be a good measure"—connects it to a rich literature in economics and public policy.
+
+**Annotator disagreement is signal, not noise.** Early RLHF work treated disagreement among annotators as measurement error to be averaged away. But Chapter 5's analysis of preference aggregation suggests a different interpretation: annotators disagree because they genuinely hold different preferences, not (only) because they make mistakes. The DPO-Borda connection (@sec-borda-dpo) shows that aggregating via majority vote implicitly selects the Borda winner—which may not be the socially optimal choice when minority preferences carry important information. This has led to growing interest in pluralistic alignment approaches that maintain multiple preference models rather than collapsing to a single aggregate.
+
+### What Broke
+
+**The inversion problem at scale.** Chapter 5's discussion of the inversion problem (@sec-inversion)—that observed behavior does not equal underlying preferences—takes on new urgency at the scale of commercial annotation. Annotators working under time pressure, fatigue, and piece-rate compensation produce preference labels that reflect their working conditions as much as their genuine judgments. Studies have documented systematic biases: annotators favor shorter responses when fatigued, prefer responses that match their cultural background, and exhibit position bias (favoring the first response presented). These are precisely the distortions that Chapter 6's fairness analysis predicts—and they propagate through the entire pipeline.
+
+**IIA violations in practice.** The Independence of Irrelevant Alternatives assumption, whose limitations we analyzed theoretically in Chapter 1 (the red-bus/blue-bus problem), manifests concretely in LLM alignment. Annotators' preference between two responses depends on what other responses they have recently evaluated (contrast effects), how the comparison is framed (whether they are asked "which is better" versus "which is less harmful"), and even the order of presentation. These violations suggest that richer preference models—context-dependent Bradley-Terry, mixed logit, or the random-coefficients models from Chapter 1—may be needed for high-stakes applications.
+
+**Single-turn preferences do not capture long-horizon value.** Most preference learning for language models collects feedback on individual responses in isolation. But users ultimately care about the quality of extended interactions—whether the model is consistently helpful over a conversation, whether it remembers context appropriately, and whether it knows when to ask clarifying questions versus provide direct answers. Extending preference models from single comparisons to trajectory-level feedback remains an open challenge that connects to the sequential decision-making framework of Chapter 4.
+
 ## Forwarding the Field
 
 Machine learning from human preferences is a vibrant area of research with many open challenges. We highlight several directions that we believe are particularly important for the field's advancement.
@@ -51,10 +79,10 @@ Machine learning from human preferences is a vibrant area of research with many 
 
 Much of this book focused on pairwise comparisons—the simplest and most well-understood form of preference data. But humans express preferences in many ways:
 
-- **Natural language feedback**: "This response is helpful but could be more concise" conveys richer information than a binary comparison.
-- **Partial rankings**: A user might confidently rank their top three choices but be uncertain about the rest.
-- **Ratings and Likert scales**: Absolute judgments on a scale provide cardinal (not just ordinal) information, though they introduce calibration challenges.
-- **Implicit signals**: Engagement time, scroll patterns, and click behavior reveal preferences without explicit queries.
+- **Natural language feedback**: "This response is helpful but could be more concise" conveys richer information than a binary comparison. Recent work on learning from critiques and natural language rewards suggests that language feedback can be formalized as soft constraints on the reward function, though the mapping from language to reward remains noisy and context-dependent.
+- **Partial rankings**: A user might confidently rank their top three choices but be uncertain about the rest. Plackett-Luce models (@eq-plackett-luce) handle full rankings, but principled treatment of partial and uncertain rankings requires extensions that allow "I don't know" or "these are roughly equivalent" responses.
+- **Ratings and Likert scales**: Absolute judgments on a scale provide cardinal (not just ordinal) information, though they introduce calibration challenges across annotators—one person's 4 out of 5 may be another's 3. Anchoring and cross-annotator calibration methods are active areas of research.
+- **Implicit signals**: Engagement time, scroll patterns, and click behavior reveal preferences without explicit queries. But these signals are heavily confounded by interface design, attention patterns, and the inversion problem (Chapter 5)—longer engagement may reflect confusion rather than interest.
 
 Integrating these diverse modalities into unified preference models is an important open problem. Each modality has strengths: pairwise comparisons are reliable but expensive; implicit signals are cheap but noisy; natural language is rich but difficult to formalize. Hybrid approaches that combine multiple feedback types, weighting each appropriately, hold promise for more efficient and accurate preference learning.
 
@@ -64,11 +92,21 @@ As AI systems become more capable, the tasks they perform become harder for huma
 
 *Scalable oversight* addresses this challenge through techniques like:
 
-- **Recursive reward modeling**: Decomposing complex evaluation tasks into simpler subtasks that humans can reliably judge.
-- **AI-assisted evaluation**: Using AI systems to help humans provide more accurate feedback, while remaining vigilant about circular dependencies.
-- **Debate and amplification**: Adversarial procedures where AI systems critique each other's outputs, surfacing flaws that a single evaluator might miss.
+- **Recursive reward modeling**: Decomposing complex evaluation tasks into simpler subtasks that humans can reliably judge. The key insight is that while evaluating a complete solution may be hard, verifying individual steps is often feasible. This connects to the preference elicitation framework of Chapter 3: by decomposing evaluation, we can apply Fisher information analysis to each subtask and select the most informative verification queries.
+- **AI-assisted evaluation**: Using AI systems to help humans provide more accurate feedback, while remaining vigilant about circular dependencies. RLAIF (reinforcement learning from AI feedback) replaces human annotators with AI evaluators, raising questions about whether the preference signal is genuinely informative or merely reflects the evaluator model's own biases.
+- **Debate and amplification**: Adversarial procedures where AI systems critique each other's outputs, surfacing flaws that a single evaluator might miss. This can be formalized as a zero-sum game, connecting to the von Neumann winner concept from Chapter 4's dueling bandits framework.
 
-These approaches extend preference learning beyond direct human feedback to settings where humans provide oversight indirectly. The tools developed in this book provide a starting point: Fisher information (@sec-fisher-information) can guide query selection even when evaluators are unreliable, by quantifying how informative each comparison is given evaluator noise; the CIRL framework from Chapter 4 models the cooperative structure of oversight, where the human's ability to evaluate depends on how the agent presents its outputs. But scaling these ideas to superhuman AI systems remains an open frontier.
+The CIRL framework from Chapter 4 models the cooperative structure of oversight, where the human's ability to evaluate depends on how the agent presents its outputs. But scaling these ideas to superhuman AI systems—where the agent's capabilities exceed the evaluator's—remains one of the most important open frontiers in AI safety.
+
+### Temporal Dynamics and Preference Change
+
+This book has largely treated preferences as static: a user has fixed utilities $V_j$ that we aim to estimate. In reality, preferences evolve over time. A user's taste in music changes as they discover new genres; a society's norms around acceptable content shift across decades; an annotator's judgment drifts as they gain experience with the task.
+
+Modeling temporal preference dynamics introduces several challenges:
+
+- **Distinguishing drift from noise**: Is a changed preference a genuine evolution (the user's taste matured) or a noisy observation (the user was tired that day)? The Bayesian framework from Chapter 2 can be extended with time-varying priors—for example, a random walk on utilities—but choosing the right rate of change requires domain knowledge.
+- **Non-stationarity in online learning**: The Elo rating system (Chapter 2, @sec-online) implicitly handles non-stationarity through its constant step size $K$, which weights recent observations more heavily. But the optimal $K$ depends on the rate of change, creating a tradeoff between responsiveness and stability.
+- **Retroactive fairness**: If a system learns preferences from historical data that reflects outdated norms, deploying those preferences perpetuates past values. Chapter 6's pipeline framework ($\mathcal{E} \to \mathcal{L} \to \mathcal{A} \to \mathcal{D}$) provides a lens for auditing where temporal biases enter.
 
 ### Heterogeneity and Personalization
 
@@ -76,9 +114,10 @@ This book has established that preference heterogeneity is not a nuisance but a 
 
 Yet significant open problems remain:
 
-- **Scalable mixture models** that identify latent preference clusters in high-dimensional settings without requiring users to self-identify.
-- **Contextual preference models** that account for how the same user's preferences vary with cognitive load, time pressure, and framing—building on the contextual Bradley-Terry models introduced in Chapter 6.
-- **Personalization with fairness constraints** that provide tailored assistance while ensuring no group is systematically underserved.
+- **Scalable mixture models** that identify latent preference clusters in high-dimensional settings without requiring users to self-identify. Variational inference and amortized methods show promise for scaling mixture-of-experts preference models to millions of users.
+- **Contextual preference models** that account for how the same user's preferences vary with cognitive load, time pressure, and framing—building on the contextual Bradley-Terry models introduced in Chapter 6. The challenge is distinguishing genuine context-dependence from IIA violations.
+- **Personalization with fairness constraints** that provide tailored assistance while ensuring no group is systematically underserved. Multi-objective optimization frameworks that Pareto-balance personalization and equity are an active area of research.
+- **Cold-start and few-shot preference learning**: How should a system behave for a new user with no preference history? Transfer learning from population-level models, combined with the active elicitation strategies from Chapter 3, can accelerate personalization while managing uncertainty.
 
 The tension between personalization (giving each user what they want) and fairness (ensuring equitable outcomes across groups) is not fully resolved by the technical tools we have today. Progress requires both better algorithms and clearer normative frameworks for navigating these tradeoffs.
 
@@ -86,9 +125,10 @@ The tension between personalization (giving each user what they want) and fairne
 
 Chapter 6 introduced fairness considerations; making them operational requires ongoing research:
 
-- **Fairness metrics for preference learning**: Standard fairness definitions (demographic parity, equalized odds) were developed for classification. What are the appropriate analogs for preference models? When is it fair for a system to learn different preference models for different groups?
-- **Value alignment under disagreement**: When stakeholders have genuinely conflicting preferences, what should a system optimize for? Majority preferences? Pareto improvements? Maximin welfare?
-- **Transparency and contestability**: Users should understand why a system makes the recommendations it does, and have meaningful recourse when they disagree.
+- **Fairness metrics for preference learning**: Standard fairness definitions (demographic parity, equalized odds) were developed for classification. What are the appropriate analogs for preference models? When is it fair for a system to learn different preference models for different groups? The pipeline framework from Chapter 6 suggests that fairness must be assessed at each stage ($\mathcal{E}, \mathcal{L}, \mathcal{A}, \mathcal{D}$), not just at the final output.
+- **Value alignment under disagreement**: When stakeholders have genuinely conflicting preferences, what should a system optimize for? Majority preferences? Pareto improvements? Maximin welfare? The social choice results of Chapter 5—particularly Arrow's theorem—tell us that no aggregation rule is universally satisfactory, but they also point toward domain restrictions and mechanism design as paths forward.
+- **Transparency and contestability**: Users should understand why a system makes the recommendations it does, and have meaningful recourse when they disagree. This requires preference models that are not only accurate but interpretable—a challenge for the high-dimensional factor models and GP-based approaches developed in earlier chapters.
+- **Pluralistic alignment**: Rather than learning a single aggregate preference model, maintain multiple models reflecting different value systems and allow users or institutions to choose among them. This connects to the mixture models of Chapter 1 and the multi-issue voting framework of Chapter 5.
 
 These are not purely technical questions—they require engagement with philosophy, law, and democratic theory. But technical researchers must be part of the conversation, ensuring that fairness frameworks are implementable and that their limitations are well understood.
 
@@ -96,11 +136,195 @@ These are not purely technical questions—they require engagement with philosop
 
 Large language models trained via RLHF and DPO represent the most prominent current application of preference learning. Yet significant challenges remain:
 
-- **Reward hacking**: Models may find ways to achieve high reward without actually satisfying human preferences—exploiting ambiguities in the reward signal rather than genuinely helpful behavior.
-- **Distributional shift**: Preferences collected in one context may not generalize to deployment settings, especially as models are used for novel tasks.
-- **Constitutional AI and rule-based approaches**: Can we move beyond learning from examples to learning from principles? How do we reconcile principle-based and preference-based approaches?
+- **Reward hacking**: Models may find ways to achieve high reward without actually satisfying human preferences—exploiting ambiguities in the reward signal rather than genuinely helpful behavior. This is a manifestation of Goodhart's Law: when the learned reward becomes the optimization target, it ceases to be a faithful proxy for human preferences. Mitigations include reward model ensembles, KL-constrained optimization (as in DPO's implicit KL penalty), and regular recalibration against fresh human judgments.
+- **Distributional shift**: Preferences collected in one context may not generalize to deployment settings, especially as models are used for novel tasks. The Bradley-Terry model assumes a fixed set of items with stable utilities, but in practice the "items" (model responses) change as the model improves, creating a moving target that requires online adaptation.
+- **Constitutional AI and rule-based approaches**: Can we move beyond learning from examples to learning from principles? Constitutional AI proposes specifying desirable behavior through written rules rather than example comparisons, raising questions about how to reconcile principle-based and preference-based approaches. The connection to single-peaked preferences (Chapter 5) is suggestive: if principles define a partial order over responses, they may restrict the preference domain enough to escape aggregation impossibilities.
+- **Multi-objective alignment**: Real-world alignment requires balancing multiple objectives simultaneously—helpfulness, harmlessness, honesty, and more. This is fundamentally a multi-objective optimization problem where different objectives can conflict, connecting to the social choice framework of Chapter 5.
 
 The alignment of foundation models with human values is arguably the most consequential application of preference learning today. Progress in this area requires both fundamental research on preference modeling and careful empirical work on what actually makes language model outputs helpful, harmless, and honest.
+
+## Capstone Projects
+
+The chapters of this book develop a rich toolkit---from preference models and estimation to active elicitation, sequential decisions, social aggregation, and fairness---but the deepest understanding comes from applying these ideas to open-ended problems. The following capstone projects are designed as extended investigations suitable for individual or small-team work. Each project is inspired by the format of the CS329H course project: students produce a pre-analysis plan, a final manuscript in NeurIPS format (up to 8 pages), and reproducible code. Projects span the book's six main chapters and range from focused empirical studies to more ambitious research contributions. Difficulty is indicated by stars: \* (one person, roughly four weeks), \*\* (one to two people, roughly six weeks), and \*\*\* (two to three people, eight or more weeks).
+
+### Project 1: When Does IIA Fail? Detecting and Modeling Context Effects in Preference Data (\*)
+
+**Description.** The Independence of Irrelevant Alternatives assumption (@sec-iia) is the backbone of Bradley-Terry and Plackett-Luce models, yet it is routinely violated in practice---the "red-bus/blue-bus" problem being the canonical example. This project investigates *when and how much* IIA violations matter by designing controlled experiments (or analyzing existing preference datasets) to detect context effects, then comparing Bradley-Terry against richer models that relax IIA.
+
+**Suggested methods.**
+
+- Fit a standard Bradley-Terry model (@sec-bradley-terry) and a mixed logit or nested logit model (@sec-beyond-bradley-terry) to the same preference data.
+- Use likelihood ratio tests or AIC/BIC (@sec-model-selection) to quantify whether the richer model provides a statistically significant improvement.
+- Construct synthetic "red-bus/blue-bus" scenarios by introducing near-duplicate items into a choice set and measuring the distortion in estimated utilities.
+
+**Expected deliverables.** A manuscript reporting (1) a dataset with documented IIA violations, (2) a quantitative comparison of Bradley-Terry vs. at least one IIA-relaxing model, and (3) practical guidelines for when practitioners should move beyond Bradley-Terry. Code for all experiments with reproducible results.
+
+### Project 2: Bayesian vs. Frequentist Preference Learning on Real Annotation Data (\*)
+
+**Description.** Chapter 2 presents three estimation paradigms---maximum likelihood (@sec-mle), Bayesian inference via MCMC (@sec-bayesian), and online learning via the Elo system (@sec-online). How do these approaches compare on real-world human preference data, especially in low-data regimes where uncertainty quantification matters most? This project conducts a systematic comparison using publicly available LLM preference datasets.
+
+**Suggested methods.**
+
+- Implement MLE with L2 regularization (@sec-regularization), Bayesian inference with the Laplace approximation (@sec-gp-inference), and Elo updates (@sec-online) for the same Bradley-Terry model.
+- Evaluate predictive accuracy (AUC), calibration, and posterior coverage as a function of dataset size by subsampling.
+- Assess computational cost and convergence diagnostics (@sec-optimization).
+
+**Expected deliverables.** A manuscript with learning curves showing accuracy and calibration vs. sample size for each method, a discussion of when Bayesian uncertainty is worth the computational overhead, and fully documented code including data preprocessing scripts.
+
+### Project 3: Active Preference Elicitation for Personalized Recommendation (\*\*)
+
+**Description.** When human feedback is expensive, active query selection can dramatically reduce annotation cost. This project builds an end-to-end active preference elicitation system for a concrete domain---such as food preferences, music taste, or movie recommendations---and measures how much the Fisher information framework improves over random querying.
+
+**Suggested methods.**
+
+- Implement a Rasch or factor model (@sec-factor-models) with Fisher-information-based query selection (@sec-measurement, @sec-fisher-information).
+- Compare A-optimal, D-optimal, and E-optimal criteria (@sec-factor-models-active) for selecting the next comparison to present.
+- Collect real preference data from at least 10 participants (or use a realistic simulator) and measure the reduction in queries needed to reach a target prediction accuracy.
+- Optionally extend to the pairwise setting using the active pair selection framework from @sec-pairwise-active.
+
+**Expected deliverables.** A working interactive system (command-line or web-based) that adaptively selects queries, an empirical evaluation showing query savings relative to random selection, and a manuscript discussing the practical benefits and limitations of active elicitation.
+
+### Project 4: Dueling Bandits for A/B Testing with Preference Feedback (\*\*)
+
+**Description.** Traditional A/B testing compares treatments using scalar metrics (click-through rate, revenue), but in many settings the outcome of interest is a human preference judgment---e.g., "Which UI layout do you prefer?" This project formulates A/B testing as a dueling bandit problem and evaluates whether dueling bandit algorithms can identify the best variant faster than naive round-robin comparisons.
+
+**Suggested methods.**
+
+- Implement at least two dueling bandit algorithms from Chapter 4, such as RUCB or Double Thompson Sampling, targeting different winner concepts (Condorcet vs. Borda, @sec-borda).
+- Define appropriate regret metrics for the A/B testing setting and track cumulative regret over time.
+- Simulate a realistic A/B testing scenario with 5--10 variants and heterogeneous user preferences (using mixture models from @sec-factor-models to generate synthetic users).
+- Compare sample efficiency against uniform random pairing and standard Thompson Sampling (@sec-thompson-sampling) on scalar proxy metrics.
+
+**Expected deliverables.** A manuscript presenting regret curves and sample complexity comparisons, a discussion of which winner concept is most appropriate for A/B testing, and modular code that could be adapted to other dueling bandit applications.
+
+### Project 5: Preferential Bayesian Optimization for Human-in-the-Loop Design (\*\*)
+
+**Description.** Preferential Bayesian Optimization (PBO) enables optimization of complex objectives---such as the taste of a recipe, the aesthetics of a generated image, or the comfort of a robot trajectory---from pairwise human feedback alone. This project applies PBO to a concrete design problem where scalar evaluation is difficult but pairwise comparison is natural.
+
+**Suggested methods.**
+
+- Implement the GP-based PBO framework from Chapter 4, including a Gaussian Process preference model with Laplace approximation (@sec-gp-inference) and an acquisition function (Expected Improvement of the Copeland score or Thompson Sampling).
+- Choose a design domain with a continuous parameter space (e.g., color palettes, font configurations, audio equalization settings, or procedurally generated environments).
+- Collect preference feedback from at least 5 participants and track convergence to their preferred design.
+- Compare PBO against random search and, if a scalar proxy is available, against standard Bayesian Optimization.
+
+**Expected deliverables.** A manuscript reporting convergence rates and user satisfaction, a working PBO system with a human-facing interface, and an analysis of how posterior uncertainty evolves with the number of comparisons.
+
+### Project 6: The DPO-Borda Connection: Empirical Validation on Multi-Annotator Data (\*\*)
+
+**Description.** Chapter 5 establishes a theoretical connection between Direct Preference Optimization and the Borda count (@sec-borda-dpo): DPO finds the policy that maximizes pairwise win rate, i.e., the Borda winner. But does this hold empirically when annotators are heterogeneous and preferences are noisy? This project tests the DPO-Borda connection on real multi-annotator preference data and investigates when the Borda winner diverges from other social choice solutions.
+
+**Suggested methods.**
+
+- Use a publicly available multi-annotator preference dataset (e.g., from Chatbot Arena or similar).
+- Compute the Borda ranking, Condorcet ranking (if it exists), and plurality ranking from raw annotations.
+- Train a DPO model and compare its implicit ranking to each social choice solution.
+- Analyze cases where the rankings diverge: are these cases where annotators have genuinely heterogeneous preferences, or where the data is simply noisy? Use the mixture model framework from @sec-factor-models to test for latent preference clusters.
+
+**Expected deliverables.** A manuscript quantifying the agreement between DPO-implied rankings and classical social choice rankings, an analysis of when and why they diverge, and reproducible code for all experiments.
+
+### Project 7: Auditing a Preference Learning Pipeline for Compounding Bias (\*\*)
+
+**Description.** Chapter 6 demonstrates that small biases at each stage of the preference learning pipeline---elicitation, learning, aggregation, decision---can compound into large disparities (@sec-compounding-unfairness). This project operationalizes that insight by constructing a complete pipeline simulation, injecting realistic biases at each stage, and measuring how they interact.
+
+**Suggested methods.**
+
+- Build a simulated preference learning pipeline following the four-stage framework ($\mathcal{E} \to \mathcal{L} \to \mathcal{A} \to \mathcal{D}$) from @sec-pipeline.
+- Model two or more user groups with different base rates of participation, different noise levels, and different preference distributions.
+- At each pipeline stage, introduce a specific bias mechanism: (1) undersampling a group in elicitation (@sec-elicitation-fairness), (2) IIA misspecification for context-dependent preferences (@sec-learning-assumptions), (3) volume-weighted aggregation (@sec-aggregation-fairness), and (4) liberal vs. illiberal decision-making (@sec-liberal-illiberal).
+- Measure group-level disparities in recommendation quality at the pipeline output, and decompose total disparity into contributions from each stage.
+
+**Expected deliverables.** A manuscript with a bias decomposition showing how much each pipeline stage contributes to overall unfairness, concrete recommendations for which stage to prioritize when mitigating bias, and a reusable simulation framework.
+
+### Project 8: Mechanism Design for Incentive-Compatible Preference Elicitation (\*\*\*)
+
+**Description.** When users have strategic incentives---e.g., inflating ratings to influence recommendations, or misreporting preferences in a voting system---naive preference elicitation produces biased data. This project designs and evaluates an incentive-compatible mechanism for a specific preference learning application, drawing on the mechanism design framework from Chapter 5 (@sec-mechanism-design).
+
+**Suggested methods.**
+
+- Choose a concrete setting where strategic misreporting is plausible (e.g., peer review, course evaluation, or collaborative filtering).
+- Design a mechanism that incentivizes truthful reporting, building on VCG mechanisms or peer prediction from @sec-mechanism-design.
+- Prove or empirically demonstrate the mechanism's incentive compatibility properties.
+- Simulate strategic agents using a mixture of truthful and strategic types, and compare preference estimation quality under your mechanism vs. naive elicitation.
+- Analyze the mechanism's efficiency cost (the "price of incentive compatibility") relative to a setting with truthful agents.
+
+**Expected deliverables.** A manuscript with a formal mechanism description, theoretical analysis of incentive properties, simulation results comparing truthful vs. strategic settings, and implementation code. If applicable, include a discussion of how the mechanism interacts with the fairness considerations from Chapter 6 (@sec-design-principles).
+
+### Project 9: Cooperative Inverse Reinforcement Learning for Interactive Preference Learning (\*\*\*)
+
+**Description.** The CIRL framework from Chapter 4 models preference learning as a cooperative game between a human and an agent, where the agent's actions serve both to accomplish tasks and to elicit information about the human's reward function. This project implements a CIRL-style agent in a simplified domain and studies how cooperative interaction compares to passive preference observation.
+
+**Suggested methods.**
+
+- Define a gridworld or simple continuous environment where a human has a latent reward function over outcomes.
+- Implement a CIRL agent that maintains a belief over reward functions and selects actions to jointly maximize expected reward and information gain, following the framework from Chapter 4.
+- Compare against (1) a passive agent that observes demonstrations and infers preferences via inverse reinforcement learning, and (2) an active agent that can ask explicit comparison queries (@sec-active-learning).
+- Measure convergence rate to the true reward function, cumulative regret, and the human's perceived interaction quality (if using human participants) or simulated interaction cost.
+
+**Expected deliverables.** A manuscript presenting the CIRL formulation for your domain, regret comparisons across the three approaches, an analysis of when cooperative interaction provides the most benefit (e.g., ambiguous rewards, high-dimensional preference spaces), and well-documented code.
+
+### Project 10: Pluralistic Alignment---Learning and Serving Multiple Preference Models (\*\*\*)
+
+**Description.** Most preference learning systems collapse diverse human preferences into a single aggregate model. Drawing on Arrow's Impossibility Theorem (@sec-aggregation), the DPO-Borda connection (@sec-borda-dpo), and the fairness framework of Chapter 6, this project explores an alternative: learning *multiple* preference models that represent distinct value systems, and allowing users or institutions to choose among them.
+
+**Suggested methods.**
+
+- Start with a multi-annotator preference dataset and fit a mixture model to discover latent preference clusters (@sec-factor-models, @sec-bayesian).
+- Train separate DPO or reward models for each cluster and evaluate whether cluster-specific models outperform a single aggregate model on within-cluster prediction accuracy.
+- Investigate the social choice properties of the cluster-level approach: does serving cluster-specific models avoid Arrow-style impossibilities? Under what conditions does it introduce new fairness concerns (e.g., stereotype reinforcement)?
+- Design a user-facing mechanism for selecting among preference models, and evaluate whether users can meaningfully choose the model that best represents their values.
+
+**Expected deliverables.** A manuscript with (1) evidence that latent preference clusters exist in real data, (2) a comparison of pluralistic vs. aggregate alignment, (3) a discussion of the fairness trade-offs involved, and (4) code for cluster discovery, model training, and evaluation. This project connects nearly every chapter of the book and is suitable for an ambitious team.
+
+## A Practitioner's Checklist
+
+For readers building preference learning systems in practice, we distill the book's lessons into a checklist of questions to address at each stage of system development.
+
+**Data Collection (Chapters 1, 3)**
+
+- What type of preference data will you collect? Pairwise comparisons, rankings, ratings, or natural language? Each carries different assumptions and failure modes.
+- Who are your annotators, and how are they incentivized? Piece-rate compensation can introduce the fatigue and speed-accuracy tradeoffs that create the inversion problem (Chapter 5, @sec-inversion).
+- Are you using active query selection? If human feedback is expensive, the Fisher information framework (Chapter 3) can substantially reduce the number of comparisons needed.
+- Have you considered position bias, framing effects, and other presentation artifacts that violate IIA?
+
+**Modeling (Chapters 1, 2)**
+
+- Is Bradley-Terry appropriate for your setting, or do you need richer models? If your population is heterogeneous, consider mixture models or factor models from Chapter 1.
+- Are you quantifying uncertainty? Point estimates (MLE) are fast but miss the posterior information needed for downstream decision-making. The Laplace approximation provides a practical middle ground.
+- How are you evaluating your model? Use multiple metrics—AUC for ranking, calibration error for probabilistic predictions, and subgroup analysis for fairness (Chapter 6).
+- Is your model regularized appropriately? Too little regularization overfits to noisy preferences; too much shrinks all utilities toward zero.
+
+**Decision-Making (Chapter 4)**
+
+- Are you in a measurement setting (reduce uncertainty) or a reward maximization setting (manage uncertainty)? The choice determines whether elicitation (Chapter 3) or bandit/optimization methods (Chapter 4) are appropriate.
+- If optimizing sequentially, how are you balancing exploration and exploitation? Thompson Sampling provides a principled default.
+- What is your winner concept? Condorcet, Borda, and von Neumann winners can diverge—the choice encodes assumptions about what "best" means.
+
+**Aggregation and Fairness (Chapters 5, 6)**
+
+- Whose preferences are included, and whose are excluded? Convenience sampling overrepresents easily-reached populations.
+- How are you aggregating across annotators? Majority vote selects the Borda winner (Chapter 5, @sec-borda-dpo)—is that what you want?
+- Have you audited for compounding unfairness? Small biases at each pipeline stage can multiply through feedback loops (Chapter 6).
+- Are your value tradeoffs explicit and documented? If not, they are implicit and unaccountable.
+
+**Deployment and Monitoring**
+
+- Are you monitoring subgroup performance over time, not just aggregate metrics?
+- Do you have a plan for preference drift? User preferences and societal norms change; static models decay.
+- Is there a mechanism for users to contest or correct the system's preference model?
+- Have you considered the system's role as a choice architect—how the options you present shape the preferences you observe?
+
+## Scope and Limitations
+
+This book has deliberately focused on the mathematical and algorithmic foundations of preference learning, and several important topics lie outside its scope.
+
+**Cognitive science of preference formation.** We model preferences as given—either as fixed utilities or as draws from a distribution—without deeply examining how humans form preferences in the first place. The rich literature on bounded rationality, heuristics and biases, and constructed preferences suggests that human choice is more complex than any random utility model captures. Readers interested in these foundations should consult the work of Kahneman, Tversky, Slovic, and their successors.
+
+**Large-scale systems engineering.** The algorithms in this book are presented at a scale suitable for understanding and experimentation. Production preference learning systems at major technology companies handle billions of data points, thousands of annotators, and models with billions of parameters. The engineering challenges of distributed training, data pipeline management, annotation quality control, and real-time serving are substantial but largely orthogonal to the algorithmic questions we address.
+
+**Legal and regulatory frameworks.** The deployment of preference learning systems increasingly intersects with privacy regulation (GDPR's right to explanation, data minimization), anti-discrimination law, and sector-specific oversight (healthcare, finance, education). These legal dimensions shape what data can be collected, how it can be used, and what accountability mechanisms must be in place. We have touched on related ethical considerations in Chapter 6, but a thorough treatment of the regulatory landscape is beyond our scope.
+
+**Multi-modal and embodied preferences.** This book focuses primarily on preferences over discrete items or text responses. Preferences in robotics (over trajectories), in design (over visual layouts), and in multi-modal settings (over combinations of text, images, and audio) raise additional challenges that we have only briefly touched upon.
 
 ## Final Thought
 
