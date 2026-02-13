@@ -34,15 +34,6 @@ filters:
   - pyodide
 ---
 
-::: {.content-visible when-format="html"}
-
-<iframe
-  src="../slides/chap3.html"
-  style="width:90%; height:450px;"
-></iframe>
-[Fullscreen](../slides/chap3.html){.btn .btn-outline-primary .btn role="button"}
-
-:::
 
 ::: {.callout-note}
 ## Intended Learning Outcomes
@@ -264,6 +255,10 @@ print(f"Final Rel. | Random: {rel_rnd[-1]:.3f}  | Fisher: {rel_act[-1]:.3f}")
 Fisher-active item selection achieves higher reliability with fewer queries than random selection. The gain comes from targeting items near $p=0.5$, where each response is maximally informative. This principle---**measure where uncertainty is highest**---underlies all active learning methods in this chapter.
 :::
 
+::: {.callout-warning title="Assumption: Known Item Parameters"}
+The Fisher information framework above assumes item parameters ($V_j$, $Z_j$) are **known or pre-calibrated** before elicitation begins. In practice, item parameters must often be estimated jointly with user preferences---this is the **cold-start problem** in recommender systems. When item parameters are uncertain, errors in item calibration propagate into suboptimal query selection: the system may ask about items it *thinks* are informative but are not. Joint estimation of user and item parameters requires different approaches, such as alternating optimization or fully Bayesian models that maintain uncertainty over both.
+:::
+
 ### Factor Models: Multi-Dimensional Preferences {#sec-factor-models-active}
 
 In practice, a single "ability" parameter may not capture the diversity of user preferences. Factor models generalize Rasch by giving each user a $K$-dimensional embedding $U_i \in \mathbb R^K$ and each item a $K$-dimensional embedding $V_j \in \mathbb R^K$, plus optional bias $Z_j$. The linear predictor is $H_{ij} = U_i^\top V_j + Z_j$ where $p(Y_{ij}=1 \mid U_i, V_j, Z_j) = \sigma(H_{ij}).$
@@ -278,6 +273,10 @@ $$
 $$ {#eq-factor-fisher-info}
 So each queried item contributes a rank-1 matrix in the direction of $V_j$, scaled by the variance term $\sigma(H)(1-\sigma(H))$. For a sequence of items ${j_t}$, the cumulative information is
 $$\mathcal I(U) = \sum_t \sigma(H_{j_t})(1-\sigma(H_{j_t})) V_{j_t} V_{j_t}^\top.$$ {#eq-cumulative-fisher-info}
+
+::: {.callout-warning title="Assumption: Correct Model Specification"}
+Fisher information quantifies the informativeness of a query **under the assumed model**. If the model is misspecified---for example, if preferences are not logistic, or if the factor structure has the wrong dimensionality $K$---then queries optimized for the Fisher criterion may not be optimal for learning the true preference structure. Under misspecification, information-theoretic criteria such as mutual information or Bayesian approaches that integrate over model uncertainty can be more robust. In practice, it is worth checking sensitivity to the assumed model by comparing active learning performance across different model specifications.
+:::
 
 In multiple dimensions, information is a matrix. Classical optimal design offers various criteria for selecting informative queries:
 
@@ -428,6 +427,10 @@ This follows from the matrix determinant lemma: $\det(A + uv^\top) = (1 + v^\top
 :::
 
 Pick the pair that maximizes $\log(1 + w x^\top\Sigma x)$. This requires only a vector-matrix-vector product, making it efficient for online selection.
+
+::: {.callout-warning title="Myopic vs. Non-Myopic Query Selection"}
+The D-optimal (and A/E-optimal) criteria above are **greedy**: they select each query to maximize the *immediate* information gain, without considering how the current query affects future query opportunities. The optimal policy would look ahead over a budget of $T$ queries and select the sequence that maximizes total information. In practice, the greedy approach works well when queries are roughly exchangeable, but it can perform poorly in **batch selection** settings (selecting multiple queries simultaneously) because it ignores redundancy---two individually informative queries may provide overlapping information. Batch extensions typically add diversity mechanisms, such as penalizing queries whose feature vectors $V_j - V_k$ are correlated with already-selected pairs.
+:::
 
 * A-optimal (trace drop of covariance): $\Delta_A(j,k);=;\mathrm{tr}(\Sigma)-\mathrm{tr}\big((\Lambda+w,xx^\top)^{-1}\big)
   = \frac{w,x^\top\Sigma^2 x}{1+w,x^\top\Sigma x}.$
@@ -1161,6 +1164,10 @@ The **Active DPO (ADPO)** algorithm applies D-optimal design to select preferenc
 **Return:** Final policy $\pi_{\theta_T}$
 :::
 
+::: {.callout-warning title="When the Log-Linear Policy Assumption Fails"}
+ADPO's theoretical guarantees rely on the **log-linear policy assumption**: that $\log \pi_\theta(y \mid x)$ is approximately linear in $\theta$, which holds in the neural tangent kernel (NTK) regime near the reference policy. This approximation degrades when: (1) the policy is fine-tuned **far from the reference** (large $\|\theta - \theta_{\text{ref}}\|$), (2) the model is **small** relative to the data complexity so the NTK regime does not hold, or (3) the loss landscape is **highly non-convex** with multiple basins. In these settings, the Fisher information computed under the log-linear assumption may poorly reflect the actual curvature of the loss, leading to suboptimal query selection. Practitioners should monitor whether the D-optimal gains predicted by the linear model correlate with actual improvements in policy quality.
+:::
+
 ### Theoretical Guarantees
 
 Under standard regularity conditions, ADPO achieves the following convergence rate:
@@ -1261,6 +1268,18 @@ If you read only five papers from this chapter's references, make them these:
 7. Foundation models like R3M and Voltron leverage pretraining on human video data. What types of robotic tasks might benefit most from this approach? What tasks might still require substantial robot-specific data?
 
 8. The active elicitation framework for imitation learning identifies "compatible" demonstrations. How might this concept of compatibility be extended to multi-agent settings where different agents have legitimately different optimal behaviors?
+
+## Further Reading
+
+For readers who want to go deeper into the topics introduced in this chapter, we recommend the following:
+
+- **@fedorov1972theory**, *Theory of Optimal Experiments* — The classical reference on A/D/E-optimal experimental design, providing the mathematical foundations for the Fisher information-based query selection methods used throughout this chapter.
+- **@chaloner1995bayesian**, "Bayesian Experimental Design: A Review" — A unified information-theoretic approach to experimental design that extends the Fisher information framework to Bayesian settings, including mutual information-based criteria that are robust to model misspecification.
+- **@settles2012active**, *Active Learning* — A comprehensive survey of active learning, covering pool-based, stream-based, and query-synthesis approaches. Places the preference elicitation methods in this chapter within the broader active learning literature.
+- **@van2010elements**, *Elements of Adaptive Testing* — How Fisher information drives modern standardized testing (GRE, GMAT), providing the practical context for the Rasch model-based elicitation methods discussed in this chapter.
+- **@houlsby2011bayesian**, "Bayesian Active Learning for Classification and Preference Learning" — Introduces the BALD (Bayesian Active Learning by Disagreement) acquisition function, an information-theoretic alternative to D-optimal design that works well with GP models.
+- **@sadigh2017active**, "Active Preference-Based Learning of Reward Functions" — Active query selection for robot trajectory preferences, demonstrating how the Fisher information framework applies to continuous, high-dimensional preference learning in robotics.
+- **@pmlr-v89-hiranandani19a**, "Multiclass Performance Metric Elicitation" — The paper behind the metric elicitation case study, showing how active preference queries can recover a practitioner's implicit loss function for classifier evaluation.
 
 ## Exercises
 

@@ -1,0 +1,38 @@
+---
+title: Teaching Materials
+format: html
+---
+
+This page collects resources for instructors using *Machine Learning from Human Preferences* in their courses. The materials below were developed for Stanford's CS329H but can be adapted to courses of varying length and focus.
+
+## Lecture Slides
+
+Each chapter has an accompanying slide deck in RevealJS format.
+
+| Chapter | Topic | Slides |
+|:--------|:------|:-------|
+| Introduction | Overview and motivation | [Slides](../slides/chap0.html) |
+| Chapter 1 | Foundations | [Slides](../slides/chap1.html) |
+| Chapter 2 | Learning | [Slides](../slides/chap2.html) |
+| Chapter 3 | Elicitation | [Slides](../slides/chap3.html) |
+| Chapter 4 | Decisions | [Slides](../slides/chap4.html) |
+| Chapter 5 | Aggregation | [Slides](../slides/chap5.html) |
+| Chapter 6 | Whose? | [Slides](../slides/chap6.html) |
+
+## Problem Sets
+
+| Problem Set | Topics |
+|:------------|:-------|
+| [Problem Set 1](psets/pset1.html) | Foundations |
+| [Problem Set 2](psets/pset2.html) | Learning |
+| [Problem Set 3](psets/pset3.html) | Elicitation |
+| [Problem Set 4](psets/pset4.html) | Decisions |
+
+## Suggested Course Pathways
+
+The book supports several course configurations depending on audience and length. Chapter 1 is foundational to all pathways.
+
+- **Applied AI** (e.g., early graduate ML course): Chapters 1, 2, and 4.
+- **Discrete choice and economics**: Skim Chapter 1, then Chapters 2 and 4.
+- **Deep learning focus**: Chapters 2--4.
+- **Computation and society**: Chapters 1, 5, and 6.

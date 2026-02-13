@@ -1,16 +1,7 @@
 # Introduction {.unnumbered #sec-intro}
 
-::: {.content-visible when-format="html"}
 
-<iframe
-  src="slides/chap0.html"
-  style="width:50%; height:250px;"
-></iframe>
-[Fullscreen Slide](slides/chap0.html){.btn .btn-outline-primary .btn role="button"}
-
-:::
-
-Machine learning is increasingly shaping various aspects of our lives, from education and healthcare to scientific discovery. A key challenge in developing trustworthy intelligent systems is ensuring they align with human preferences. Learning from human feedback offers a promising solution to this challenge. This book introduces the foundations and practical applications of machine learning from human preferences. Instead of manually predefining the learning goal, the book presents preference-based learning that incorporates human feedback to guide the learning process, drawing insights from related fields such as economics, psychology, and human-computer interaction. By the end of this book, readers will be equipped with the key concepts and tools needed to design systems that effectively align with human preferences. 
+Machine learning is increasingly shaping various aspects of our lives, from education and healthcare to scientific discovery. A key challenge in developing trustworthy intelligent systems is ensuring they align with human preferences. Learning from human feedback offers a promising solution to this challenge. This book introduces the foundations and practical applications of machine learning from human preferences. Instead of manually predefining the learning goal, the book presents preference-based learning that incorporates human feedback to guide the learning process, drawing insights from related fields such as economics, psychology, and human-computer interaction. Throughout, we emphasize not only the methods themselves but also their assumptions, limitations, and the conditions under which they can and cannot be applied---understanding when a model fails is as important as understanding when it works. By the end of this book, readers will be equipped with the key concepts and tools needed to design systems that effectively align with human preferences. 
 
 The book is intended for researchers, practitioners, and students who are interested in integrating machine learning with human-centered application. We assume some basic knowledge of probability and statistics, but provides sufficient background and references for the readers to follow the main ideas. The book also provides illustrative program examples and datasets. The field of machine learning from human preference is a vibrant area of research and practice with many open challenges and opportunities, and we hope that this book will inspire readers to further explore and advance this exciting field.
 
@@ -53,11 +44,30 @@ There are four models of reading, and teaching with, this book. Chapter 1 is fou
 
  - For those interested in the societal and theoretical foundations of machine learning from comparisons, we recommend Chapters 1, 5, and 6. Chapter 1 establishes the modeling foundations, Chapter 5 studies aggregation and mechanism design, and Chapter 6 examines fairness and value alignment. This pathway is suitable for a course on Computation and Society.
 
+## For instructors
+
+This book is designed to support course instruction, and each chapter includes lecture plan callouts with suggested timing. A few notes for instructors adopting this book:
+
+- **Pacing**: The book can be covered in a 10-week quarter (as in Stanford's CS329H) or a 15-week semester. For a quarter: allocate approximately 2 weeks each for Chapters 1--2, 1.5 weeks for Chapter 3, 2.5 weeks for Chapter 4, and 1 week each for Chapters 5--6. For a semester, expand each chapter proportionally.
+- **Core vs. optional material**: The "Beyond Bradley-Terry" sections in Chapter 1 and the RL foundations section in Chapter 4 (marked "Optional") can be skipped without loss of continuity. All other material is core.
+- **Assumptions and limitations**: Throughout the book, callout boxes marked with warnings highlight key assumptions and their limitations. We encourage instructors to treat these as first-class content---understanding when models fail is as pedagogically important as understanding when they work.
+- **Cross-chapter connections**: Several results connect across chapters in non-obvious ways: Elo is SGD on the Bradley-Terry likelihood (Ch1--2); DPO implicitly optimizes the Borda score (Ch2--5); Fisher information drives both active learning (Ch3) and fairness auditing (Ch6). Emphasizing these connections reinforces the book's unified perspective.
+- **Assessment**: Each chapter includes exercises at three difficulty levels, discussion questions for class participation, and quick check questions for self-assessment. Problem sets are available on the [Teaching Materials](src/teaching.qmd) page.
+
 ## Prior knowledge
 The book assumes knowledge of the fundamentals of statistics, linear algebra and machine learning. Many example code excerpts are written in `python`, and make experience in the `python` programming language valuable for readers.
 
+## Recommended background texts
+
+For readers seeking to strengthen their prerequisites or deepen their understanding of the fields this book draws from, we recommend the following companion texts:
+
+- **Abu-Mostafa, Magdon-Ismail, and Lin**, [*Learning from Data*](https://amlbook.com/) — An exceptionally clear introduction to the core ideas of machine learning, emphasizing generalization, bias-variance tradeoffs, and the limits of learning from finite data. Ideal preparation for the statistical learning concepts in Chapters 2--4.
+- **Bishop**, [*Pattern Recognition and Machine Learning*](https://www.microsoft.com/en-us/research/publication/pattern-recognition-machine-learning/) — Comprehensive coverage of Gaussian processes, Bayesian inference, and logistic regression, all of which appear throughout this book.
+- **Russell and Norvig**, [*Artificial Intelligence: A Modern Approach*](https://aima.cs.berkeley.edu/) — The standard AI textbook, providing context for the reinforcement learning and decision-making concepts in Chapter 4.
+- **Sen**, [*Collective Choice and Social Welfare*](https://www.cambridge.org/core/books/machine-learning/621D3E616DF879E494B094CC93ED36A4) — For readers wanting depth in social choice theory and welfare economics before Chapter 5, Sen's classic text provides the rigorous foundations.
+
 ## Additional Materials
-Every chapter has problems for readers and slides for teaching of the material available. They are available on the [book's website](https://mlhp.stanford.edu).
+Every chapter has problems for readers and slides for teaching of the material available. See the [Teaching Materials](src/teaching.qmd) page for all slides, problem sets, and suggested course pathways.
 
 ## Acknowledgments {#sec-ack}
 

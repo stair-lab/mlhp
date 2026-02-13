@@ -146,6 +146,7 @@ book:
     - src/chap5.qmd
     - src/chap6.qmd
     - src/chap7.qmd
+    - src/teaching.qmd
   appendices:
     - src/notation.qmd
     - src/glossary.qmd

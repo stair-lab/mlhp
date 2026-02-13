@@ -34,16 +34,6 @@ filters:
   - pyodide
 ---
 
-::: {.content-visible when-format="html"}
-
-<iframe
-  src="../slides/chap1.html"
-  style="width:90%; height:450px;"
-></iframe>
-[Fullscreen Slides](../slides/chap1.html){.btn .btn-outline-primary .btn role="button"}
-
-:::
-
 
 ::: {.callout-note}
 ## Intended Learning Outcomes
@@ -63,6 +53,12 @@ By the end of this chapter you will be able to:
 - **Diagnose** two key limitations of IIA—population heterogeneity (mixture models) and the *red-bus/blue-bus* cloning problem—and **motivate** richer models with correlated utility shocks.
 - **Explain** why *Gaussian Processes (GPs)* provide a flexible nonparametric alternative to linear reward models, and identify when GPs are preferred over parametric approaches.
 
+:::
+
+::: {.callout-tip title="Video Overview" collapse="false"}
+A visual tour of the key concepts in this chapter — from response matrices and the Rasch model to Bradley-Terry, IIA, and Gaussian process preference models.
+
+{{< video ../animations/ch1/chapter1_narrated.mp4 >}}
 :::
 
 *A consolidated table of mathematical notation used throughout this book is provided in the [Mathematical Notation](notation.qmd) appendix.*
@@ -197,6 +193,10 @@ In the following, we consider randomness as generated from a *decision-maker* wh
 One might wonder why we need to have a random preference. Deterministic preferences are conceptually helpful constructs and are used broadly in the fields of Consumer theory (e.g., @mas1995microeconomic). However, they suffer when bringing them to data, as data is inherently noisy.
 
 Even when allowing for randomness, assumptions we will impose in this chapter---transitivity and the Independence of Irrelevant Alternatives---are strong yet practical. In many situations they will fail, for good reasons: humans cannot always clearly rank alternatives, their choices may reflect cultural norms, or they might exhibit self-control problems. These limitations of classical preference models will be discussed in later chapters. Until then, we will make full use of learning stochastic preferences.
+
+::: {.callout-warning title="Assumption: Totality and Its Limits"}
+Totality assumes that for every pair of items, the decision-maker can express a preference (or indifference). In practice, humans often have **genuinely incomplete preferences**: they may lack the expertise to compare two items, the items may differ along incommensurable dimensions (e.g., helpfulness vs. safety in LLM responses), or the cognitive load of comparison may be too high. Forcing a total order on such preferences introduces noise that is not well-captured by random utility models---it is not randomness in preference, but absence of preference. Models that allow for incomparability (partial orders) exist but require substantially different estimation approaches; see Chapter 7 for open challenges.
+:::
 
 ## Types of Comparison Data
 There are different types of comparison data we may observe. We can relate them back to the population preferences $\prec$.
@@ -428,6 +428,10 @@ Factor models are the foundation of modern recommender systems:
 
 We defer *learning* factor model parameters to Chapter 3, but understanding their structure is essential for modeling preference data.
 
+::: {.callout-warning title="Limitations of Linear Factor Models"}
+The factor model $H_{ij} = U_i^\top V_j + Z_j$ assumes utility is a **linear function** of latent embeddings. This means it cannot capture interactions between feature dimensions---for instance, a user who values both "conciseness" and "formality" independently, but dislikes responses that are both concise *and* formal. More generally, dot-product models impose a monotonic relationship along each latent dimension. Nonlinear alternatives (such as the ideal point model $H_{ij} = -\|U_i - V_j\|_2 + Z_j$ or neural network scoring functions) can capture richer preference structures, but at the cost of identifiability and computational complexity. The Gaussian Process models introduced later in this chapter provide a flexible nonparametric alternative.
+:::
+
 ::: {.callout-important title="Key Takeaway: The Latent Variable View"}
 The latent variable view extends preference models to handle user heterogeneity:
 
@@ -644,6 +648,10 @@ These interpretations explain **why** one might model utilities as stochastic ($
 
 The interpretation will guide our decision-making predictions in Chapters 4 and 5.
 
+::: {.callout-important title="Which Noise Interpretation Matters for Practice"}
+The choice of noise interpretation is not merely philosophical---it determines **what conclusions can be drawn from data**. Under the *heterogeneity* view, observing that item $j$ is chosen more often than $j'$ implies a majority of the population prefers $j$. Under the *bounded rationality* view, the same observation may reflect systematic decision errors rather than genuine preference, so one cannot directly conclude that $j$ is truly preferred. Under the *designer belief* view, the data updates a prior, and conclusions are conditional on the prior specification. When building systems that act on learned preferences (Chapters 4--6), the interpretation determines whether the system should optimize for the most-chosen item (heterogeneity), correct for decision errors (bounded rationality), or maintain uncertainty (Bayesian designer).
+:::
+
 We next introduce a main way to simplify learning utility functions: The axiom of Independence of Irrelevant Alternatives.
 
 ## Independence of Irrelevant Alternatives {#sec-iia}
@@ -671,6 +679,10 @@ $$ {#eq-gumbel-iia-proof}
 This ratio depends only on $V_j - V_k$ and is independent of other alternatives in $\mathcal{S}$, so IIA holds.
 
 **(⇒) IIA implies Gumbel.** The converse is more subtle: one must show that IIA together with regularity (adding alternatives cannot increase choice probability) uniquely determines the Gumbel distribution. The key insight is that IIA forces a multiplicative structure on choice probabilities, and the only continuous distributions compatible with this structure are the extreme value distributions. See @yellott1977relationship for the complete proof.
+:::
+
+::: {.callout-warning title="Gumbel vs. Gaussian Noise: Logit vs. Probit"}
+The IIA-Gumbel equivalence shows that *only* Gumbel noise produces IIA-satisfying models (logit/softmax). Gaussian noise yields the **probit** model, which does *not* satisfy IIA---the relative probability of choosing $j$ over $k$ can change when a third alternative $\ell$ is added. In practice, the logit and probit models produce nearly identical predictions for binary comparisons, since the logistic and normal CDFs are close (after rescaling). The difference matters primarily for **multi-way choices**: the probit model allows for correlated utilities across alternatives (via a covariance matrix on $\varepsilon$), enabling richer substitution patterns. For most preference learning applications with pairwise data, the choice between logit and probit is empirically inconsequential; for choice sets with many similar alternatives, the probit's flexibility can be important.
 :::
 
 ::: {.callout-note title="Connection to Latent Variable Models"}
@@ -1122,45 +1134,6 @@ These extensions are active areas of research in machine learning from human pre
 
 The next chapter is the first to study learning of average utility functions from preference data, and assumes that a dataset is given of utility vectors $(V_j)_{j=1}^M$ for different types of sampling and for different notions of "inference".
 
-| Notation | Meaning | Domain / Type |
-|---|---|---|
-| $M$ | Number of items | $\mathbb{N}$ |
-| $j, j', k$ | Item indices | $\{1, \ldots, M\}$ |
-| $0$ | Outside ("no-choice") option index | Reference item |
-| $\prec$ / $\succ$ | Weak preference relation / its strict part | Binary relation on items |
-| $L=(j_1,\dots ,j_M)$ | Full ranking (preference list) | Permutation of items |
-| $(j, \mathcal{S})$ | Observation that $j$ is chosen from subset $\mathcal{S}$ | $j \in \mathcal{S} \subseteq \{1,\ldots,M\}$ |
-| $Y_{jj'}$ | Binary preference outcome ($j$ vs $j'$) | $\{0, 1\}$ |
-| $i$ | User/context index | $\{1, \ldots, N\}$ |
-| $N$ | Number of users | $\mathbb{N}$ |
-| $x$ | Context/prompt (in LLM setting) | Input space |
-| $y, y_w, y_l$ | Responses (winning/losing in preference data) | Output space |
-| $\pi_\theta$ | Policy (language model) parameterized by $\theta$ | Distribution over outputs |
-| $\pi_{\text{ref}}$ | Reference policy | Distribution over outputs |
-| $r(x, y)$ | Reward function | $\mathbb{R}$ |
-| $U_i$ | User embedding/appetite | $\mathbb{R}^K$ |
-| $V_j$ | Item loading/appeal | $\mathbb{R}^K$ (or $\mathbb{R}$ when $K=1$) |
-| $Z_j$ | Item offset | $\mathbb{R}$ |
-| $H_{ij}$ | Latent utility for user $i$, item $j$ | $\mathbb{R}$ |
-| $H_j$ | Latent utility (single-user case) | $\mathbb{R}$ |
-| $\varepsilon_j$ | Stochastic utility shock for item $j$ | $\mathbb{R}$ (i.i.d.) |
-| $p(\cdot)$ | Probability | $[0,1]$ |
-| $p(j \mid \mathcal{S})$ | Logit/Plackett-Luce choice probability of $j$ from $\mathcal{S}$ | $[0,1]$ |
-| $\sigma(x)$ | Sigmoid $1/(1+e^{-x})$ | $(0,1)$ |
-| $d$ | Dimensionality of feature vectors | $\mathbb{N}$ |
-| $\boldsymbol{x}_j \in\mathbb{R}^{d}$ | Feature vector of item $j$ | $\mathbb{R}^{d}$ |
-| $\text{Ackley}(\boldsymbol{x})$ | Ackley test-function value | $\mathbb{R}$ |
-| $a,b,c$ | Ackley parameters | Scalars |
-| $\alpha_i$ | Population weight of subgroup $i$ | $(0,1)$ with $\sum_i\alpha_i=1$ |
-| $\beta$ | Random-coefficients vector in linear RUM / KL penalty in DPO | $\mathbb{R}^{d}$ or $\mathbb{R}^+$ |
-| $\Sigma$ | Covariance matrix of $\beta$ | $\mathbb{R}^{d\times d}$ |
-| $\mathcal{GP}(m, k)$ | Gaussian Process with mean $m$ and kernel $k$ | Distribution over functions |
-| $k(x, x')$ | Kernel (covariance) function | $\mathbb{R}$ |
-| $\ell$ | Length-scale parameter in RBF kernel | $\mathbb{R}^+$ |
-| $\sigma_f^2$ | Signal variance in GP kernel | $\mathbb{R}^+$ |
-
-: **Table 1 — Notation used in Chapter "Foundations of Preference Modeling".** {#tbl-notation}
-
 ## Summary
 
 - Preference data pervades machine learning---from recommender systems and information retrieval to robotics and language model alignment---and this chapter provides the unified probabilistic foundation for modeling it.
@@ -1230,6 +1203,18 @@ If you read only five papers from this chapter's references, make them these:
 4. **@bradley1952rank** — The Bradley-Terry model for paired comparison ranking
 5. **@rafailov2023direct** — DPO: the modern connection between Bradley-Terry and LLM alignment
 :::
+
+## Further Reading
+
+For readers who want to go deeper into the topics introduced in this chapter, we recommend the following:
+
+- **@train2009discrete**, *Discrete Choice Methods with Simulation* — The definitive graduate textbook on random utility models, covering mixed logit, simulation-based estimation, and welfare analysis. Essential for understanding the econometric foundations of preference models.
+- **@luce1959individual**, *Individual Choice Behavior* — Luce's original monograph developing the choice axiom (IIA) from first principles. Remarkably clear and still relevant 65 years later.
+- **@kahneman2011thinking**, *Thinking, Fast and Slow* — The essential reference on bounded rationality and systematic deviations from utility maximization, providing context for why the rational choice models in this chapter are useful approximations but not complete descriptions of human behavior.
+- **@cattelan2012models**, "Models for Paired Comparison Data: A Review with Emphasis on Dependent Data" — A comprehensive survey of Bradley-Terry extensions, including models for ties, home advantage, and time-varying abilities.
+- **@chu2005preference**, "Preference Learning with Gaussian Processes" — The foundational paper on GP-based preference learning that underpins the nonparametric models in this chapter and the active learning methods in Chapter 3.
+- **@mcfadden2000disaggregate**, "Disaggregate Behavioral Travel Demand's RUM Side" — McFadden's own retrospective on discrete choice theory, including the limitations of IIA and the development of mixed logit as an IIA-relaxing alternative.
+- **@ben1985discrete**, *Discrete Choice Analysis* — An accessible introduction to discrete choice models, emphasizing applications in transportation and marketing that motivated much of the theory.
 
 ## Exercises
 Exercises are marked with difficulty levels: (\*) for introductory, (\*\*) for intermediate, and (\*\*\*) for challenging.

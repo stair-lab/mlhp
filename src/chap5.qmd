@@ -34,15 +34,6 @@ filters:
   - pyodide
 ---
 
-::: {.content-visible when-format="html"}
-
-<iframe
-  src="../slides/chap5.html"
-  style="width:90%; height:450px;"
-></iframe>
-[Fullscreen Slides](../slides/chap5.html){.btn .btn-outline-primary .btn role="button"}
-
-:::
 
 ::: {.callout-note}
 ## Intended Learning Outcomes
@@ -292,6 +283,10 @@ Arrow's Impossibility Theorem [@arrow1951] is a cornerstone of social choice the
 Arrow's theorem applies specifically to **social welfare functions** that produce a complete ranking from ordinal preferences over three or more alternatives. A common misconception is that "all preference aggregation is impossible." In fact, Arrow's theorem does **not** directly apply to (1) cardinal scores (e.g., 1-5 ratings), (2) pairwise comparison models that output partial orders rather than complete rankings, or (3) domains with restricted preferences (e.g., single-peaked preferences, where majority rule is well-behaved). In RLHF, we typically work with cardinal reward models or pairwise Bradley-Terry likelihoods, which sidestep Arrow's specific impossibility — but other impossibilities (Gibbard-Satterthwaite) still constrain what's achievable. The theorem tells us we must **sacrifice at least one axiom**, not that aggregation is hopeless.
 :::
 
+::: {.callout-important title="Ordinal vs. Cardinal: What Escapes Arrow's Theorem"}
+Arrow's theorem applies to **ordinal** aggregation: it constrains rules that take ranked preferences as input. However, when we have **cardinal** utilities---as in Bradley-Terry models, where each item has a numerical score $V_j$---utilitarian aggregation (summing or averaging utilities) is well-defined and not subject to Arrow's impossibility. The catch is **interpersonal comparability**: summing utilities across people assumes that "$V_j = 5$ for Alice" means the same thing as "$V_j = 5$ for Bob," which is a strong and often unjustified assumption. In RLHF, treating all annotators' Bradley-Terry parameters as comparable implicitly makes this assumption. When annotators have different scales or noise levels, naive averaging can systematically favor annotators whose scores have larger variance.
+:::
+
 Arrow's Impossibility Theorem has profound implications: it formalizes the inherent trade-offs in designing any fair aggregation scheme. In practice, different voting rules relax one or more of Arrow’s conditions. For instance, Borda count violates IIA (since introducing or removing an irrelevant alternative can change the point totals), while a dictatorship violates fairness blatantly. The theorem suggests that every practical voting system must sacrifice at least one of the ideal fairness criteria. It also motivated the exploration of alternative frameworks (such as allowing interpersonal comparisons of utility or cardinal preference aggregation) to escape the impossibility by weakening assumptions.
 
 Complementing Arrow’s theorem, the Gibbard–Satterthwaite theorem focuses on incentives and strategic manipulation in voting systems [@gibbard1973; @satterthwaite1975]. It considers any deterministic social choice function $f$ that chooses a single winner from the set of $m\ge 3$ alternatives. The theorem states that if $f$ is strategy-proof (incentive compatible) and onto (its range of outcomes is the entire set of alternatives), then $f$ must be dictatorial. Strategy-proofness (also called truthfulness or dominant-strategy incentive compatibility) means that no voter can ever benefit by misrepresenting their true preferences, regardless of what others do. In other words, reporting their genuine ranking is a (weakly) dominant strategy for each voter. The theorem implies that for any realistic voting rule where every alternative can possibly win, either one voter effectively decides the outcome (a dictatorship) or else the rule is susceptible to strategic manipulation by voters. The Gibbard–Satterthwaite theorem tells us that every non-dictatorial voting rule for 3 or more alternatives is manipulable: there will exist some election scenario where a voter can gain a more preferred outcome by voting insincerely (i.e. not according to their true preferences). For example, in a simple plurality vote, a voter whose true favorite is a long-shot candidate might vote for a more viable candidate to avoid a worst-case outcome (“lesser of two evils” voting). In a Borda count election, voters might strategically raise a competitor in their ranking to push down an even stronger rival. The only way to avoid all such strategic voting incentives is to have a dictatorship or limit the choice set to at most two alternatives.
@@ -322,6 +317,10 @@ The set of all single-peaked preferences on $Y$ is denoted $\text{SP}(Y)$.
 :::
 
 Intuitively, a voter with peak $p$ always prefers alternatives closer to $p$ over alternatives farther from $p$. This rules out preferences like "I prefer the extremes to the middle"—which would create the kind of cycles that drive Arrow's impossibility.
+
+::: {.callout-warning title="When Is Single-Peakedness Reasonable?"}
+Single-peakedness is a powerful escape from impossibility, but it requires alternatives to be ordered along a **single dimension**. This is natural for some settings: budget levels, temperature, or dosage amounts. However, it fails when preferences are inherently **multi-dimensional**---for instance, in LLM alignment, annotators may evaluate responses along multiple axes (helpfulness, harmlessness, conciseness, formality) with different trade-offs, producing multi-peaked preferences. In political settings, the assumption of a one-dimensional left-right spectrum is a simplification that breaks down for cross-cutting issues. Before relying on single-peaked domain restrictions, practitioners should verify that the assumption is empirically supported, for example by checking whether the preference data can be embedded in one dimension with low distortion.
+:::
 
 **Example: Temperature preferences.** Consider three colleagues deciding on the office thermostat setting. The alternatives are temperatures from 65°F to 75°F. Alice prefers 68°F (her peak), with utility decreasing as temperature moves away from 68. Bob prefers 72°F. Carol prefers 70°F. All three have single-peaked preferences on the temperature spectrum.
 
@@ -471,6 +470,10 @@ $$
 :::
 
 In other words, **DPO finds a policy that upweights responses proportionally to their Borda scores**. This provides a social choice interpretation of what DPO is doing: it aggregates pairwise preferences by finding the response that would win the most head-to-head matchups against alternatives drawn from the reference policy.
+
+::: {.callout-warning title="When DPO Does Not Find the Borda Winner"}
+The DPO-Borda equivalence assumes that comparison pairs are **sampled uniformly** from the reference policy and that the Bradley-Terry model is correctly specified. In practice, these assumptions often fail: (1) annotation pipelines may oversample certain response types (e.g., longer or more controversial outputs), creating **non-uniform pair sampling** that changes the implicit social choice rule; (2) different annotator pools have different preference distributions, so the effective Borda score depends on *who* annotates *which* pairs; (3) if the Bradley-Terry model is misspecified (e.g., preferences are intransitive or context-dependent), the DPO objective no longer corresponds to any clean social choice rule. Practitioners should be aware that the Borda interpretation provides useful intuition but may not hold exactly in deployed systems.
+:::
 
 The following code demonstrates the DPO-Borda connection empirically: we compute the Borda scores from pairwise preferences and verify that DPO's implicit reward ranking matches the Borda ranking.
 
@@ -1059,6 +1062,10 @@ In this section we discuss an influential new framework for designing peer predi
 
 Two important families of mutual information measures that satisfy these properties are $f$-mutual information and Bregman mutual information. The $f$-mutual information is defined as $MI_f(X; Y) = D_f(U_{X,Y}, V_{X,Y})$, where $D_f$ is an $f$-divergence, $U_{X,Y}$ is the joint distribution of $X$ and $Y$, and $V_{X,Y}$ is the product of their marginal distributions. The Bregman mutual information is defined as: $BMI_{PS}(X; Y) = \mathbb{E}_{X} [D{PS}(U_{Y|X}, U_Y)]$, where $D_{PS}$ is a Bregman divergence based on a proper scoring rule $PS$, $U_{Y|X}$ is the conditional distribution of $Y$ given $X$, and $U_Y$ is the marginal distribution of $Y$. The MIP framework can be applied in both single-question and multi-question settings. In the multi-question setting, the mechanism can estimate the mutual information empirically from multiple questions. In the single-question setting, additional techniques like asking for predictions about other agents' reports are used to estimate the mutual information. A key theoretical result of the MIP framework is that when the chosen mutual information measure is strictly information-monotone with respect to agents' priors, the resulting mechanism is both dominantly truthful and strongly truthful. This means that truth-telling is a dominant strategy for each agent and that the truth-telling equilibrium yields strictly higher payoffs than any other non-permutation strategy profile. As research continues to address practical implementation challenges of designing truthful mechanisms, MIP-based approaches have significant potential to improve preference elicitation and aggregation in real-world applications lacking verifiable ground truth.
 
+::: {.callout-warning title="Practical Limitations of Peer Prediction"}
+While the MIP framework provides elegant theoretical guarantees for truthful elicitation, practical deployment faces several challenges. First, it requires a **common prior** or sufficient data to estimate the joint distribution of reports---which may not be available in small-scale annotation tasks. Second, theoretical guarantees hold in the **multi-question** setting where mutual information can be estimated empirically; in the **single-question** setting, additional assumptions (e.g., asking agents to predict others' reports) are needed. Third, the gap between theoretical guarantees and empirical performance can be substantial: agents may not reason about dominant strategies, and the payment scheme's complexity may itself introduce noise. In annotation pipelines for RLHF, simpler quality-control mechanisms (inter-annotator agreement, gold-standard questions) are often more practical, even if theoretically less principled.
+:::
+
 ## Summary
 
 - When **multiple stakeholders** have conflicting preferences, aggregation is unavoidable---and impossibility results constrain what any aggregation rule can achieve.
@@ -1143,6 +1150,18 @@ If you read only five papers from this chapter's references, make them these:
 4. **@gordon2022jury** — Jury learning: aggregating diverse annotator preferences for fairer AI systems
 5. **@kongschoenebeck2019** — The Mutual Information Paradigm for incentive-compatible preference elicitation
 :::
+
+## Further Reading
+
+For readers who want to go deeper into the topics introduced in this chapter, we recommend the following:
+
+- **@sen1970collective**, *Collective Choice and Social Welfare* — Sen's classic text connecting social choice theory to welfare economics, providing the rigorous foundations for Arrow's theorem, the liberal paradox, and interpersonal comparability of utility.
+- **@borgers2015introduction**, *An Introduction to the Theory of Mechanism Design* — An accessible introduction to auctions, VCG mechanisms, and incentive compatibility, covering the game-theoretic foundations of the mechanism design topics in this chapter.
+- **@austen-smith_banks_2000**, *Positive Political Theory I* — A rigorous treatment of voting theory, impossibility results, and domain restrictions, suitable for readers who want the formal proofs behind the results surveyed here.
+- **@list2011group**, *Group Agency* — Extends impossibility results from preference aggregation to judgment aggregation (aggregating beliefs, not just preferences), showing that related impossibilities arise when groups try to maintain consistent collective beliefs.
+- **@gordon2022jury**, "Jury Learning: Integrating Dissenting Voices into Machine Learning" — Proposes methods for integrating diverse annotator perspectives rather than collapsing to majority vote, directly relevant to pluralistic approaches to LLM alignment.
+- **@miller2005eliciting**, "Eliciting Informative Feedback: The Peer-Prediction Method" — The foundational work on eliciting truthful reports without verification, providing the theoretical basis for the peer prediction and MIP frameworks discussed in this chapter.
+- **@conitzer2024social**, "Social Choice for AI Policy" — Recent work on applying social choice theory to AI governance and alignment, arguing for maintaining multiple preference models rather than collapsing to a single aggregate.
 
 ## Exercises
 

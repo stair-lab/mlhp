@@ -34,15 +34,6 @@ filters:
   - pyodide
 ---
 
-::: {.content-visible when-format="html"}
-
-<iframe
-  src="../slides/chap4.html"
-  style="width:90%; height:450px;"
-></iframe>
-[Fullscreen Slides](../slides/chap4.html){.btn .btn-outline-primary .btn role="button"}
-
-:::
 
 
 ::: {.callout-note}
@@ -58,6 +49,7 @@ By the end of this chapter you will be able to:
 - **Apply** acquisition functions (Uniform, Epsilon-Greedy, UCB, Pure Exploration, qEUBO) for sequential decision-making with preference feedback.
 - **Analyze** regret bounds for Preferential Bayesian Optimization algorithms and understand their convergence guarantees.
 - **Implement** Thompson Sampling and dueling bandit algorithms in practical settings.
+- **(Optional)** **Derive** the policy gradient theorem and explain how REINFORCE and GRPO use it for preference-based optimization.
 
 :::
 
@@ -84,12 +76,19 @@ This chapter can be covered in four 50-minute lectures:
 - DBGD, Sparring EXP4, Feel-good Thompson Sampling (10 min)
 - Case studies: LLM response selection and clinical trials (15 min)
 
-**Lecture 4** (Sections 4.5–4.6): Preferential Bayesian Optimization and CIRL
+**Lecture 4** (Sections 4.5 and 4.7): Preferential Bayesian Optimization and CIRL
 
 - PBO problem formulation and Copeland scores (15 min)
 - Acquisition functions: qEUBO, Pure Exploration, POP-BO (15 min)
 - CIRL: From passive oracles to active human agents (15 min)
 - Discussion: Choice architecture and responsible deployment (5 min)
+
+**Lecture 5 (Optional)** (Section 4.6): RL Foundations for Preference Optimization
+
+- MDP formulation and the LLM generation MDP (10 min)
+- Policy gradient theorem derivation (15 min)
+- REINFORCE, baselines, and variance reduction (10 min)
+- GRPO: From RLHF to group-relative optimization (15 min)
 :::
 
 ## Chapter Overview
@@ -104,7 +103,8 @@ The shift is subtle but important. Chapter 3's measurement perspective treats un
 2. **Dueling Bandits** (@sec-borda): When actions can only be compared pairwise, introducing regret notions and winner concepts (Condorcet, Borda, von Neumann)
 3. **Applications**: Case studies connecting these methods to LLM alignment and clinical trials
 4. **Preferential Bayesian Optimization**: Advanced acquisition functions (qEUBO, POP-BO) with convergence guarantees
-5. **Human-Agent Cooperation (CIRL)**: Moving beyond passive oracles to model humans as strategic agents
+5. **RL Foundations (Optional)** (@sec-rl-foundations): MDP formulation, the policy gradient theorem, and GRPO for preference optimization
+6. **Human-Agent Cooperation (CIRL)**: Moving beyond passive oracles to model humans as strategic agents
 
 **Connections to Prior Chapters:**
 
@@ -114,6 +114,7 @@ The shift is subtle but important. Chapter 3's measurement perspective treats un
 | Laplace approximation | GP posterior inference | Thompson Sampling posterior |
 | Acquisition functions | D-optimal, info gain (Ch. 3) | UCB, qEUBO, Pure Exploration |
 | DPO / reward learning | Objective function, ADPO (Ch. 3) | Reward maximization under uncertainty |
+| Policy gradient / GRPO | RLHF pipeline (Ch. 1) | Full derivation, GRPO algorithm (Optional) |
 | Winner concepts | — | Condorcet, Borda, von Neumann → reappear in Ch. 5 |
 
 ## The Reward Maximization under Uncertainty Problem
@@ -128,6 +129,10 @@ The fundamental tension in sequential decision-making is the **exploration-explo
 - **Exploration**: Try uncertain actions to gain information for better future decisions
 
 A purely exploitative strategy may miss superior options it never tried. A purely explorative strategy wastes resources on suboptimal choices. Effective algorithms balance both.
+
+::: {.callout-warning title="Assumption: Stationary Utilities"}
+The bandit framework assumes item utilities are **fixed over time**: the reward distribution for each arm does not change across rounds. All regret bounds in this chapter rely on this stationarity assumption. In practice, preferences drift---users' tastes evolve, LLM responses improve through training, and the item set itself may change (new products, new model versions). When utilities are non-stationary, standard regret bounds no longer apply, and algorithms must explicitly account for drift, for instance by discounting old observations (as the Elo K-factor does implicitly in Chapter 2) or by using non-stationary bandit algorithms with sliding windows or change-point detection.
+:::
 
 Each user $i$ interacts with a set of available items indexed by $j$, each characterized by a known parameter vector $V_j \in \mathbb{R}^K$. The user's utility function is $H_{ij} = h_i(V_j),$ where $h_i: \mathbb{R}^K \rightarrow \mathbb{R}$ maps item features to latent utility. We only observe noisy or partial feedback, such as item-wise or pairwise responses. The agent's objective is to select items sequentially to maximize reward.
 
@@ -1292,6 +1297,10 @@ bandits, which will be introduced later. In these settings, the
 preference matrix depends on different context, which may have different
 Borda winners, just as different parties may vote for different pizzas.
 
+::: {.callout-important title="No Universal Winner Concept"}
+The three winner concepts---Condorcet, Borda, and von Neumann---can identify **different** items as the "best," and a Condorcet winner may not even exist. The choice of winner concept is therefore a **normative design decision**, not a purely technical one: it determines what "regret" means and what the algorithm optimizes for. This parallels a deeper tension formalized by Arrow's impossibility theorem (@sec-aggregation): there is no aggregation rule that satisfies all desirable properties simultaneously. When deploying dueling bandit algorithms, practitioners should explicitly choose a winner concept that matches their application's values---majority dominance (Condorcet), average popularity (Borda), or worst-case robustness (von Neumann).
+:::
+
 ::: {#fig-condorcet_violation}
          A        B           C         D       E      F
   --- ------- ---------- ----------- ------- ------- ------
@@ -2083,6 +2092,10 @@ humans, it has been demonstrated that we are better at evaluating
 differences rather than absolute magnitudes [@kahneman_tversky_1979] and
 therefore PBO models can be applied in various contexts.
 
+::: {.callout-important title="When Is Pairwise Feedback the Right Choice?"}
+PBO assumes the oracle can only provide **pairwise comparisons**, not scalar ratings. This is well-justified when absolute evaluations are cognitively difficult or poorly calibrated (e.g., "How good is this robot trajectory on a scale of 1-10?"), but in some domains scalar feedback is readily available and strictly more informative---each scalar observation constrains the reward function more than a binary comparison. When both modalities are feasible, standard Bayesian optimization with scalar feedback typically requires fewer queries to find the optimum. PBO is most valuable when: (1) comparisons are genuinely easier for humans than absolute ratings, (2) the rating scale is arbitrary or poorly anchored across evaluators, or (3) the goal is to find the *best* option rather than estimate the full reward function.
+:::
+
 ### Problem statement
 
 The problem of finding the optimum of a latent preference function
@@ -2735,9 +2748,341 @@ print(f"Final distance to optimum: {distances[-1]:.4f}")
 
 :::
 
+## Reinforcement Learning Foundations for Preference Optimization (Optional) {#sec-rl-foundations}
+
+::: {.callout-note}
+This section is optional and covers reinforcement learning (RL) foundations that underlie modern preference optimization methods like RLHF, PPO, and GRPO. It provides the formal framework for CIRL (next section) and connects the bandit methods from earlier sections to the full sequential setting used in language model alignment. Readers familiar with RL may wish to skim Sections 4.6.1--4.6.2 and focus on Sections 4.6.3--4.6.5, which develop the policy gradient theorem and GRPO in the preference optimization context.
+:::
+
+The bandit and Bayesian optimization methods developed so far operate in **single-step** or **myopic** settings: at each round, the learner selects an arm or a query pair, observes feedback, and updates its model. But the RLHF pipeline introduced in Chapter 1 and the CIRL framework in the next section both require reasoning over **sequences** of decisions, where early actions influence future states.
+
+This section develops the RL machinery needed for these settings, culminating in **GRPO** (Group Relative Policy Optimization)---a modern method that directly connects policy gradient optimization to the Bradley-Terry preference model from Chapter 1. The progression from bandits to full RL mirrors this chapter's arc from simple to complex decision-making under uncertainty.
+
+### Markov Decision Processes
+
+The **Markov Decision Process** (MDP) generalizes the bandit setting by introducing *states* that evolve over time based on the learner's actions.
+
+::: {.callout-note title="Definition: Markov Decision Process (MDP)"}
+An MDP is a tuple $(\mathcal{S}, \mathcal{A}, P, R, \gamma, \rho_0)$ where:
+
+- $\mathcal{S}$: state space
+- $\mathcal{A}$: action space
+- $P(s' \mid s, a)$: transition probability from state $s$ to $s'$ under action $a$
+- $R(s, a)$: reward function, $R: \mathcal{S} \times \mathcal{A} \to \mathbb{R}$
+- $\gamma \in [0, 1]$: discount factor
+- $\rho_0$: initial state distribution
+:::
+
+A **policy** $\pi_\theta(a \mid s)$ maps states to distributions over actions, parameterized by $\theta$. An agent following policy $\pi$ generates a **trajectory**:
+$$
+\tau = (s_0, a_0, s_1, a_1, \ldots, s_T, a_T), \quad s_0 \sim \rho_0, \; a_t \sim \pi(\cdot \mid s_t), \; s_{t+1} \sim P(\cdot \mid s_t, a_t)
+$$ {#eq-trajectory}
+
+The **RL objective** is to find the policy that maximizes expected cumulative reward:
+$$
+J(\theta) = \mathbb{E}_{\tau \sim \pi_\theta}\left[\sum_{t=0}^{T} \gamma^t R(s_t, a_t)\right]
+$$ {#eq-rl-objective}
+
+When $T = 0$ (a single step with no state transitions), the MDP reduces to the **bandit** setting from earlier sections. The RL objective then reduces to maximizing expected immediate reward $\mathbb{E}_{a \sim \pi_\theta}[R(a)]$, recovering the reward maximization problem from @sec-thompson-sampling.
+
+::: {.callout-tip title="Example: LLM Generation as an MDP"}
+Autoregressive text generation fits naturally into the MDP framework:
+
+- **State** $s_t$: the prompt $x$ concatenated with tokens generated so far, $(x, y_1, \ldots, y_t)$
+- **Action** $a_t$: the next token $y_{t+1}$ from the vocabulary $\mathcal{V}$
+- **Transition**: deterministic---the new state appends the chosen token
+- **Reward**: $R(s_t, a_t) = 0$ for all intermediate steps; at the terminal step $T$, the reward is $r_\phi(x, y)$ from a learned reward model (e.g., trained on Bradley-Terry preferences as in Chapter 1)
+- **Discount**: $\gamma = 1$ (finite horizon, all tokens matter equally)
+
+The policy $\pi_\theta(a_t \mid s_t)$ is the language model itself, producing a distribution over the next token given the context.
+:::
+
+The next section introduces CIRL, which extends this single-agent MDP to a **two-player cooperative game** where a human and robot jointly optimize a shared reward.
+
+### Value Functions and the Advantage
+
+To understand *how much better* one action is compared to others, we define three related quantities.
+
+The **state-value function** measures the expected return starting from state $s$ and following policy $\pi$:
+$$
+V^\pi(s) = \mathbb{E}_{\tau \sim \pi}\left[\sum_{t=0}^{T} \gamma^t R(s_t, a_t) \;\middle|\; s_0 = s\right]
+$$ {#eq-rl-value-function}
+
+The **action-value function** additionally conditions on taking a specific first action:
+$$
+Q^\pi(s, a) = \mathbb{E}_{\tau \sim \pi}\left[\sum_{t=0}^{T} \gamma^t R(s_t, a_t) \;\middle|\; s_0 = s, a_0 = a\right]
+$$ {#eq-q-function}
+
+The **advantage function** is the difference:
+$$
+A^\pi(s, a) = Q^\pi(s, a) - V^\pi(s)
+$$ {#eq-advantage}
+
+The advantage tells us how much better action $a$ is compared to the *average* action under the current policy at state $s$. By definition, $\mathbb{E}_{a \sim \pi(\cdot|s)}[A^\pi(s,a)] = 0$---some actions have positive advantage (better than average) and others negative. This quantity will reappear as the key ingredient in GRPO's group-relative baseline.
+
+These quantities satisfy the **Bellman equation**, which recursively relates the value of a state to the values of its successors:
+$$
+V^\pi(s) = \mathbb{E}_{a \sim \pi(\cdot|s)}\left[R(s,a) + \gamma \, \mathbb{E}_{s' \sim P(\cdot|s,a)}[V^\pi(s')]\right]
+$$ {#eq-bellman}
+
+### The Policy Gradient Theorem {#sec-policy-gradient}
+
+We now derive the central result that enables gradient-based policy optimization. The challenge is that the RL objective @eq-rl-objective depends on $\theta$ both through the policy $\pi_\theta$ (which determines which actions are taken) and through the resulting trajectory distribution (which determines which states are visited). The **policy gradient theorem** shows that we can compute gradients using only the policy's log-probabilities, without differentiating through the environment dynamics.
+
+**The score function trick.** For any parameterized distribution $\pi_\theta(a \mid s)$, we can write:
+$$
+\nabla_\theta \pi_\theta(a \mid s) = \pi_\theta(a \mid s) \, \nabla_\theta \log \pi_\theta(a \mid s)
+$$ {#eq-score-function}
+
+This identity converts a gradient of a probability into an expectation-friendly form. The term $\nabla_\theta \log \pi_\theta(a \mid s)$ is called the **score function**---the same quantity that appears in the Fisher information matrix (Chapter 3), though here it serves a different purpose: instead of measuring information content, it tells us how to adjust the policy to increase reward.
+
+**Trajectory probability.** The probability of a trajectory under policy $\pi_\theta$ factors as:
+$$
+p(\tau \mid \theta) = \rho_0(s_0) \prod_{t=0}^{T} \pi_\theta(a_t \mid s_t) \, P(s_{t+1} \mid s_t, a_t)
+$$ {#eq-trajectory-prob}
+
+Taking the log-gradient, the transition terms $P(s_{t+1} \mid s_t, a_t)$ vanish because they do not depend on $\theta$:
+$$
+\nabla_\theta \log p(\tau \mid \theta) = \sum_{t=0}^{T} \nabla_\theta \log \pi_\theta(a_t \mid s_t)
+$$ {#eq-log-trajectory-grad}
+
+This is the key insight: **the environment dynamics drop out of the gradient**, so we can estimate policy gradients without knowing or differentiating through the transition function $P$.
+
+::: {.callout-important title="Theorem: Policy Gradient"}
+For a parameterized policy $\pi_\theta$ with RL objective $J(\theta) = \mathbb{E}_{\tau \sim \pi_\theta}[\sum_{t=0}^{T} \gamma^t R(s_t, a_t)]$:
+$$
+\nabla_\theta J(\theta) = \mathbb{E}_{\tau \sim \pi_\theta}\left[\sum_{t=0}^{T} \nabla_\theta \log \pi_\theta(a_t \mid s_t) \cdot G_t\right]
+$$ {#eq-policy-gradient-theorem}
+where $G_t = \sum_{t'=t}^{T} \gamma^{t'-t} R(s_{t'}, a_{t'})$ is the **return** (cumulative discounted reward) from time step $t$ onward.
+:::
+
+*Proof sketch.* Write $J(\theta) = \mathbb{E}_{\tau \sim p(\cdot|\theta)}[R(\tau)]$ where $R(\tau) = \sum_t \gamma^t R(s_t, a_t)$. Apply the score function trick to the trajectory distribution: $\nabla_\theta J = \mathbb{E}_\tau[R(\tau) \nabla_\theta \log p(\tau|\theta)]$. Substitute @eq-log-trajectory-grad. Finally, note that actions at time $t$ cannot influence rewards at earlier times, so we can replace $R(\tau)$ with the future return $G_t$ for each term in the sum. $\square$
+
+### REINFORCE and Variance Reduction
+
+The policy gradient theorem immediately yields the simplest policy gradient algorithm.
+
+::: {.callout-note title="Algorithm: REINFORCE [@williams1992simple]"}
+**Input:** Parameterized policy $\pi_\theta$, learning rate $\alpha$
+
+**Repeat:**
+
+1. Sample trajectory $\tau = (s_0, a_0, \ldots, s_T, a_T) \sim \pi_\theta$
+2. For each time step $t = 0, \ldots, T$:
+     - Compute return $G_t = \sum_{t'=t}^{T} \gamma^{t'-t} R(s_{t'}, a_{t'})$
+3. Update: $\theta \leftarrow \theta + \alpha \sum_{t=0}^{T} \nabla_\theta \log \pi_\theta(a_t \mid s_t) \cdot G_t$
+:::
+
+REINFORCE is an unbiased estimator of the policy gradient, but it suffers from **high variance**: a single trajectory can produce wildly different gradient estimates depending on the stochastic outcomes. This motivates **variance reduction** through baselines.
+
+**Baseline subtraction.** We can subtract any function $b(s_t)$ that depends only on the state (not the action) from the return without introducing bias:
+$$
+\nabla_\theta J(\theta) = \mathbb{E}_{\tau}\left[\sum_{t=0}^{T} \nabla_\theta \log \pi_\theta(a_t \mid s_t) \, (G_t - b(s_t))\right]
+$$ {#eq-reinforce-baseline}
+
+**Why is this unbiased?** For any state-dependent baseline $b(s)$:
+$$
+\mathbb{E}_{a \sim \pi_\theta(\cdot|s)}\left[\nabla_\theta \log \pi_\theta(a \mid s) \cdot b(s)\right] = b(s) \cdot \nabla_\theta \sum_{a} \pi_\theta(a \mid s) = b(s) \cdot \nabla_\theta \, 1 = 0
+$$ {#eq-baseline-unbiased}
+
+The probabilities sum to 1 regardless of $\theta$, so the gradient of that sum is zero.
+
+The variance-minimizing baseline turns out to be $b^*(s_t) = V^\pi(s_t)$, which reduces the gradient to use the **advantage** $A^\pi(s_t, a_t) = G_t - V^\pi(s_t)$. Intuitively, we only reinforce actions that are *better than average*---actions with positive advantage get upweighted, while those with negative advantage get downweighted.
+
+::: {.callout-caution}
+In practice, $V^\pi(s)$ is unknown and must itself be estimated, typically by training a separate neural network (the **critic** or **value network**) alongside the policy. This adds computational cost and can introduce its own approximation errors. GRPO, discussed next, avoids this entirely.
+:::
+
+### From RLHF to GRPO {#sec-grpo}
+
+We now connect the policy gradient framework to the **RLHF pipeline** introduced in Chapter 1 and develop GRPO as a modern, critic-free alternative to PPO.
+
+**The RLHF objective.** Recall from Chapter 1 that RLHF trains a reward model $r_\phi(x, y)$ on human preference data using the Bradley-Terry likelihood, then optimizes the policy to maximize reward while staying close to a reference policy $\pi_{\text{ref}}$:
+$$
+J_{\text{RLHF}}(\theta) = \mathbb{E}_{x \sim \mathcal{D},\, y \sim \pi_\theta(\cdot|x)}\left[r_\phi(x, y)\right] - \beta \, \text{KL}\left[\pi_\theta(\cdot|x) \,\|\, \pi_{\text{ref}}(\cdot|x)\right]
+$$ {#eq-rlhf-objective}
+
+The KL penalty prevents **reward hacking**: without it, the policy could exploit imperfections in the learned reward model $r_\phi$ to achieve high reward scores that do not correspond to genuinely preferred outputs (see Chapter 7 for empirical discussion).
+
+**PPO.** Proximal Policy Optimization [@schulman2017proximal] applies the policy gradient theorem to the RLHF objective using a **clipped surrogate** that prevents excessively large policy updates. PPO requires a learned value function $V_\psi(s)$ (the critic) to estimate advantages. Training this critic adds computational cost---roughly doubling the model parameters in the LLM setting, since the critic is typically the same size as the policy. Trust Region Policy Optimization [TRPO; @schulman2015trust] preceded PPO with a similar motivation but used a hard KL constraint instead of clipping.
+
+**GRPO: Group Relative Policy Optimization.** GRPO [@shao2024deepseekmath] eliminates the critic by replacing the learned value baseline with a **group-relative** baseline computed from multiple sampled outputs. The key idea is conceptually parallel to the dueling bandit paradigm from earlier in this chapter: rather than estimating absolute values (which requires a critic), we compare outputs *within a group* to determine which are relatively better.
+
+::: {.callout-note title="Algorithm: Group Relative Policy Optimization (GRPO)"}
+**Input:** Policy $\pi_\theta$, reference policy $\pi_{\text{ref}}$, reward model $r_\phi$, group size $G$, clip range $\epsilon$, KL weight $\beta$
+
+For each prompt $x \sim \mathcal{D}$:
+
+1. **Sample** a group of outputs: $\{y_1, \ldots, y_G\} \sim \pi_{\theta_{\text{old}}}(\cdot \mid x)$
+2. **Score** each output: $r_i = r_\phi(x, y_i)$ for $i = 1, \ldots, G$
+3. **Normalize** to get group-relative advantages:
+$$
+\hat{A}_i = \frac{r_i - \text{mean}(\{r_j\}_{j=1}^G)}{\text{std}(\{r_j\}_{j=1}^G)}
+$$ {#eq-grpo-advantage}
+4. **Update** the policy by maximizing:
+$$
+\mathcal{L}_{\text{GRPO}}(\theta) = \frac{1}{G}\sum_{i=1}^{G} \min\!\left(\rho_i \hat{A}_i, \; \text{clip}(\rho_i, 1{-}\epsilon, 1{+}\epsilon) \, \hat{A}_i\right) - \beta \, \text{KL}[\pi_\theta \| \pi_{\text{ref}}]
+$$ {#eq-grpo-loss}
+where $\rho_i = \pi_\theta(y_i \mid x) \,/\, \pi_{\theta_{\text{old}}}(y_i \mid x)$ is the importance ratio.
+:::
+
+The z-score normalization in @eq-grpo-advantage plays the same role as pairwise comparisons in dueling bandits: it tells us which outputs are *relatively* better within the group, without requiring an absolute value estimate. When the group mean is high (all outputs are good), only the *best* outputs receive positive advantage; when the group mean is low, even mediocre outputs can be positively reinforced.
+
+::: {.callout-tip title="Key Insight: GRPO and Dueling Bandits"}
+GRPO's group-relative baseline is the RL analog of the dueling bandit paradigm. In dueling bandits, we never observe absolute arm rewards---only pairwise comparisons. Similarly, GRPO never estimates absolute state values---only relative quality within a sampled group. This connection runs deeper: the Bradley-Terry reward model $r_\phi$ that scores GRPO's outputs is the same preference model that defines the dueling bandit's comparison probabilities. The circle from preference models (Chapter 1) through sequential decision-making (this chapter) back to policy optimization closes here.
+:::
+
+**Connection to DPO.** When $G = 2$ and the reward comes from a Bradley-Terry model, GRPO's advantage reduces to $\hat{A}_1 = -\hat{A}_2 \propto r_\phi(x, y_1) - r_\phi(x, y_2)$. This reward difference is exactly the quantity that determines preference probabilities in the Bradley-Terry model: $p(y_1 \succ y_2 \mid x) = \sigma(r_\phi(x, y_1) - r_\phi(x, y_2))$. DPO optimizes this signal directly on a fixed offline dataset, while GRPO generates fresh samples during training and generalizes to groups larger than 2. The online sampling allows GRPO to explore the policy's current output distribution, while DPO is limited to the distribution that generated the training data.
+
+::: {.callout-note title="Code: REINFORCE vs. GRPO on a Preference Bandit" collapse="false"}
+
+```{pyodide-python}
+#| autorun: true
+# Compare REINFORCE and GRPO on a toy preference optimization problem
+np.random.seed(42)
+
+# Setup: 5 "responses" with hidden Bradley-Terry utilities
+n_actions = 5
+true_utilities = np.array([0.5, 1.0, 2.0, 0.3, 1.5])  # Action 2 is best
+temperature = 1.0
+
+def reward_model(action):
+    """Simulate a Bradley-Terry reward model with noise."""
+    return true_utilities[action] + np.random.normal(0, 0.5)
+
+def softmax_policy(logits):
+    """Convert logits to action probabilities."""
+    logits = logits - np.max(logits)  # numerical stability
+    exp_logits = np.exp(logits)
+    return exp_logits / np.sum(exp_logits)
+
+def sample_action(probs):
+    """Sample an action from the policy."""
+    return np.random.choice(len(probs), p=probs)
+
+# REINFORCE with running-average baseline
+def run_reinforce(n_steps=500, lr=0.1):
+    logits = np.zeros(n_actions)
+    avg_reward = 0.0
+    rewards_history = []
+    grad_norms = []
+
+    for step in range(n_steps):
+        probs = softmax_policy(logits)
+        action = sample_action(probs)
+        reward = reward_model(action)
+
+        # Running average baseline
+        avg_reward = 0.95 * avg_reward + 0.05 * reward
+        advantage = reward - avg_reward
+
+        # Policy gradient: d/d(logits) log pi(a) = e_a - pi
+        grad = -probs.copy()
+        grad[action] += 1.0
+        grad *= advantage
+
+        logits += lr * grad
+        rewards_history.append(reward)
+        grad_norms.append(np.linalg.norm(grad))
+
+    return rewards_history, grad_norms
+
+# GRPO with group sampling
+def run_grpo(n_steps=500, lr=0.1, group_size=4):
+    logits = np.zeros(n_actions)
+    rewards_history = []
+    grad_norms = []
+
+    for step in range(n_steps):
+        probs = softmax_policy(logits)
+
+        # Sample a group of actions
+        actions = [sample_action(probs) for _ in range(group_size)]
+        rewards = [reward_model(a) for a in actions]
+
+        # Group-relative advantages (z-score normalization)
+        mean_r = np.mean(rewards)
+        std_r = np.std(rewards) + 1e-8
+        advantages = [(r - mean_r) / std_r for r in rewards]
+
+        # Aggregate gradients over the group
+        total_grad = np.zeros(n_actions)
+        for a, adv in zip(actions, advantages):
+            grad = -probs.copy()
+            grad[a] += 1.0
+            total_grad += grad * adv
+        total_grad /= group_size
+
+        logits += lr * total_grad
+        rewards_history.append(np.mean(rewards))
+        grad_norms.append(np.linalg.norm(total_grad))
+
+    return rewards_history, grad_norms
+
+# Run experiments
+reinforce_rewards, reinforce_norms = run_reinforce()
+grpo2_rewards, grpo2_norms = run_grpo(group_size=2)
+grpo4_rewards, grpo4_norms = run_grpo(group_size=4)
+grpo8_rewards, grpo8_norms = run_grpo(group_size=8)
+
+# Smoothing for visualization
+def smooth(x, window=20):
+    return np.convolve(x, np.ones(window)/window, mode='valid')
+
+fig, axes = plt.subplots(1, 2, figsize=(7, 3))
+
+# Left: Learning curves (expected reward)
+axes[0].plot(smooth(reinforce_rewards), label='REINFORCE', linewidth=1.5, alpha=0.9)
+axes[0].plot(smooth(grpo2_rewards), label='GRPO (G=2)', linewidth=1.5, alpha=0.9)
+axes[0].plot(smooth(grpo4_rewards), label='GRPO (G=4)', linewidth=1.5, alpha=0.9)
+axes[0].plot(smooth(grpo8_rewards), label='GRPO (G=8)', linewidth=1.5, alpha=0.9)
+axes[0].axhline(true_utilities[2], color='black', linestyle='--', alpha=0.4, label='Optimal')
+axes[0].set_xlabel('Step')
+axes[0].set_ylabel('Average Reward')
+axes[0].set_title('Learning Curves')
+axes[0].legend(fontsize=7)
+axes[0].grid(True, alpha=0.3)
+
+# Right: Gradient variance (smoothed norm)
+axes[1].plot(smooth(reinforce_norms, 30), label='REINFORCE', linewidth=1.5, alpha=0.9)
+axes[1].plot(smooth(grpo2_norms, 30), label='GRPO (G=2)', linewidth=1.5, alpha=0.9)
+axes[1].plot(smooth(grpo4_norms, 30), label='GRPO (G=4)', linewidth=1.5, alpha=0.9)
+axes[1].plot(smooth(grpo8_norms, 30), label='GRPO (G=8)', linewidth=1.5, alpha=0.9)
+axes[1].set_xlabel('Step')
+axes[1].set_ylabel('Gradient Norm')
+axes[1].set_title('Gradient Variability')
+axes[1].legend(fontsize=7)
+axes[1].grid(True, alpha=0.3)
+
+plt.tight_layout()
+plt.show()
+
+# Print final policies
+for name, logits_final in [('REINFORCE', None)]:
+    pass  # logits not stored; show GRPO comparison instead
+
+print("Larger group sizes in GRPO reduce gradient variance,")
+print("enabling faster and more stable convergence.")
+print(f"\nTrue best action: 2 (utility = {true_utilities[2]:.1f})")
+```
+
+:::
+
+### Connections
+
+The progression from bandits (single-step) to RL (sequential) to preference-based RL (RLHF, GRPO) mirrors this chapter's arc from simple to complex decision-making. The **policy gradient theorem** (@eq-policy-gradient-theorem) provides the mathematical bridge: it tells us how to optimize *any* parameterized policy using only sampled trajectories and rewards. When those rewards come from a learned preference model (Bradley-Terry), we recover the modern alignment pipeline.
+
+- **Forward to CIRL** (next section): The MDP framework developed here provides the formal setting for CIRL, where the single-agent MDP becomes a two-player cooperative game with shared rewards.
+- **Forward to Chapter 7**: Chapter 7 discusses the practical lessons from deploying RLHF and GRPO at scale, including reward hacking and the gap between learned and true rewards.
+- **Back to Chapter 3**: The log-linear policy assumption used in ADPO---$\pi(y \mid x; \theta) \propto \exp(\phi(x,y)^\top \theta)$---is a special case of the parameterized policy $\pi_\theta$, specifically the softmax policy class common in RL.
+
+::: {.callout-tip title="Key Takeaway: From Bandits to RL to Preferences"}
+GRPO further simplifies the RL pipeline by replacing the value function with group-relative comparisons, connecting RL optimization back to the pairwise comparison paradigm that runs throughout this book. The key equations---Bradley-Terry preference probabilities (Chapter 1), Fisher information and score functions (Chapter 3), and the policy gradient theorem (this section)---all share the same mathematical core: the log-derivative of a parameterized probability model.
+:::
+
 ## Human-Agent Cooperation and CIRL
 
-The algorithms discussed so far---Thompson Sampling, dueling bandits, and Preferential Bayesian Optimization---all share a common assumption: the human is a **passive oracle** who responds to queries but does not actively shape the learning process. In practice, this assumption often breaks down. A user choosing between LLM responses may deliberately select the more challenging example to *teach* the system. A patient in a clinical trial may modify their behavior based on what they believe the system is learning. Humans are **active agents** whose feedback depends on their beliefs about how it will be used.
+The algorithms discussed so far---Thompson Sampling, dueling bandits, Preferential Bayesian Optimization, and the RL methods in the preceding section---all share a common assumption: the human is a **passive oracle** who responds to queries but does not actively shape the learning process. In practice, this assumption often breaks down. A user choosing between LLM responses may deliberately select the more challenging example to *teach* the system. A patient in a clinical trial may modify their behavior based on what they believe the system is learning. Humans are **active agents** whose feedback depends on their beliefs about how it will be used.
 
 This section introduces **Cooperative Inverse Reinforcement Learning (CIRL)**, a framework that models human and agent as jointly optimizing a shared objective. Where Thompson Sampling optimizes reward under uncertainty about the *reward function*, CIRL optimizes under uncertainty about the *human's preferences*---and crucially, the human knows this and can act to reduce that uncertainty.
 
@@ -2752,7 +3097,7 @@ In standard Inverse Reinforcement Learning (IRL), the agent learns a reward func
 The key insight is that the human's optimal policy is not just demonstrating good behavior, but **teaching** the robot about $\theta$. Sometimes instructive actions (that reveal information) dominate expert demonstrations (that maximize immediate reward).
 
 ::: {.callout-note title="CIRL Formal Definition"}
-A CIRL game is defined by:
+A CIRL game extends the single-agent MDP (@eq-rl-objective) to a two-player cooperative setting:
 
 - State space $\mathcal{S}$
 - Action spaces $\mathcal{A}_H$ (human) and $\mathcal{A}_R$ (robot)
@@ -2761,7 +3106,7 @@ A CIRL game is defined by:
 - Prior $P_0(\theta)$ over reward parameters
 - Discount factor $\gamma \in (0, 1)$
 
-At each time $t$, both observe $(s_t, a_H^{t-1}, a_R^{t-1})$. Only H observes $\theta$. The robot maintains a belief $b_R^t(\theta)$ updated via Bayes' rule.
+At each time $t$, both observe $(s_t, a_H^{t-1}, a_R^{t-1})$. Only H observes $\theta$. The robot maintains a belief $b_R^t(\theta)$ updated via Bayes' rule. The key difference from the standard MDP is that the reward parameter $\theta$ is observed only by the human, making this a game of **asymmetric information**.
 :::
 
 ### Teaching vs. Demonstrating
@@ -2886,6 +3231,10 @@ These effects are typically not captured in standard choice models (which assume
 The transition from measurement to decision-making revealed that uncertainty should be managed, not just reduced. The transition from passive oracles to active humans reveals that **humans themselves are strategic agents** whose behavior depends on their beliefs about the system. CIRL provides a principled framework for this cooperative setting.
 :::
 
+::: {.callout-warning title="Assumption: Approximately Rational Humans"}
+CIRL's cooperative framework assumes the human acts **approximately optimally** given their beliefs about the robot's learning process. If the human is systematically biased---exhibiting anchoring effects, framing dependence, or status quo bias---the robot may learn incorrect preferences from the human's demonstrations. For example, a human who consistently overweights recent experiences (recency bias) will provide teaching signals that distort the learned reward function. More fundamentally, CIRL assumes the human *wants* to teach the robot, but in practice humans may be inattentive, adversarial, or simply unaware that their behavior is being interpreted as preference data. The choice architecture effects noted above compound this issue: the system's interface can systematically bias the human's responses in ways that CIRL does not account for.
+:::
+
 ::: {.callout-tip title="Looking Ahead: From Individual Decisions to Collective Preferences"}
 This chapter developed methods for sequential decision-making with preference feedback from a **single** user. But what happens when **multiple** users have different preferences? Chapter 5 (Aggregation) addresses this challenge using social choice theory and mechanism design. The winner concepts introduced here---Condorcet, Borda, von Neumann---will reappear in that context. In particular, a key result in Chapter 5 shows that DPO implicitly optimizes the **Borda score** when aggregating across annotators, connecting the dueling bandit framework developed here to the social choice theory of preference aggregation. Chapter 6 then asks the normative question: *whose* preferences should we optimize for, and what fairness constraints should apply?
 :::
@@ -2898,6 +3247,7 @@ This chapter developed methods for sequential decision-making with preference fe
 - **Preferential Bayesian Optimization (PBO)** tackles the continuous-armed case where the goal is to find the best option in a large or infinite space using only preference feedback. The **qEUBO** acquisition function provably converges while the seemingly natural **qEI** can fail.
 - Regret bounds for PBO scale as $R_T = O(\sqrt{\beta_T \gamma_T T})$, where $\gamma_T$ is the maximum information gain---providing convergence guarantees that depend on the kernel's complexity.
 - **Cooperative Inverse Reinforcement Learning (CIRL)** models humans as strategic agents who actively teach rather than passively demonstrate, enabling more efficient preference communication through cooperative interaction.
+- **(Optional)** The **policy gradient theorem** provides the mathematical bridge from bandit methods to full RL-based preference optimization. **GRPO** eliminates the need for a learned value function by using group-relative advantages, connecting RL optimization back to the pairwise comparison paradigm.
 - As system designers, we are **choice architects**: order effects, framing, and defaults influence human choices in ways that standard models (IIA) do not capture, requiring awareness of these biases in deployment.
 
 ## Quick Check
@@ -2912,6 +3262,8 @@ Test your understanding before proceeding to the exercises.
 
 4. In CIRL, what changes if the human acts as a *teacher* (choosing informative demonstrations) rather than a *demonstrator* (acting optimally for themselves)?
 
+5. (Optional) The policy gradient theorem uses $\nabla_\theta \log \pi_\theta(a \mid s)$ to estimate the gradient of the RL objective. Why do the environment's transition dynamics $P(s' \mid s, a)$ not appear in the gradient, even though they affect the trajectory distribution?
+
 ::: {.callout-tip title="Essential Reading" collapse="true"}
 If you read only five papers from this chapter's references, make them these:
 
@@ -2920,6 +3272,8 @@ If you read only five papers from this chapter's references, make them these:
 3. **@sui2017multi** — Multi-dueling bandits: extending pairwise comparisons to multi-way preference feedback
 4. **@brochu2010tutorial** — A tutorial on Bayesian optimization, the foundation for preferential BO
 5. **@hadfield2016cooperative** — CIRL: cooperative inverse reinforcement learning for value alignment
+6. **@suttonrl** — Reinforcement Learning: An Introduction, the standard reference for MDP formulations and policy gradient methods
+7. **@shao2024deepseekmath** — DeepSeekMath: the paper introducing GRPO for LLM alignment
 :::
 
 ## Discussion Questions
@@ -2948,6 +3302,23 @@ If you read only five papers from this chapter's references, make them these:
 
 12. **Scalability Challenges**: What are the main computational challenges in scaling dueling bandit and PBO algorithms to large action spaces? How might these be addressed?
 
+13. **(Optional) GRPO vs. DPO**: Both GRPO and DPO optimize a policy using preference data. DPO is "offline" (optimizes directly on a fixed dataset), while GRPO is "online" (generates new samples during training). What are the tradeoffs? When might each be preferred?
+
+14. **(Optional) Variance Reduction**: GRPO uses a group-relative baseline while classical REINFORCE uses a learned value function baseline. Compare the computational and statistical tradeoffs. How does the group size $G$ affect the bias-variance tradeoff?
+
+## Further Reading
+
+For readers who want to go deeper into the topics introduced in this chapter, we recommend the following:
+
+- **@russo2018tutorial**, "A Tutorial on Thompson Sampling" — A modern tutorial covering the theory, applications, and extensions of Thompson Sampling, including connections to information-directed sampling and contextual bandits.
+- **@bengs2021preference**, "Preference-Based Online Learning with Dueling Bandits: A Survey" — A comprehensive survey of dueling bandit algorithms and their regret bounds, covering Condorcet, Borda, and von Neumann winner concepts and the algorithms designed for each.
+- **@lattimore2020bandit**, *Bandit Algorithms* — The definitive modern textbook on bandit theory, providing rigorous treatments of regret bounds, exploration strategies, and the information-theoretic limits of sequential decision-making.
+- **@shahriari2016taking**, "Taking the Human Out of the Loop: A Review of Bayesian Optimization" — A survey connecting Bayesian optimization to preference learning, covering acquisition functions, GP surrogate models, and applications to hyperparameter tuning and experimental design.
+- **@hadfield2016cooperative**, "Cooperative Inverse Reinforcement Learning" — The foundational CIRL paper, formalizing the cooperative game between a human and a robot that learns the human's reward function through interaction.
+- **@suttonrl**, *Reinforcement Learning: An Introduction* — The standard RL textbook, essential for readers who want to understand the MDP foundations and policy gradient methods discussed in the optional RL section of this chapter.
+- **@thaler2008nudge**, *Nudge: Improving Decisions About Health, Wealth, and Happiness* — The foundational work on choice architecture, documenting how presentation order, framing, and defaults influence human choices in ways that standard preference models do not capture.
+- **@kahneman_tversky_1979**, "Prospect Theory: An Analysis of Decision Under Risk" — The seminal paper on how humans systematically deviate from expected utility maximization, providing the behavioral foundations for why pairwise comparisons (PBO) are often more reliable than absolute ratings.
+
 ## Exercises
 
 ### Basic (*)
@@ -2960,6 +3331,8 @@ If you read only five papers from this chapter's references, make them these:
 
 3. **Copeland Score**: For the preference matrix in Exercise 2, compute the Copeland score for each arm.
 
+4. **(Optional) MDP for LLM Generation**: Formally define the MDP for autoregressive text generation. What is the state space? Action space? When is reward received? What is the discount factor? How does the horizon $T$ relate to the generated sequence length?
+
 ### Intermediate (**)
 
 4. **GP Classification**: Implement GP classification with Laplace approximation for a 1D toy problem. Generate binary labels from a latent sinusoidal function passed through a sigmoid, then fit a GP and visualize the posterior mean and uncertainty.
@@ -2967,6 +3340,8 @@ If you read only five papers from this chapter's references, make them these:
 5. **Thompson Sampling Simulation**: Implement Thompson Sampling for a linear bandit with Gaussian prior. Run simulations comparing Thompson Sampling to UCB and $\varepsilon$-greedy on a synthetic problem. Plot cumulative regret curves.
 
 6. **Dueling Bandit Simulation**: Implement the Interleaved Filter algorithm and test it on a dueling bandit problem with 5 arms. Compare its sample complexity to uniform exploration for finding the Condorcet winner.
+
+7. **(Optional) Policy Gradient Derivation**: Starting from the trajectory probability $p(\tau \mid \theta) = \rho_0(s_0) \prod_t \pi_\theta(a_t \mid s_t) P(s_{t+1} \mid s_t, a_t)$, derive the policy gradient theorem. Show that subtracting a state-dependent baseline $b(s_t)$ from the return does not bias the gradient estimate.
 
 ### Advanced (***)
 
@@ -2977,6 +3352,10 @@ If you read only five papers from this chapter's references, make them these:
 9. **POP-BO Regret Bound**: Following the proof sketch in the chapter, derive the regret bound for POP-BO with a linear kernel. Explain how the covering number $\mathcal{N}(\mathcal{B}_f, \epsilon, \|\cdot\|_\infty)$ appears in the bound.
 
 10. **Custom Acquisition Function**: Design and implement a novel acquisition function for preferential Bayesian optimization that balances exploration and exploitation in a different way than qEUBO. Provide theoretical justification or empirical evidence for its effectiveness.
+
+11. **(Optional) GRPO Implementation**: Implement GRPO for a contextual bandit with Bradley-Terry rewards. Compare convergence and gradient variance against REINFORCE with a learned baseline for group sizes $G \in \{2, 4, 8, 16\}$. Investigate: for what group size does the marginal benefit of additional samples diminish?
+
+12. **(Optional) KL-Constrained Optimization**: The RLHF objective includes a KL penalty $\beta \, \text{KL}[\pi_\theta \| \pi_{\text{ref}}]$. Derive the optimal policy in closed form (it has the form $\pi^*(y \mid x) \propto \pi_{\text{ref}}(y \mid x) \exp(r(x,y)/\beta)$). Show that this is exactly the DPO implicit reward from Chapter 1.
 
 
 <!--

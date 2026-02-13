@@ -1,7 +1,7 @@
 ---
 title: "Machine Learning from Human Preferences"
-subtitle: "Chapter 1: Preference Models"
-footer: "Chapter 1: Preference Models"
+subtitle: "Chapter 1: Foundations"
+footer: "Chapter 1: Foundations"
 ---
 
 ## Overview

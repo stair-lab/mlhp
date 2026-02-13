@@ -122,3 +122,13 @@ $boxes: (
 		}
 	}
 }
+
+/* Constrain pyodide figure output to content width */
+.qpyodide-output-graph-area figure {
+	max-width: 100%;
+
+	canvas, img {
+		max-width: 100%;
+		height: auto;
+	}
+}

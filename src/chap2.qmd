@@ -34,15 +34,6 @@ filters:
   - pyodide
 ---
 
-::: {.content-visible when-format="html"}
-
-<iframe
-  src="../slides/chap2.html"
-  style="width:90%; height:450px;"
-></iframe>
-[Fullscreen Slides](../slides/chap2.html){.btn .btn-outline-primary .btn role="button"}
-
-:::
 
 ::: {.callout-note}
 ## Intended Learning Outcomes
@@ -214,6 +205,10 @@ $$
 \hat{V} = \arg\max_{V} \sum_{j,j' \in \mathcal{D}_{\text{train}}} \log p(Y_{0,jj'} | \sigma(H_{0,jj'})), \quad H_{0} = V 1_M^\top - 1_M V^\top,
 $$ {#eq-mle-objective}
 where $1_M$ is a column vector of 1 with length $M$ and $H_{0,jj'} = v_j-v_{j'}$ for a fixed user $0$. The optimization can be carried out with standard optimizers, such as gradient descent.
+
+::: {.callout-warning title="Assumption: Connected Comparison Graph"}
+The MLE for Bradley-Terry parameters exists and is unique if and only if the **comparison graph is strongly connected**---that is, for every pair of items $(j, k)$, there exists a chain of comparisons linking $j$ to $k$ [see @ford1957solution]. If some items have never been compared (directly or transitively), their utility parameters are not identifiable and the MLE diverges to $\pm\infty$. In practice, sparse datasets (e.g., LLM evaluation where each response pair is annotated only once) frequently produce disconnected comparison graphs. Regularization (@sec-regularization) addresses this by shrinking all parameters toward zero, effectively imposing a prior that prevents divergence.
+:::
 
 Let $\mathcal{N}_m^+ = \{(m,k) \in \mathcal{D}_{\text{train}}\}$ be pairs recorded in the order $(m,k)$. Let $\mathcal{N}_m^- = \{(k,m) \in \mathcal{D}_{\text{train}}\}$ be pairs recorded in the order $(k,m)$. Define residuals $r_{mk} = y_{mk} - \sigma(V_m - V_k)$ and $r_{km} = y_{km} - \sigma(V_k-V_m)$. Then
 
@@ -422,7 +417,14 @@ for t in range(steps):
 trace = np.array(trace)  # shape (steps/trace_every, M)
 acc_rate = acc / steps
 print(f"[MH] Acceptance rate: {acc_rate:.3f} with prop_scale={prop_scale}")
+```
 
+::: {.callout-warning title="Assumption: MCMC Has Converged"}
+Metropolis-Hastings produces samples from the posterior *asymptotically*, but in finite time, the chain may not have converged. A reasonable acceptance rate (20--50%) is necessary but not sufficient: the chain may mix slowly between modes or explore only a local region of the posterior. In practice, one should run **multiple independent chains** from dispersed starting points and check convergence using diagnostics such as the Gelman-Rubin $\hat{R}$ statistic (which should be close to 1.0) and effective sample size. The Laplace approximation introduced below avoids sampling entirely but assumes the posterior is unimodal and approximately Gaussian---an assumption that fails when data is sparse or the posterior is multimodal.
+:::
+
+```{pyodide-python}
+#| autorun: true
 # Show trace with posterior marginal
 plt.figure()
 fig, (ax_trace, ax_hist) = plt.subplots(1, 2, width_ratios=[4, 1],
@@ -491,6 +493,10 @@ p(\mathbf{r} \mid \mathcal{D}) \approx \mathcal{N}\left(\mathbf{r}^*, (K^{-1} + 
 $$ {#eq-laplace-posterior}
 
 This is structurally similar to standard GP regression, but with the data-dependent precision matrix $W$ arising from the Bradley-Terry likelihood rather than observation noise.
+
+::: {.callout-warning title="Limitations of the Laplace Approximation"}
+The Laplace approximation replaces the true posterior with a Gaussian centered at the MAP estimate $\mathbf{r}^*$. This approximation can be poor when: (1) the posterior is **multimodal** (e.g., when items form disconnected clusters with few cross-cluster comparisons), (2) the MAP is near a **boundary** of the parameter space, or (3) there are **very few comparisons** so the likelihood barely constrains the posterior. In these settings, the Gaussian approximation underestimates posterior uncertainty and can produce overconfident predictions. Alternatives include expectation propagation (EP), which approximates each likelihood factor separately, or full MCMC sampling as described above.
+:::
 
 ```{pyodide-python}
 #| autorun: true
@@ -644,6 +650,10 @@ $$V_A \leftarrow 1500 - 32 \times 0.378 \approx 1488$$
 $$V_B \leftarrow 1700 + 32 \times 0.378 \approx 1712$$
 
 **Key insight:** Upsets produce larger rating changes (19.9 points) than expected outcomes (12.1 points). This is exactly stochastic gradient ascent: the step size is proportional to the prediction error, so surprising results move parameters more. The $K$-factor controls the tradeoff between responsiveness (large $K$) and stability (small $K$).
+:::
+
+::: {.callout-warning title="Limitations of Fixed K-Factor Elo"}
+The Elo system with a constant $K$-factor has several limitations. First, it weights all comparisons equally regardless of recency---there is no discounting of old information, so it cannot optimally track **non-stationary** preferences (e.g., an LLM improving through training). Second, a single $K$ must trade off responsiveness against stability for *all* items, even though some items' utilities may be well-established while others are new. Third, unlike Bayesian methods, Elo provides **no uncertainty quantification**---the rating $V_j$ is a point estimate with no associated confidence interval. Systems like Glicko address some of these issues by maintaining per-item uncertainty estimates that decay with inactivity and scale the update magnitude accordingly.
 :::
 
 ```{pyodide-python}
@@ -1214,6 +1224,10 @@ print(f"Label noise: ~10% of comparisons are random")
 
 This synthetic dataset mimics real LLM preference data: responses have embedding representations, utilities are learned functions of embeddings, and annotations contain noise.
 
+::: {.callout-important title="Label Noise: Random vs. Systematic"}
+The 10% uniform label noise above is a simplification. In real annotation pipelines, noise is often **systematic** rather than random: annotators may have consistent biases (preferring verbose responses), may be influenced by presentation order, or may satisfice rather than carefully evaluate. Uniform noise attenuates the learned utilities toward zero (biasing toward equal preference) but preserves their *ranking*. Systematic noise, by contrast, can **reverse rankings**---if annotators consistently prefer item $j$ for reasons unrelated to the true objective (e.g., surface fluency over factual accuracy), the MLE will learn the annotators' biases as if they were genuine preferences. This connects to the **inversion problem** discussed in Chapter 6: observed choices may not reflect underlying preferences. Robust estimation methods that model annotator-specific biases or down-weight unreliable annotations can mitigate this issue.
+:::
+
 ### Applying All Three Learning Methods
 
 We apply MLE, Bayesian inference, and online learning (Elo) to the same data and compare results.
@@ -1471,6 +1485,18 @@ If you read only five papers from this chapter's references, make them these:
 4. **@ouyang2022training** — InstructGPT: scaling RLHF to large language models
 5. **@hastie2009elements** — The statistical learning textbook covering regularization, cross-validation, and model selection foundations
 :::
+
+## Further Reading
+
+For readers who want to go deeper into the topics introduced in this chapter, we recommend the following:
+
+- **@hunter2004mm**, "MM Algorithms for Generalized Bradley-Terry Models" — Efficient algorithms for MLE that scale to large comparison datasets, including extensions to ties and home-field advantage.
+- **@caron2012bayesian**, "Efficient Bayesian Inference for Generalized Bradley-Terry Models" — Modern MCMC and variational methods for Bayesian preference learning, including techniques for handling large-scale data.
+- **@glickman1999parameter**, "Parameter Estimation in Large Dynamic Paired Comparison Experiments" — The Glicko rating system, which extends Elo with per-player uncertainty estimates that decay with inactivity, addressing several limitations of fixed K-factor Elo.
+- **@rasmussen2006gaussian**, *Gaussian Processes for Machine Learning*, Ch. 3 — Comprehensive treatment of the Laplace approximation and expectation propagation for GP classification, the theoretical foundation for the GP inference methods used in this chapter.
+- **@gneiting2007strictly**, "Strictly Proper Scoring Rules, Prediction, and Estimation" — The definitive treatment of proper scoring rules and calibration, explaining why cross-entropy (log loss) is the natural loss for preference learning and how to assess whether learned probabilities are well-calibrated.
+- **@ouyang2022training**, "Training Language Models to Follow Instructions with Human Feedback" — The InstructGPT paper that demonstrated RLHF at scale, showing how the MLE, Bayesian, and online methods in this chapter are applied to real LLM alignment.
+- **@hastie2009elements**, *The Elements of Statistical Learning* — The standard reference for regularization theory, bias-variance tradeoff, and cross-validation, providing the statistical foundations for the model selection techniques discussed here.
 
 ## Exercises
 

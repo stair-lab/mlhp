@@ -34,15 +34,6 @@ filters:
   - pyodide
 ---
 
-::: {.content-visible when-format="html"}
-
-<iframe
-  src="../slides/chap6.html"
-  style="width:90%; height:450px;"
-></iframe>
-[Fullscreen Slides](../slides/chap6.html){.btn .btn-outline-primary .btn role="button"}
-
-:::
 
 ::: {.callout-note}
 
@@ -146,6 +137,10 @@ To analyze these fairness questions systematically, we introduce a **four-stage 
 4. **Decision** ($\mathcal{D}$): When do we defer to user preferences vs. override them? What constitutes legitimate paternalism?
 
 At each stage, we make choices that embed values. Often these choices compound: a bias introduced at elicitation amplifies through learning, aggregation, and decision-making, creating feedback loops that widen disparities over time.
+
+::: {.callout-important title="Identifying Stakeholders Systematically"}
+Before analyzing fairness at each pipeline stage, one must first identify **who is affected**. A useful framework distinguishes four categories: (1) **direct users** who interact with the system and provide preference data (e.g., reviewers using the AI assistant); (2) **affected parties** who are impacted by decisions but may not be users (e.g., paper authors whose work is reviewed); (3) **system designers** who set objectives and constraints (e.g., conference organizers); and (4) **society** broadly, which bears indirect consequences (e.g., the research community's trust in peer review). Different stakeholder groups may have conflicting interests, and a fairness analysis that considers only direct users can overlook harms to affected parties---a common failure mode in deployed preference learning systems.
+:::
 
 ::: {.callout-important title="The Central Thesis"}
 **Every technical choice in the preference learning pipeline is a value choice about whose preferences matter and how they should be weighted.**
@@ -1474,6 +1469,10 @@ where $G$ is the group membership variable.
 
 **These conflict**: To satisfy group fairness, we'd need to assign Group B papers to reviewers *less matched by topic* (drawing from the broader pool). But this violates individual fairness (similar topics → different review quality based on which group the paper belongs to).
 
+::: {.callout-warning title="Intersectionality Multiplies Fairness Challenges"}
+The group fairness framework above treats groups as monolithic categories (Group A vs. Group B). In reality, individuals belong to **multiple overlapping groups** simultaneously---a junior researcher working on a small subfield from an under-resourced institution faces compounding disadvantages that analyzing any single group membership would miss. Intersectional fairness requires monitoring outcomes for all combinations of protected attributes, but this quickly creates a **sample size problem**: with $k$ binary attributes, there are $2^k$ subgroups, many of which may have too few members for reliable statistical analysis. Practical approaches include hierarchical models that share information across subgroups, or focusing on subgroups identified by preliminary analysis as having the largest outcome disparities.
+:::
+
 **Connection to Earlier Sections**:
 - Elicitation (@sec-elicitation-fairness): Stratified sampling ensures group fairness (equal queries per group) but may violate individual fairness (equally productive reviewers get different query rates based on group).
 - Aggregation (@sec-aggregation-fairness): Equal-weight aggregation promotes group fairness but may violate individual fairness (reviewers with equal participation get different weights based on group size).
@@ -2319,11 +2318,16 @@ This chapter draws on diverse literatures in fairness, social choice theory, hum
 
 **Historical Context**: The questions in this chapter are not new. @arrow1950difficulty showed aggregation impossibilities in 1950. @thurstone1927law introduced random utility models in 1927. @luce1959individual axiomatized IIA in 1959. What's new is the **application to machine learning from human preferences at scale**—where small biases compound through automated feedback loops affecting millions of users. Classical fairness concerns now manifest in algorithmic systems with unprecedented speed and scope.
 
-**Further Reading**: For readers wanting to go deeper:
-- **Fairness foundations**: @barocas2019fairness (textbook), @corbett2017algorithmic (definitions)
-- **Sen's social choice**: @sen2017collective (comprehensive), @sen1999development (capabilities approach)
-- **Preference learning**: @furnkranz2010preference (textbook), @chu2005preference (Gaussian processes)
-- **RLHF and alignment**: @christiano2017deep (original RLHF), @ouyang2022training (InstructGPT), @casper2023open (open problems)
-- **Impossibility results**: @arrow2012social (social choice impossibilities), @dietrich2016impossibility (judgment aggregation)
+## Further Reading
+
+For readers who want to go deeper into the topics introduced in this chapter, we recommend the following:
+
+- **@barocas2019fairness**, *Fairness and Machine Learning: Limitations and Opportunities* — The comprehensive textbook on fairness in ML, covering group fairness definitions, individual fairness, impossibility results, and the sociotechnical context of algorithmic decision-making.
+- **@sen2017collective**, *Collective Choice and Social Welfare* (expanded edition) — Sen's definitive treatment of social choice theory, the liberal paradox, and the distinction between revealed preferences and welfare, providing the normative foundations for this chapter.
+- **@dwork2012fairness**, "Fairness Through Awareness" — The foundational paper on individual fairness, formalizing the Lipschitz condition that similar individuals should receive similar outcomes and introducing the metric learning challenge for fairness.
+- **@furnkranz2010preference**, *Preference Learning* — A textbook covering preference learning from a machine learning perspective, including label ranking, instance ranking, and object ranking, complementing this book's focus on human preference data.
+- **@casper2023open**, "Open Problems and Fundamental Limitations of Reinforcement Learning from Human Feedback" — A systematic survey of RLHF failure modes, including reward hacking, distributional shift, and the challenges of aligning AI systems with diverse human values.
+- **@kleinberg2017human**, "Human Decisions and Machine Predictions" — Formalizes the gap between behavior and mental state (the inversion problem) in the context of judicial bail decisions, showing how observed choices can systematically diverge from underlying preferences.
+- **@hashimoto2018fairness**, "Fairness Without Demographics in Repeated Loss Minimization" — Introduces distributionally robust optimization for fairness, showing how to protect minority groups without requiring explicit demographic labels, relevant to the compounding unfairness analysis in this chapter.
 
 This chapter synthesizes insights across these literatures to provide integrated guidance for building fairer preference learning systems.

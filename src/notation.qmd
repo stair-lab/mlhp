@@ -6,24 +6,43 @@ This appendix consolidates the mathematical notation used throughout the book. S
 
 | Symbol | Meaning |
 |--------|---------|
+| $M \in \mathbb{N}$ | Number of items (alternatives) |
 | $j, j', k \in \{1, \ldots, M\}$ | Item (alternative) indices |
+| $N \in \mathbb{N}$ | Number of users (agents) |
 | $i \in \{1, \ldots, N\}$ | User (agent) index |
+| $\prec, \succ$ | Weak preference relation / strict preference |
 | $H_{ij} \in \mathbb{R}$ | Latent utility of user $i$ for item $j$ |
 | $V_j \in \mathbb{R}$ or $\mathbb{R}^K$ | Item appeal / item embedding vector |
 | $U_i \in \mathbb{R}^K$ | User embedding / preference vector |
 | $Y_{jj'} \in \{0, 1\}$ | Binary preference outcome ($1$ means $j \succ j'$) |
+| $\varepsilon_j \in \mathbb{R}$ | Stochastic utility shock for item $j$ (i.i.d.) |
 | $\sigma(x) = 1/(1+e^{-x})$ | Logistic sigmoid function |
 | $p(\cdot \mid \cdot)$ | Conditional probability |
+| $x$ | Context / prompt (in LLM setting) |
+| $y, y_w, y_l$ | Response / winning response / losing response |
+| $d \in \mathbb{N}$ | Dimensionality of feature vectors |
+| $\boldsymbol{x}_j \in \mathbb{R}^d$ | Feature vector of item $j$ |
 | $\mathcal{D}_t = \{(V_j, Y_{ij})\}_{j=1}^t$ | Observed dataset at time $t$ |
 
 ## Preference Models (Chapter 1)
 
 | Symbol | Meaning |
 |--------|---------|
+| $0$ | Outside ("no-choice") option index |
+| $L = (j_1, \dots, j_M)$ | Full ranking (permutation of items) |
+| $(j, \mathcal{S})$ | Observation that $j$ is chosen from $\mathcal{S}$ |
+| $H_j \in \mathbb{R}$ | Latent utility (single-user case) |
+| $r(x, y) \in \mathbb{R}$ | Reward function |
 | $p(j \succ k) = \sigma(V_j - V_k)$ | Bradley-Terry comparison probability |
 | $\tilde{V}_j = V_j + \epsilon_j$ | Random utility ($\epsilon_j$ is noise) |
 | $p(j \mid \mathcal{S}) = e^{V_j} / \sum_{k \in \mathcal{S}} e^{V_k}$ | Multinomial logit (softmax) choice probability |
 | $\prod_r e^{V_{j_r}} / \sum_{s \geq r} e^{V_{j_s}}$ | Plackett-Luce ranking probability |
+| $\alpha_i \in (0,1)$ | Population weight of subgroup $i$ ($\sum_i \alpha_i = 1$) |
+| $\beta \in \mathbb{R}^d$ | Random-coefficients vector (linear RUM) |
+| $\Sigma \in \mathbb{R}^{d \times d}$ | Covariance matrix of $\beta$ |
+| $\mathcal{GP}(m, k)$ | Gaussian Process with mean $m$ and kernel $k$ |
+| $\ell \in \mathbb{R}^+$ | Length-scale parameter (RBF kernel) |
+| $\sigma_f^2 \in \mathbb{R}^+$ | Signal variance (GP kernel) |
 
 ## Learning and Estimation (Chapter 2)
 
