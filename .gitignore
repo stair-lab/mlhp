@@ -75,3 +75,7 @@ CLAUDE.md
 # Local notes
 lecture_note/
 media/
+
+# Large media
+*.mp4
+*.mp3
