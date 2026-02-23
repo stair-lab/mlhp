@@ -461,6 +461,142 @@ for strategy in strategies:
 
 **Design Principle**: When elicitation strategy affects representation, stratify by relevant demographics to ensure fairness—even if it reduces statistical efficiency.
 
+#### Fisher information fairness audit {#sec-fisher-fairness-audit}
+
+The same Fisher information machinery that drives active learning in Chapter 3 (@sec-fisher-information) can be used to *audit* whether an elicitation policy allocates information fairly across groups. For the Rasch model, the Fisher information about user $U$ from item $j$ is $\mathcal{I}_j(U) = p_j(U)(1 - p_j(U))$ with $p_j(U) = \sigma(U + V_j)$. A user receives more "information" when they are asked items matched to their ability. If we run a Fisher-optimal policy (always query the user--item pair that maximizes expected information gain), we can track *cumulative Fisher information per group* over time. Disparity in cumulative information across groups is a concrete fairness metric: it measures whether each group's preferences are learned with similar precision.
+
+The code below simulates two groups (e.g., majority and minority) with a shared item bank, runs both a **Fisher-optimal** policy (globally information-maximizing) and a **stratified Fisher** policy (allocate queries by group proportion, then within each group choose the most informative item for that user). We then plot cumulative Fisher information per group under each policy. This operationalizes the connection between optimal design and fairness: information-maximizing policies can systematically allocate more information to one group, and the audit makes the disparity visible.
+
+```{pyodide-python}
+#| autorun: true
+#| echo: true
+# Fisher information fairness audit: compare information allocation across groups
+sigmoid = lambda x: 1.0 / (1.0 + np.exp(-np.clip(x, -500, 500)))
+rng = np.random.default_rng(43)
+
+# Two groups, shared item bank (Rasch model)
+n_A, n_B = 60, 40
+U_A = rng.normal(0.2, 0.6, size=n_A)   # Group A abilities
+U_B = rng.normal(-0.3, 0.5, size=n_B)  # Group B abilities
+M = 25
+V = np.sort(rng.normal(0, 1.0, size=M))  # Item difficulties
+
+# Prior for each user: N(0, 1)
+def fisher_info(u_hat, vj):
+    p = sigmoid(u_hat + vj)
+    return p * (1.0 - p)
+
+def update_posterior(u_hat, tau, vj, y):
+    p = sigmoid(u_hat + vj)
+    S, I = (y - p), p * (1.0 - p)
+    u_new = u_hat + S / (I + tau + 1e-12)
+    tau_new = tau + I
+    return u_new, tau_new
+
+def choose_fisher_global(u_hats, taus, group_ids, asked):
+    """Pick (user_idx, item_idx) that maximizes Fisher info; user_idx is global."""
+    best_info, best_ui, best_j = -1.0, None, None
+    for ui in range(len(u_hats)):
+        if asked[ui].sum() >= M:
+            continue
+        for j in range(M):
+            if asked[ui, j]:
+                continue
+            info = fisher_info(u_hats[ui], V[j])
+            if info > best_info:
+                best_info, best_ui, best_j = info, ui, j
+    return best_ui, best_j
+
+T = 400  # Total queries
+n_total = n_A + n_B
+u_hat = np.zeros(n_total)
+tau = np.ones(n_total)
+U_true = np.concatenate([U_A, U_B])
+group_id = np.array([0] * n_A + [1] * n_B)
+asked = np.zeros((n_total, M), dtype=bool)
+
+# Fisher-optimal (global) policy
+info_history_fisher = [np.zeros(2)]
+for _ in range(T):
+    ui, j = choose_fisher_global(u_hat, tau, group_id, asked)
+    if ui is None:
+        break
+    p = sigmoid(U_true[ui] + V[j])
+    y = 1 if rng.random() < p else 0
+    info_j = fisher_info(u_hat[ui], V[j])
+    g = group_id[ui]
+    u_hat[ui], tau[ui] = update_posterior(u_hat[ui], tau[ui], V[j], y)
+    asked[ui, j] = True
+    cum = info_history_fisher[-1].copy()
+    cum[g] += info_j
+    info_history_fisher.append(cum)
+
+# Stratified Fisher: 60% queries to group 0, 40% to group 1; within group, Fisher-optimal
+u_hat_s = np.zeros(n_total)
+tau_s = np.ones(n_total)
+asked_s = np.zeros((n_total, M), dtype=bool)
+queries_per_group = [int(T * n_A / n_total), T - int(T * n_A / n_total)]
+info_history_strat = [np.zeros(2)]
+for g in [0, 1]:
+    idx = np.where(group_id == g)[0]
+    n_queries_g = queries_per_group[g]
+    for _ in range(n_queries_g):
+        best_info, best_ui, best_j = -1.0, None, None
+        for ui in idx:
+            for j in range(M):
+                if asked_s[ui, j]:
+                    continue
+                info = fisher_info(u_hat_s[ui], V[j])
+                if info > best_info:
+                    best_info, best_ui, best_j = info, ui, j
+        if best_ui is None:
+            break
+        p = sigmoid(U_true[best_ui] + V[best_j])
+        y = 1 if rng.random() < p else 0
+        info_j = fisher_info(u_hat_s[best_ui], V[best_j])
+        u_hat_s[best_ui], tau_s[best_ui] = update_posterior(
+            u_hat_s[best_ui], tau_s[best_ui], V[best_j], y
+        )
+        asked_s[best_ui, best_j] = True
+        cum = info_history_strat[-1].copy()
+        cum[g] += info_j
+        info_history_strat.append(cum)
+
+# Plot cumulative Fisher information per group
+fig, axes = plt.subplots(1, 2, figsize=(8, 3))
+steps_f = np.arange(len(info_history_fisher))
+steps_s = np.arange(len(info_history_strat))
+arr_f = np.array(info_history_fisher)
+arr_s = np.array(info_history_strat)
+axes[0].plot(steps_f, arr_f[:, 0], label="Group A", color="C0")
+axes[0].plot(steps_f, arr_f[:, 1], label="Group B", color="C1")
+axes[0].set_xlabel("Query count")
+axes[0].set_ylabel("Cumulative Fisher information")
+axes[0].set_title("Fisher-optimal (global)")
+axes[0].legend()
+axes[0].grid(True, alpha=0.3)
+axes[1].plot(steps_s, arr_s[:, 0], label="Group A", color="C0")
+axes[1].plot(steps_s, arr_s[:, 1], label="Group B", color="C1")
+axes[1].set_xlabel("Query count")
+axes[1].set_ylabel("Cumulative Fisher information")
+axes[1].set_title("Stratified Fisher")
+axes[1].legend()
+axes[1].grid(True, alpha=0.3)
+plt.tight_layout()
+plt.show()
+
+# Summary: disparity in final cumulative information
+final_fisher = info_history_fisher[-1]
+final_strat = info_history_strat[-1]
+disp_fisher = abs(final_fisher[0] / n_A - final_fisher[1] / n_B)
+disp_strat = abs(final_strat[0] / n_A - final_strat[1] / n_B)
+print("Per-user cumulative Fisher information (mean):")
+print(f"  Fisher-optimal: Group A {final_fisher[0]/n_A:.2f}, Group B {final_fisher[1]/n_B:.2f} (disparity {disp_fisher:.2f})")
+print(f"  Stratified:      Group A {final_strat[0]/n_A:.2f}, Group B {final_strat[1]/n_B:.2f} (disparity {disp_strat:.2f})")
+```
+
+**Interpretation**: The Fisher-optimal policy often allocates more total information to the group that is "easier" to learn (e.g., lower variance in abilities or better match to the item bank), so per-user information can be unequal. Stratified Fisher balances query budget by group and then uses Fisher-optimal selection within each group, typically reducing disparity in per-user information. Auditing cumulative Fisher information by group makes this tradeoff explicit and supports the design principle of stratifying when fairness is a goal.
+
 Next, we'll see how the learning stage compounds this bias by imposing structure (IIA) that works poorly for context-dependent preferences.
 
 ### Learning: What Preference Structures Are Valid? {#sec-learning-assumptions}
