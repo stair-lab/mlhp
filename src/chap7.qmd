@@ -1,5 +1,5 @@
 ---
-title: Alternatives
+title: Inversion
 format: html
 filters:
   - pyodide
